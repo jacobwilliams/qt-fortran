@@ -20,7 +20,7 @@ environment.
 
 ```
 user code   ->  use qt                      Modern Fortran OO API
-                qt.f90 (later qt_core / qt_gui / qt_widgets)
+                qt.f90 -> qt_core, qt_widgets (qt_gui in phase 3)
             ->  qt_c_*.f90                  raw bind(C) interfaces (iso_c_binding only)
             ->  shim/qtf_*.cpp  (libqtf)    extern "C" shim over Qt C++
             ->  libQt6Core / Gui / Widgets
@@ -40,10 +40,32 @@ user code   ->  use qt                      Modern Fortran OO API
   `QString::fromUtf8(p, len)`, so no NUL terminator is needed.
 - **Strings out**: the shim returns a malloc'd UTF-8 buffer and its length.
   Fortran copies it into `character(len=:), allocatable` and calls `qtf_free`.
-- **Callbacks** (phase 1): C++ stores an integer slot id and calls one Fortran
-  `bind(C)` dispatcher. Fortran keeps a table of procedure pointers plus
-  `class(*)` user data, so user callbacks don't need `bind(C)`. The spike still
-  uses a raw `bind(C)` callback with `c_ptr` data.
+- **Signals & slots**: signals are components of the emitting object, as in PySide:
+  `call timer%timeout%connect(on_tick, state)`. There is one signal type per
+  argument shape (`QSignal` with no args, `QSignalString`; int/bool/double
+  arrive in phase 2), each with a matching slot interface (`qt_slot`,
+  `qt_slot_string`, ...).
+  - **Slots** are ordinary Fortran procedures (no `bind(C)`) with a final
+    `class(*), intent(inout), optional :: data` argument.
+  - **`data`** is stored by reference. It must have TARGET/POINTER and outlive
+    the connection.
+  - **Dispatch**: C++ calls one Fortran `bind(C)` dispatcher with a slot index
+    and a `qtf_args` block. Fortran keeps a registry of procedure pointers plus data.
+  - **Lifetime**: each connection holds a `shared_ptr` slot handle. When Qt
+    destroys the connection (sender deleted, single-shot fired), the
+    registry entry is released (`qt_slot_count()`).
+  - **Connectors**: signal ids (`QTF_SIG_*`) are shared between
+    `shim/qtf_common.h` and `src/core/qt_c_core.f90`. Each shim file registers
+    its connectors at load time.
+  - **Avoid host association in slots**: put slots in modules and pass state
+    through `data`. Internal procedures that use host variables need gfortran
+    trampolines, which aren't portable.
+- **Object wrappers**: each type holds `ptr` plus its signal components.
+  `%attach(ptr)` binds a wrapper to an existing Qt object. Extended types
+  override it to bind their own signals.
+- **Static methods**: exposed as free procedures `QClass_method`
+  (`QTimer_singleShot`, `QApplication_quit`) and, where natural, as `nopass`
+  bindings (`app%exec()`).
 - **Ownership**: follows Qt's parent/child model. No finalizers. Parented
   objects belong to Qt, and top-level objects use an explicit `%delete()`.
   A `QPointer`-backed handle may be added later to detect use after delete.
@@ -108,22 +130,22 @@ pixi run example hello     # run an example
 ```
 src/
   qt.f90                    umbrella module: use qt
-  core/    qt_c_core.f90    qt_core.f90      QCoreApplication, QObject, QTimer, strings, callbacks
+  core/    qt_c_core.f90    qt_core.f90      QObject, QTimer, signals/slots, strings, Qt_* constants
   gui/     qt_c_gui.f90     qt_gui.f90       QColor, QFont, QPainter, QPixmap...
   widgets/ qt_c_widgets.f90 qt_widgets.f90   QApplication, QWidget, buttons, layouts...
 shim/      qtf_common.h qtf_core.cpp qtf_gui.cpp qtf_widgets.cpp   (built into libqtf)
 tools/     fpm_qt.py  (builds shim, drives fpm)
-example/   hello, button_click, form, painter, timer
-test/      strings, signals, widgets
+example/   hello, timer (later: button_click, form, painter)
+test/      testing.f90 (check helper), test_core, test_widgets
 ```
 
 ## Phases
 
 | # | Goal | Done when | Status |
 |---|------|-----------|--------|
-| 0. Spike | C++ compiler in pixi, pixi tasks, minimal shim, Fortran `QLabel` window | `pixi run example hello` shows a window; the headless test passes | **done** (macOS verified) |
-| 0b. Cross-platform | Shim as shared library, gfortran everywhere, `tools/fpm_qt.py` driver, GitHub Actions matrix (ubuntu/macos/windows, offscreen tests) | CI green on all three | in progress (Linux/Windows still need a CI run) |
-| 1. Core infra | String helpers, callback dispatcher, `QApplication`/`exec`, `QObject` base (`objectName`, `deleteLater`, `setParent`), `QTimer` | Unit tests pass offscreen; a timer fires a Fortran procedure with `class(*)` user data | |
+| 0. Spike | C++ compiler in pixi, pixi tasks, minimal shim, Fortran `QLabel` window | `pixi run example hello` shows a window; the headless test passes | **done** |
+| 0b. Cross-platform | Shim as shared library, gfortran everywhere, `tools/fpm_qt.py` driver, GitHub Actions matrix (ubuntu/macos/windows, offscreen tests) | CI green on all three | **done**: CI green on ubuntu, macos, windows |
+| 1. Core infra | String helpers, callback dispatcher, `QApplication`/`exec`, `QObject` base (`objectName`, `deleteLater`, `setParent`), `QTimer` | Unit tests pass offscreen; a timer fires a Fortran procedure with `class(*)` user data | **done** on macOS (CI pending) |
 | 2. Basic widgets | `QWidget`, `QMainWindow`, `QLabel`, `QPushButton`, `QLineEdit`, `QCheckBox`, `QSpinBox`, `QSlider`, `QComboBox`, box/grid layouts, `QMessageBox`, plus their main signals | A "form" example works | |
 | 3. GUI & extensibility | `QAction`/`QMenuBar`, `QFileDialog`, `QPainter`/`QColor`/`QPen`, a custom widget with a Fortran `paintEvent`, mouse/key events | A live-plot painter example driven by `QTimer` | |
 | 4. Binding generator | A Python script that generates the shim, raw interfaces and type-bound methods from a spec. It can mine PySide6's `share/PySide6/typesystems/*.xml` for signatures. | Phase 2 classes regenerate identically | |
@@ -151,6 +173,4 @@ Phases 0-3 are hand-written to settle the patterns. Phase 4 then automates them.
   to subclasses (e.g. `findChild`).
 - Re-entrancy: Fortran callbacks running inside `exec()` that emit more signals.
 - gfortran edge cases with `class(*)` in the dispatcher table.
-- Windows: MinGW gfortran linking the MSVC-built `qtf.dll` (through `qtf.lib` or
-  the DLL directly), and clang++ finding the MSVC linker, are still unverified in CI.
 - Every phase must stay green on all three CI platforms before it counts as done.
