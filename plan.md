@@ -69,8 +69,27 @@ user code   ->  use qt                      Modern Fortran OO API
 - **Ownership**: follows Qt's parent/child model. No finalizers. Parented
   objects belong to Qt, and top-level objects use an explicit `%delete()`.
   A `QPointer`-backed handle may be added later to detect use after delete.
-- **Enums/flags**: `integer(c_int), parameter` constants named `Qt_<Name>`
-  (e.g. `Qt_AlignCenter`).
+- **Enums/flags**: `integer(c_int), parameter` constants. Qt namespace values are
+  `Qt_<Value>` (e.g. `Qt_AlignCenter`), and class enums are `QClass_<Value>`
+  (e.g. `QMessageBox_Yes`, `QDialog_Accepted`). Flags combine with `ior`.
+  **Fortran is case-insensitive**, so when a constant would clash with a
+  function, the constant is qualified with its enum name, as in PySide6:
+  `QMessageBox_Icon_Information` vs the function `QMessageBox_information`.
+- **Indices are 0-based**, as in Qt (combo box items, grid rows/columns, ...),
+  so the Qt docs apply unchanged.
+- **Scalars**: Qt `int` is default `integer`, `bool` is `logical`, and `double`
+  is `real(c_double)` (= real64). Shim booleans cross the boundary as 0/1 `int`.
+- **Optional `parent`** comes last in constructors (as in Qt) and also in static
+  functions, e.g. `QMessageBox_question(title, text, buttons, defaultButton, parent)`.
+  This differs from Qt's order, because Fortran can't conveniently omit a
+  leading optional argument.
+- **Signals whose argument is rarely wanted** drop it, e.g. `clicked` is a
+  no-argument `QSignal`; the state is available via `toggled` / `isChecked()`.
+- **Method overloads that Fortran can't express as overrides** (e.g.
+  `addWidget` differs between box and grid layouts) are defined on each
+  concrete base (`QBoxLayout`, `QGridLayout`), not on `QLayout`.
+- **Casting**: `call box%attach(w%ptr)` rebinds a handle as a more derived type
+  (check `w%inherits('QMessageBox')` first). Used for `activeModalWidget()` etc.
 
 ## Platforms & toolchains
 
@@ -135,8 +154,9 @@ src/
   widgets/ qt_c_widgets.f90 qt_widgets.f90   QApplication, QWidget, buttons, layouts...
 shim/      qtf_common.h qtf_core.cpp qtf_gui.cpp qtf_widgets.cpp   (built into libqtf)
 tools/     fpm_qt.py  (builds shim, drives fpm)
-example/   hello, timer (later: button_click, form, painter)
-test/      testing.f90 (check helper), test_core, test_widgets
+example/   hello, timer, form (later: painter)
+test/      testing.f90 (check helper), test_core, test_widgets, test_controls,
+           test_layouts, test_dialogs
 ```
 
 ## Phases
@@ -146,12 +166,15 @@ test/      testing.f90 (check helper), test_core, test_widgets
 | 0. Spike | C++ compiler in pixi, pixi tasks, minimal shim, Fortran `QLabel` window | `pixi run example hello` shows a window; the headless test passes | **done** |
 | 0b. Cross-platform | Shim as shared library, gfortran everywhere, `tools/fpm_qt.py` driver, GitHub Actions matrix (ubuntu/macos/windows, offscreen tests) | CI green on all three | **done**: CI green on ubuntu, macos, windows |
 | 1. Core infra | String helpers, callback dispatcher, `QApplication`/`exec`, `QObject` base (`objectName`, `deleteLater`, `setParent`), `QTimer` | Unit tests pass offscreen; a timer fires a Fortran procedure with `class(*)` user data | **done** on macOS (CI pending) |
-| 2. Basic widgets | `QWidget`, `QMainWindow`, `QLabel`, `QPushButton`, `QLineEdit`, `QCheckBox`, `QSpinBox`, `QSlider`, `QComboBox`, box/grid layouts, `QMessageBox`, plus their main signals | A "form" example works | |
+| 2. Basic widgets | `QWidget`, `QMainWindow`, `QLabel`, `QPushButton`, `QLineEdit`, `QCheckBox`, `QSpinBox`, `QSlider`, `QComboBox`, box/grid layouts, `QMessageBox`, plus their main signals | A "form" example works | **done** on macOS (CI pending). Also: `QRadioButton`, `QDoubleSpinBox`, `QStatusBar`, `QDialog`, and bool/int/double signal types. |
 | 3. GUI & extensibility | `QAction`/`QMenuBar`, `QFileDialog`, `QPainter`/`QColor`/`QPen`, a custom widget with a Fortran `paintEvent`, mouse/key events | A live-plot painter example driven by `QTimer` | |
 | 4. Binding generator | A Python script that generates the shim, raw interfaces and type-bound methods from a spec. It can mine PySide6's `share/PySide6/typesystems/*.xml` for signatures. | Phase 2 classes regenerate identically | |
 | 5. Polish | FORD docs, README, Windows packaging notes | Docs published | |
 
 Phases 0-3 are hand-written to settle the patterns. Phase 4 then automates them.
+In phase 2, the raw interfaces in `src/widgets/qt_c_widgets.f90` were already
+generated, by a throwaway script that parses the `QTF_API` signatures in the
+shim. Parsing the shim is a natural first stage for the phase 4 generator.
 
 ## Spike results (phase 0)
 

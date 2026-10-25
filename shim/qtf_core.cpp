@@ -54,6 +54,24 @@ void qtf_emit(const qtf_slot &slot, const QString &s) {
     qtf_emit(slot, a);
 }
 
+void qtf_emit_bool(const qtf_slot &slot, bool b) {
+    qtf_args a{};
+    a.i[0] = b ? 1 : 0;
+    qtf_emit(slot, a);
+}
+
+void qtf_emit_int(const qtf_slot &slot, int i) {
+    qtf_args a{};
+    a.i[0] = i;
+    qtf_emit(slot, a);
+}
+
+void qtf_emit_double(const qtf_slot &slot, double d) {
+    qtf_args a{};
+    a.d[0] = d;
+    qtf_emit(slot, a);
+}
+
 // function-local static: safe to use from other translation units' static init
 static std::unordered_map<int, qtf_connector_fn> &qtf_connectors() {
     static std::unordered_map<int, qtf_connector_fn> m;

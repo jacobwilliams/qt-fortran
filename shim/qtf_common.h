@@ -20,6 +20,26 @@ enum qtf_signal : int {
     QTF_SIG_QOBJECT_OBJECTNAMECHANGED = 2,
     QTF_SIG_QTIMER_TIMEOUT = 3,
     // widgets (1000..1999)
+    QTF_SIG_QABSTRACTBUTTON_CLICKED = 1000,
+    QTF_SIG_QABSTRACTBUTTON_TOGGLED = 1001,
+    QTF_SIG_QABSTRACTBUTTON_PRESSED = 1002,
+    QTF_SIG_QABSTRACTBUTTON_RELEASED = 1003,
+    QTF_SIG_QLINEEDIT_TEXTCHANGED = 1010,
+    QTF_SIG_QLINEEDIT_TEXTEDITED = 1011,
+    QTF_SIG_QLINEEDIT_RETURNPRESSED = 1012,
+    QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1013,
+    QTF_SIG_QSPINBOX_VALUECHANGED = 1020,
+    QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1021,
+    QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1030,
+    QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1031,
+    QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1032,
+    QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1033,
+    QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1040,
+    QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1041,
+    QTF_SIG_QCOMBOBOX_ACTIVATED = 1042,
+    QTF_SIG_QDIALOG_ACCEPTED = 1050,
+    QTF_SIG_QDIALOG_REJECTED = 1051,
+    QTF_SIG_QDIALOG_FINISHED = 1052,
 };
 
 // Signal arguments passed to the Fortran dispatcher (mirrors type(qtf_args)).
@@ -51,6 +71,9 @@ inline qtf_slot qtf_make_slot(int id) { return std::make_shared<qtf_slot_ref>(id
 void qtf_emit(const qtf_slot &slot, const qtf_args &args);
 void qtf_emit(const qtf_slot &slot);
 void qtf_emit(const qtf_slot &slot, const QString &s);
+void qtf_emit_bool(const qtf_slot &slot, bool b);
+void qtf_emit_int(const qtf_slot &slot, int i);
+void qtf_emit_double(const qtf_slot &slot, double d);
 
 // Connect `signal` of `sender` to Fortran slot `slot`; returns false on failure.
 typedef bool (*qtf_connector_fn)(void *sender, const qtf_slot &slot);

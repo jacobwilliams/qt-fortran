@@ -25,6 +25,10 @@ module qt_core
     integer(c_int), parameter, public :: Qt_AlignVCenter = int(z'0080', c_int)
     integer(c_int), parameter, public :: Qt_AlignCenter  = ior(Qt_AlignHCenter, Qt_AlignVCenter)
 
+    ! Qt::Orientation
+    integer(c_int), parameter, public :: Qt_Horizontal = 1
+    integer(c_int), parameter, public :: Qt_Vertical   = 2
+
     abstract interface
         !> Slot for signals without arguments.
         subroutine qt_slot(data)
@@ -35,8 +39,24 @@ module qt_core
             character(len=*), intent(in) :: value
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_string
+        !> Slot for signals with a single logical argument.
+        subroutine qt_slot_bool(value, data)
+            logical, intent(in) :: value
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_bool
+        !> Slot for signals with a single integer argument.
+        subroutine qt_slot_int(value, data)
+            integer, intent(in) :: value
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_int
+        !> Slot for signals with a single real argument.
+        subroutine qt_slot_double(value, data)
+            import :: c_double
+            real(c_double), intent(in) :: value
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_double
     end interface
-    public :: qt_slot, qt_slot_string
+    public :: qt_slot, qt_slot_string, qt_slot_bool, qt_slot_int, qt_slot_double
 
     !> A signal without arguments.
     type, public :: QSignal
@@ -53,6 +73,30 @@ module qt_core
     contains
         procedure :: connect => qsignalstring_connect
     end type QSignalString
+
+    !> A signal with a single logical argument.
+    type, public :: QSignalBool
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignalbool_connect
+    end type QSignalBool
+
+    !> A signal with a single integer argument.
+    type, public :: QSignalInt
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignalint_connect
+    end type QSignalInt
+
+    !> A signal with a single real argument.
+    type, public :: QSignalDouble
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignaldouble_connect
+    end type QSignalDouble
 
     type, public :: QObject
         type(c_ptr) :: ptr = c_null_ptr
@@ -96,12 +140,15 @@ module qt_core
     ! ------------------------------------------------------------------
     ! slot registry: the shim refers to Fortran slots by index into `slots`
 
-    integer, parameter :: SLOT_VOID = 1, SLOT_STRING = 2
+    integer, parameter :: SLOT_VOID = 1, SLOT_STRING = 2, SLOT_BOOL = 3, SLOT_INT = 4, SLOT_DOUBLE = 5
 
     type :: slot_entry
         integer :: kind = 0     !! 0 = free
         procedure(qt_slot), pointer, nopass :: void => null()
         procedure(qt_slot_string), pointer, nopass :: string => null()
+        procedure(qt_slot_bool), pointer, nopass :: bool => null()
+        procedure(qt_slot_int), pointer, nopass :: int => null()
+        procedure(qt_slot_double), pointer, nopass :: double => null()
         class(*), pointer :: data => null()
     end type slot_entry
 
@@ -154,25 +201,49 @@ contains
     subroutine qtf_dispatch(id, args) bind(C)
         integer(c_int), value :: id
         type(qtf_args), intent(in) :: args
-        procedure(qt_slot), pointer :: void
-        procedure(qt_slot_string), pointer :: string
+        procedure(qt_slot), pointer :: f_void
+        procedure(qt_slot_string), pointer :: f_string
+        procedure(qt_slot_bool), pointer :: f_bool
+        procedure(qt_slot_int), pointer :: f_int
+        procedure(qt_slot_double), pointer :: f_double
         class(*), pointer :: data
         ! copy out first: the slot may connect (reallocating `slots`) or release itself
-        void => slots(id)%void
-        string => slots(id)%string
+        f_void => slots(id)%void
+        f_string => slots(id)%string
+        f_bool => slots(id)%bool
+        f_int => slots(id)%int
+        f_double => slots(id)%double
         data => slots(id)%data
         select case (slots(id)%kind)
         case (SLOT_VOID)
             if (associated(data)) then
-                call void(data)
+                call f_void(data)
             else
-                call void()
+                call f_void()
             end if
         case (SLOT_STRING)
             if (associated(data)) then
-                call string(qtf_string(args%s, args%slen), data)
+                call f_string(qtf_string(args%s, args%slen), data)
             else
-                call string(qtf_string(args%s, args%slen))
+                call f_string(qtf_string(args%s, args%slen))
+            end if
+        case (SLOT_BOOL)
+            if (associated(data)) then
+                call f_bool(args%i(1) /= 0, data)
+            else
+                call f_bool(args%i(1) /= 0)
+            end if
+        case (SLOT_INT)
+            if (associated(data)) then
+                call f_int(int(args%i(1)), data)
+            else
+                call f_int(int(args%i(1)))
+            end if
+        case (SLOT_DOUBLE)
+            if (associated(data)) then
+                call f_double(args%d(1), data)
+            else
+                call f_double(args%d(1))
             end if
         end select
     end subroutine qtf_dispatch
@@ -211,6 +282,39 @@ contains
         if (present(data)) slots(id)%data => data
         call connect_slot(self%sender, self%id, id)
     end subroutine qsignalstring_connect
+
+    subroutine qsignalbool_connect(self, slot, data)
+        class(QSignalBool), intent(in) :: self
+        procedure(qt_slot_bool) :: slot
+        class(*), intent(inout), target, optional :: data
+        integer :: id
+        id = new_slot(SLOT_BOOL)
+        slots(id)%bool => slot
+        if (present(data)) slots(id)%data => data
+        call connect_slot(self%sender, self%id, id)
+    end subroutine qsignalbool_connect
+
+    subroutine qsignalint_connect(self, slot, data)
+        class(QSignalInt), intent(in) :: self
+        procedure(qt_slot_int) :: slot
+        class(*), intent(inout), target, optional :: data
+        integer :: id
+        id = new_slot(SLOT_INT)
+        slots(id)%int => slot
+        if (present(data)) slots(id)%data => data
+        call connect_slot(self%sender, self%id, id)
+    end subroutine qsignalint_connect
+
+    subroutine qsignaldouble_connect(self, slot, data)
+        class(QSignalDouble), intent(in) :: self
+        procedure(qt_slot_double) :: slot
+        class(*), intent(inout), target, optional :: data
+        integer :: id
+        id = new_slot(SLOT_DOUBLE)
+        slots(id)%double => slot
+        if (present(data)) slots(id)%data => data
+        call connect_slot(self%sender, self%id, id)
+    end subroutine qsignaldouble_connect
 
     ! ------------------------------------------------------------------
     ! QObject
