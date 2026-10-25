@@ -31,58 +31,98 @@ module qt_c_widgets
     integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_RELEASED = 1020
     integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_TEXTCHANGED = 1021
     integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_TEXTEDITED = 1022
-    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_RETURNPRESSED = 1023
-    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1024
-    integer(c_int), parameter, public :: QTF_SIG_QSPINBOX_VALUECHANGED = 1025
-    integer(c_int), parameter, public :: QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1026
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1027
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1028
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1029
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1030
-    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1031
-    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1032
-    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_ACTIVATED = 1033
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_ACCEPTED = 1034
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_REJECTED = 1035
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_FINISHED = 1036
-    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1037
-    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1038
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1039
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1040
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1041
-    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1042
-    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1043
-    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1044
-    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1045
-    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1046
-    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1047
-    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1048
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1049
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1050
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1051
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1052
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1053
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1054
-    integer(c_int), parameter, public :: QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1055
-    integer(c_int), parameter, public :: QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1056
-    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1057
-    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1058
-    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABBARCLICKED = 1059
-    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1060
-    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1061
-    integer(c_int), parameter, public :: QTF_SIG_QSPLITTER_SPLITTERMOVED = 1062
-    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_TOGGLED = 1063
-    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_CLICKED = 1064
-    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1065
-    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1066
-    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1067
-    integer(c_int), parameter, public :: QTF_SIG_QBUTTONGROUP_IDCLICKED = 1068
-    integer(c_int), parameter, public :: QTF_SIG_QDATEEDIT_DATECHANGED = 1069
-    integer(c_int), parameter, public :: QTF_SIG_QTIMEEDIT_TIMECHANGED = 1070
-    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1071
-    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_CLICKED = 1072
-    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1073
-    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSDIALOG_CANCELED = 1074
+    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_INPUTREJECTED = 1023
+    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_RETURNPRESSED = 1024
+    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1025
+    integer(c_int), parameter, public :: QTF_SIG_QSPINBOX_VALUECHANGED = 1026
+    integer(c_int), parameter, public :: QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1027
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1028
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1029
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1030
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1031
+    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1032
+    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1033
+    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_ACTIVATED = 1034
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_ACCEPTED = 1035
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_REJECTED = 1036
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_FINISHED = 1037
+    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1038
+    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1039
+    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_SORTREQUESTED = 1040
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1041
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1042
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1043
+    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_NODECLICKED = 1044
+    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_NODEACTIVATED = 1045
+    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_CURRENTNODECHANGED = 1046
+    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_CURRENTFILECHANGED = 1047
+    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_FILEACTIVATED = 1048
+    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_EXPANDEDNODE = 1049
+    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_COLLAPSEDNODE = 1050
+    integer(c_int), parameter, public :: QTF_SIG_QTFTREEMODEL_DATAREQUESTED = 1051
+    integer(c_int), parameter, public :: QTF_SIG_QTFTREEMODEL_DATAEDITED = 1052
+    integer(c_int), parameter, public :: QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED = 1053
+    integer(c_int), parameter, public :: QTF_SIG_QFILESYSTEMMODEL_ROOTPATHCHANGED = 1054
+    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1055
+    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1056
+    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1057
+    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1058
+    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1059
+    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1060
+    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1061
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1062
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1063
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1064
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1065
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1066
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1067
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1068
+    integer(c_int), parameter, public :: QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1069
+    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1070
+    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1071
+    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABBARCLICKED = 1072
+    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1073
+    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1074
+    integer(c_int), parameter, public :: QTF_SIG_QSPLITTER_SPLITTERMOVED = 1075
+    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_TOGGLED = 1076
+    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_CLICKED = 1077
+    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1078
+    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1079
+    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1080
+    integer(c_int), parameter, public :: QTF_SIG_QBUTTONGROUP_IDCLICKED = 1081
+    integer(c_int), parameter, public :: QTF_SIG_QDATEEDIT_DATECHANGED = 1082
+    integer(c_int), parameter, public :: QTF_SIG_QTIMEEDIT_TIMECHANGED = 1083
+    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1084
+    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_CLICKED = 1085
+    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1086
+    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSDIALOG_CANCELED = 1087
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED = 1088
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_REJECTED = 1089
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED = 1090
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_CLICKED = 1091
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE = 1092
+    integer(c_int), parameter, public :: QTF_SIG_QCOMPLETER_ACTIVATED = 1093
+    integer(c_int), parameter, public :: QTF_SIG_QCOMPLETER_HIGHLIGHTED = 1094
+    integer(c_int), parameter, public :: QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED = 1095
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_ANCHORCLICKED = 1096
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_SOURCECHANGED = 1097
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE = 1098
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE = 1099
+    integer(c_int), parameter, public :: QTF_SIG_QTOOLBOX_CURRENTCHANGED = 1100
+    integer(c_int), parameter, public :: QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED = 1101
+    integer(c_int), parameter, public :: QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE = 1102
+    integer(c_int), parameter, public :: QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED = 1103
+    integer(c_int), parameter, public :: QTF_SIG_QWIZARDPAGE_COMPLETECHANGED = 1104
+    integer(c_int), parameter, public :: QTF_SIG_QWIZARD_CURRENTIDCHANGED = 1105
+    integer(c_int), parameter, public :: QTF_SIG_QWIZARD_HELPREQUESTED = 1106
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_REDOREQUESTED = 1107
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_UNDOREQUESTED = 1108
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_CANUNDOCHANGED = 1109
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_CANREDOCHANGED = 1110
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_INDEXCHANGED = 1111
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1112
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1113
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1114
 
     interface
 
@@ -627,6 +667,80 @@ module qt_c_widgets
             integer(c_int) :: res
         end function qtf_qwidget_isWindow
 
+        !> Show the window maximized.
+        !>
+        !> C: `void qtf_qwidget_showMaximized(void *self)`
+        subroutine qtf_qwidget_showMaximized(self) bind(C, name='qtf_qwidget_showMaximized')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qwidget_showMaximized
+
+        !> Show the window minimized (iconified).
+        !>
+        !> C: `void qtf_qwidget_showMinimized(void *self)`
+        subroutine qtf_qwidget_showMinimized(self) bind(C, name='qtf_qwidget_showMinimized')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qwidget_showMinimized
+
+        !> Show the window at its normal size (after maximized, minimized or full screen).
+        !>
+        !> C: `void qtf_qwidget_showNormal(void *self)`
+        subroutine qtf_qwidget_showNormal(self) bind(C, name='qtf_qwidget_showNormal')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qwidget_showNormal
+
+        !> Show the window full screen.
+        !>
+        !> C: `void qtf_qwidget_showFullScreen(void *self)`
+        subroutine qtf_qwidget_showFullScreen(self) bind(C, name='qtf_qwidget_showFullScreen')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qwidget_showFullScreen
+
+        !> True if the window is maximized.
+        !>
+        !> C: `int qtf_qwidget_isMaximized(void *self)`
+        function qtf_qwidget_isMaximized(self) result(res) bind(C, name='qtf_qwidget_isMaximized')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwidget_isMaximized
+
+        !> True if the window is minimized.
+        !>
+        !> C: `int qtf_qwidget_isMinimized(void *self)`
+        function qtf_qwidget_isMinimized(self) result(res) bind(C, name='qtf_qwidget_isMinimized')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwidget_isMinimized
+
+        !> Make the window the active one (give it keyboard focus).
+        !>
+        !> C: `void qtf_qwidget_activateWindow(void *self)`
+        subroutine qtf_qwidget_activateWindow(self) bind(C, name='qtf_qwidget_activateWindow')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qwidget_activateWindow
+
+        !> Raise the window above other windows (or the widget above its siblings).
+        !>
+        !> C: `void qtf_qwidget_raise(void *self)`
+        subroutine qtf_qwidget_raise(self) bind(C, name='qtf_qwidget_raise')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qwidget_raise
+
         !> Re-apply the style sheet, e.g. after changing a property that a style rule selects on (`*[state="error"]`).
         !>
         !> C: `void qtf_qwidget_repolish(void *self)`
@@ -1053,6 +1167,67 @@ module qt_c_widgets
             implicit none
             type(c_ptr), value :: self
         end subroutine qtf_qlineedit_clear
+
+        !> Accept only input the validator allows (no argument: remove it). The line edit does not take ownership.
+        !>
+        !> C: `void qtf_qlineedit_setValidator(void *self, void *validator)`
+        subroutine qtf_qlineedit_setValidator(self, validator) bind(C, name='qtf_qlineedit_setValidator')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: validator
+        end subroutine qtf_qlineedit_setValidator
+
+        !> True if the text satisfies the validator (or there is none).
+        !>
+        !> C: `int qtf_qlineedit_hasAcceptableInput(void *self)`
+        function qtf_qlineedit_hasAcceptableInput(self) result(res) bind(C, name='qtf_qlineedit_hasAcceptableInput')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qlineedit_hasAcceptableInput
+
+        !> Offer completions while typing (no argument: remove it).
+        !>
+        !> C: `void qtf_qlineedit_setCompleter(void *self, void *completer)`
+        subroutine qtf_qlineedit_setCompleter(self, completer) bind(C, name='qtf_qlineedit_setCompleter')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: completer
+        end subroutine qtf_qlineedit_setCompleter
+
+        !> An input mask, e.g. '000.000.000.000' (see Qt's QLineEdit::inputMask).
+        !>
+        !> C: `void qtf_qlineedit_setInputMask(void *self, const char *mask, int mask_len)`
+        subroutine qtf_qlineedit_setInputMask(self, mask, mask_len) bind(C, name='qtf_qlineedit_setInputMask')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: mask
+            integer(c_int), value :: mask_len
+        end subroutine qtf_qlineedit_setInputMask
+
+        !> QLineEdit_Normal, _NoEcho, _Password or _PasswordEchoOnEdit.
+        !>
+        !> C: `void qtf_qlineedit_setEchoMode(void *self, int mode)`
+        subroutine qtf_qlineedit_setEchoMode(self, mode) bind(C, name='qtf_qlineedit_setEchoMode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: mode
+        end subroutine qtf_qlineedit_setEchoMode
+
+        !> Show a clear button while there is text.
+        !>
+        !> C: `void qtf_qlineedit_setClearButtonEnabled(void *self, int enable)`
+        subroutine qtf_qlineedit_setClearButtonEnabled(self, enable) bind(C, name='qtf_qlineedit_setClearButtonEnabled')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enable
+        end subroutine qtf_qlineedit_setClearButtonEnabled
 
         !> Create a spin box (range 0..99).
         !>
@@ -1520,6 +1695,16 @@ module qt_c_widgets
             type(c_ptr), value :: self
             integer(c_int), value :: editable
         end subroutine qtf_qcombobox_setEditable
+
+        !> Completions for an editable combo box.
+        !>
+        !> C: `void qtf_qcombobox_setCompleter(void *self, void *completer)`
+        subroutine qtf_qcombobox_setCompleter(self, completer) bind(C, name='qtf_qcombobox_setCompleter')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: completer
+        end subroutine qtf_qcombobox_setCompleter
 
         !> Set the margins around the layout, in pixels.
         !>
@@ -2457,6 +2642,26 @@ module qt_c_widgets
             type(c_ptr) :: res
         end function qtf_qfiledialog_getExistingDirectory
 
+        !> Number of (top-level) rows.
+        !>
+        !> C: `int qtf_qabstractitemmodel_rowCount(void *self)`
+        function qtf_qabstractitemmodel_rowCount(self) result(res) bind(C, name='qtf_qabstractitemmodel_rowCount')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qabstractitemmodel_rowCount
+
+        !> Number of columns.
+        !>
+        !> C: `int qtf_qabstractitemmodel_columnCount(void *self)`
+        function qtf_qabstractitemmodel_columnCount(self) result(res) bind(C, name='qtf_qabstractitemmodel_columnCount')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qabstractitemmodel_columnCount
+
         !> Show `text` in the cell.
         !>
         !> C: `void qtf_qtfmodelrequest_setText(void *self, const char *text, int text_len)`
@@ -2519,26 +2724,6 @@ module qt_c_widgets
             type(c_ptr), value :: self
             integer(c_int), value :: columns
         end subroutine qtf_qtftablemodel_setColumnCount
-
-        !> Number of rows.
-        !>
-        !> C: `int qtf_qtftablemodel_rowCount(void *self)`
-        function qtf_qtftablemodel_rowCount(self) result(res) bind(C, name='qtf_qtftablemodel_rowCount')
-            import :: c_int, c_ptr
-            implicit none
-            type(c_ptr), value :: self
-            integer(c_int) :: res
-        end function qtf_qtftablemodel_rowCount
-
-        !> Number of columns.
-        !>
-        !> C: `int qtf_qtftablemodel_columnCount(void *self)`
-        function qtf_qtftablemodel_columnCount(self) result(res) bind(C, name='qtf_qtftablemodel_columnCount')
-            import :: c_int, c_ptr
-            implicit none
-            type(c_ptr), value :: self
-            integer(c_int) :: res
-        end function qtf_qtftablemodel_columnCount
 
         !> Set the column titles.
         !>
@@ -2625,6 +2810,50 @@ module qt_c_widgets
             integer(c_int) :: res
         end function qtf_qtftablemodel_setDataText
 
+        !> Show `model` (the view does not take ownership). Not for the item widgets (QTableWidget, ...), which have their own model.
+        !>
+        !> C: `void qtf_qabstractitemview_setModel(void *self, void *model)`
+        subroutine qtf_qabstractitemview_setModel(self, model) bind(C, name='qtf_qabstractitemview_setModel')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: model
+        end subroutine qtf_qabstractitemview_setModel
+
+        !> Edit every cell with `delegate`.
+        !>
+        !> C: `void qtf_qabstractitemview_setItemDelegate(void *self, void *delegate)`
+        subroutine qtf_qabstractitemview_setItemDelegate(self, delegate) &
+                bind(C, name='qtf_qabstractitemview_setItemDelegate')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: delegate
+        end subroutine qtf_qabstractitemview_setItemDelegate
+
+        !> Edit the cells of one column with `delegate`.
+        !>
+        !> C: `void qtf_qabstractitemview_setItemDelegateForColumn(void *self, int column, void *delegate)`
+        subroutine qtf_qabstractitemview_setItemDelegateForColumn(self, column, delegate) &
+                bind(C, name='qtf_qabstractitemview_setItemDelegateForColumn')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: column
+            type(c_ptr), value :: delegate
+        end subroutine qtf_qabstractitemview_setItemDelegateForColumn
+
+        !> Start editing a (top-level) cell, as a double click would.
+        !>
+        !> C: `void qtf_qabstractitemview_edit(void *self, int row, int column)`
+        subroutine qtf_qabstractitemview_edit(self, row, column) bind(C, name='qtf_qabstractitemview_edit')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: row
+            integer(c_int), value :: column
+        end subroutine qtf_qabstractitemview_edit
+
         !> Shade every other row.
         !>
         !> C: `void qtf_qabstractitemview_setAlternatingRowColors(void *self, int enable)`
@@ -2705,16 +2934,6 @@ module qt_c_widgets
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qtableview_new
-
-        !> Show `model` (the view does not take ownership).
-        !>
-        !> C: `void qtf_qtableview_setModel(void *self, void *model)`
-        subroutine qtf_qtableview_setModel(self, model) bind(C, name='qtf_qtableview_setModel')
-            import :: c_ptr
-            implicit none
-            type(c_ptr), value :: self
-            type(c_ptr), value :: model
-        end subroutine qtf_qtableview_setModel
 
         !> Fit the column widths to their contents.
         !>
@@ -2839,6 +3058,688 @@ module qt_c_widgets
             type(c_ptr), value :: self
             integer(c_int), value :: on
         end subroutine qtf_qtableview_setWordWrap
+
+        !> Sort when a column title is clicked (a QtfTableModel gets `sortRequested`).
+        !>
+        !> C: `void qtf_qtableview_setSortingEnabled(void *self, int enable)`
+        subroutine qtf_qtableview_setSortingEnabled(self, enable) bind(C, name='qtf_qtableview_setSortingEnabled')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enable
+        end subroutine qtf_qtableview_setSortingEnabled
+
+        !> Sort by a column now.
+        !>
+        !> C: `void qtf_qtableview_sortByColumn(void *self, int column, int order)`
+        subroutine qtf_qtableview_sortByColumn(self, column, order) bind(C, name='qtf_qtableview_sortByColumn')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: column
+            integer(c_int), value :: order
+        end subroutine qtf_qtableview_sortByColumn
+
+        !> Hide or show a column.
+        !>
+        !> C: `void qtf_qtableview_setColumnHidden(void *self, int column, int hide)`
+        subroutine qtf_qtableview_setColumnHidden(self, column, hide) bind(C, name='qtf_qtableview_setColumnHidden')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: column
+            integer(c_int), value :: hide
+        end subroutine qtf_qtableview_setColumnHidden
+
+        !> Create a tree view.
+        !>
+        !> C: `void *qtf_qtreeview_new(void *parent)`
+        function qtf_qtreeview_new(parent) result(res) bind(C, name='qtf_qtreeview_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qtreeview_new
+
+        !> The current node of a QtfTreeModel (-1 if none).
+        !>
+        !> C: `int qtf_qtreeview_currentNode(void *self)`
+        function qtf_qtreeview_currentNode(self) result(res) bind(C, name='qtf_qtreeview_currentNode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtreeview_currentNode
+
+        !> Make `node` current (its parents are expanded).
+        !>
+        !> C: `void qtf_qtreeview_setCurrentNode(void *self, int node)`
+        subroutine qtf_qtreeview_setCurrentNode(self, node) bind(C, name='qtf_qtreeview_setCurrentNode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: node
+        end subroutine qtf_qtreeview_setCurrentNode
+
+        !> Expand a node.
+        !>
+        !> C: `void qtf_qtreeview_expandNode(void *self, int node)`
+        subroutine qtf_qtreeview_expandNode(self, node) bind(C, name='qtf_qtreeview_expandNode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: node
+        end subroutine qtf_qtreeview_expandNode
+
+        !> Collapse a node.
+        !>
+        !> C: `void qtf_qtreeview_collapseNode(void *self, int node)`
+        subroutine qtf_qtreeview_collapseNode(self, node) bind(C, name='qtf_qtreeview_collapseNode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: node
+        end subroutine qtf_qtreeview_collapseNode
+
+        !> True if the node is expanded.
+        !>
+        !> C: `int qtf_qtreeview_isNodeExpanded(void *self, int node)`
+        function qtf_qtreeview_isNodeExpanded(self, node) result(res) bind(C, name='qtf_qtreeview_isNodeExpanded')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: node
+            integer(c_int) :: res
+        end function qtf_qtreeview_isNodeExpanded
+
+        !> Scroll so that the node is visible (expanding its parents).
+        !>
+        !> C: `void qtf_qtreeview_scrollToNode(void *self, int node)`
+        subroutine qtf_qtreeview_scrollToNode(self, node) bind(C, name='qtf_qtreeview_scrollToNode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: node
+        end subroutine qtf_qtreeview_scrollToNode
+
+        !> The path of the current file of a QFileSystemModel (empty if none).
+        !>
+        !> C: `char *qtf_qtreeview_currentFilePath(void *self, int *len)`
+        function qtf_qtreeview_currentFilePath(self, len) result(res) bind(C, name='qtf_qtreeview_currentFilePath')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qtreeview_currentFilePath
+
+        !> Make the file `path` of the QFileSystemModel current.
+        !>
+        !> C: `void qtf_qtreeview_setCurrentFile(void *self, const char *path, int path_len)`
+        subroutine qtf_qtreeview_setCurrentFile(self, path, path_len) bind(C, name='qtf_qtreeview_setCurrentFile')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: path
+            integer(c_int), value :: path_len
+        end subroutine qtf_qtreeview_setCurrentFile
+
+        !> Show only the directory `path` of the QFileSystemModel (set the model's root path too).
+        !>
+        !> C: `void qtf_qtreeview_setRootPath(void *self, const char *path, int path_len)`
+        subroutine qtf_qtreeview_setRootPath(self, path, path_len) bind(C, name='qtf_qtreeview_setRootPath')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: path
+            integer(c_int), value :: path_len
+        end subroutine qtf_qtreeview_setRootPath
+
+        !> Expand every node.
+        !>
+        !> C: `void qtf_qtreeview_expandAll(void *self)`
+        subroutine qtf_qtreeview_expandAll(self) bind(C, name='qtf_qtreeview_expandAll')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtreeview_expandAll
+
+        !> Collapse every node.
+        !>
+        !> C: `void qtf_qtreeview_collapseAll(void *self)`
+        subroutine qtf_qtreeview_collapseAll(self) bind(C, name='qtf_qtreeview_collapseAll')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtreeview_collapseAll
+
+        !> Expand nodes down to `depth` levels (0: the top level).
+        !>
+        !> C: `void qtf_qtreeview_expandToDepth(void *self, int depth)`
+        subroutine qtf_qtreeview_expandToDepth(self, depth) bind(C, name='qtf_qtreeview_expandToDepth')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: depth
+        end subroutine qtf_qtreeview_expandToDepth
+
+        !> Hide the column titles.
+        !>
+        !> C: `void qtf_qtreeview_setHeaderHidden(void *self, int hide)`
+        subroutine qtf_qtreeview_setHeaderHidden(self, hide) bind(C, name='qtf_qtreeview_setHeaderHidden')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: hide
+        end subroutine qtf_qtreeview_setHeaderHidden
+
+        !> Show expand/collapse controls for top-level nodes.
+        !>
+        !> C: `void qtf_qtreeview_setRootIsDecorated(void *self, int show)`
+        subroutine qtf_qtreeview_setRootIsDecorated(self, show) bind(C, name='qtf_qtreeview_setRootIsDecorated')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: show
+        end subroutine qtf_qtreeview_setRootIsDecorated
+
+        !> Promise equal row heights (faster for large trees).
+        !>
+        !> C: `void qtf_qtreeview_setUniformRowHeights(void *self, int uniform)`
+        subroutine qtf_qtreeview_setUniformRowHeights(self, uniform) bind(C, name='qtf_qtreeview_setUniformRowHeights')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: uniform
+        end subroutine qtf_qtreeview_setUniformRowHeights
+
+        !> Animate expanding and collapsing.
+        !>
+        !> C: `void qtf_qtreeview_setAnimated(void *self, int enable)`
+        subroutine qtf_qtreeview_setAnimated(self, enable) bind(C, name='qtf_qtreeview_setAnimated')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enable
+        end subroutine qtf_qtreeview_setAnimated
+
+        !> Indentation per level.
+        !>
+        !> C: `void qtf_qtreeview_setIndentation(void *self, int pixels)`
+        subroutine qtf_qtreeview_setIndentation(self, pixels) bind(C, name='qtf_qtreeview_setIndentation')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: pixels
+        end subroutine qtf_qtreeview_setIndentation
+
+        !> Fit a column's width to its contents.
+        !>
+        !> C: `void qtf_qtreeview_resizeColumnToContents(void *self, int column)`
+        subroutine qtf_qtreeview_resizeColumnToContents(self, column) &
+                bind(C, name='qtf_qtreeview_resizeColumnToContents')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: column
+        end subroutine qtf_qtreeview_resizeColumnToContents
+
+        !> Set a column width in pixels.
+        !>
+        !> C: `void qtf_qtreeview_setColumnWidth(void *self, int column, int width)`
+        subroutine qtf_qtreeview_setColumnWidth(self, column, width) bind(C, name='qtf_qtreeview_setColumnWidth')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: column
+            integer(c_int), value :: width
+        end subroutine qtf_qtreeview_setColumnWidth
+
+        !> Hide or show a column.
+        !>
+        !> C: `void qtf_qtreeview_setColumnHidden(void *self, int column, int hide)`
+        subroutine qtf_qtreeview_setColumnHidden(self, column, hide) bind(C, name='qtf_qtreeview_setColumnHidden')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: column
+            integer(c_int), value :: hide
+        end subroutine qtf_qtreeview_setColumnHidden
+
+        !> Sort when a column title is clicked (needs a sorting model, e.g. QSortFilterProxyModel).
+        !>
+        !> C: `void qtf_qtreeview_setSortingEnabled(void *self, int enable)`
+        subroutine qtf_qtreeview_setSortingEnabled(self, enable) bind(C, name='qtf_qtreeview_setSortingEnabled')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enable
+        end subroutine qtf_qtreeview_setSortingEnabled
+
+        !> Sort by a column now.
+        !>
+        !> C: `void qtf_qtreeview_sortByColumn(void *self, int column, int order)`
+        subroutine qtf_qtreeview_sortByColumn(self, column, order) bind(C, name='qtf_qtreeview_sortByColumn')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: column
+            integer(c_int), value :: order
+        end subroutine qtf_qtreeview_sortByColumn
+
+        !> An empty tree model with `columns` columns.
+        !>
+        !> C: `void *qtf_qtftreemodel_new(int columns, void *parent)`
+        function qtf_qtftreemodel_new(columns, parent) result(res) bind(C, name='qtf_qtftreemodel_new')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), value :: columns
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qtftreemodel_new
+
+        !> Set the structure: node i's parent is `parents(i)` (0: top level; must be < i). Resets the views.
+        !>
+        !> C: `void qtf_qtftreemodel_setParents(void *self, const int *parents, int n)`
+        subroutine qtf_qtftreemodel_setParents(self, parents, n) bind(C, name='qtf_qtftreemodel_setParents')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), dimension(*), intent(in) :: parents
+            integer(c_int), value :: n
+        end subroutine qtf_qtftreemodel_setParents
+
+        !> Add a node as the last child of `parent` (0: top level); returns its number (-1 if `parent` is invalid).
+        !>
+        !> C: `int qtf_qtftreemodel_appendNode(void *self, int parent)`
+        function qtf_qtftreemodel_appendNode(self, parent) result(res) bind(C, name='qtf_qtftreemodel_appendNode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: parent
+            integer(c_int) :: res
+        end function qtf_qtftreemodel_appendNode
+
+        !> The number of nodes.
+        !>
+        !> C: `int qtf_qtftreemodel_nodeCount(void *self)`
+        function qtf_qtftreemodel_nodeCount(self) result(res) bind(C, name='qtf_qtftreemodel_nodeCount')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtftreemodel_nodeCount
+
+        !> The parent of a node (0: top level; -1 if invalid).
+        !>
+        !> C: `int qtf_qtftreemodel_parentNode(void *self, int node)`
+        function qtf_qtftreemodel_parentNode(self, node) result(res) bind(C, name='qtf_qtftreemodel_parentNode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: node
+            integer(c_int) :: res
+        end function qtf_qtftreemodel_parentNode
+
+        !> The number of children of a node (0: the top-level nodes).
+        !>
+        !> C: `int qtf_qtftreemodel_childCount(void *self, int node)`
+        function qtf_qtftreemodel_childCount(self, node) result(res) bind(C, name='qtf_qtftreemodel_childCount')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: node
+            integer(c_int) :: res
+        end function qtf_qtftreemodel_childCount
+
+        !> Set the number of columns.
+        !>
+        !> C: `void qtf_qtftreemodel_setColumnCount(void *self, int columns)`
+        subroutine qtf_qtftreemodel_setColumnCount(self, columns) bind(C, name='qtf_qtftreemodel_setColumnCount')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: columns
+        end subroutine qtf_qtftreemodel_setColumnCount
+
+        !> Set the column titles.
+        !>
+        !> C: `void qtf_qtftreemodel_setHeaderLabels(void *self, const char *labels, int labels_len, int n)`
+        subroutine qtf_qtftreemodel_setHeaderLabels(self, labels, labels_len, n) &
+                bind(C, name='qtf_qtftreemodel_setHeaderLabels')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: labels
+            integer(c_int), value :: labels_len
+            integer(c_int), value :: n
+        end subroutine qtf_qtftreemodel_setHeaderLabels
+
+        !> Allow editing cells (edits arrive at `dataEdited`).
+        !>
+        !> C: `void qtf_qtftreemodel_setEditable(void *self, int editable)`
+        subroutine qtf_qtftreemodel_setEditable(self, editable) bind(C, name='qtf_qtftreemodel_setEditable')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: editable
+        end subroutine qtf_qtftreemodel_setEditable
+
+        !> Redisplay all cells (after the data changed).
+        !>
+        !> C: `void qtf_qtftreemodel_refresh(void *self)`
+        subroutine qtf_qtftreemodel_refresh(self) bind(C, name='qtf_qtftreemodel_refresh')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtftreemodel_refresh
+
+        !> Redisplay one node's cells.
+        !>
+        !> C: `void qtf_qtftreemodel_refreshNode(void *self, int node)`
+        subroutine qtf_qtftreemodel_refreshNode(self, node) bind(C, name='qtf_qtftreemodel_refreshNode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: node
+        end subroutine qtf_qtftreemodel_refreshNode
+
+        !> The text of a cell, as a view would show it.
+        !>
+        !> C: `char *qtf_qtftreemodel_dataText(void *self, int node, int column, int *len)`
+        function qtf_qtftreemodel_dataText(self, node, column, len) &
+                result(res) bind(C, name='qtf_qtftreemodel_dataText')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: node
+            integer(c_int), value :: column
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qtftreemodel_dataText
+
+        !> A proxy model (set its source model).
+        !>
+        !> C: `void *qtf_qsortfilterproxymodel_new(void *parent)`
+        function qtf_qsortfilterproxymodel_new(parent) result(res) bind(C, name='qtf_qsortfilterproxymodel_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qsortfilterproxymodel_new
+
+        !> The model to sort and filter.
+        !>
+        !> C: `void qtf_qsortfilterproxymodel_setSourceModel(void *self, void *model)`
+        subroutine qtf_qsortfilterproxymodel_setSourceModel(self, model) &
+                bind(C, name='qtf_qsortfilterproxymodel_setSourceModel')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: model
+        end subroutine qtf_qsortfilterproxymodel_setSourceModel
+
+        !> Show only rows whose key column contains `pattern` (empty: all rows).
+        !>
+        !> C: `void qtf_qsortfilterproxymodel_setFilterFixedString(void *self, const char *pattern, int pattern_len)`
+        subroutine qtf_qsortfilterproxymodel_setFilterFixedString(self, pattern, pattern_len) &
+                bind(C, name='qtf_qsortfilterproxymodel_setFilterFixedString')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: pattern
+            integer(c_int), value :: pattern_len
+        end subroutine qtf_qsortfilterproxymodel_setFilterFixedString
+
+        !> Show only rows whose key column matches a regular expression.
+        !>
+        !> C: `void qtf_qsortfilterproxymodel_setFilterRegularExpression(void *self, const char *pattern, int pattern_len)`
+        subroutine qtf_qsortfilterproxymodel_setFilterRegularExpression(self, pattern, pattern_len) &
+                bind(C, name='qtf_qsortfilterproxymodel_setFilterRegularExpression')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: pattern
+            integer(c_int), value :: pattern_len
+        end subroutine qtf_qsortfilterproxymodel_setFilterRegularExpression
+
+        !> Show only rows whose key column matches a wildcard pattern (`*`, `?`).
+        !>
+        !> C: `void qtf_qsortfilterproxymodel_setFilterWildcard(void *self, const char *pattern, int pattern_len)`
+        subroutine qtf_qsortfilterproxymodel_setFilterWildcard(self, pattern, pattern_len) &
+                bind(C, name='qtf_qsortfilterproxymodel_setFilterWildcard')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: pattern
+            integer(c_int), value :: pattern_len
+        end subroutine qtf_qsortfilterproxymodel_setFilterWildcard
+
+        !> The column the filter looks at (-1: any column).
+        !>
+        !> C: `void qtf_qsortfilterproxymodel_setFilterKeyColumn(void *self, int column)`
+        subroutine qtf_qsortfilterproxymodel_setFilterKeyColumn(self, column) &
+                bind(C, name='qtf_qsortfilterproxymodel_setFilterKeyColumn')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: column
+        end subroutine qtf_qsortfilterproxymodel_setFilterKeyColumn
+
+        !> Qt_CaseInsensitive or Qt_CaseSensitive (default).
+        !>
+        !> C: `void qtf_qsortfilterproxymodel_setFilterCaseSensitivity(void *self, int cs)`
+        subroutine qtf_qsortfilterproxymodel_setFilterCaseSensitivity(self, cs) &
+                bind(C, name='qtf_qsortfilterproxymodel_setFilterCaseSensitivity')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: cs
+        end subroutine qtf_qsortfilterproxymodel_setFilterCaseSensitivity
+
+        !> Case sensitivity when sorting text.
+        !>
+        !> C: `void qtf_qsortfilterproxymodel_setSortCaseSensitivity(void *self, int cs)`
+        subroutine qtf_qsortfilterproxymodel_setSortCaseSensitivity(self, cs) &
+                bind(C, name='qtf_qsortfilterproxymodel_setSortCaseSensitivity')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: cs
+        end subroutine qtf_qsortfilterproxymodel_setSortCaseSensitivity
+
+        !> For trees: keep the parents of matching nodes.
+        !>
+        !> C: `void qtf_qsortfilterproxymodel_setRecursiveFilteringEnabled(void *self, int recursive)`
+        subroutine qtf_qsortfilterproxymodel_setRecursiveFilteringEnabled(self, recursive) &
+                bind(C, name='qtf_qsortfilterproxymodel_setRecursiveFilteringEnabled')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: recursive
+        end subroutine qtf_qsortfilterproxymodel_setRecursiveFilteringEnabled
+
+        !> Re-sort and re-filter when the source changes (default true).
+        !>
+        !> C: `void qtf_qsortfilterproxymodel_setDynamicSortFilter(void *self, int enable)`
+        subroutine qtf_qsortfilterproxymodel_setDynamicSortFilter(self, enable) &
+                bind(C, name='qtf_qsortfilterproxymodel_setDynamicSortFilter')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enable
+        end subroutine qtf_qsortfilterproxymodel_setDynamicSortFilter
+
+        !> Sort by a column (-1: source order).
+        !>
+        !> C: `void qtf_qsortfilterproxymodel_sort(void *self, int column, int order)`
+        subroutine qtf_qsortfilterproxymodel_sort(self, column, order) bind(C, name='qtf_qsortfilterproxymodel_sort')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: column
+            integer(c_int), value :: order
+        end subroutine qtf_qsortfilterproxymodel_sort
+
+        !> Re-sort and re-filter now.
+        !>
+        !> C: `void qtf_qsortfilterproxymodel_invalidate(void *self)`
+        subroutine qtf_qsortfilterproxymodel_invalidate(self) bind(C, name='qtf_qsortfilterproxymodel_invalidate')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qsortfilterproxymodel_invalidate
+
+        !> The source model's row for a proxy row (-1 if invalid).
+        !>
+        !> C: `int qtf_qsortfilterproxymodel_mapToSourceRow(void *self, int row, int column)`
+        function qtf_qsortfilterproxymodel_mapToSourceRow(self, row, column) &
+                result(res) bind(C, name='qtf_qsortfilterproxymodel_mapToSourceRow')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: row
+            integer(c_int), value :: column
+            integer(c_int) :: res
+        end function qtf_qsortfilterproxymodel_mapToSourceRow
+
+        !> The proxy row of a source row (-1 if filtered out).
+        !>
+        !> C: `int qtf_qsortfilterproxymodel_mapFromSourceRow(void *self, int row, int column)`
+        function qtf_qsortfilterproxymodel_mapFromSourceRow(self, row, column) &
+                result(res) bind(C, name='qtf_qsortfilterproxymodel_mapFromSourceRow')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: row
+            integer(c_int), value :: column
+            integer(c_int) :: res
+        end function qtf_qsortfilterproxymodel_mapFromSourceRow
+
+        !> A file system model (call setRootPath).
+        !>
+        !> C: `void *qtf_qfilesystemmodel_new(void *parent)`
+        function qtf_qfilesystemmodel_new(parent) result(res) bind(C, name='qtf_qfilesystemmodel_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qfilesystemmodel_new
+
+        !> Start watching `path` (load its contents); use the view's setRootPath to show only it.
+        !>
+        !> C: `void qtf_qfilesystemmodel_setRootPath(void *self, const char *path, int path_len)`
+        subroutine qtf_qfilesystemmodel_setRootPath(self, path, path_len) &
+                bind(C, name='qtf_qfilesystemmodel_setRootPath')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: path
+            integer(c_int), value :: path_len
+        end subroutine qtf_qfilesystemmodel_setRootPath
+
+        !> The watched root path.
+        !>
+        !> C: `char *qtf_qfilesystemmodel_rootPath(void *self, int *len)`
+        function qtf_qfilesystemmodel_rootPath(self, len) result(res) bind(C, name='qtf_qfilesystemmodel_rootPath')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qfilesystemmodel_rootPath
+
+        !> Show only files matching these wildcards, e.g. ['*.dat', '*.csv'].
+        !>
+        !> C: `void qtf_qfilesystemmodel_setNameFilters(void *self, const char *filters, int filters_len, int n)`
+        subroutine qtf_qfilesystemmodel_setNameFilters(self, filters, filters_len, n) &
+                bind(C, name='qtf_qfilesystemmodel_setNameFilters')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: filters
+            integer(c_int), value :: filters_len
+            integer(c_int), value :: n
+        end subroutine qtf_qfilesystemmodel_setNameFilters
+
+        !> Show non-matching files disabled (true, default) or hide them (false).
+        !>
+        !> C: `void qtf_qfilesystemmodel_setNameFilterDisables(void *self, int disable)`
+        subroutine qtf_qfilesystemmodel_setNameFilterDisables(self, disable) &
+                bind(C, name='qtf_qfilesystemmodel_setNameFilterDisables')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: disable
+        end subroutine qtf_qfilesystemmodel_setNameFilterDisables
+
+        !> Allow renaming and moving files in views (false) or not (true, default).
+        !>
+        !> C: `void qtf_qfilesystemmodel_setReadOnly(void *self, int readOnly)`
+        subroutine qtf_qfilesystemmodel_setReadOnly(self, readOnly) bind(C, name='qtf_qfilesystemmodel_setReadOnly')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: readOnly
+        end subroutine qtf_qfilesystemmodel_setReadOnly
+
+        !> The number of entries shown in directory `path` (once loaded).
+        !>
+        !> C: `int qtf_qfilesystemmodel_childCount(void *self, const char *path, int path_len)`
+        function qtf_qfilesystemmodel_childCount(self, path, path_len) &
+                result(res) bind(C, name='qtf_qfilesystemmodel_childCount')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: path
+            integer(c_int), value :: path_len
+            integer(c_int) :: res
+        end function qtf_qfilesystemmodel_childCount
+
+        !> A delegate (give it the view as parent).
+        !>
+        !> C: `void *qtf_qtfitemdelegate_new(void *parent)`
+        function qtf_qtfitemdelegate_new(parent) result(res) bind(C, name='qtf_qtfitemdelegate_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qtfitemdelegate_new
+
+        !> Edit with a combo box offering `choices`.
+        !>
+        !> C: `void qtf_qtfitemdelegate_setChoices(void *self, const char *choices, int choices_len, int n)`
+        subroutine qtf_qtfitemdelegate_setChoices(self, choices, choices_len, n) &
+                bind(C, name='qtf_qtfitemdelegate_setChoices')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: choices
+            integer(c_int), value :: choices_len
+            integer(c_int), value :: n
+        end subroutine qtf_qtfitemdelegate_setChoices
+
+        !> Edit with a spin box limited to [minimum, maximum] (`decimals = 0`: an integer spin box).
+        !>
+        !> C: `void qtf_qtfitemdelegate_setRange(void *self, double minimum, double maximum, int decimals)`
+        subroutine qtf_qtfitemdelegate_setRange(self, minimum, maximum, decimals) &
+                bind(C, name='qtf_qtfitemdelegate_setRange')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: minimum
+            real(c_double), value :: maximum
+            integer(c_int), value :: decimals
+        end subroutine qtf_qtfitemdelegate_setRange
+
+        !> Back to the default editor (a line edit).
+        !>
+        !> C: `void qtf_qtfitemdelegate_clear(void *self)`
+        subroutine qtf_qtfitemdelegate_clear(self) bind(C, name='qtf_qtfitemdelegate_clear')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtfitemdelegate_clear
 
         !> A cell item with `text`.
         !>
@@ -5743,6 +6644,1398 @@ module qt_c_widgets
             type(c_ptr) :: res
         end function qtf_qstyle_standardIcon
 
+        !> A button box, e.g. QDialogButtonBox(ior(QDialogButtonBox_Ok, QDialogButtonBox_Cancel)).
+        !>
+        !> C: `void *qtf_qdialogbuttonbox_new(int buttons, void *parent)`
+        function qtf_qdialogbuttonbox_new(buttons, parent) result(res) bind(C, name='qtf_qdialogbuttonbox_new')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), value :: buttons
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qdialogbuttonbox_new
+
+        !> Set the standard buttons (combine with ior).
+        !>
+        !> C: `void qtf_qdialogbuttonbox_setStandardButtons(void *self, int buttons)`
+        subroutine qtf_qdialogbuttonbox_setStandardButtons(self, buttons) &
+                bind(C, name='qtf_qdialogbuttonbox_setStandardButtons')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: buttons
+        end subroutine qtf_qdialogbuttonbox_setStandardButtons
+
+        !> The standard buttons.
+        !>
+        !> C: `int qtf_qdialogbuttonbox_standardButtons(void *self)`
+        function qtf_qdialogbuttonbox_standardButtons(self) &
+                result(res) bind(C, name='qtf_qdialogbuttonbox_standardButtons')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qdialogbuttonbox_standardButtons
+
+        !> A standard button (null if absent), e.g. to disable OK.
+        !>
+        !> C: `void *qtf_qdialogbuttonbox_button(void *self, int which)`
+        function qtf_qdialogbuttonbox_button(self, which) result(res) bind(C, name='qtf_qdialogbuttonbox_button')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: which
+            type(c_ptr) :: res
+        end function qtf_qdialogbuttonbox_button
+
+        !> Add a button with your own text and a role.
+        !>
+        !> C: `void *qtf_qdialogbuttonbox_addButton(void *self, const char *text, int text_len, int role)`
+        function qtf_qdialogbuttonbox_addButton(self, text, text_len, role) &
+                result(res) bind(C, name='qtf_qdialogbuttonbox_addButton')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+            integer(c_int), value :: role
+            type(c_ptr) :: res
+        end function qtf_qdialogbuttonbox_addButton
+
+        !> Lay the buttons out horizontally (default) or vertically.
+        !>
+        !> C: `void qtf_qdialogbuttonbox_setOrientation(void *self, int orientation)`
+        subroutine qtf_qdialogbuttonbox_setOrientation(self, orientation) &
+                bind(C, name='qtf_qdialogbuttonbox_setOrientation')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: orientation
+        end subroutine qtf_qdialogbuttonbox_setOrientation
+
+        !> Center the buttons instead of aligning them as the platform does.
+        !>
+        !> C: `void qtf_qdialogbuttonbox_setCenterButtons(void *self, int center)`
+        subroutine qtf_qdialogbuttonbox_setCenterButtons(self, center) &
+                bind(C, name='qtf_qdialogbuttonbox_setCenterButtons')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: center
+        end subroutine qtf_qdialogbuttonbox_setCenterButtons
+
+        !> Complete from `items`.
+        !>
+        !> C: `void *qtf_qcompleter_new(const char *items, int items_len, void *parent, int n)`
+        function qtf_qcompleter_new(items, items_len, parent, n) result(res) bind(C, name='qtf_qcompleter_new')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: items
+            integer(c_int), value :: items_len
+            type(c_ptr), value :: parent
+            integer(c_int), value :: n
+            type(c_ptr) :: res
+        end function qtf_qcompleter_new
+
+        !> Replace the completions.
+        !>
+        !> C: `void qtf_qcompleter_setItems(void *self, const char *items, int items_len, int n)`
+        subroutine qtf_qcompleter_setItems(self, items, items_len, n) bind(C, name='qtf_qcompleter_setItems')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: items
+            integer(c_int), value :: items_len
+            integer(c_int), value :: n
+        end subroutine qtf_qcompleter_setItems
+
+        !> Qt_CaseInsensitive or Qt_CaseSensitive (default).
+        !>
+        !> C: `void qtf_qcompleter_setCaseSensitivity(void *self, int cs)`
+        subroutine qtf_qcompleter_setCaseSensitivity(self, cs) bind(C, name='qtf_qcompleter_setCaseSensitivity')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: cs
+        end subroutine qtf_qcompleter_setCaseSensitivity
+
+        !> Which items match: Qt_MatchStartsWith (default), Qt_MatchContains or Qt_MatchEndsWith.
+        !>
+        !> C: `void qtf_qcompleter_setFilterMode(void *self, int mode)`
+        subroutine qtf_qcompleter_setFilterMode(self, mode) bind(C, name='qtf_qcompleter_setFilterMode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: mode
+        end subroutine qtf_qcompleter_setFilterMode
+
+        !> QCompleter_PopupCompletion (default), _UnfilteredPopupCompletion or _InlineCompletion.
+        !>
+        !> C: `void qtf_qcompleter_setCompletionMode(void *self, int mode)`
+        subroutine qtf_qcompleter_setCompletionMode(self, mode) bind(C, name='qtf_qcompleter_setCompletionMode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: mode
+        end subroutine qtf_qcompleter_setCompletionMode
+
+        !> Rows shown in the pop-up.
+        !>
+        !> C: `void qtf_qcompleter_setMaxVisibleItems(void *self, int count)`
+        subroutine qtf_qcompleter_setMaxVisibleItems(self, count) bind(C, name='qtf_qcompleter_setMaxVisibleItems')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: count
+        end subroutine qtf_qcompleter_setMaxVisibleItems
+
+        !> Complete `prefix` (as if typed).
+        !>
+        !> C: `void qtf_qcompleter_setCompletionPrefix(void *self, const char *prefix, int prefix_len)`
+        subroutine qtf_qcompleter_setCompletionPrefix(self, prefix, prefix_len) &
+                bind(C, name='qtf_qcompleter_setCompletionPrefix')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: prefix
+            integer(c_int), value :: prefix_len
+        end subroutine qtf_qcompleter_setCompletionPrefix
+
+        !> The number of completions of the current prefix.
+        !>
+        !> C: `int qtf_qcompleter_completionCount(void *self)`
+        function qtf_qcompleter_completionCount(self) result(res) bind(C, name='qtf_qcompleter_completionCount')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qcompleter_completionCount
+
+        !> The current completion.
+        !>
+        !> C: `char *qtf_qcompleter_currentCompletion(void *self, int *len)`
+        function qtf_qcompleter_currentCompletion(self, len) &
+                result(res) bind(C, name='qtf_qcompleter_currentCompletion')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qcompleter_currentCompletion
+
+        !> Make the `row`-th completion current (0-based); false if out of range.
+        !>
+        !> C: `int qtf_qcompleter_setCurrentRow(void *self, int row)`
+        function qtf_qcompleter_setCurrentRow(self, row) result(res) bind(C, name='qtf_qcompleter_setCurrentRow')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: row
+            integer(c_int) :: res
+        end function qtf_qcompleter_setCurrentRow
+
+        !> Create a date-time editor.
+        !>
+        !> C: `void *qtf_qdatetimeedit_new(void *parent)`
+        function qtf_qdatetimeedit_new(parent) result(res) bind(C, name='qtf_qdatetimeedit_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qdatetimeedit_new
+
+        !> Set the date and time.
+        !>
+        !> C: `void qtf_qdatetimeedit_setDateTime(void *self, int dateTime_year, int dateTime_month, int dateTime_day, int dateTime_hour, int dateTime_minute, int dateTime_second, int dateTime_msec)`
+        subroutine qtf_qdatetimeedit_setDateTime(self, dateTime_year, dateTime_month, dateTime_day, dateTime_hour, dateTime_minute, dateTime_second, dateTime_msec) &
+                bind(C, name='qtf_qdatetimeedit_setDateTime')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: dateTime_year
+            integer(c_int), value :: dateTime_month
+            integer(c_int), value :: dateTime_day
+            integer(c_int), value :: dateTime_hour
+            integer(c_int), value :: dateTime_minute
+            integer(c_int), value :: dateTime_second
+            integer(c_int), value :: dateTime_msec
+        end subroutine qtf_qdatetimeedit_setDateTime
+
+        !> The date and time.
+        !>
+        !> C: `void qtf_qdatetimeedit_dateTime(void *self, int *res_year, int *res_month, int *res_day, int *res_hour, int *res_minute, int *res_second, int *res_msec)`
+        subroutine qtf_qdatetimeedit_dateTime(self, res_year, res_month, res_day, res_hour, res_minute, res_second, res_msec) &
+                bind(C, name='qtf_qdatetimeedit_dateTime')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_year
+            integer(c_int), intent(out) :: res_month
+            integer(c_int), intent(out) :: res_day
+            integer(c_int), intent(out) :: res_hour
+            integer(c_int), intent(out) :: res_minute
+            integer(c_int), intent(out) :: res_second
+            integer(c_int), intent(out) :: res_msec
+        end subroutine qtf_qdatetimeedit_dateTime
+
+        !> The earliest allowed value.
+        !>
+        !> C: `void qtf_qdatetimeedit_setMinimumDateTime(void *self, int dateTime_year, int dateTime_month, int dateTime_day, int dateTime_hour, int dateTime_minute, int dateTime_second, int dateTime_msec)`
+        subroutine qtf_qdatetimeedit_setMinimumDateTime(self, dateTime_year, dateTime_month, dateTime_day, dateTime_hour, dateTime_minute, dateTime_second, dateTime_msec) &
+                bind(C, name='qtf_qdatetimeedit_setMinimumDateTime')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: dateTime_year
+            integer(c_int), value :: dateTime_month
+            integer(c_int), value :: dateTime_day
+            integer(c_int), value :: dateTime_hour
+            integer(c_int), value :: dateTime_minute
+            integer(c_int), value :: dateTime_second
+            integer(c_int), value :: dateTime_msec
+        end subroutine qtf_qdatetimeedit_setMinimumDateTime
+
+        !> The latest allowed value.
+        !>
+        !> C: `void qtf_qdatetimeedit_setMaximumDateTime(void *self, int dateTime_year, int dateTime_month, int dateTime_day, int dateTime_hour, int dateTime_minute, int dateTime_second, int dateTime_msec)`
+        subroutine qtf_qdatetimeedit_setMaximumDateTime(self, dateTime_year, dateTime_month, dateTime_day, dateTime_hour, dateTime_minute, dateTime_second, dateTime_msec) &
+                bind(C, name='qtf_qdatetimeedit_setMaximumDateTime')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: dateTime_year
+            integer(c_int), value :: dateTime_month
+            integer(c_int), value :: dateTime_day
+            integer(c_int), value :: dateTime_hour
+            integer(c_int), value :: dateTime_minute
+            integer(c_int), value :: dateTime_second
+            integer(c_int), value :: dateTime_msec
+        end subroutine qtf_qdatetimeedit_setMaximumDateTime
+
+        !> How the value is shown, e.g. 'yyyy-MM-dd HH:mm:ss'.
+        !>
+        !> C: `void qtf_qdatetimeedit_setDisplayFormat(void *self, const char *format, int format_len)`
+        subroutine qtf_qdatetimeedit_setDisplayFormat(self, format, format_len) &
+                bind(C, name='qtf_qdatetimeedit_setDisplayFormat')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: format
+            integer(c_int), value :: format_len
+        end subroutine qtf_qdatetimeedit_setDisplayFormat
+
+        !> The display format.
+        !>
+        !> C: `char *qtf_qdatetimeedit_displayFormat(void *self, int *len)`
+        function qtf_qdatetimeedit_displayFormat(self, len) result(res) bind(C, name='qtf_qdatetimeedit_displayFormat')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qdatetimeedit_displayFormat
+
+        !> Pick the date from a pop-up calendar.
+        !>
+        !> C: `void qtf_qdatetimeedit_setCalendarPopup(void *self, int enable)`
+        subroutine qtf_qdatetimeedit_setCalendarPopup(self, enable) bind(C, name='qtf_qdatetimeedit_setCalendarPopup')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enable
+        end subroutine qtf_qdatetimeedit_setCalendarPopup
+
+        !> Create a text browser.
+        !>
+        !> C: `void *qtf_qtextbrowser_new(void *parent)`
+        function qtf_qtextbrowser_new(parent) result(res) bind(C, name='qtf_qtextbrowser_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qtextbrowser_new
+
+        !> Show a document: a file path, or a URL.
+        !>
+        !> C: `void qtf_qtextbrowser_setSource(void *self, const char *source, int source_len)`
+        subroutine qtf_qtextbrowser_setSource(self, source, source_len) bind(C, name='qtf_qtextbrowser_setSource')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: source
+            integer(c_int), value :: source_len
+        end subroutine qtf_qtextbrowser_setSource
+
+        !> The URL of the document shown.
+        !>
+        !> C: `char *qtf_qtextbrowser_source(void *self, int *len)`
+        function qtf_qtextbrowser_source(self, len) result(res) bind(C, name='qtf_qtextbrowser_source')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qtextbrowser_source
+
+        !> Directories where relative links are looked up.
+        !>
+        !> C: `void qtf_qtextbrowser_setSearchPaths(void *self, const char *paths, int paths_len, int n)`
+        subroutine qtf_qtextbrowser_setSearchPaths(self, paths, paths_len, n) &
+                bind(C, name='qtf_qtextbrowser_setSearchPaths')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: paths
+            integer(c_int), value :: paths_len
+            integer(c_int), value :: n
+        end subroutine qtf_qtextbrowser_setSearchPaths
+
+        !> Open http(s) links in the system browser.
+        !>
+        !> C: `void qtf_qtextbrowser_setOpenExternalLinks(void *self, int open)`
+        subroutine qtf_qtextbrowser_setOpenExternalLinks(self, open) &
+                bind(C, name='qtf_qtextbrowser_setOpenExternalLinks')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: open
+        end subroutine qtf_qtextbrowser_setOpenExternalLinks
+
+        !> Follow links (true, default), or only report them with `anchorClicked`.
+        !>
+        !> C: `void qtf_qtextbrowser_setOpenLinks(void *self, int open)`
+        subroutine qtf_qtextbrowser_setOpenLinks(self, open) bind(C, name='qtf_qtextbrowser_setOpenLinks')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: open
+        end subroutine qtf_qtextbrowser_setOpenLinks
+
+        !> Go back in the history.
+        !>
+        !> C: `void qtf_qtextbrowser_backward(void *self)`
+        subroutine qtf_qtextbrowser_backward(self) bind(C, name='qtf_qtextbrowser_backward')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtextbrowser_backward
+
+        !> Go forward in the history.
+        !>
+        !> C: `void qtf_qtextbrowser_forward(void *self)`
+        subroutine qtf_qtextbrowser_forward(self) bind(C, name='qtf_qtextbrowser_forward')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtextbrowser_forward
+
+        !> Go to the first document shown.
+        !>
+        !> C: `void qtf_qtextbrowser_home(void *self)`
+        subroutine qtf_qtextbrowser_home(self) bind(C, name='qtf_qtextbrowser_home')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtextbrowser_home
+
+        !> Reload the current document.
+        !>
+        !> C: `void qtf_qtextbrowser_reload(void *self)`
+        subroutine qtf_qtextbrowser_reload(self) bind(C, name='qtf_qtextbrowser_reload')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtextbrowser_reload
+
+        !> True if `backward` is possible.
+        !>
+        !> C: `int qtf_qtextbrowser_isBackwardAvailable(void *self)`
+        function qtf_qtextbrowser_isBackwardAvailable(self) &
+                result(res) bind(C, name='qtf_qtextbrowser_isBackwardAvailable')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextbrowser_isBackwardAvailable
+
+        !> True if `forward` is possible.
+        !>
+        !> C: `int qtf_qtextbrowser_isForwardAvailable(void *self)`
+        function qtf_qtextbrowser_isForwardAvailable(self) &
+                result(res) bind(C, name='qtf_qtextbrowser_isForwardAvailable')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextbrowser_isForwardAvailable
+
+        !> Forget the history.
+        !>
+        !> C: `void qtf_qtextbrowser_clearHistory(void *self)`
+        subroutine qtf_qtextbrowser_clearHistory(self) bind(C, name='qtf_qtextbrowser_clearHistory')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtextbrowser_clearHistory
+
+        !> Create a tool box.
+        !>
+        !> C: `void *qtf_qtoolbox_new(void *parent)`
+        function qtf_qtoolbox_new(parent) result(res) bind(C, name='qtf_qtoolbox_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qtoolbox_new
+
+        !> Append a page with a title (the tool box takes ownership).
+        !>
+        !> C: `void qtf_qtoolbox_addItem(void *self, void *widget, const char *text, int text_len)`
+        subroutine qtf_qtoolbox_addItem(self, widget, text, text_len) bind(C, name='qtf_qtoolbox_addItem')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: widget
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+        end subroutine qtf_qtoolbox_addItem
+
+        !> Insert a page before `index`.
+        !>
+        !> C: `void qtf_qtoolbox_insertItem(void *self, int index, void *widget, const char *text, int text_len)`
+        subroutine qtf_qtoolbox_insertItem(self, index, widget, text, text_len) bind(C, name='qtf_qtoolbox_insertItem')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            type(c_ptr), value :: widget
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+        end subroutine qtf_qtoolbox_insertItem
+
+        !> Remove a page (it is not deleted).
+        !>
+        !> C: `void qtf_qtoolbox_removeItem(void *self, int index)`
+        subroutine qtf_qtoolbox_removeItem(self, index) bind(C, name='qtf_qtoolbox_removeItem')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+        end subroutine qtf_qtoolbox_removeItem
+
+        !> The number of pages.
+        !>
+        !> C: `int qtf_qtoolbox_count(void *self)`
+        function qtf_qtoolbox_count(self) result(res) bind(C, name='qtf_qtoolbox_count')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtoolbox_count
+
+        !> The open page (0-based).
+        !>
+        !> C: `int qtf_qtoolbox_currentIndex(void *self)`
+        function qtf_qtoolbox_currentIndex(self) result(res) bind(C, name='qtf_qtoolbox_currentIndex')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtoolbox_currentIndex
+
+        !> Open a page.
+        !>
+        !> C: `void qtf_qtoolbox_setCurrentIndex(void *self, int index)`
+        subroutine qtf_qtoolbox_setCurrentIndex(self, index) bind(C, name='qtf_qtoolbox_setCurrentIndex')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+        end subroutine qtf_qtoolbox_setCurrentIndex
+
+        !> Set a page title.
+        !>
+        !> C: `void qtf_qtoolbox_setItemText(void *self, int index, const char *text, int text_len)`
+        subroutine qtf_qtoolbox_setItemText(self, index, text, text_len) bind(C, name='qtf_qtoolbox_setItemText')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+        end subroutine qtf_qtoolbox_setItemText
+
+        !> A page title.
+        !>
+        !> C: `char *qtf_qtoolbox_itemText(void *self, int index, int *len)`
+        function qtf_qtoolbox_itemText(self, index, len) result(res) bind(C, name='qtf_qtoolbox_itemText')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qtoolbox_itemText
+
+        !> Enable or disable a page.
+        !>
+        !> C: `void qtf_qtoolbox_setItemEnabled(void *self, int index, int enabled)`
+        subroutine qtf_qtoolbox_setItemEnabled(self, index, enabled) bind(C, name='qtf_qtoolbox_setItemEnabled')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            integer(c_int), value :: enabled
+        end subroutine qtf_qtoolbox_setItemEnabled
+
+        !> Set a page's icon (copied).
+        !>
+        !> C: `void qtf_qtoolbox_setItemIcon(void *self, int index, void *icon)`
+        subroutine qtf_qtoolbox_setItemIcon(self, index, icon) bind(C, name='qtf_qtoolbox_setItemIcon')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            type(c_ptr), value :: icon
+        end subroutine qtf_qtoolbox_setItemIcon
+
+        !> Set a page's tool tip.
+        !>
+        !> C: `void qtf_qtoolbox_setItemToolTip(void *self, int index, const char *toolTip, int toolTip_len)`
+        subroutine qtf_qtoolbox_setItemToolTip(self, index, toolTip, toolTip_len) &
+                bind(C, name='qtf_qtoolbox_setItemToolTip')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            character(kind=c_char), dimension(*), intent(in) :: toolTip
+            integer(c_int), value :: toolTip_len
+        end subroutine qtf_qtoolbox_setItemToolTip
+
+        !> The widget of a page.
+        !>
+        !> C: `void *qtf_qtoolbox_widget(void *self, int index)`
+        function qtf_qtoolbox_widget(self, index) result(res) bind(C, name='qtf_qtoolbox_widget')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            type(c_ptr) :: res
+        end function qtf_qtoolbox_widget
+
+        !> The widget of the open page.
+        !>
+        !> C: `void *qtf_qtoolbox_currentWidget(void *self)`
+        function qtf_qtoolbox_currentWidget(self) result(res) bind(C, name='qtf_qtoolbox_currentWidget')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qtoolbox_currentWidget
+
+        !> A splash screen showing `pixmap` (copied).
+        !>
+        !> C: `void *qtf_qsplashscreen_new(void *pixmap)`
+        function qtf_qsplashscreen_new(pixmap) result(res) bind(C, name='qtf_qsplashscreen_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: pixmap
+            type(c_ptr) :: res
+        end function qtf_qsplashscreen_new
+
+        !> Draw a message on the splash screen.
+        !>
+        !> C: `void qtf_qsplashscreen_showMessage(void *self, const char *message, int message_len, int alignment, int color_r, int color_g, int color_b, int color_a, int color_valid)`
+        subroutine qtf_qsplashscreen_showMessage(self, message, message_len, alignment, color_r, color_g, color_b, color_a, color_valid) &
+                bind(C, name='qtf_qsplashscreen_showMessage')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: message
+            integer(c_int), value :: message_len
+            integer(c_int), value :: alignment
+            integer(c_int), value :: color_r
+            integer(c_int), value :: color_g
+            integer(c_int), value :: color_b
+            integer(c_int), value :: color_a
+            integer(c_int), value :: color_valid
+        end subroutine qtf_qsplashscreen_showMessage
+
+        !> Remove the message.
+        !>
+        !> C: `void qtf_qsplashscreen_clearMessage(void *self)`
+        subroutine qtf_qsplashscreen_clearMessage(self) bind(C, name='qtf_qsplashscreen_clearMessage')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qsplashscreen_clearMessage
+
+        !> The current message.
+        !>
+        !> C: `char *qtf_qsplashscreen_message(void *self, int *len)`
+        function qtf_qsplashscreen_message(self, len) result(res) bind(C, name='qtf_qsplashscreen_message')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qsplashscreen_message
+
+        !> Close the splash screen once `window` is shown.
+        !>
+        !> C: `void qtf_qsplashscreen_finish(void *self, void *window)`
+        subroutine qtf_qsplashscreen_finish(self, window) bind(C, name='qtf_qsplashscreen_finish')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: window
+        end subroutine qtf_qsplashscreen_finish
+
+        !> Set the window's contents (the window takes ownership).
+        !>
+        !> C: `void qtf_qmdisubwindow_setWidget(void *self, void *widget)`
+        subroutine qtf_qmdisubwindow_setWidget(self, widget) bind(C, name='qtf_qmdisubwindow_setWidget')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: widget
+        end subroutine qtf_qmdisubwindow_setWidget
+
+        !> The window's contents.
+        !>
+        !> C: `void *qtf_qmdisubwindow_widget(void *self)`
+        function qtf_qmdisubwindow_widget(self) result(res) bind(C, name='qtf_qmdisubwindow_widget')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qmdisubwindow_widget
+
+        !> Collapse the window to its title bar.
+        !>
+        !> C: `void qtf_qmdisubwindow_showShaded(void *self)`
+        subroutine qtf_qmdisubwindow_showShaded(self) bind(C, name='qtf_qmdisubwindow_showShaded')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qmdisubwindow_showShaded
+
+        !> True if collapsed to the title bar.
+        !>
+        !> C: `int qtf_qmdisubwindow_isShaded(void *self)`
+        function qtf_qmdisubwindow_isShaded(self) result(res) bind(C, name='qtf_qmdisubwindow_isShaded')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qmdisubwindow_isShaded
+
+        !> Create an MDI area.
+        !>
+        !> C: `void *qtf_qmdiarea_new(void *parent)`
+        function qtf_qmdiarea_new(parent) result(res) bind(C, name='qtf_qmdiarea_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qmdiarea_new
+
+        !> Show `widget` in a new sub-window (call its `show` if the area is visible).
+        !>
+        !> C: `void *qtf_qmdiarea_addSubWindow(void *self, void *widget)`
+        function qtf_qmdiarea_addSubWindow(self, widget) result(res) bind(C, name='qtf_qmdiarea_addSubWindow')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: widget
+            type(c_ptr) :: res
+        end function qtf_qmdiarea_addSubWindow
+
+        !> Remove a sub-window (the widget is not deleted).
+        !>
+        !> C: `void qtf_qmdiarea_removeSubWindow(void *self, void *widget)`
+        subroutine qtf_qmdiarea_removeSubWindow(self, widget) bind(C, name='qtf_qmdiarea_removeSubWindow')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: widget
+        end subroutine qtf_qmdiarea_removeSubWindow
+
+        !> The active sub-window (null if none).
+        !>
+        !> C: `void *qtf_qmdiarea_activeSubWindow(void *self)`
+        function qtf_qmdiarea_activeSubWindow(self) result(res) bind(C, name='qtf_qmdiarea_activeSubWindow')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qmdiarea_activeSubWindow
+
+        !> The current sub-window (also while the area is not active).
+        !>
+        !> C: `void *qtf_qmdiarea_currentSubWindow(void *self)`
+        function qtf_qmdiarea_currentSubWindow(self) result(res) bind(C, name='qtf_qmdiarea_currentSubWindow')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qmdiarea_currentSubWindow
+
+        !> Activate a sub-window (no argument: none).
+        !>
+        !> C: `void qtf_qmdiarea_setActiveSubWindow(void *self, void *window)`
+        subroutine qtf_qmdiarea_setActiveSubWindow(self, window) bind(C, name='qtf_qmdiarea_setActiveSubWindow')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: window
+        end subroutine qtf_qmdiarea_setActiveSubWindow
+
+        !> The number of sub-windows.
+        !>
+        !> C: `int qtf_qmdiarea_subWindowCount(void *self)`
+        function qtf_qmdiarea_subWindowCount(self) result(res) bind(C, name='qtf_qmdiarea_subWindowCount')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qmdiarea_subWindowCount
+
+        !> Close the active sub-window.
+        !>
+        !> C: `void qtf_qmdiarea_closeActiveSubWindow(void *self)`
+        subroutine qtf_qmdiarea_closeActiveSubWindow(self) bind(C, name='qtf_qmdiarea_closeActiveSubWindow')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qmdiarea_closeActiveSubWindow
+
+        !> Close all sub-windows.
+        !>
+        !> C: `void qtf_qmdiarea_closeAllSubWindows(void *self)`
+        subroutine qtf_qmdiarea_closeAllSubWindows(self) bind(C, name='qtf_qmdiarea_closeAllSubWindows')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qmdiarea_closeAllSubWindows
+
+        !> Activate the next sub-window.
+        !>
+        !> C: `void qtf_qmdiarea_activateNextSubWindow(void *self)`
+        subroutine qtf_qmdiarea_activateNextSubWindow(self) bind(C, name='qtf_qmdiarea_activateNextSubWindow')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qmdiarea_activateNextSubWindow
+
+        !> Activate the previous sub-window.
+        !>
+        !> C: `void qtf_qmdiarea_activatePreviousSubWindow(void *self)`
+        subroutine qtf_qmdiarea_activatePreviousSubWindow(self) bind(C, name='qtf_qmdiarea_activatePreviousSubWindow')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qmdiarea_activatePreviousSubWindow
+
+        !> Arrange the sub-windows in a cascade.
+        !>
+        !> C: `void qtf_qmdiarea_cascadeSubWindows(void *self)`
+        subroutine qtf_qmdiarea_cascadeSubWindows(self) bind(C, name='qtf_qmdiarea_cascadeSubWindows')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qmdiarea_cascadeSubWindows
+
+        !> Arrange the sub-windows as tiles.
+        !>
+        !> C: `void qtf_qmdiarea_tileSubWindows(void *self)`
+        subroutine qtf_qmdiarea_tileSubWindows(self) bind(C, name='qtf_qmdiarea_tileSubWindows')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qmdiarea_tileSubWindows
+
+        !> QMdiArea_SubWindowView (default) or QMdiArea_TabbedView.
+        !>
+        !> C: `void qtf_qmdiarea_setViewMode(void *self, int mode)`
+        subroutine qtf_qmdiarea_setViewMode(self, mode) bind(C, name='qtf_qmdiarea_setViewMode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: mode
+        end subroutine qtf_qmdiarea_setViewMode
+
+        !> In tabbed view: show close buttons on the tabs.
+        !>
+        !> C: `void qtf_qmdiarea_setTabsClosable(void *self, int closable)`
+        subroutine qtf_qmdiarea_setTabsClosable(self, closable) bind(C, name='qtf_qmdiarea_setTabsClosable')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: closable
+        end subroutine qtf_qmdiarea_setTabsClosable
+
+        !> In tabbed view: let the user reorder the tabs.
+        !>
+        !> C: `void qtf_qmdiarea_setTabsMovable(void *self, int movable)`
+        subroutine qtf_qmdiarea_setTabsMovable(self, movable) bind(C, name='qtf_qmdiarea_setTabsMovable')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: movable
+        end subroutine qtf_qmdiarea_setTabsMovable
+
+        !> Create a wizard page (lay out its widgets, then add it to a wizard).
+        !>
+        !> C: `void *qtf_qwizardpage_new(void *parent)`
+        function qtf_qwizardpage_new(parent) result(res) bind(C, name='qtf_qwizardpage_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qwizardpage_new
+
+        !> The page title.
+        !>
+        !> C: `void qtf_qwizardpage_setTitle(void *self, const char *title, int title_len)`
+        subroutine qtf_qwizardpage_setTitle(self, title, title_len) bind(C, name='qtf_qwizardpage_setTitle')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: title
+            integer(c_int), value :: title_len
+        end subroutine qtf_qwizardpage_setTitle
+
+        !> The page title.
+        !>
+        !> C: `char *qtf_qwizardpage_title(void *self, int *len)`
+        function qtf_qwizardpage_title(self, len) result(res) bind(C, name='qtf_qwizardpage_title')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qwizardpage_title
+
+        !> The text under the title.
+        !>
+        !> C: `void qtf_qwizardpage_setSubTitle(void *self, const char *subTitle, int subTitle_len)`
+        subroutine qtf_qwizardpage_setSubTitle(self, subTitle, subTitle_len) bind(C, name='qtf_qwizardpage_setSubTitle')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: subTitle
+            integer(c_int), value :: subTitle_len
+        end subroutine qtf_qwizardpage_setSubTitle
+
+        !> The subtitle.
+        !>
+        !> C: `char *qtf_qwizardpage_subTitle(void *self, int *len)`
+        function qtf_qwizardpage_subTitle(self, len) result(res) bind(C, name='qtf_qwizardpage_subTitle')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qwizardpage_subTitle
+
+        !> Offer Finish on this page.
+        !>
+        !> C: `void qtf_qwizardpage_setFinalPage(void *self, int final)`
+        subroutine qtf_qwizardpage_setFinalPage(self, final) bind(C, name='qtf_qwizardpage_setFinalPage')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: final
+        end subroutine qtf_qwizardpage_setFinalPage
+
+        !> True if Finish is offered on this page.
+        !>
+        !> C: `int qtf_qwizardpage_isFinalPage(void *self)`
+        function qtf_qwizardpage_isFinalPage(self) result(res) bind(C, name='qtf_qwizardpage_isFinalPage')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwizardpage_isFinalPage
+
+        !> After this page, Back is no longer possible.
+        !>
+        !> C: `void qtf_qwizardpage_setCommitPage(void *self, int commit)`
+        subroutine qtf_qwizardpage_setCommitPage(self, commit) bind(C, name='qtf_qwizardpage_setCommitPage')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: commit
+        end subroutine qtf_qwizardpage_setCommitPage
+
+        !> Enable (true) or disable Next/Finish for this page.
+        !>
+        !> C: `void qtf_qwizardpage_setComplete(void *self, int complete)`
+        subroutine qtf_qwizardpage_setComplete(self, complete) bind(C, name='qtf_qwizardpage_setComplete')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: complete
+        end subroutine qtf_qwizardpage_setComplete
+
+        !> True if Next/Finish is enabled (setComplete and the mandatory fields).
+        !>
+        !> C: `int qtf_qwizardpage_isComplete(void *self)`
+        function qtf_qwizardpage_isComplete(self) result(res) bind(C, name='qtf_qwizardpage_isComplete')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwizardpage_isComplete
+
+        !> Make a widget's value available as the wizard field `name` (a trailing `*` makes it mandatory: Next waits until it is filled).
+        !>
+        !> C: `void qtf_qwizardpage_registerField(void *self, const char *name, int name_len, void *widget)`
+        subroutine qtf_qwizardpage_registerField(self, name, name_len, widget) &
+                bind(C, name='qtf_qwizardpage_registerField')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+            type(c_ptr), value :: widget
+        end subroutine qtf_qwizardpage_registerField
+
+        !> Create an empty wizard.
+        !>
+        !> C: `void *qtf_qwizard_new(void *parent)`
+        function qtf_qwizard_new(parent) result(res) bind(C, name='qtf_qwizard_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qwizard_new
+
+        !> Append a page (the wizard takes ownership); its id is the number of pages before it.
+        !>
+        !> C: `void qtf_qwizard_addPage(void *self, void *page)`
+        subroutine qtf_qwizard_addPage(self, page) bind(C, name='qtf_qwizard_addPage')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: page
+        end subroutine qtf_qwizard_addPage
+
+        !> Add a page with a given id.
+        !>
+        !> C: `void qtf_qwizard_setPage(void *self, int id, void *page)`
+        subroutine qtf_qwizard_setPage(self, id, page) bind(C, name='qtf_qwizard_setPage')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: id
+            type(c_ptr), value :: page
+        end subroutine qtf_qwizard_setPage
+
+        !> Remove a page.
+        !>
+        !> C: `void qtf_qwizard_removePage(void *self, int id)`
+        subroutine qtf_qwizard_removePage(self, id) bind(C, name='qtf_qwizard_removePage')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: id
+        end subroutine qtf_qwizard_removePage
+
+        !> The id of the current page (-1 before the wizard is shown).
+        !>
+        !> C: `int qtf_qwizard_currentId(void *self)`
+        function qtf_qwizard_currentId(self) result(res) bind(C, name='qtf_qwizard_currentId')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwizard_currentId
+
+        !> The current page.
+        !>
+        !> C: `void *qtf_qwizard_currentPage(void *self)`
+        function qtf_qwizard_currentPage(self) result(res) bind(C, name='qtf_qwizard_currentPage')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qwizard_currentPage
+
+        !> The page with this id (null if none).
+        !>
+        !> C: `void *qtf_qwizard_page(void *self, int id)`
+        function qtf_qwizard_page(self, id) result(res) bind(C, name='qtf_qwizard_page')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: id
+            type(c_ptr) :: res
+        end function qtf_qwizard_page
+
+        !> True if the page has been visited.
+        !>
+        !> C: `int qtf_qwizard_hasVisitedPage(void *self, int id)`
+        function qtf_qwizard_hasVisitedPage(self, id) result(res) bind(C, name='qtf_qwizard_hasVisitedPage')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: id
+            integer(c_int) :: res
+        end function qtf_qwizard_hasVisitedPage
+
+        !> The first page.
+        !>
+        !> C: `void qtf_qwizard_setStartId(void *self, int id)`
+        subroutine qtf_qwizard_setStartId(self, id) bind(C, name='qtf_qwizard_setStartId')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: id
+        end subroutine qtf_qwizard_setStartId
+
+        !> Go to the next page.
+        !>
+        !> C: `void qtf_qwizard_next(void *self)`
+        subroutine qtf_qwizard_next(self) bind(C, name='qtf_qwizard_next')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qwizard_next
+
+        !> Go back to the previous page.
+        !>
+        !> C: `void qtf_qwizard_back(void *self)`
+        subroutine qtf_qwizard_back(self) bind(C, name='qtf_qwizard_back')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qwizard_back
+
+        !> Go back to the first page.
+        !>
+        !> C: `void qtf_qwizard_restart(void *self)`
+        subroutine qtf_qwizard_restart(self) bind(C, name='qtf_qwizard_restart')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qwizard_restart
+
+        !> QWizard_ClassicStyle, _ModernStyle, _MacStyle or _AeroStyle.
+        !>
+        !> C: `void qtf_qwizard_setWizardStyle(void *self, int style)`
+        subroutine qtf_qwizard_setWizardStyle(self, style) bind(C, name='qtf_qwizard_setWizardStyle')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: style
+        end subroutine qtf_qwizard_setWizardStyle
+
+        !> Turn an option on or off (QWizard_NoCancelButton, ...).
+        !>
+        !> C: `void qtf_qwizard_setOption(void *self, int option, int on)`
+        subroutine qtf_qwizard_setOption(self, option, on) bind(C, name='qtf_qwizard_setOption')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: option
+            integer(c_int), value :: on
+        end subroutine qtf_qwizard_setOption
+
+        !> Change a button's text, e.g. QWizard_FinishButton.
+        !>
+        !> C: `void qtf_qwizard_setButtonText(void *self, int which, const char *text, int text_len)`
+        subroutine qtf_qwizard_setButtonText(self, which, text, text_len) bind(C, name='qtf_qwizard_setButtonText')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: which
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+        end subroutine qtf_qwizard_setButtonText
+
+        !> A registered field's value as text.
+        !>
+        !> C: `char *qtf_qwizard_stringField(void *self, const char *name, int name_len, int *len)`
+        function qtf_qwizard_stringField(self, name, name_len, len) result(res) bind(C, name='qtf_qwizard_stringField')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qwizard_stringField
+
+        !> A registered field's value as an integer (e.g. a spin box or combo box index).
+        !>
+        !> C: `int qtf_qwizard_intField(void *self, const char *name, int name_len)`
+        function qtf_qwizard_intField(self, name, name_len) result(res) bind(C, name='qtf_qwizard_intField')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+            integer(c_int) :: res
+        end function qtf_qwizard_intField
+
+        !> A registered field's value as a real number.
+        !>
+        !> C: `double qtf_qwizard_doubleField(void *self, const char *name, int name_len)`
+        function qtf_qwizard_doubleField(self, name, name_len) result(res) bind(C, name='qtf_qwizard_doubleField')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+            real(c_double) :: res
+        end function qtf_qwizard_doubleField
+
+        !> A registered field's value as a logical (e.g. a check box).
+        !>
+        !> C: `int qtf_qwizard_boolField(void *self, const char *name, int name_len)`
+        function qtf_qwizard_boolField(self, name, name_len) result(res) bind(C, name='qtf_qwizard_boolField')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+            integer(c_int) :: res
+        end function qtf_qwizard_boolField
+
+        !> An empty undo stack.
+        !>
+        !> C: `void *qtf_qundostack_new(void *parent)`
+        function qtf_qundostack_new(parent) result(res) bind(C, name='qtf_qundostack_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qundostack_new
+
+        !> Record a command and perform it (calls the redoRequested slots with `id`); discards commands that were undone.
+        !>
+        !> C: `void qtf_qundostack_push(void *self, const char *text, int text_len, int id)`
+        subroutine qtf_qundostack_push(self, text, text_len, id) bind(C, name='qtf_qundostack_push')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+            integer(c_int), value :: id
+        end subroutine qtf_qundostack_push
+
+        !> Undo the last command.
+        !>
+        !> C: `void qtf_qundostack_undo(void *self)`
+        subroutine qtf_qundostack_undo(self) bind(C, name='qtf_qundostack_undo')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qundostack_undo
+
+        !> Redo the last undone command.
+        !>
+        !> C: `void qtf_qundostack_redo(void *self)`
+        subroutine qtf_qundostack_redo(self) bind(C, name='qtf_qundostack_redo')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qundostack_redo
+
+        !> True if there is a command to undo.
+        !>
+        !> C: `int qtf_qundostack_canUndo(void *self)`
+        function qtf_qundostack_canUndo(self) result(res) bind(C, name='qtf_qundostack_canUndo')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qundostack_canUndo
+
+        !> True if there is a command to redo.
+        !>
+        !> C: `int qtf_qundostack_canRedo(void *self)`
+        function qtf_qundostack_canRedo(self) result(res) bind(C, name='qtf_qundostack_canRedo')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qundostack_canRedo
+
+        !> The text of the command `undo` would reverse.
+        !>
+        !> C: `char *qtf_qundostack_undoText(void *self, int *len)`
+        function qtf_qundostack_undoText(self, len) result(res) bind(C, name='qtf_qundostack_undoText')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qundostack_undoText
+
+        !> The text of the command `redo` would perform.
+        !>
+        !> C: `char *qtf_qundostack_redoText(void *self, int *len)`
+        function qtf_qundostack_redoText(self, len) result(res) bind(C, name='qtf_qundostack_redoText')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qundostack_redoText
+
+        !> The number of commands.
+        !>
+        !> C: `int qtf_qundostack_count(void *self)`
+        function qtf_qundostack_count(self) result(res) bind(C, name='qtf_qundostack_count')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qundostack_count
+
+        !> The current position: commands before it are done.
+        !>
+        !> C: `int qtf_qundostack_index(void *self)`
+        function qtf_qundostack_index(self) result(res) bind(C, name='qtf_qundostack_index')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qundostack_index
+
+        !> Undo or redo until the position is `index`.
+        !>
+        !> C: `void qtf_qundostack_setIndex(void *self, int index)`
+        subroutine qtf_qundostack_setIndex(self, index) bind(C, name='qtf_qundostack_setIndex')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+        end subroutine qtf_qundostack_setIndex
+
+        !> The text of the command at a position.
+        !>
+        !> C: `char *qtf_qundostack_text(void *self, int index, int *len)`
+        function qtf_qundostack_text(self, index, len) result(res) bind(C, name='qtf_qundostack_text')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qundostack_text
+
+        !> Remove all commands (nothing is undone).
+        !>
+        !> C: `void qtf_qundostack_clear(void *self)`
+        subroutine qtf_qundostack_clear(self) bind(C, name='qtf_qundostack_clear')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qundostack_clear
+
+        !> Mark the current state as saved.
+        !>
+        !> C: `void qtf_qundostack_setClean(void *self)`
+        subroutine qtf_qundostack_setClean(self) bind(C, name='qtf_qundostack_setClean')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qundostack_setClean
+
+        !> True if the current state is the saved one.
+        !>
+        !> C: `int qtf_qundostack_isClean(void *self)`
+        function qtf_qundostack_isClean(self) result(res) bind(C, name='qtf_qundostack_isClean')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qundostack_isClean
+
+        !> Keep at most `limit` commands (0: no limit); only while the stack is empty.
+        !>
+        !> C: `void qtf_qundostack_setUndoLimit(void *self, int limit)`
+        subroutine qtf_qundostack_setUndoLimit(self, limit) bind(C, name='qtf_qundostack_setUndoLimit')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: limit
+        end subroutine qtf_qundostack_setUndoLimit
+
+        !> Group the following pushes into one command (until endMacro).
+        !>
+        !> C: `void qtf_qundostack_beginMacro(void *self, const char *text, int text_len)`
+        subroutine qtf_qundostack_beginMacro(self, text, text_len) bind(C, name='qtf_qundostack_beginMacro')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+        end subroutine qtf_qundostack_beginMacro
+
+        !> End a macro.
+        !>
+        !> C: `void qtf_qundostack_endMacro(void *self)`
+        subroutine qtf_qundostack_endMacro(self) bind(C, name='qtf_qundostack_endMacro')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qundostack_endMacro
+
+        !> An Undo action that follows the stack (text and enabled state).
+        !>
+        !> C: `void *qtf_qundostack_createUndoAction(void *self, void *parent, const char *prefix, int prefix_len)`
+        function qtf_qundostack_createUndoAction(self, parent, prefix, prefix_len) &
+                result(res) bind(C, name='qtf_qundostack_createUndoAction')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: parent
+            character(kind=c_char), dimension(*), intent(in) :: prefix
+            integer(c_int), value :: prefix_len
+            type(c_ptr) :: res
+        end function qtf_qundostack_createUndoAction
+
+        !> A Redo action that follows the stack.
+        !>
+        !> C: `void *qtf_qundostack_createRedoAction(void *self, void *parent, const char *prefix, int prefix_len)`
+        function qtf_qundostack_createRedoAction(self, parent, prefix, prefix_len) &
+                result(res) bind(C, name='qtf_qundostack_createRedoAction')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: parent
+            character(kind=c_char), dimension(*), intent(in) :: prefix
+            integer(c_int), value :: prefix_len
+            type(c_ptr) :: res
+        end function qtf_qundostack_createRedoAction
+
+        !> A view of `stack`.
+        !>
+        !> C: `void *qtf_qundoview_new(void *stack, void *parent)`
+        function qtf_qundoview_new(stack, parent) result(res) bind(C, name='qtf_qundoview_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: stack
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qundoview_new
+
+        !> The text of the first row (the state before any command).
+        !>
+        !> C: `void qtf_qundoview_setEmptyLabel(void *self, const char *label, int label_len)`
+        subroutine qtf_qundoview_setEmptyLabel(self, label, label_len) bind(C, name='qtf_qundoview_setEmptyLabel')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: label
+            integer(c_int), value :: label_len
+        end subroutine qtf_qundoview_setEmptyLabel
+
     end interface
 
     public :: qtf_qapplication_new_args, qtf_qapplication_arguments, qtf_qapplication_exec
@@ -5761,10 +8054,13 @@ module qt_c_widgets
     public :: qtf_qwidget_setMaximumWidth, qtf_qwidget_setMaximumHeight, qtf_qwidget_setFixedWidth
     public :: qtf_qwidget_setFixedHeight, qtf_qwidget_setSizePolicy, qtf_qwidget_setContentsMargins
     public :: qtf_qwidget_setWindowIcon, qtf_qwidget_saveGeometry, qtf_qwidget_restoreGeometry
-    public :: qtf_qwidget_isWindow, qtf_qwidget_repolish, qtf_qwidget_x, qtf_qwidget_y, qtf_qwidget_move
-    public :: qtf_qtfwidget_new, qtf_qframe_new, qtf_qframe_setFrameShape, qtf_qframe_frameShape
-    public :: qtf_qframe_setFrameShadow, qtf_qframe_setLineWidth, qtf_qlabel_new, qtf_qlabel_setText
-    public :: qtf_qlabel_text, qtf_qlabel_setAlignment, qtf_qlabel_setWordWrap, qtf_qlabel_setPixmap
+    public :: qtf_qwidget_isWindow, qtf_qwidget_showMaximized, qtf_qwidget_showMinimized
+    public :: qtf_qwidget_showNormal, qtf_qwidget_showFullScreen, qtf_qwidget_isMaximized
+    public :: qtf_qwidget_isMinimized, qtf_qwidget_activateWindow, qtf_qwidget_raise, qtf_qwidget_repolish
+    public :: qtf_qwidget_x, qtf_qwidget_y, qtf_qwidget_move, qtf_qtfwidget_new, qtf_qframe_new
+    public :: qtf_qframe_setFrameShape, qtf_qframe_frameShape, qtf_qframe_setFrameShadow
+    public :: qtf_qframe_setLineWidth, qtf_qlabel_new, qtf_qlabel_setText, qtf_qlabel_text
+    public :: qtf_qlabel_setAlignment, qtf_qlabel_setWordWrap, qtf_qlabel_setPixmap
     public :: qtf_qlabel_setScaledContents, qtf_qabstractbutton_setText, qtf_qabstractbutton_text
     public :: qtf_qabstractbutton_setCheckable, qtf_qabstractbutton_isCheckable
     public :: qtf_qabstractbutton_setChecked, qtf_qabstractbutton_isChecked, qtf_qabstractbutton_click
@@ -5772,36 +8068,39 @@ module qt_c_widgets
     public :: qtf_qpushbutton_new, qtf_qpushbutton_setDefault, qtf_qcheckbox_new, qtf_qradiobutton_new
     public :: qtf_qlineedit_new, qtf_qlineedit_setText, qtf_qlineedit_text, qtf_qlineedit_setPlaceholderText
     public :: qtf_qlineedit_placeholderText, qtf_qlineedit_setReadOnly, qtf_qlineedit_isReadOnly
-    public :: qtf_qlineedit_setMaxLength, qtf_qlineedit_maxLength, qtf_qlineedit_clear, qtf_qspinbox_new
-    public :: qtf_qspinbox_setRange, qtf_qspinbox_minimum, qtf_qspinbox_maximum, qtf_qspinbox_setValue
-    public :: qtf_qspinbox_value, qtf_qspinbox_setSingleStep, qtf_qspinbox_singleStep, qtf_qspinbox_setPrefix
-    public :: qtf_qspinbox_setSuffix, qtf_qdoublespinbox_new, qtf_qdoublespinbox_setRange
-    public :: qtf_qdoublespinbox_minimum, qtf_qdoublespinbox_maximum, qtf_qdoublespinbox_setValue
-    public :: qtf_qdoublespinbox_value, qtf_qdoublespinbox_setSingleStep, qtf_qdoublespinbox_singleStep
-    public :: qtf_qdoublespinbox_setDecimals, qtf_qdoublespinbox_decimals, qtf_qdoublespinbox_setPrefix
-    public :: qtf_qdoublespinbox_setSuffix, qtf_qabstractslider_setRange, qtf_qabstractslider_minimum
-    public :: qtf_qabstractslider_maximum, qtf_qabstractslider_setValue, qtf_qabstractslider_value
-    public :: qtf_qabstractslider_setSingleStep, qtf_qabstractslider_setPageStep
+    public :: qtf_qlineedit_setMaxLength, qtf_qlineedit_maxLength, qtf_qlineedit_clear
+    public :: qtf_qlineedit_setValidator, qtf_qlineedit_hasAcceptableInput, qtf_qlineedit_setCompleter
+    public :: qtf_qlineedit_setInputMask, qtf_qlineedit_setEchoMode, qtf_qlineedit_setClearButtonEnabled
+    public :: qtf_qspinbox_new, qtf_qspinbox_setRange, qtf_qspinbox_minimum, qtf_qspinbox_maximum
+    public :: qtf_qspinbox_setValue, qtf_qspinbox_value, qtf_qspinbox_setSingleStep, qtf_qspinbox_singleStep
+    public :: qtf_qspinbox_setPrefix, qtf_qspinbox_setSuffix, qtf_qdoublespinbox_new
+    public :: qtf_qdoublespinbox_setRange, qtf_qdoublespinbox_minimum, qtf_qdoublespinbox_maximum
+    public :: qtf_qdoublespinbox_setValue, qtf_qdoublespinbox_value, qtf_qdoublespinbox_setSingleStep
+    public :: qtf_qdoublespinbox_singleStep, qtf_qdoublespinbox_setDecimals, qtf_qdoublespinbox_decimals
+    public :: qtf_qdoublespinbox_setPrefix, qtf_qdoublespinbox_setSuffix, qtf_qabstractslider_setRange
+    public :: qtf_qabstractslider_minimum, qtf_qabstractslider_maximum, qtf_qabstractslider_setValue
+    public :: qtf_qabstractslider_value, qtf_qabstractslider_setSingleStep, qtf_qabstractslider_setPageStep
     public :: qtf_qabstractslider_setOrientation, qtf_qabstractslider_orientation, qtf_qslider_new
     public :: qtf_qcombobox_new, qtf_qcombobox_addItem, qtf_qcombobox_insertItem, qtf_qcombobox_removeItem
     public :: qtf_qcombobox_clear, qtf_qcombobox_count, qtf_qcombobox_currentIndex
     public :: qtf_qcombobox_setCurrentIndex, qtf_qcombobox_currentText, qtf_qcombobox_setCurrentText
     public :: qtf_qcombobox_itemText, qtf_qcombobox_findText, qtf_qcombobox_setEditable
-    public :: qtf_qlayout_setContentsMargins, qtf_qlayout_setSpacing, qtf_qlayout_spacing, qtf_qlayout_count
-    public :: qtf_qboxlayout_addWidget, qtf_qboxlayout_addLayout, qtf_qboxlayout_addStretch
-    public :: qtf_qboxlayout_addSpacing, qtf_qboxlayout_setStretchFactor, qtf_qboxlayout_setStretch
-    public :: qtf_qvboxlayout_new, qtf_qhboxlayout_new, qtf_qgridlayout_new, qtf_qgridlayout_addWidget
-    public :: qtf_qgridlayout_addLayout, qtf_qgridlayout_setRowStretch, qtf_qgridlayout_setColumnStretch
-    public :: qtf_qgridlayout_rowCount, qtf_qgridlayout_columnCount, qtf_qstatusbar_showMessage
-    public :: qtf_qstatusbar_clearMessage, qtf_qstatusbar_currentMessage, qtf_qmainwindow_new
-    public :: qtf_qmainwindow_setCentralWidget, qtf_qmainwindow_centralWidget, qtf_qmainwindow_statusBar
-    public :: qtf_qmainwindow_menuBar, qtf_qmainwindow_addToolBar, qtf_qmainwindow_addDockWidget
-    public :: qtf_qmainwindow_removeDockWidget, qtf_qmainwindow_tabifyDockWidget, qtf_qmainwindow_saveState
-    public :: qtf_qmainwindow_restoreState, qtf_qmenu_new, qtf_qmenu_addMenu, qtf_qmenu_addSeparator
-    public :: qtf_qmenu_title, qtf_qmenu_menuAction, qtf_qmenu_popup, qtf_qmenu_exec, qtf_qmenu_clear
-    public :: qtf_qmenu_isEmpty, qtf_qmenubar_addMenu, qtf_qtoolbar_addSeparator, qtf_qtoolbar_addWidget
-    public :: qtf_qtoolbar_setIconSize, qtf_qtoolbar_setToolButtonStyle, qtf_qdialog_new, qtf_qdialog_exec
-    public :: qtf_qdialog_open, qtf_qdialog_accept, qtf_qdialog_reject, qtf_qdialog_done, qtf_qdialog_result
+    public :: qtf_qcombobox_setCompleter, qtf_qlayout_setContentsMargins, qtf_qlayout_setSpacing
+    public :: qtf_qlayout_spacing, qtf_qlayout_count, qtf_qboxlayout_addWidget, qtf_qboxlayout_addLayout
+    public :: qtf_qboxlayout_addStretch, qtf_qboxlayout_addSpacing, qtf_qboxlayout_setStretchFactor
+    public :: qtf_qboxlayout_setStretch, qtf_qvboxlayout_new, qtf_qhboxlayout_new, qtf_qgridlayout_new
+    public :: qtf_qgridlayout_addWidget, qtf_qgridlayout_addLayout, qtf_qgridlayout_setRowStretch
+    public :: qtf_qgridlayout_setColumnStretch, qtf_qgridlayout_rowCount, qtf_qgridlayout_columnCount
+    public :: qtf_qstatusbar_showMessage, qtf_qstatusbar_clearMessage, qtf_qstatusbar_currentMessage
+    public :: qtf_qmainwindow_new, qtf_qmainwindow_setCentralWidget, qtf_qmainwindow_centralWidget
+    public :: qtf_qmainwindow_statusBar, qtf_qmainwindow_menuBar, qtf_qmainwindow_addToolBar
+    public :: qtf_qmainwindow_addDockWidget, qtf_qmainwindow_removeDockWidget
+    public :: qtf_qmainwindow_tabifyDockWidget, qtf_qmainwindow_saveState, qtf_qmainwindow_restoreState
+    public :: qtf_qmenu_new, qtf_qmenu_addMenu, qtf_qmenu_addSeparator, qtf_qmenu_title, qtf_qmenu_menuAction
+    public :: qtf_qmenu_popup, qtf_qmenu_exec, qtf_qmenu_clear, qtf_qmenu_isEmpty, qtf_qmenubar_addMenu
+    public :: qtf_qtoolbar_addSeparator, qtf_qtoolbar_addWidget, qtf_qtoolbar_setIconSize
+    public :: qtf_qtoolbar_setToolButtonStyle, qtf_qdialog_new, qtf_qdialog_exec, qtf_qdialog_open
+    public :: qtf_qdialog_accept, qtf_qdialog_reject, qtf_qdialog_done, qtf_qdialog_result
     public :: qtf_qdialog_setModal, qtf_qmessagebox_new, qtf_qmessagebox_setText, qtf_qmessagebox_text
     public :: qtf_qmessagebox_setInformativeText, qtf_qmessagebox_informativeText, qtf_qmessagebox_setIcon
     public :: qtf_qmessagebox_setStandardButtons, qtf_qmessagebox_setDefaultButton, qtf_qmessagebox_button
@@ -5811,23 +8110,52 @@ module qt_c_widgets
     public :: qtf_qfiledialog_setDirectory, qtf_qfiledialog_setDefaultSuffix, qtf_qfiledialog_selectFile
     public :: qtf_qfiledialog_selectedFiles, qtf_qfiledialog_getOpenFileName
     public :: qtf_qfiledialog_getOpenFileNames, qtf_qfiledialog_getSaveFileName
-    public :: qtf_qfiledialog_getExistingDirectory, qtf_qtfmodelrequest_setText
-    public :: qtf_qtfmodelrequest_setNumber, qtf_qtfmodelrequest_setInt, qtf_qtftablemodel_new
-    public :: qtf_qtftablemodel_setRowCount, qtf_qtftablemodel_setColumnCount, qtf_qtftablemodel_rowCount
-    public :: qtf_qtftablemodel_columnCount, qtf_qtftablemodel_setHorizontalHeaderLabels
+    public :: qtf_qfiledialog_getExistingDirectory, qtf_qabstractitemmodel_rowCount
+    public :: qtf_qabstractitemmodel_columnCount, qtf_qtfmodelrequest_setText, qtf_qtfmodelrequest_setNumber
+    public :: qtf_qtfmodelrequest_setInt, qtf_qtftablemodel_new, qtf_qtftablemodel_setRowCount
+    public :: qtf_qtftablemodel_setColumnCount, qtf_qtftablemodel_setHorizontalHeaderLabels
     public :: qtf_qtftablemodel_setVerticalHeaderLabels, qtf_qtftablemodel_setEditable
     public :: qtf_qtftablemodel_refresh, qtf_qtftablemodel_refreshCell, qtf_qtftablemodel_dataText
-    public :: qtf_qtftablemodel_setDataText, qtf_qabstractitemview_setAlternatingRowColors
+    public :: qtf_qtftablemodel_setDataText, qtf_qabstractitemview_setModel
+    public :: qtf_qabstractitemview_setItemDelegate, qtf_qabstractitemview_setItemDelegateForColumn
+    public :: qtf_qabstractitemview_edit, qtf_qabstractitemview_setAlternatingRowColors
     public :: qtf_qabstractitemview_setSelectionMode, qtf_qabstractitemview_setSelectionBehavior
     public :: qtf_qabstractitemview_setEditTriggers, qtf_qabstractitemview_clearSelection
     public :: qtf_qabstractitemview_scrollToTop, qtf_qabstractitemview_scrollToBottom, qtf_qtableview_new
-    public :: qtf_qtableview_setModel, qtf_qtableview_resizeColumnsToContents
-    public :: qtf_qtableview_resizeRowsToContents, qtf_qtableview_setColumnWidth, qtf_qtableview_columnWidth
-    public :: qtf_qtableview_setStretchLastSection, qtf_qtableview_setHorizontalHeaderVisible
-    public :: qtf_qtableview_setVerticalHeaderVisible, qtf_qtableview_currentRow
-    public :: qtf_qtableview_currentColumn, qtf_qtableview_setCurrentCell, qtf_qtableview_selectRow
-    public :: qtf_qtableview_setWordWrap, qtf_qtablewidgetitem_new, qtf_qtablewidgetitem_setText
-    public :: qtf_qtablewidgetitem_text, qtf_qtablewidgetitem_setTextAlignment, qtf_qtablewidgetitem_setFlags
+    public :: qtf_qtableview_resizeColumnsToContents, qtf_qtableview_resizeRowsToContents
+    public :: qtf_qtableview_setColumnWidth, qtf_qtableview_columnWidth, qtf_qtableview_setStretchLastSection
+    public :: qtf_qtableview_setHorizontalHeaderVisible, qtf_qtableview_setVerticalHeaderVisible
+    public :: qtf_qtableview_currentRow, qtf_qtableview_currentColumn, qtf_qtableview_setCurrentCell
+    public :: qtf_qtableview_selectRow, qtf_qtableview_setWordWrap, qtf_qtableview_setSortingEnabled
+    public :: qtf_qtableview_sortByColumn, qtf_qtableview_setColumnHidden, qtf_qtreeview_new
+    public :: qtf_qtreeview_currentNode, qtf_qtreeview_setCurrentNode, qtf_qtreeview_expandNode
+    public :: qtf_qtreeview_collapseNode, qtf_qtreeview_isNodeExpanded, qtf_qtreeview_scrollToNode
+    public :: qtf_qtreeview_currentFilePath, qtf_qtreeview_setCurrentFile, qtf_qtreeview_setRootPath
+    public :: qtf_qtreeview_expandAll, qtf_qtreeview_collapseAll, qtf_qtreeview_expandToDepth
+    public :: qtf_qtreeview_setHeaderHidden, qtf_qtreeview_setRootIsDecorated
+    public :: qtf_qtreeview_setUniformRowHeights, qtf_qtreeview_setAnimated, qtf_qtreeview_setIndentation
+    public :: qtf_qtreeview_resizeColumnToContents, qtf_qtreeview_setColumnWidth
+    public :: qtf_qtreeview_setColumnHidden, qtf_qtreeview_setSortingEnabled, qtf_qtreeview_sortByColumn
+    public :: qtf_qtftreemodel_new, qtf_qtftreemodel_setParents, qtf_qtftreemodel_appendNode
+    public :: qtf_qtftreemodel_nodeCount, qtf_qtftreemodel_parentNode, qtf_qtftreemodel_childCount
+    public :: qtf_qtftreemodel_setColumnCount, qtf_qtftreemodel_setHeaderLabels, qtf_qtftreemodel_setEditable
+    public :: qtf_qtftreemodel_refresh, qtf_qtftreemodel_refreshNode, qtf_qtftreemodel_dataText
+    public :: qtf_qsortfilterproxymodel_new, qtf_qsortfilterproxymodel_setSourceModel
+    public :: qtf_qsortfilterproxymodel_setFilterFixedString
+    public :: qtf_qsortfilterproxymodel_setFilterRegularExpression
+    public :: qtf_qsortfilterproxymodel_setFilterWildcard, qtf_qsortfilterproxymodel_setFilterKeyColumn
+    public :: qtf_qsortfilterproxymodel_setFilterCaseSensitivity
+    public :: qtf_qsortfilterproxymodel_setSortCaseSensitivity
+    public :: qtf_qsortfilterproxymodel_setRecursiveFilteringEnabled
+    public :: qtf_qsortfilterproxymodel_setDynamicSortFilter, qtf_qsortfilterproxymodel_sort
+    public :: qtf_qsortfilterproxymodel_invalidate, qtf_qsortfilterproxymodel_mapToSourceRow
+    public :: qtf_qsortfilterproxymodel_mapFromSourceRow, qtf_qfilesystemmodel_new
+    public :: qtf_qfilesystemmodel_setRootPath, qtf_qfilesystemmodel_rootPath
+    public :: qtf_qfilesystemmodel_setNameFilters, qtf_qfilesystemmodel_setNameFilterDisables
+    public :: qtf_qfilesystemmodel_setReadOnly, qtf_qfilesystemmodel_childCount, qtf_qtfitemdelegate_new
+    public :: qtf_qtfitemdelegate_setChoices, qtf_qtfitemdelegate_setRange, qtf_qtfitemdelegate_clear
+    public :: qtf_qtablewidgetitem_new, qtf_qtablewidgetitem_setText, qtf_qtablewidgetitem_text
+    public :: qtf_qtablewidgetitem_setTextAlignment, qtf_qtablewidgetitem_setFlags
     public :: qtf_qtablewidgetitem_flags, qtf_qtablewidgetitem_setToolTip, qtf_qtablewidgetitem_setIcon
     public :: qtf_qtablewidgetitem_setBackground, qtf_qtablewidgetitem_setForeground
     public :: qtf_qtablewidgetitem_row, qtf_qtablewidgetitem_column, qtf_qtablewidget_new
@@ -5918,6 +8246,49 @@ module qt_c_widgets
     public :: qtf_qformlayout_addRow, qtf_qformlayout_addRowLayout, qtf_qformlayout_addRowWidget
     public :: qtf_qformlayout_rowCount, qtf_qformlayout_setLabelAlignment
     public :: qtf_qformlayout_setHorizontalSpacing, qtf_qformlayout_setVerticalSpacing
-    public :: qtf_qstyle_standardIcon
+    public :: qtf_qstyle_standardIcon, qtf_qdialogbuttonbox_new, qtf_qdialogbuttonbox_setStandardButtons
+    public :: qtf_qdialogbuttonbox_standardButtons, qtf_qdialogbuttonbox_button
+    public :: qtf_qdialogbuttonbox_addButton, qtf_qdialogbuttonbox_setOrientation
+    public :: qtf_qdialogbuttonbox_setCenterButtons, qtf_qcompleter_new, qtf_qcompleter_setItems
+    public :: qtf_qcompleter_setCaseSensitivity, qtf_qcompleter_setFilterMode
+    public :: qtf_qcompleter_setCompletionMode, qtf_qcompleter_setMaxVisibleItems
+    public :: qtf_qcompleter_setCompletionPrefix, qtf_qcompleter_completionCount
+    public :: qtf_qcompleter_currentCompletion, qtf_qcompleter_setCurrentRow, qtf_qdatetimeedit_new
+    public :: qtf_qdatetimeedit_setDateTime, qtf_qdatetimeedit_dateTime, qtf_qdatetimeedit_setMinimumDateTime
+    public :: qtf_qdatetimeedit_setMaximumDateTime, qtf_qdatetimeedit_setDisplayFormat
+    public :: qtf_qdatetimeedit_displayFormat, qtf_qdatetimeedit_setCalendarPopup, qtf_qtextbrowser_new
+    public :: qtf_qtextbrowser_setSource, qtf_qtextbrowser_source, qtf_qtextbrowser_setSearchPaths
+    public :: qtf_qtextbrowser_setOpenExternalLinks, qtf_qtextbrowser_setOpenLinks, qtf_qtextbrowser_backward
+    public :: qtf_qtextbrowser_forward, qtf_qtextbrowser_home, qtf_qtextbrowser_reload
+    public :: qtf_qtextbrowser_isBackwardAvailable, qtf_qtextbrowser_isForwardAvailable
+    public :: qtf_qtextbrowser_clearHistory, qtf_qtoolbox_new, qtf_qtoolbox_addItem, qtf_qtoolbox_insertItem
+    public :: qtf_qtoolbox_removeItem, qtf_qtoolbox_count, qtf_qtoolbox_currentIndex
+    public :: qtf_qtoolbox_setCurrentIndex, qtf_qtoolbox_setItemText, qtf_qtoolbox_itemText
+    public :: qtf_qtoolbox_setItemEnabled, qtf_qtoolbox_setItemIcon, qtf_qtoolbox_setItemToolTip
+    public :: qtf_qtoolbox_widget, qtf_qtoolbox_currentWidget, qtf_qsplashscreen_new
+    public :: qtf_qsplashscreen_showMessage, qtf_qsplashscreen_clearMessage, qtf_qsplashscreen_message
+    public :: qtf_qsplashscreen_finish, qtf_qmdisubwindow_setWidget, qtf_qmdisubwindow_widget
+    public :: qtf_qmdisubwindow_showShaded, qtf_qmdisubwindow_isShaded, qtf_qmdiarea_new
+    public :: qtf_qmdiarea_addSubWindow, qtf_qmdiarea_removeSubWindow, qtf_qmdiarea_activeSubWindow
+    public :: qtf_qmdiarea_currentSubWindow, qtf_qmdiarea_setActiveSubWindow, qtf_qmdiarea_subWindowCount
+    public :: qtf_qmdiarea_closeActiveSubWindow, qtf_qmdiarea_closeAllSubWindows
+    public :: qtf_qmdiarea_activateNextSubWindow, qtf_qmdiarea_activatePreviousSubWindow
+    public :: qtf_qmdiarea_cascadeSubWindows, qtf_qmdiarea_tileSubWindows, qtf_qmdiarea_setViewMode
+    public :: qtf_qmdiarea_setTabsClosable, qtf_qmdiarea_setTabsMovable, qtf_qwizardpage_new
+    public :: qtf_qwizardpage_setTitle, qtf_qwizardpage_title, qtf_qwizardpage_setSubTitle
+    public :: qtf_qwizardpage_subTitle, qtf_qwizardpage_setFinalPage, qtf_qwizardpage_isFinalPage
+    public :: qtf_qwizardpage_setCommitPage, qtf_qwizardpage_setComplete, qtf_qwizardpage_isComplete
+    public :: qtf_qwizardpage_registerField, qtf_qwizard_new, qtf_qwizard_addPage, qtf_qwizard_setPage
+    public :: qtf_qwizard_removePage, qtf_qwizard_currentId, qtf_qwizard_currentPage, qtf_qwizard_page
+    public :: qtf_qwizard_hasVisitedPage, qtf_qwizard_setStartId, qtf_qwizard_next, qtf_qwizard_back
+    public :: qtf_qwizard_restart, qtf_qwizard_setWizardStyle, qtf_qwizard_setOption
+    public :: qtf_qwizard_setButtonText, qtf_qwizard_stringField, qtf_qwizard_intField
+    public :: qtf_qwizard_doubleField, qtf_qwizard_boolField, qtf_qundostack_new, qtf_qundostack_push
+    public :: qtf_qundostack_undo, qtf_qundostack_redo, qtf_qundostack_canUndo, qtf_qundostack_canRedo
+    public :: qtf_qundostack_undoText, qtf_qundostack_redoText, qtf_qundostack_count, qtf_qundostack_index
+    public :: qtf_qundostack_setIndex, qtf_qundostack_text, qtf_qundostack_clear, qtf_qundostack_setClean
+    public :: qtf_qundostack_isClean, qtf_qundostack_setUndoLimit, qtf_qundostack_beginMacro
+    public :: qtf_qundostack_endMacro, qtf_qundostack_createUndoAction, qtf_qundostack_createRedoAction
+    public :: qtf_qundoview_new, qtf_qundoview_setEmptyLabel
 
 end module qt_c_widgets

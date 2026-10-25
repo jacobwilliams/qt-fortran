@@ -27,6 +27,10 @@ cpp_includes = [
     "QScrollArea", "QSplitter", "QStackedWidget", "QTabWidget", "QTableView", "QTableWidget", "QTextEdit",
     "QTime", "QTimeEdit", "QToolButton", "QTreeWidget", "QVariant", "QIcon", "QMetaEnum", "QStyle", "string",
     "QCloseEvent", "QContextMenuEvent", "QByteArray", "QFocusEvent",
+    "QAbstractProxyModel", "QFileSystemModel", "QSortFilterProxyModel", "QStyledItemDelegate", "QTreeView",
+    "QRegularExpression", "QCompleter", "QDialogButtonBox", "QDateTimeEdit", "QTextBrowser", "QToolBox",
+    "QSplashScreen", "QMdiArea", "QMdiSubWindow", "QWizard", "QWizardPage", "QUndoStack", "QUndoView",
+    "QStringListModel", "QUrl", "QFileInfo", "QValidator", "QDateTime",
 ]
 
 cpp_prelude = """
@@ -48,6 +52,74 @@ QTF_API void *qtf_qapplication_new_args(const char *s, int itemlen, int n) {
     qtf_argv.push_back(nullptr);
     qtf_argc = static_cast<int>(qtf_arg_strings.size());
     return new QApplication(qtf_argc, qtf_argv.data());
+}
+
+// Replace a completer's items.
+static void qtf_completer_items(QCompleter *c, const QStringList &items) {
+    c->setModel(new QStringListModel(items, c));
+}
+
+// Show a file (a path) or a URL in a text browser.
+static void qtf_set_source(QTextBrowser *b, const QString &s) {
+    b->setSource(QFileInfo::exists(s) ? QUrl::fromLocalFile(s) : QUrl(s));
+}
+
+// QtfWizardPage: a wizard page whose completeness (the Next/Finish button) is
+// set from Fortran, and which can register fields (protected in Qt).
+class QtfWizardPage : public QWizardPage {
+  public:
+    using QWizardPage::QWizardPage;
+    bool complete = true;
+    bool isComplete() const override { return complete && QWizardPage::isComplete(); }
+    void setComplete(bool c) {
+        complete = c;
+        emit completeChanged();
+    }
+    void addField(const QString &name, QWidget *w) { registerField(name, w); }
+};
+
+static QtfWizardPage *qtf_page(QWizardPage *p) {
+    auto *q = dynamic_cast<QtfWizardPage *>(p);
+    if (!q) qFatal("QWizardPage: not created by qt-fortran");
+    return q;
+}
+
+// QtfUndoStack: an undo stack whose commands are (text, id) pairs; undoing and
+// redoing a command call the stack's Fortran undo/redo slots with its id.
+class QtfUndoStack : public QUndoStack {
+  public:
+    using QUndoStack::QUndoStack;
+    std::vector<qtf_slot> undo_handlers, redo_handlers;
+};
+
+class QtfUndoCommand : public QUndoCommand {
+  public:
+    QtfUndoCommand(QtfUndoStack *stack, const QString &text, int id) : QUndoCommand(text), stack(stack), cid(id) {}
+    void undo() override { call(stack->undo_handlers); }
+    void redo() override { call(stack->redo_handlers); }
+
+  private:
+    void call(const std::vector<qtf_slot> &handlers) {
+        qtf_args a{};
+        a.i[0] = cid;
+        qtf_emit_all(handlers, a);
+    }
+    QtfUndoStack *stack;   // owns this command
+    int cid;
+};
+
+static void qtf_undo_push(QUndoStack *s, const QString &text, int id) {
+    auto *stack = dynamic_cast<QtfUndoStack *>(s);
+    if (!stack) qFatal("QUndoStack: not created by qt-fortran");
+    stack->push(new QtfUndoCommand(stack, text, id));
+}
+
+// Attach a slot to an undo stack's undo (UNDO = true) or redo requests.
+template <bool UNDO> static bool connect_undo(void *s, const qtf_slot &ref) {
+    auto *stack = dynamic_cast<QtfUndoStack *>(static_cast<QObject *>(s));
+    if (!stack) return false;
+    (UNDO ? stack->undo_handlers : stack->redo_handlers).push_back(ref);
+    return true;
 }
 
 // Re-apply the style (sheet) to a widget, e.g. after a dynamic property changed.
@@ -205,33 +277,61 @@ struct QtfModelRequest {
     QVariant value;
 };
 
+// The Fortran slots of a Fortran-backed model (QtfTableModel, QtfTreeModel).
+struct QtfModelHandlers {
+    virtual ~QtfModelHandlers() = default;
+    std::vector<qtf_slot> data_handlers, edit_handlers, sort_handlers;
+
+    // The value of one cell, from the dataRequested slots (`key` is the row or node).
+    QVariant request(int key, int column) const {
+        QtfModelRequest req;
+        const std::vector<qtf_slot> targets = data_handlers;   // a slot may connect more
+        for (const qtf_slot &s : targets) qtf_emit_ptr_ints(s, &req, {key, column});
+        return req.value;
+    }
+
+    // Report an edit to the dataEdited slots; false if nobody listens.
+    bool edit(int key, int column, const QVariant &v) const {
+        if (edit_handlers.empty()) return false;
+        qtf_args a{};
+        const QByteArray text = v.toString().toUtf8();
+        a.i[0] = key;
+        a.i[1] = column;
+        a.s = text.constData();
+        a.slen = static_cast<int32_t>(text.size());
+        return qtf_emit_all(edit_handlers, a) > 0;
+    }
+};
+
 // QtfTableModel: a table model whose cells are provided by Fortran slots on
 // demand (dataRequested), so large Fortran arrays can be shown without copying
-// them into Qt. Edits are reported to dataEdited slots.
-class QtfTableModel : public QAbstractTableModel {
+// them into Qt. Edits are reported to dataEdited slots, and header clicks of a
+// sorting view to sortRequested slots.
+class QtfTableModel : public QAbstractTableModel, public QtfModelHandlers {
   public:
     QtfTableModel(int rows, int cols, QObject *parent) : QAbstractTableModel(parent), nrows(rows), ncols(cols) {}
 
     int nrows, ncols;
     bool editable = false;
     QStringList hlabels, vlabels;
-    std::vector<qtf_slot> data_handlers, edit_handlers;
+
+    void sort(int column, Qt::SortOrder order) override {
+        qtf_args a{};
+        a.i[0] = column;
+        a.i[1] = order;
+        if (qtf_emit_all(sort_handlers, a) > 0) refresh();
+    }
 
     int rowCount(const QModelIndex &parent) const override { return parent.isValid() ? 0 : nrows; }
     int columnCount(const QModelIndex &parent) const override { return parent.isValid() ? 0 : ncols; }
 
     QVariant data(const QModelIndex &i, int role) const override {
         if (!i.isValid() || (role != Qt::DisplayRole && role != Qt::EditRole)) return QVariant();
-        QtfModelRequest req;
-        const std::vector<qtf_slot> targets = data_handlers;   // a slot may connect more
-        for (const qtf_slot &s : targets) qtf_emit_ptr_ints(s, &req, {i.row(), i.column()});
-        return req.value;
+        return request(i.row(), i.column());
     }
 
     bool setData(const QModelIndex &i, const QVariant &v, int role) override {
-        if (!i.isValid() || role != Qt::EditRole || edit_handlers.empty()) return false;
-        const std::vector<qtf_slot> targets = edit_handlers;
-        for (const qtf_slot &s : targets) qtf_emit_ints_string(s, {i.row(), i.column()}, v.toString());
+        if (!i.isValid() || role != Qt::EditRole || !edit(i.row(), i.column(), v)) return false;
         emit dataChanged(i, i);
         return true;
     }
@@ -268,13 +368,289 @@ class QtfTableModel : public QAbstractTableModel {
     void refreshCell(int r, int c) { emit dataChanged(index(r, c), index(r, c)); }
 };
 
-// Attach a slot to a QtfTableModel's data (WHICH = 0) or edit (WHICH = 1) requests.
+// QtfTreeModel: a tree whose structure is a Fortran parent array (node i's
+// parent, 0 for top-level nodes; parents come before their children) and whose
+// cells come from Fortran slots on demand, like QtfTableModel. Nodes are
+// numbered 1..n; an index's internalId is its node.
+class QtfTreeModel : public QAbstractItemModel, public QtfModelHandlers {
+  public:
+    QtfTreeModel(int cols, QObject *parent) : QAbstractItemModel(parent), ncols(cols), children(1) {}
+
+    int ncols;
+    bool editable = false;
+    QStringList hlabels;
+    std::vector<int> parent_of{0}, row_of{0};      // by node (index 0: the root)
+    std::vector<std::vector<int>> children;         // by node
+
+    int nodeCount() const { return static_cast<int>(parent_of.size()) - 1; }
+
+    void setParents(const int *p, int n) {
+        for (int i = 0; i < n; ++i)
+            if (p[i] < 0 || p[i] > i)
+                qFatal("QtfTreeModel::setParents: the parent of node %d is %d (must be 0..%d)", i + 1, p[i], i);
+        beginResetModel();
+        parent_of.assign(1, 0);
+        row_of.assign(1, 0);
+        children.assign(n + 1, {});
+        for (int i = 1; i <= n; ++i) {
+            parent_of.push_back(p[i - 1]);
+            row_of.push_back(static_cast<int>(children[p[i - 1]].size()));
+            children[p[i - 1]].push_back(i);
+        }
+        endResetModel();
+    }
+
+    // Append a node under `parent` (0: top level); returns its number.
+    int appendNode(int parent) {
+        if (parent < 0 || parent > nodeCount()) return -1;
+        const int row = static_cast<int>(children[parent].size());
+        const int node = nodeCount() + 1;
+        beginInsertRows(nodeIndex(parent), row, row);
+        parent_of.push_back(parent);
+        row_of.push_back(row);
+        children.emplace_back();
+        children[parent].push_back(node);
+        endInsertRows();
+        return node;
+    }
+
+    QModelIndex nodeIndex(int node, int column = 0) const {
+        if (node <= 0 || node > nodeCount()) return QModelIndex();
+        return createIndex(row_of[node], column, quintptr(node));
+    }
+
+    QModelIndex index(int row, int column, const QModelIndex &parent) const override {
+        const int p = parent.isValid() ? int(parent.internalId()) : 0;
+        if (p < 0 || p > nodeCount() || row < 0 || row >= int(children[p].size()) || column < 0 || column >= ncols)
+            return QModelIndex();
+        return createIndex(row, column, quintptr(children[p][row]));
+    }
+
+    QModelIndex parent(const QModelIndex &i) const override {
+        if (!i.isValid()) return QModelIndex();
+        return nodeIndex(parent_of[int(i.internalId())]);
+    }
+
+    int rowCount(const QModelIndex &parent) const override {
+        if (parent.column() > 0) return 0;
+        const int p = parent.isValid() ? int(parent.internalId()) : 0;
+        return int(children[p].size());
+    }
+
+    int columnCount(const QModelIndex &) const override { return ncols; }
+
+    QVariant data(const QModelIndex &i, int role) const override {
+        if (!i.isValid() || (role != Qt::DisplayRole && role != Qt::EditRole)) return QVariant();
+        return request(int(i.internalId()), i.column());
+    }
+
+    bool setData(const QModelIndex &i, const QVariant &v, int role) override {
+        if (!i.isValid() || role != Qt::EditRole || !edit(int(i.internalId()), i.column(), v)) return false;
+        emit dataChanged(i, i);
+        return true;
+    }
+
+    Qt::ItemFlags flags(const QModelIndex &i) const override {
+        Qt::ItemFlags f = QAbstractItemModel::flags(i);
+        if (editable && i.isValid()) f |= Qt::ItemIsEditable;
+        return f;
+    }
+
+    QVariant headerData(int section, Qt::Orientation o, int role) const override {
+        if (o == Qt::Horizontal && role == Qt::DisplayRole && section < hlabels.size()) return hlabels[section];
+        return QAbstractItemModel::headerData(section, o, role);
+    }
+
+    void setHeaders(const QStringList &labels) {
+        hlabels = labels;
+        if (ncols > 0) emit headerDataChanged(Qt::Horizontal, 0, ncols - 1);
+    }
+
+    void setColumns(int n) {
+        beginResetModel();
+        ncols = n;
+        endResetModel();
+    }
+
+    // Redisplay every node (keeps the view's expansion state).
+    void refresh() {
+        for (int p = 0; p <= nodeCount(); ++p) {
+            const std::vector<int> &c = children[p];
+            if (!c.empty()) emit dataChanged(nodeIndex(c.front()), nodeIndex(c.back(), ncols - 1));
+        }
+    }
+
+    void refreshNode(int node) {
+        const QModelIndex a = nodeIndex(node, 0), b = nodeIndex(node, ncols - 1);
+        if (a.isValid()) emit dataChanged(a, b);
+    }
+};
+
+// Attach a slot to a Fortran-backed model's data (WHICH = 0), edit (1) or sort (2) requests.
 template <int WHICH> static bool connect_model(void *s, const qtf_slot &ref) {
-    auto *m = dynamic_cast<QtfTableModel *>(static_cast<QObject *>(s));
+    auto *m = dynamic_cast<QtfModelHandlers *>(static_cast<QObject *>(s));
     if (!m) return false;
-    (WHICH == 0 ? m->data_handlers : m->edit_handlers).push_back(ref);
+    (WHICH == 0 ? m->data_handlers : WHICH == 1 ? m->edit_handlers : m->sort_handlers).push_back(ref);
     return true;
 }
+
+// The source-model index behind a (possibly proxied) index.
+static QModelIndex qtf_source_index(QModelIndex i) {
+    while (i.isValid()) {
+        auto *p = qobject_cast<const QAbstractProxyModel *>(i.model());
+        if (!p) break;
+        i = p->mapToSource(i);
+    }
+    return i;
+}
+
+// The model at the bottom of a view's proxy chain.
+static QAbstractItemModel *qtf_source_model(const QAbstractItemView *v) {
+    QAbstractItemModel *m = v->model();
+    while (auto *p = qobject_cast<QAbstractProxyModel *>(m)) m = p->sourceModel();
+    return m;
+}
+
+// A source-model index as an index of the view's model (through its proxies).
+static QModelIndex qtf_view_index(const QAbstractItemView *v, const QModelIndex &source) {
+    std::vector<QAbstractProxyModel *> chain;
+    QAbstractItemModel *m = v->model();
+    while (auto *p = qobject_cast<QAbstractProxyModel *>(m)) {
+        chain.push_back(p);
+        m = p->sourceModel();
+    }
+    QModelIndex i = source;
+    for (auto it = chain.rbegin(); it != chain.rend(); ++it) i = (*it)->mapFromSource(i);
+    return i;
+}
+
+// The QtfTreeModel node of an index (-1 if the model is not a QtfTreeModel).
+static int qtf_node(const QModelIndex &i) {
+    const QModelIndex s = qtf_source_index(i);
+    return s.isValid() && dynamic_cast<const QtfTreeModel *>(s.model()) ? int(s.internalId()) : -1;
+}
+
+// The view index of a QtfTreeModel node (invalid if the view does not show one).
+static QModelIndex qtf_node_index(const QAbstractItemView *v, int node) {
+    auto *m = dynamic_cast<QtfTreeModel *>(qtf_source_model(v));
+    return m ? qtf_view_index(v, m->nodeIndex(node)) : QModelIndex();
+}
+
+// The file path of an index of a QFileSystemModel (empty for other models).
+static QString qtf_file_path(const QModelIndex &i) {
+    const QModelIndex s = qtf_source_index(i);
+    auto *fs = qobject_cast<const QFileSystemModel *>(s.model());
+    return fs ? fs->filePath(s) : QString();
+}
+
+// Show the directory `path` of the view's QFileSystemModel as its root.
+static void qtf_set_root_path(QAbstractItemView *v, const QString &path) {
+    if (auto *fs = qobject_cast<QFileSystemModel *>(qtf_source_model(v)))
+        v->setRootIndex(qtf_view_index(v, fs->index(path)));
+}
+
+// Make the file `path` of the view's QFileSystemModel current.
+static void qtf_set_current_file(QAbstractItemView *v, const QString &path) {
+    if (auto *fs = qobject_cast<QFileSystemModel *>(qtf_source_model(v)))
+        v->setCurrentIndex(qtf_view_index(v, fs->index(path)));
+}
+
+// QTreeView that reports current-index changes (as a node, or a file path).
+class QtfTreeView : public QTreeView {
+  public:
+    using QTreeView::QTreeView;
+    std::vector<qtf_slot> node_handlers, file_handlers;
+
+  protected:
+    void currentChanged(const QModelIndex &current, const QModelIndex &previous) override {
+        QTreeView::currentChanged(current, previous);
+        qtf_args a{};
+        a.i[0] = qtf_node(current);
+        qtf_emit_all(node_handlers, a);
+        if (!file_handlers.empty()) {
+            const std::vector<qtf_slot> targets = file_handlers;
+            const QString path = qtf_file_path(current);
+            for (const qtf_slot &s : targets) qtf_emit(s, path);
+        }
+    }
+};
+
+// Attach a slot to a QtfTreeView's current node (FILE = false) or file changes.
+template <bool FILE> static bool connect_tree(void *s, const qtf_slot &ref) {
+    auto *v = dynamic_cast<QtfTreeView *>(static_cast<QObject *>(s));
+    if (!v) return false;
+    (FILE ? v->file_handlers : v->node_handlers).push_back(ref);
+    return true;
+}
+
+// Map a proxy row (in column `column`, top level) to the source model, and back.
+static int qtf_proxy_to_source(QSortFilterProxyModel *p, int row, int column) {
+    return p->mapToSource(p->index(row, column)).row();
+}
+
+static int qtf_proxy_from_source(QSortFilterProxyModel *p, int row, int column) {
+    QAbstractItemModel *m = p->sourceModel();
+    return m ? p->mapFromSource(m->index(row, column)).row() : -1;
+}
+
+// QtfItemDelegate: a cell editor chosen per column: a combo box of fixed
+// choices, a (double) spin box with a range, or Qt's default line edit.
+class QtfItemDelegate : public QStyledItemDelegate {
+  public:
+    using QStyledItemDelegate::QStyledItemDelegate;
+    QStringList choices;
+    bool ranged = false;
+    double lo = 0, hi = 0;
+    int decimals = 2;
+
+    void setRange(double minimum, double maximum, int dec) {
+        ranged = true;
+        lo = minimum;
+        hi = maximum;
+        decimals = dec;
+    }
+
+    void clear() {
+        choices.clear();
+        ranged = false;
+    }
+
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
+                          const QModelIndex &index) const override {
+        if (!choices.isEmpty()) {
+            auto *c = new QComboBox(parent);
+            c->addItems(choices);
+            return c;
+        }
+        if (ranged && decimals == 0) {
+            auto *sb = new QSpinBox(parent);
+            sb->setRange(int(lo), int(hi));
+            return sb;
+        }
+        if (ranged) {
+            auto *sb = new QDoubleSpinBox(parent);
+            sb->setRange(lo, hi);
+            sb->setDecimals(decimals);
+            return sb;
+        }
+        return QStyledItemDelegate::createEditor(parent, option, index);
+    }
+
+    void setEditorData(QWidget *editor, const QModelIndex &index) const override {
+        const QVariant v = index.data(Qt::EditRole);
+        if (auto *c = dynamic_cast<QComboBox *>(editor)) c->setCurrentText(v.toString());
+        else if (auto *sb = dynamic_cast<QSpinBox *>(editor)) sb->setValue(v.toInt());
+        else if (auto *sb = dynamic_cast<QDoubleSpinBox *>(editor)) sb->setValue(v.toDouble());
+        else QStyledItemDelegate::setEditorData(editor, index);
+    }
+
+    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override {
+        if (auto *c = dynamic_cast<QComboBox *>(editor)) model->setData(index, c->currentText());
+        else if (auto *sb = dynamic_cast<QSpinBox *>(editor)) model->setData(index, sb->value());
+        else if (auto *sb = dynamic_cast<QDoubleSpinBox *>(editor)) model->setData(index, sb->value());
+        else QStyledItemDelegate::setModelData(editor, model, index);
+    }
+};
 
 // Attach a slot to one of the QtfWidget's event handlers. The slots are owned
 // by the widget, so they are released when it is destroyed.
@@ -541,6 +917,11 @@ fields = ["year: int", "month: int", "day: int"]
 cpp = "QDate({year}, {month}, {day})"
 out = { year = "{v}.year()", month = "{v}.month()", day = "{v}.day()" }
 
+[value_types.QDateTime]
+fields = ["year: int", "month: int", "day: int", "hour: int", "minute: int", "second: int", "msec: int"]
+cpp = "QDateTime(QDate({year}, {month}, {day}), QTime({hour}, {minute}, {second}, {msec}))"
+out = { year = "{v}.date().year()", month = "{v}.date().month()", day = "{v}.date().day()", hour = "{v}.time().hour()", minute = "{v}.time().minute()", second = "{v}.time().second()", msec = "{v}.time().msec()" }
+
 [value_types.QTime]
 fields = ["hour: int", "minute: int", "second: int"]
 cpp = "QTime({hour}, {minute}, {second})"
@@ -674,6 +1055,54 @@ doc = "QTabWidget::TabPosition"
 values = ["QTabWidget_North = 0", "QTabWidget_South = 1", "QTabWidget_West = 2", "QTabWidget_East = 3"]
 
 [[enum]]
+doc = "QLineEdit::EchoMode"
+values = ["QLineEdit_Normal = 0", "QLineEdit_NoEcho = 1", "QLineEdit_Password = 2", "QLineEdit_PasswordEchoOnEdit = 3"]
+
+[[enum]]
+doc = "QDialogButtonBox::StandardButton"
+values = [
+    "QDialogButtonBox_NoButton = 0", "QDialogButtonBox_Ok = int(z'00000400')", "QDialogButtonBox_Save = int(z'00000800')",
+    "QDialogButtonBox_SaveAll = int(z'00001000')", "QDialogButtonBox_Open = int(z'00002000')",
+    "QDialogButtonBox_Yes = int(z'00004000')", "QDialogButtonBox_YesToAll = int(z'00008000')",
+    "QDialogButtonBox_No = int(z'00010000')", "QDialogButtonBox_NoToAll = int(z'00020000')",
+    "QDialogButtonBox_Abort = int(z'00040000')", "QDialogButtonBox_Retry = int(z'00080000')",
+    "QDialogButtonBox_Ignore = int(z'00100000')", "QDialogButtonBox_Close = int(z'00200000')",
+    "QDialogButtonBox_Cancel = int(z'00400000')", "QDialogButtonBox_Discard = int(z'00800000')",
+    "QDialogButtonBox_Help = int(z'01000000')", "QDialogButtonBox_Apply = int(z'02000000')",
+    "QDialogButtonBox_Reset = int(z'04000000')", "QDialogButtonBox_RestoreDefaults = int(z'08000000')",
+]
+
+[[enum]]
+doc = "QDialogButtonBox::ButtonRole"
+values = [
+    "QDialogButtonBox_InvalidRole = -1", "QDialogButtonBox_AcceptRole = 0", "QDialogButtonBox_RejectRole = 1",
+    "QDialogButtonBox_DestructiveRole = 2", "QDialogButtonBox_ActionRole = 3", "QDialogButtonBox_HelpRole = 4",
+    "QDialogButtonBox_YesRole = 5", "QDialogButtonBox_NoRole = 6", "QDialogButtonBox_ResetRole = 7",
+    "QDialogButtonBox_ApplyRole = 8",
+]
+
+[[enum]]
+doc = "QCompleter::CompletionMode and Qt::MatchFlag (for setFilterMode)"
+values = [
+    "QCompleter_PopupCompletion = 0", "QCompleter_UnfilteredPopupCompletion = 1", "QCompleter_InlineCompletion = 2",
+    "Qt_MatchContains = 1", "Qt_MatchStartsWith = 2", "Qt_MatchEndsWith = 3",
+]
+
+[[enum]]
+doc = "QMdiArea::ViewMode"
+values = ["QMdiArea_SubWindowView = 0", "QMdiArea_TabbedView = 1"]
+
+[[enum]]
+doc = "QWizard::WizardStyle, QWizard::WizardButton and QWizard::WizardOption (subset)"
+values = [
+    "QWizard_ClassicStyle = 0", "QWizard_ModernStyle = 1", "QWizard_MacStyle = 2", "QWizard_AeroStyle = 3",
+    "QWizard_BackButton = 0", "QWizard_NextButton = 1", "QWizard_CommitButton = 2", "QWizard_FinishButton = 3",
+    "QWizard_CancelButton = 4", "QWizard_HelpButton = 5",
+    "QWizard_IndependentPages = 1", "QWizard_NoBackButtonOnStartPage = 16", "QWizard_NoBackButtonOnLastPage = 32",
+    "QWizard_HaveFinishButtonOnEarlyPages = 256", "QWizard_NoCancelButton = 512", "QWizard_HaveHelpButton = 2048",
+]
+
+[[enum]]
 doc = "Qt::FocusReason"
 values = [
     "Qt_MouseFocusReason = 0", "Qt_TabFocusReason = 1", "Qt_BacktabFocusReason = 2",
@@ -784,6 +1213,14 @@ methods = [
     { sig = "saveGeometry() -> string", cpp = "QString::fromLatin1({self}->saveGeometry().toBase64())", doc = "The window's position and size as text (base64), e.g. to store with QSettings." },
     { sig = "restoreGeometry(geometry: string) -> bool", cpp = "{self}->restoreGeometry(QByteArray::fromBase64({geometry}.toLatin1()))", doc = "Restore a geometry from `saveGeometry`; false (and no change) if it is invalid." },
     "isWindow() -> bool -- True if the widget is a top-level window.",
+    "showMaximized() -- Show the window maximized.",
+    "showMinimized() -- Show the window minimized (iconified).",
+    "showNormal() -- Show the window at its normal size (after maximized, minimized or full screen).",
+    "showFullScreen() -- Show the window full screen.",
+    "isMaximized() -> bool -- True if the window is maximized.",
+    "isMinimized() -> bool -- True if the window is minimized.",
+    "activateWindow() -- Make the window the active one (give it keyboard focus).",
+    "raise() -- Raise the window above other windows (or the widget above its siblings).",
     { sig = "repolish()", cpp = "qtf_repolish({self})", doc = "Re-apply the style sheet, e.g. after changing a property that a style rule selects on (`*[state=\"error\"]`)." },
     "x() -> int -- Horizontal position (relative to the parent, or on the screen for a window).",
     "y() -> int -- Vertical position (relative to the parent, or on the screen for a window).",
@@ -901,6 +1338,7 @@ ctor = "(text: string = '', parent: QWidget?) -- Create a line edit, optionally 
 signals = [
     "textChanged: string -- The text changed (by the user or by `setText`).",
     "textEdited: string -- The user edited the text (not emitted by `setText`).",
+    "inputRejected: void -- A key press was rejected by the validator or input mask.",
     "returnPressed: void -- Return or Enter was pressed.",
     "editingFinished: void -- Return was pressed or the line edit lost focus.",
 ]
@@ -914,6 +1352,12 @@ methods = [
     "setMaxLength(n: int) -- Limit the text to `n` characters (longer text is truncated).",
     "maxLength() -> int -- The maximum text length.",
     "clear() -- Clear the text.",
+    "setValidator(validator: QValidator?) -- Accept only input the validator allows (no argument: remove it). The line edit does not take ownership.",
+    "hasAcceptableInput() -> bool -- True if the text satisfies the validator (or there is none).",
+    "setCompleter(completer: QCompleter?) -- Offer completions while typing (no argument: remove it).",
+    "setInputMask(mask: string) -- An input mask, e.g. '000.000.000.000' (see Qt's QLineEdit::inputMask).",
+    "setEchoMode(mode: QLineEdit::EchoMode) -- QLineEdit_Normal, _NoEcho, _Password or _PasswordEchoOnEdit.",
+    "setClearButtonEnabled(enable: bool) -- Show a clear button while there is text.",
 ]
 
 [[class]]
@@ -1005,6 +1449,7 @@ methods = [
     "itemText(index: int) -> string -- Text of the item at `index` (0-based).",
     "findText(text: string) -> int -- Index of the item with this text (0-based; -1 if not found).",
     "setEditable(editable: bool) -- Allow typing a value that is not in the list.",
+    "setCompleter(completer: QCompleter?) -- Completions for an editable combo box.",
 ]
 fortran_bindings = "procedure :: addItems => qcombobox_addItems"
 fortran_procedures = """
@@ -1207,6 +1652,14 @@ methods = [
 # item views
 
 [[class]]
+name = "QAbstractItemModel"
+doc = "Base of the item models (QtfTableModel, QtfTreeModel, QSortFilterProxyModel, QFileSystemModel)."
+methods = [
+    { sig = "rowCount() -> int", cpp = "{self}->rowCount()", doc = "Number of (top-level) rows." },
+    { sig = "columnCount() -> int", cpp = "{self}->columnCount()", doc = "Number of columns." },
+]
+
+[[class]]
 name = "QtfModelRequest"
 handle = true
 doc = "The cell being requested from a QtfTableModel `dataRequested` slot: set its value."
@@ -1218,23 +1671,28 @@ methods = [
 
 [[class]]
 name = "QtfTableModel"
+base = "QAbstractItemModel"
 doc = """
 A table model whose cells come from Fortran on demand (`Qtf` marks a
 qt-fortran class): connect a slot to `dataRequested` and fill in each cell it
 is asked for. Only visible cells are requested, so a QTableView can show large
 Fortran arrays without copying them into Qt. Call `refresh` after the data
-changes. Rows and columns are 0-based."""
+changes. Rows and columns are 0-based.
+
+Sorting: in a view with `setSortingEnabled(.true.)`, a click on a column title
+emits `sortRequested(column, order)`; reorder the Fortran data (e.g. through a
+permutation array) in the slot, and the view is refreshed. Alternatively put a
+QSortFilterProxyModel between model and view."""
 ctor = "(rows: int = 0, columns: int = 0, parent: QObject?) -- A table model of the given shape."
 cpp_ctor = "new QtfTableModel({rows}, {columns}, {parent})"
 signals = [
     { sig = "dataRequested: custom", fortran_type = "QSignalModelData", connector = "connect_model<0>", doc = "A cell is needed: slots get (row, column, request) and set the request's value." },
     { sig = "dataEdited: custom", fortran_type = "QSignalModelEdit", connector = "connect_model<1>", doc = "The user edited a cell: slots get (row, column, text); store the new value." },
+    { sig = "sortRequested: custom", fortran_type = "QSignalInt2", connector = "connect_model<2>", doc = "Sort by a column: slots get (column, order) with order Qt_AscendingOrder or Qt_DescendingOrder, and reorder the data." },
 ]
 methods = [
     { sig = "setRowCount(rows: int)", cpp = "{self}->setShape({rows}, {self}->ncols)", doc = "Set the number of rows." },
     { sig = "setColumnCount(columns: int)", cpp = "{self}->setShape({self}->nrows, {columns})", doc = "Set the number of columns." },
-    { sig = "rowCount() -> int", cpp = "{self}->nrows", doc = "Number of rows." },
-    { sig = "columnCount() -> int", cpp = "{self}->ncols", doc = "Number of columns." },
     { sig = "setHorizontalHeaderLabels(labels: strings)", cpp = "{self}->setHeaders(Qt::Horizontal, {labels})", doc = "Set the column titles." },
     { sig = "setVerticalHeaderLabels(labels: strings)", cpp = "{self}->setHeaders(Qt::Vertical, {labels})", doc = "Set the row titles." },
     { sig = "setEditable(editable: bool)", cpp = "{self}->editable = {editable}", doc = "Allow editing cells (edits arrive at `dataEdited`)." },
@@ -1254,6 +1712,10 @@ signals = [
     { sig = "activated: custom", fortran_type = "QSignalInt2", lambda = "const QModelIndex &i", emit = "qtf_emit_ints(ref, {i.row(), i.column()})", doc = "A cell was activated (double-click or Enter): (row, column)." },
 ]
 methods = [
+    "setModel(model: QAbstractItemModel) -- Show `model` (the view does not take ownership). Not for the item widgets (QTableWidget, ...), which have their own model.",
+    "setItemDelegate(delegate: QtfItemDelegate) -- Edit every cell with `delegate`.",
+    "setItemDelegateForColumn(column: int, delegate: QtfItemDelegate) -- Edit the cells of one column with `delegate`.",
+    { sig = "edit(row: int, column: int)", cpp = "if ({self}->model()) {self}->edit({self}->model()->index({row}, {column}))", doc = "Start editing a (top-level) cell, as a double click would." },
     "setAlternatingRowColors(enable: bool) -- Shade every other row.",
     "setSelectionMode(mode: QAbstractItemView::SelectionMode) -- Single, multiple, ... selection (QAbstractItemView_* constants).",
     "setSelectionBehavior(behavior: QAbstractItemView::SelectionBehavior) -- Select items, rows or columns.",
@@ -1269,7 +1731,6 @@ base = "QAbstractItemView"
 doc = "A table view of a model (use QtfTableModel to show Fortran data)."
 ctor = "(parent: QWidget?) -- Create a table view."
 methods = [
-    "setModel(model: QtfTableModel) -- Show `model` (the view does not take ownership).",
     "resizeColumnsToContents() -- Fit the column widths to their contents.",
     "resizeRowsToContents() -- Fit the row heights to their contents.",
     "setColumnWidth(column: int, width: int) -- Set a column width in pixels.",
@@ -1282,6 +1743,150 @@ methods = [
     { sig = "setCurrentCell(row: int, column: int)", cpp = "if ({self}->model()) {self}->setCurrentIndex({self}->model()->index({row}, {column}))", doc = "Make (row, column) the current cell." },
     "selectRow(row: int) -- Select a whole row.",
     "setWordWrap(on: bool) -- Wrap long cell text.",
+    "setSortingEnabled(enable: bool) -- Sort when a column title is clicked (a QtfTableModel gets `sortRequested`).",
+    "sortByColumn(column: int, order: Qt::SortOrder) -- Sort by a column now.",
+    "setColumnHidden(column: int, hide: bool) -- Hide or show a column.",
+]
+
+[[class]]
+name = "QTreeView"
+base = "QAbstractItemView"
+doc = """
+A tree view of a model: a QtfTreeModel (Fortran data), a QFileSystemModel
+(files), or a QSortFilterProxyModel over either.
+
+With a QtfTreeModel, nodes are the model's node numbers (through any proxy):
+see `nodeClicked`, `currentNodeChanged`, `setCurrentNode`, `expandNode`. With
+a QFileSystemModel, files are paths: see `currentFileChanged`, `fileActivated`
+and `setRootPath`."""
+ctor = "(parent: QWidget?) -- Create a tree view."
+cpp_ctor = "new QtfTreeView({parent})"
+signals = [
+    { sig = "nodeClicked: custom", fortran_type = "QSignalInt", cpp_signal = "&QTreeView::clicked", lambda = "const QModelIndex &i", emit = "qtf_emit_int(ref, qtf_node(i))", doc = "A node of a QtfTreeModel was clicked." },
+    { sig = "nodeActivated: custom", fortran_type = "QSignalInt", cpp_signal = "&QTreeView::activated", lambda = "const QModelIndex &i", emit = "qtf_emit_int(ref, qtf_node(i))", doc = "A node was activated (double click or Enter)." },
+    { sig = "currentNodeChanged: int", connector = "connect_tree<false>", doc = "The current node changed (-1 if none, or not a QtfTreeModel)." },
+    { sig = "currentFileChanged: string", connector = "connect_tree<true>", doc = "The current file of a QFileSystemModel changed: its path." },
+    { sig = "fileActivated: custom", fortran_type = "QSignalString", cpp_signal = "&QTreeView::activated", lambda = "const QModelIndex &i", emit = "qtf_emit(ref, qtf_file_path(i))", doc = "A file of a QFileSystemModel was activated (double click or Enter): its path." },
+    { sig = "expandedNode: custom", fortran_type = "QSignalInt", cpp_signal = "&QTreeView::expanded", lambda = "const QModelIndex &i", emit = "qtf_emit_int(ref, qtf_node(i))", doc = "A node was expanded." },
+    { sig = "collapsedNode: custom", fortran_type = "QSignalInt", cpp_signal = "&QTreeView::collapsed", lambda = "const QModelIndex &i", emit = "qtf_emit_int(ref, qtf_node(i))", doc = "A node was collapsed." },
+]
+methods = [
+    { sig = "currentNode() -> int", cpp = "qtf_node({self}->currentIndex())", doc = "The current node of a QtfTreeModel (-1 if none)." },
+    { sig = "setCurrentNode(node: int)", cpp = "{self}->setCurrentIndex(qtf_node_index({self}, {node}))", doc = "Make `node` current (its parents are expanded)." },
+    { sig = "expandNode(node: int)", cpp = "{self}->expand(qtf_node_index({self}, {node}))", doc = "Expand a node." },
+    { sig = "collapseNode(node: int)", cpp = "{self}->collapse(qtf_node_index({self}, {node}))", doc = "Collapse a node." },
+    { sig = "isNodeExpanded(node: int) -> bool", cpp = "{self}->isExpanded(qtf_node_index({self}, {node}))", doc = "True if the node is expanded." },
+    { sig = "scrollToNode(node: int)", cpp = "{self}->scrollTo(qtf_node_index({self}, {node}))", doc = "Scroll so that the node is visible (expanding its parents)." },
+    { sig = "currentFilePath() -> string", cpp = "qtf_file_path({self}->currentIndex())", doc = "The path of the current file of a QFileSystemModel (empty if none)." },
+    { sig = "setCurrentFile(path: string)", cpp = "qtf_set_current_file({self}, {path})", doc = "Make the file `path` of the QFileSystemModel current." },
+    { sig = "setRootPath(path: string)", cpp = "qtf_set_root_path({self}, {path})", doc = "Show only the directory `path` of the QFileSystemModel (set the model's root path too)." },
+    "expandAll() -- Expand every node.",
+    "collapseAll() -- Collapse every node.",
+    "expandToDepth(depth: int) -- Expand nodes down to `depth` levels (0: the top level).",
+    "setHeaderHidden(hide: bool) -- Hide the column titles.",
+    "setRootIsDecorated(show: bool) -- Show expand/collapse controls for top-level nodes.",
+    "setUniformRowHeights(uniform: bool) -- Promise equal row heights (faster for large trees).",
+    "setAnimated(enable: bool) -- Animate expanding and collapsing.",
+    "setIndentation(pixels: int) -- Indentation per level.",
+    "resizeColumnToContents(column: int) -- Fit a column's width to its contents.",
+    "setColumnWidth(column: int, width: int) -- Set a column width in pixels.",
+    "setColumnHidden(column: int, hide: bool) -- Hide or show a column.",
+    "setSortingEnabled(enable: bool) -- Sort when a column title is clicked (needs a sorting model, e.g. QSortFilterProxyModel).",
+    "sortByColumn(column: int, order: Qt::SortOrder) -- Sort by a column now.",
+]
+
+[[class]]
+name = "QtfTreeModel"
+base = "QAbstractItemModel"
+doc = """
+A tree model whose structure is a Fortran parent array and whose cells come
+from Fortran on demand (`Qtf` marks a qt-fortran class). Nodes are numbered
+1..n in the order given: `parents(i)` is node i's parent (0 for a top-level
+node), and a parent comes before its children. Children appear in node order.
+Connect `dataRequested` (slots get (node, column, request)) as for
+QtfTableModel; only visible cells are requested."""
+ctor = "(columns: int = 1, parent: QObject?) -- An empty tree model with `columns` columns."
+cpp_ctor = "new QtfTreeModel({columns}, {parent})"
+signals = [
+    { sig = "dataRequested: custom", fortran_type = "QSignalModelData", connector = "connect_model<0>", doc = "A cell is needed: slots get (node, column, request) and set the request's value." },
+    { sig = "dataEdited: custom", fortran_type = "QSignalModelEdit", connector = "connect_model<1>", doc = "The user edited a cell: slots get (node, column, text)." },
+]
+methods = [
+    { sig = "setParents(parents: int[])", cpp = "{self}->setParents({parents}, {n})", doc = "Set the structure: node i's parent is `parents(i)` (0: top level; must be < i). Resets the views." },
+    { sig = "appendNode(parent: int) -> int", cpp = "{self}->appendNode({parent})", doc = "Add a node as the last child of `parent` (0: top level); returns its number (-1 if `parent` is invalid)." },
+    { sig = "nodeCount() -> int", cpp = "{self}->nodeCount()", doc = "The number of nodes." },
+    { sig = "parentNode(node: int) -> int", cpp = "({node} >= 1 && {node} <= {self}->nodeCount()) ? {self}->parent_of[{node}] : -1", doc = "The parent of a node (0: top level; -1 if invalid)." },
+    { sig = "childCount(node: int) -> int", cpp = "({node} >= 0 && {node} <= {self}->nodeCount()) ? int({self}->children[{node}].size()) : 0", doc = "The number of children of a node (0: the top-level nodes)." },
+    { sig = "setColumnCount(columns: int)", cpp = "{self}->setColumns({columns})", doc = "Set the number of columns." },
+    { sig = "setHeaderLabels(labels: strings)", cpp = "{self}->setHeaders({labels})", doc = "Set the column titles." },
+    { sig = "setEditable(editable: bool)", cpp = "{self}->editable = {editable}", doc = "Allow editing cells (edits arrive at `dataEdited`)." },
+    { sig = "refresh()", cpp = "{self}->refresh()", doc = "Redisplay all cells (after the data changed)." },
+    { sig = "refreshNode(node: int)", cpp = "{self}->refreshNode({node})", doc = "Redisplay one node's cells." },
+    { sig = "dataText(node: int, column: int) -> string", cpp = "{self}->data({self}->nodeIndex({node}, {column}), Qt::DisplayRole).toString()", doc = "The text of a cell, as a view would show it." },
+]
+
+[[class]]
+name = "QSortFilterProxyModel"
+base = "QAbstractItemModel"
+doc = """
+Sorts and filters another model for a view: `proxy%setSourceModel(model)`,
+then `view%setModel(proxy)`. Rows in the view (and in the view's signals) are
+then the proxy's: map them with `mapToSourceRow`. Numbers set with
+`request%setNumber` sort numerically. Filtering and sorting ask the source for
+every row of the key column, so for very large Fortran tables sorting through
+QtfTableModel's `sortRequested` is faster."""
+ctor = "(parent: QObject?) -- A proxy model (set its source model)."
+methods = [
+    "setSourceModel(model: QAbstractItemModel) -- The model to sort and filter.",
+    "setFilterFixedString(pattern: string) -- Show only rows whose key column contains `pattern` (empty: all rows).",
+    { sig = "setFilterRegularExpression(pattern: string)", cpp = "{self}->setFilterRegularExpression(QRegularExpression({pattern}))", doc = "Show only rows whose key column matches a regular expression." },
+    "setFilterWildcard(pattern: string) -- Show only rows whose key column matches a wildcard pattern (`*`, `?`).",
+    "setFilterKeyColumn(column: int) -- The column the filter looks at (-1: any column).",
+    "setFilterCaseSensitivity(cs: Qt::CaseSensitivity) -- Qt_CaseInsensitive or Qt_CaseSensitive (default).",
+    "setSortCaseSensitivity(cs: Qt::CaseSensitivity) -- Case sensitivity when sorting text.",
+    "setRecursiveFilteringEnabled(recursive: bool) -- For trees: keep the parents of matching nodes.",
+    "setDynamicSortFilter(enable: bool) -- Re-sort and re-filter when the source changes (default true).",
+    { sig = "sort(column: int, order: Qt::SortOrder = Qt_AscendingOrder)", cpp = "{self}->sort({column}, Qt::SortOrder({order}))", doc = "Sort by a column (-1: source order)." },
+    "invalidate() -- Re-sort and re-filter now.",
+    { sig = "mapToSourceRow(row: int, column: int = 0) -> int", cpp = "qtf_proxy_to_source({self}, {row}, {column})", doc = "The source model's row for a proxy row (-1 if invalid)." },
+    { sig = "mapFromSourceRow(row: int, column: int = 0) -> int", cpp = "qtf_proxy_from_source({self}, {row}, {column})", doc = "The proxy row of a source row (-1 if filtered out)." },
+]
+
+[[class]]
+name = "QFileSystemModel"
+base = "QAbstractItemModel"
+doc = """
+The local file system as a model, for a QTreeView (or QTableView). Columns:
+name, size, type, date modified. Directories are read in the background:
+`directoryLoaded` reports when a directory's contents are available."""
+ctor = "(parent: QObject?) -- A file system model (call setRootPath)."
+signals = [
+    "directoryLoaded: string -- A directory's contents have been read: its path.",
+    "rootPathChanged: string -- The root path changed.",
+]
+methods = [
+    { sig = "setRootPath(path: string)", cpp = "{self}->setRootPath({path})", doc = "Start watching `path` (load its contents); use the view's setRootPath to show only it." },
+    "rootPath() -> string -- The watched root path.",
+    "setNameFilters(filters: strings) -- Show only files matching these wildcards, e.g. ['*.dat', '*.csv'].",
+    "setNameFilterDisables(disable: bool) -- Show non-matching files disabled (true, default) or hide them (false).",
+    "setReadOnly(readOnly: bool) -- Allow renaming and moving files in views (false) or not (true, default).",
+    { sig = "childCount(path: string) -> int", cpp = "{self}->rowCount({self}->index({path}))", doc = "The number of entries shown in directory `path` (once loaded)." },
+]
+
+[[class]]
+name = "QtfItemDelegate"
+doc = """
+A cell editor for item views (`Qtf` marks a qt-fortran class): set it on a
+view, for all cells or one column (`setItemDelegateForColumn`). With
+`setChoices` cells are edited with a combo box of fixed choices; with
+`setRange` with a spin box (`decimals = 0`: integers). The edited value
+reaches the model as for a normal edit (QtfTableModel's `dataEdited`)."""
+ctor = "(parent: QObject?) -- A delegate (give it the view as parent)."
+cpp_ctor = "new QtfItemDelegate({parent})"
+methods = [
+    { sig = "setChoices(choices: strings)", cpp = "{self}->choices = {choices}", doc = "Edit with a combo box offering `choices`." },
+    { sig = "setRange(minimum: double, maximum: double, decimals: int = 2)", cpp = "{self}->setRange({minimum}, {maximum}, {decimals})", doc = "Edit with a spin box limited to [minimum, maximum] (`decimals = 0`: an integer spin box)." },
+    { sig = "clear()", cpp = "{self}->clear()", doc = "Back to the default editor (a line edit)." },
 ]
 
 [[class]]
@@ -1850,4 +2455,294 @@ name = "QStyle"
 doc = "The application's look and feel; provides the standard icons."
 methods = [
     { sig = "static standardIcon(name: string) -> QIcon", cpp = "qtf_standard_icon({name})", doc = "A standard icon of the application style by its QStyle::StandardPixmap name, e.g. 'SP_MediaPlay', 'SP_DialogSaveButton', 'SP_BrowserReload' (null if unknown). Delete it when done." },
+]
+
+# ---------------------------------------------------------------------------
+# dialogs and input helpers
+
+[[class]]
+name = "QDialogButtonBox"
+base = "QWidget"
+doc = """
+The standard buttons of a dialog (OK, Cancel, Apply, ...), laid out and
+labelled as the platform expects. Connect `accepted` to the dialog's `accept`
+and `rejected` to its `reject`, or handle `clicked` (the standard button)."""
+ctor = "(buttons: QDialogButtonBox::StandardButtons = QDialogButtonBox_NoButton, parent: QWidget?) -- A button box, e.g. QDialogButtonBox(ior(QDialogButtonBox_Ok, QDialogButtonBox_Cancel))."
+cpp_ctor = "new QDialogButtonBox(QDialogButtonBox::StandardButtons({buttons}), {parent})"
+signals = [
+    "accepted: void -- A button with the accept role (OK, Save, Yes, ...) was clicked.",
+    "rejected: void -- A button with the reject role (Cancel, Close, ...) was clicked, or Escape pressed.",
+    "helpRequested: void -- The Help button was clicked.",
+    { sig = "clicked: custom", fortran_type = "QSignalInt", lambda = "QAbstractButton *b", emit = "qtf_emit_int(ref, int(as<QDialogButtonBox>(s)->standardButton(b)))", doc = "A button was clicked: its standard button (QDialogButtonBox_NoButton for buttons added with text)." },
+    { sig = "clickedRole: custom", fortran_type = "QSignalInt", cpp_signal = "&QDialogButtonBox::clicked", lambda = "QAbstractButton *b", emit = "qtf_emit_int(ref, int(as<QDialogButtonBox>(s)->buttonRole(b)))", doc = "A button was clicked: its role (QDialogButtonBox_AcceptRole, ...)." },
+]
+methods = [
+    "setStandardButtons(buttons: QDialogButtonBox::StandardButtons) -- Set the standard buttons (combine with ior).",
+    "standardButtons() -> QDialogButtonBox::StandardButtons -- The standard buttons.",
+    "button(which: QDialogButtonBox::StandardButton) -> QPushButton -- A standard button (null if absent), e.g. to disable OK.",
+    "addButton(text: string, role: QDialogButtonBox::ButtonRole) -> QPushButton -- Add a button with your own text and a role.",
+    "setOrientation(orientation: Qt::Orientation) -- Lay the buttons out horizontally (default) or vertically.",
+    "setCenterButtons(center: bool) -- Center the buttons instead of aligning them as the platform does.",
+]
+
+[[class]]
+name = "QCompleter"
+doc = """
+Completions for a QLineEdit (`setCompleter`) or an editable QComboBox, from a
+list of strings."""
+ctor = "(items: strings, parent: QObject?) -- Complete from `items`."
+cpp_ctor = "new QCompleter({items}, {parent})"
+signals = [
+    { sig = "activated: custom", fortran_type = "QSignalString", cpp_signal = "qOverload<const QString &>(&QCompleter::activated)", lambda = "const QString &v", emit = "qtf_emit(ref, v)", doc = "The user chose a completion." },
+    { sig = "highlighted: custom", fortran_type = "QSignalString", cpp_signal = "qOverload<const QString &>(&QCompleter::highlighted)", lambda = "const QString &v", emit = "qtf_emit(ref, v)", doc = "A completion was highlighted in the pop-up." },
+]
+methods = [
+    { sig = "setItems(items: strings)", cpp = "qtf_completer_items({self}, {items})", doc = "Replace the completions." },
+    "setCaseSensitivity(cs: Qt::CaseSensitivity) -- Qt_CaseInsensitive or Qt_CaseSensitive (default).",
+    "setFilterMode(mode: Qt::MatchFlags) -- Which items match: Qt_MatchStartsWith (default), Qt_MatchContains or Qt_MatchEndsWith.",
+    "setCompletionMode(mode: QCompleter::CompletionMode) -- QCompleter_PopupCompletion (default), _UnfilteredPopupCompletion or _InlineCompletion.",
+    "setMaxVisibleItems(count: int) -- Rows shown in the pop-up.",
+    "setCompletionPrefix(prefix: string) -- Complete `prefix` (as if typed).",
+    "completionCount() -> int -- The number of completions of the current prefix.",
+    "currentCompletion() -> string -- The current completion.",
+    { sig = "setCurrentRow(row: int) -> bool", cpp = "{self}->setCurrentRow({row})", doc = "Make the `row`-th completion current (0-based); false if out of range." },
+]
+
+[[class]]
+name = "QDateTimeEdit"
+base = "QWidget"
+doc = "A date and time editor (see QDateTime)."
+ctor = "(parent: QWidget?) -- Create a date-time editor."
+signals = [
+    { sig = "dateTimeChanged: custom", fortran_type = "QSignal", lambda = "const QDateTime &", emit = "qtf_emit(ref)", doc = "The date or time changed (read it with `dateTime`)." },
+]
+methods = [
+    "setDateTime(dateTime: QDateTime) -- Set the date and time.",
+    "dateTime() -> QDateTime -- The date and time.",
+    "setMinimumDateTime(dateTime: QDateTime) -- The earliest allowed value.",
+    "setMaximumDateTime(dateTime: QDateTime) -- The latest allowed value.",
+    "setDisplayFormat(format: string) -- How the value is shown, e.g. 'yyyy-MM-dd HH:mm:ss'.",
+    "displayFormat() -> string -- The display format.",
+    "setCalendarPopup(enable: bool) -- Pick the date from a pop-up calendar.",
+]
+
+[[class]]
+name = "QTextBrowser"
+base = "QTextEdit"
+doc = """
+A read-only rich-text (HTML, Markdown) viewer with navigable links, e.g. for
+help pages: `setSource` a file, and links between files are followed."""
+ctor = "(parent: QWidget?) -- Create a text browser."
+signals = [
+    { sig = "anchorClicked: custom", fortran_type = "QSignalString", lambda = "const QUrl &u", emit = "qtf_emit(ref, u.toString())", doc = "A link was clicked: its URL." },
+    { sig = "sourceChanged: custom", fortran_type = "QSignalString", lambda = "const QUrl &u", emit = "qtf_emit(ref, u.toString())", doc = "A new document is shown: its URL." },
+    "backwardAvailable: bool -- Whether `backward` is possible changed.",
+    "forwardAvailable: bool -- Whether `forward` is possible changed.",
+]
+methods = [
+    { sig = "setSource(source: string)", cpp = "qtf_set_source({self}, {source})", doc = "Show a document: a file path, or a URL." },
+    { sig = "source() -> string", cpp = "{self}->source().toString()", doc = "The URL of the document shown." },
+    "setSearchPaths(paths: strings) -- Directories where relative links are looked up.",
+    "setOpenExternalLinks(open: bool) -- Open http(s) links in the system browser.",
+    "setOpenLinks(open: bool) -- Follow links (true, default), or only report them with `anchorClicked`.",
+    "backward() -- Go back in the history.",
+    "forward() -- Go forward in the history.",
+    "home() -- Go to the first document shown.",
+    "reload() -- Reload the current document.",
+    "isBackwardAvailable() -> bool -- True if `backward` is possible.",
+    "isForwardAvailable() -> bool -- True if `forward` is possible.",
+    "clearHistory() -- Forget the history.",
+]
+
+# ---------------------------------------------------------------------------
+# containers and windows
+
+[[class]]
+name = "QToolBox"
+base = "QFrame"
+doc = "A column of pages, each under a button title; one page is open at a time (an accordion)."
+ctor = "(parent: QWidget?) -- Create a tool box."
+signals = ["currentChanged: int -- The open page changed (0-based; -1 if none)."]
+methods = [
+    "addItem(widget: QWidget, text: string) -- Append a page with a title (the tool box takes ownership).",
+    "insertItem(index: int, widget: QWidget, text: string) -- Insert a page before `index`.",
+    "removeItem(index: int) -- Remove a page (it is not deleted).",
+    "count() -> int -- The number of pages.",
+    "currentIndex() -> int -- The open page (0-based).",
+    "setCurrentIndex(index: int) -- Open a page.",
+    "setItemText(index: int, text: string) -- Set a page title.",
+    "itemText(index: int) -> string -- A page title.",
+    "setItemEnabled(index: int, enabled: bool) -- Enable or disable a page.",
+    { sig = "setItemIcon(index: int, icon: QIcon)", cpp = "{self}->setItemIcon({index}, *{icon})", doc = "Set a page's icon (copied)." },
+    "setItemToolTip(index: int, toolTip: string) -- Set a page's tool tip.",
+    "widget(index: int) -> QWidget -- The widget of a page.",
+    "currentWidget() -> QWidget -- The widget of the open page.",
+]
+
+[[class]]
+name = "QSplashScreen"
+base = "QWidget"
+doc = """
+A splash screen shown while the application starts: show it, update it with
+`showMessage` (call QApplication_processEvents so it repaints), then
+`finish(mainWindow)` once the main window is shown."""
+ctor = "(pixmap: QPixmap) -- A splash screen showing `pixmap` (copied)."
+cpp_ctor = "new QSplashScreen(*{pixmap})"
+signals = ["messageChanged: string -- The message changed."]
+methods = [
+    "showMessage(message: string, alignment: Qt::Alignment = ior(Qt_AlignBottom, Qt_AlignHCenter), color: QColor = Qt_black) -- Draw a message on the splash screen.",
+    "clearMessage() -- Remove the message.",
+    "message() -> string -- The current message.",
+    "finish(window: QWidget) -- Close the splash screen once `window` is shown.",
+]
+
+[[class]]
+name = "QMdiSubWindow"
+base = "QWidget"
+doc = "A window inside a QMdiArea (created by `addSubWindow`)."
+signals = ["aboutToActivate: void -- The window is about to become active."]
+methods = [
+    "setWidget(widget: QWidget) -- Set the window's contents (the window takes ownership).",
+    "widget() -> QWidget -- The window's contents.",
+    "showShaded() -- Collapse the window to its title bar.",
+    "isShaded() -> bool -- True if collapsed to the title bar.",
+]
+
+[[class]]
+name = "QMdiArea"
+base = "QFrame"
+doc = """
+A multiple-document area: several sub-windows inside one main window
+(typically its central widget), shown as windows or as tabs."""
+ctor = "(parent: QWidget?) -- Create an MDI area."
+signals = [
+    { sig = "subWindowActivated: custom", fortran_type = "QSignal", lambda = "QMdiSubWindow *", emit = "qtf_emit(ref)", doc = "The active sub-window changed (see `activeSubWindow`)." },
+]
+methods = [
+    "addSubWindow(widget: QWidget) -> QMdiSubWindow -- Show `widget` in a new sub-window (call its `show` if the area is visible).",
+    "removeSubWindow(widget: QWidget) -- Remove a sub-window (the widget is not deleted).",
+    "activeSubWindow() -> QMdiSubWindow -- The active sub-window (null if none).",
+    "currentSubWindow() -> QMdiSubWindow -- The current sub-window (also while the area is not active).",
+    "setActiveSubWindow(window: QMdiSubWindow?) -- Activate a sub-window (no argument: none).",
+    { sig = "subWindowCount() -> int", cpp = "int({self}->subWindowList().size())", doc = "The number of sub-windows." },
+    "closeActiveSubWindow() -- Close the active sub-window.",
+    "closeAllSubWindows() -- Close all sub-windows.",
+    "activateNextSubWindow() -- Activate the next sub-window.",
+    "activatePreviousSubWindow() -- Activate the previous sub-window.",
+    "cascadeSubWindows() -- Arrange the sub-windows in a cascade.",
+    "tileSubWindows() -- Arrange the sub-windows as tiles.",
+    "setViewMode(mode: QMdiArea::ViewMode) -- QMdiArea_SubWindowView (default) or QMdiArea_TabbedView.",
+    "setTabsClosable(closable: bool) -- In tabbed view: show close buttons on the tabs.",
+    "setTabsMovable(movable: bool) -- In tabbed view: let the user reorder the tabs.",
+]
+
+[[class]]
+name = "QWizardPage"
+base = "QWidget"
+doc = """
+A page of a QWizard. Next (or Finish) is enabled while the page is complete:
+call `setComplete` as the input changes, or register mandatory fields
+(`registerField('name*', lineEdit)`)."""
+ctor = "(parent: QWidget?) -- Create a wizard page (lay out its widgets, then add it to a wizard)."
+cpp_ctor = "new QtfWizardPage({parent})"
+signals = ["completeChanged: void -- Whether the page is complete may have changed."]
+methods = [
+    "setTitle(title: string) -- The page title.",
+    "title() -> string -- The page title.",
+    "setSubTitle(subTitle: string) -- The text under the title.",
+    "subTitle() -> string -- The subtitle.",
+    "setFinalPage(final: bool) -- Offer Finish on this page.",
+    "isFinalPage() -> bool -- True if Finish is offered on this page.",
+    "setCommitPage(commit: bool) -- After this page, Back is no longer possible.",
+    { sig = "setComplete(complete: bool)", cpp = "qtf_page({self})->setComplete({complete})", doc = "Enable (true) or disable Next/Finish for this page." },
+    "isComplete() -> bool -- True if Next/Finish is enabled (setComplete and the mandatory fields).",
+    { sig = "registerField(name: string, widget: QWidget)", cpp = "qtf_page({self})->addField({name}, {widget})", doc = "Make a widget's value available as the wizard field `name` (a trailing `*` makes it mandatory: Next waits until it is filled)." },
+]
+
+[[class]]
+name = "QWizard"
+base = "QDialog"
+doc = """
+A wizard: a dialog that leads through pages (QWizardPage) with Back, Next and
+Finish buttons. Pages are numbered from 0 in the order added. Read the values
+of registered fields with `stringField`, `intField`, ...; run it with `exec`."""
+ctor = "(parent: QWidget?) -- Create an empty wizard."
+signals = [
+    "currentIdChanged: int -- The current page changed (its id).",
+    "helpRequested: void -- The Help button was clicked.",
+]
+methods = [
+    "addPage(page: QWizardPage) -- Append a page (the wizard takes ownership); its id is the number of pages before it.",
+    "setPage(id: int, page: QWizardPage) -- Add a page with a given id.",
+    "removePage(id: int) -- Remove a page.",
+    "currentId() -> int -- The id of the current page (-1 before the wizard is shown).",
+    "currentPage() -> QWizardPage -- The current page.",
+    "page(id: int) -> QWizardPage -- The page with this id (null if none).",
+    "hasVisitedPage(id: int) -> bool -- True if the page has been visited.",
+    "setStartId(id: int) -- The first page.",
+    "next() -- Go to the next page.",
+    "back() -- Go back to the previous page.",
+    "restart() -- Go back to the first page.",
+    "setWizardStyle(style: QWizard::WizardStyle) -- QWizard_ClassicStyle, _ModernStyle, _MacStyle or _AeroStyle.",
+    "setOption(option: QWizard::WizardOption, on: bool = .true.) -- Turn an option on or off (QWizard_NoCancelButton, ...).",
+    "setButtonText(which: QWizard::WizardButton, text: string) -- Change a button's text, e.g. QWizard_FinishButton.",
+    { sig = "stringField(name: string) -> string", cpp = "{self}->field({name}).toString()", doc = "A registered field's value as text." },
+    { sig = "intField(name: string) -> int", cpp = "{self}->field({name}).toInt()", doc = "A registered field's value as an integer (e.g. a spin box or combo box index)." },
+    { sig = "doubleField(name: string) -> double", cpp = "{self}->field({name}).toDouble()", doc = "A registered field's value as a real number." },
+    { sig = "boolField(name: string) -> bool", cpp = "{self}->field({name}).toBool()", doc = "A registered field's value as a logical (e.g. a check box)." },
+]
+
+# ---------------------------------------------------------------------------
+# undo / redo
+
+[[class]]
+name = "QUndoStack"
+doc = """
+Undo and redo. A command is a text (shown as "Undo <text>") and an integer id
+of your choosing: `push(text, id)` records it and immediately calls the
+`redoRequested(id)` slots, which must perform it; undoing calls the
+`undoRequested(id)` slots, which must reverse it. Keep what each id needs
+(e.g. old and new values) in your own arrays. Menu actions that follow the
+stack: `createUndoAction` / `createRedoAction`."""
+ctor = "(parent: QObject?) -- An empty undo stack."
+cpp_ctor = "new QtfUndoStack({parent})"
+signals = [
+    { sig = "redoRequested: int", connector = "connect_undo<false>", doc = "Perform (or redo) the command with this id (also called by `push`)." },
+    { sig = "undoRequested: int", connector = "connect_undo<true>", doc = "Reverse the command with this id." },
+    "canUndoChanged: bool -- Whether undo is possible changed.",
+    "canRedoChanged: bool -- Whether redo is possible changed.",
+    "indexChanged: int -- The current position in the stack changed.",
+    "cleanChanged: bool -- The stack became clean (saved state) or not.",
+    "undoTextChanged: string -- The text of the command `undo` would reverse changed.",
+    "redoTextChanged: string -- The text of the command `redo` would perform changed.",
+]
+methods = [
+    { sig = "push(text: string, id: int)", cpp = "qtf_undo_push({self}, {text}, {id})", doc = "Record a command and perform it (calls the redoRequested slots with `id`); discards commands that were undone." },
+    "undo() -- Undo the last command.",
+    "redo() -- Redo the last undone command.",
+    "canUndo() -> bool -- True if there is a command to undo.",
+    "canRedo() -> bool -- True if there is a command to redo.",
+    "undoText() -> string -- The text of the command `undo` would reverse.",
+    "redoText() -> string -- The text of the command `redo` would perform.",
+    "count() -> int -- The number of commands.",
+    "index() -> int -- The current position: commands before it are done.",
+    "setIndex(index: int) -- Undo or redo until the position is `index`.",
+    "text(index: int) -> string -- The text of the command at a position.",
+    "clear() -- Remove all commands (nothing is undone).",
+    "setClean() -- Mark the current state as saved.",
+    "isClean() -> bool -- True if the current state is the saved one.",
+    "setUndoLimit(limit: int) -- Keep at most `limit` commands (0: no limit); only while the stack is empty.",
+    "beginMacro(text: string) -- Group the following pushes into one command (until endMacro).",
+    "endMacro() -- End a macro.",
+    "createUndoAction(parent: QObject, prefix: string = '') -> QAction -- An Undo action that follows the stack (text and enabled state).",
+    "createRedoAction(parent: QObject, prefix: string = '') -> QAction -- A Redo action that follows the stack.",
+]
+
+[[class]]
+name = "QUndoView"
+base = "QAbstractItemView"
+doc = "A list of the commands of an undo stack; clicking one undoes or redoes up to it."
+ctor = "(stack: QUndoStack, parent: QWidget?) -- A view of `stack`."
+methods = [
+    "setEmptyLabel(label: string) -- The text of the first row (the state before any command).",
 ]

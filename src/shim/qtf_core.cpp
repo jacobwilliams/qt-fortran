@@ -79,10 +79,11 @@ QTF_API void qtf_set_dispatcher(qtf_dispatch_fn dispatch, qtf_release_fn release
     qtf_releaser = release;
 }
 
-// The live refs by Fortran slot id, for qtf_disconnect.
+// The live refs by Fortran slot id, for qtf_disconnect. Never destroyed: Qt
+// objects holding slots may be destroyed after static destructors have run.
 static std::unordered_map<int, qtf_slot_ref *> &qtf_live_slots() {
-    static std::unordered_map<int, qtf_slot_ref *> m;
-    return m;
+    static auto *m = new std::unordered_map<int, qtf_slot_ref *>;
+    return *m;
 }
 
 qtf_slot_ref::qtf_slot_ref(int id) : id(id) { qtf_live_slots()[id] = this; }

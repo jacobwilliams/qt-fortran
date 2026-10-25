@@ -1168,6 +1168,165 @@ module qt_c_gui
             type(c_ptr), value :: icon
         end subroutine qtf_qaction_setIcon
 
+        !> How `text` fares: QValidator_Invalid, QValidator_Intermediate or QValidator_Acceptable.
+        !>
+        !> C: `int qtf_qvalidator_validate(void *self, const char *text, int text_len)`
+        function qtf_qvalidator_validate(self, text, text_len) result(res) bind(C, name='qtf_qvalidator_validate')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+            integer(c_int) :: res
+        end function qtf_qvalidator_validate
+
+        !> Accept integers from `bottom` to `top`.
+        !>
+        !> C: `void *qtf_qintvalidator_new(int bottom, int top, void *parent)`
+        function qtf_qintvalidator_new(bottom, top, parent) result(res) bind(C, name='qtf_qintvalidator_new')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), value :: bottom
+            integer(c_int), value :: top
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qintvalidator_new
+
+        !> Set the accepted range.
+        !>
+        !> C: `void qtf_qintvalidator_setRange(void *self, int bottom, int top)`
+        subroutine qtf_qintvalidator_setRange(self, bottom, top) bind(C, name='qtf_qintvalidator_setRange')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: bottom
+            integer(c_int), value :: top
+        end subroutine qtf_qintvalidator_setRange
+
+        !> The smallest accepted value.
+        !>
+        !> C: `int qtf_qintvalidator_bottom(void *self)`
+        function qtf_qintvalidator_bottom(self) result(res) bind(C, name='qtf_qintvalidator_bottom')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qintvalidator_bottom
+
+        !> The largest accepted value.
+        !>
+        !> C: `int qtf_qintvalidator_top(void *self)`
+        function qtf_qintvalidator_top(self) result(res) bind(C, name='qtf_qintvalidator_top')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qintvalidator_top
+
+        !> Accept reals from `bottom` to `top`.
+        !>
+        !> C: `void *qtf_qdoublevalidator_new(double bottom, double top, int decimals, void *parent)`
+        function qtf_qdoublevalidator_new(bottom, top, decimals, parent) &
+                result(res) bind(C, name='qtf_qdoublevalidator_new')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            real(c_double), value :: bottom
+            real(c_double), value :: top
+            integer(c_int), value :: decimals
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qdoublevalidator_new
+
+        !> Set the accepted range and decimals.
+        !>
+        !> C: `void qtf_qdoublevalidator_setRange(void *self, double bottom, double top, int decimals)`
+        subroutine qtf_qdoublevalidator_setRange(self, bottom, top, decimals) &
+                bind(C, name='qtf_qdoublevalidator_setRange')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: bottom
+            real(c_double), value :: top
+            integer(c_int), value :: decimals
+        end subroutine qtf_qdoublevalidator_setRange
+
+        !> QDoubleValidator_StandardNotation or _ScientificNotation (default).
+        !>
+        !> C: `void qtf_qdoublevalidator_setNotation(void *self, int notation)`
+        subroutine qtf_qdoublevalidator_setNotation(self, notation) bind(C, name='qtf_qdoublevalidator_setNotation')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: notation
+        end subroutine qtf_qdoublevalidator_setNotation
+
+        !> The smallest accepted value.
+        !>
+        !> C: `double qtf_qdoublevalidator_bottom(void *self)`
+        function qtf_qdoublevalidator_bottom(self) result(res) bind(C, name='qtf_qdoublevalidator_bottom')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qdoublevalidator_bottom
+
+        !> The largest accepted value.
+        !>
+        !> C: `double qtf_qdoublevalidator_top(void *self)`
+        function qtf_qdoublevalidator_top(self) result(res) bind(C, name='qtf_qdoublevalidator_top')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qdoublevalidator_top
+
+        !> The maximum number of decimals.
+        !>
+        !> C: `int qtf_qdoublevalidator_decimals(void *self)`
+        function qtf_qdoublevalidator_decimals(self) result(res) bind(C, name='qtf_qdoublevalidator_decimals')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qdoublevalidator_decimals
+
+        !> Accept text matching `pattern`, e.g. '[A-Z]{2}[0-9]{4}'.
+        !>
+        !> C: `void *qtf_qregularexpressionvalidator_new(const char *pattern, int pattern_len, void *parent)`
+        function qtf_qregularexpressionvalidator_new(pattern, pattern_len, parent) &
+                result(res) bind(C, name='qtf_qregularexpressionvalidator_new')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: pattern
+            integer(c_int), value :: pattern_len
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qregularexpressionvalidator_new
+
+        !> Set the regular expression.
+        !>
+        !> C: `void qtf_qregularexpressionvalidator_setPattern(void *self, const char *pattern, int pattern_len)`
+        subroutine qtf_qregularexpressionvalidator_setPattern(self, pattern, pattern_len) &
+                bind(C, name='qtf_qregularexpressionvalidator_setPattern')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: pattern
+            integer(c_int), value :: pattern_len
+        end subroutine qtf_qregularexpressionvalidator_setPattern
+
+        !> The regular expression.
+        !>
+        !> C: `char *qtf_qregularexpressionvalidator_pattern(void *self, int *len)`
+        function qtf_qregularexpressionvalidator_pattern(self, len) &
+                result(res) bind(C, name='qtf_qregularexpressionvalidator_pattern')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qregularexpressionvalidator_pattern
+
     end interface
 
     public :: qtf_qcolor_fromString, qtf_qimage_fromArray, qtf_qimage_colorbar, qtf_qimage_delete
@@ -1197,6 +1356,11 @@ module qt_c_gui
     public :: qtf_qaction_new, qtf_qaction_setText, qtf_qaction_text, qtf_qaction_setShortcut
     public :: qtf_qaction_shortcut, qtf_qaction_setCheckable, qtf_qaction_isCheckable, qtf_qaction_setChecked
     public :: qtf_qaction_isChecked, qtf_qaction_setEnabled, qtf_qaction_isEnabled, qtf_qaction_setStatusTip
-    public :: qtf_qaction_setToolTip, qtf_qaction_trigger, qtf_qaction_setIcon
+    public :: qtf_qaction_setToolTip, qtf_qaction_trigger, qtf_qaction_setIcon, qtf_qvalidator_validate
+    public :: qtf_qintvalidator_new, qtf_qintvalidator_setRange, qtf_qintvalidator_bottom
+    public :: qtf_qintvalidator_top, qtf_qdoublevalidator_new, qtf_qdoublevalidator_setRange
+    public :: qtf_qdoublevalidator_setNotation, qtf_qdoublevalidator_bottom, qtf_qdoublevalidator_top
+    public :: qtf_qdoublevalidator_decimals, qtf_qregularexpressionvalidator_new
+    public :: qtf_qregularexpressionvalidator_setPattern, qtf_qregularexpressionvalidator_pattern
 
 end module qt_c_gui

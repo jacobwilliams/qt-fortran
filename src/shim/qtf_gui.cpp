@@ -11,16 +11,22 @@
 #include <QAction>
 #include <QCloseEvent>
 #include <QContextMenuEvent>
+#include <QDoubleValidator>
 #include <QFontMetrics>
 #include <QIcon>
 #include <QImage>
+#include <QIntValidator>
 #include <QKeyEvent>
 #include <QKeySequence>
+#include <QLocale>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPixmap>
 #include <QPolygonF>
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
 #include <QResizeEvent>
+#include <QValidator>
 #include <QWheelEvent>
 #include <cmath>
 #include <vector>
@@ -32,6 +38,19 @@ enum : int {
     QTF_SIG_QACTION_TRIGGERED = 2000,
     QTF_SIG_QACTION_TOGGLED = 2001,
 };
+
+// Validate `text` with a validator: QValidator_Invalid, _Intermediate or _Acceptable.
+static int qtf_validate(const QValidator *v, QString text) {
+    int pos = 0;
+    return int(v->validate(text, pos));
+}
+
+// A double validator using the C locale (a '.' decimal point, as Fortran reads numbers).
+static QDoubleValidator *qtf_double_validator(double bottom, double top, int decimals, QObject *parent) {
+    auto *v = new QDoubleValidator(bottom, top, decimals, parent);
+    v->setLocale(QLocale::c());
+    return v;
+}
 
 // Parse a color name ("red", "#ff8000", ...); returns 0 if invalid.
 QTF_API int qtf_qcolor_fromString(const char *s, int len, int *r, int *g, int *b, int *a) {
@@ -550,6 +569,78 @@ QTF_API void qtf_qaction_trigger(void *self) { as<QAction>(self)->trigger(); }
 
 // Set the icon shown in menus and tool bars (the icon is copied).
 QTF_API void qtf_qaction_setIcon(void *self, void *icon) { as<QAction>(self)->setIcon(*as<QIcon>(icon)); }
+
+// ---------------------------------------------------------------------------
+// QValidator
+
+// How `text` fares: QValidator_Invalid, QValidator_Intermediate or QValidator_Acceptable.
+QTF_API int qtf_qvalidator_validate(void *self, const char *text, int text_len) {
+    return qtf_validate(as<QValidator>(self), qtf_qstring(text, text_len));
+}
+
+// ---------------------------------------------------------------------------
+// QIntValidator
+
+// Accept integers from `bottom` to `top`.
+QTF_API void *qtf_qintvalidator_new(int bottom, int top, void *parent) {
+    return new QIntValidator(bottom, top, as<QObject>(parent));
+}
+
+// Set the accepted range.
+QTF_API void qtf_qintvalidator_setRange(void *self, int bottom, int top) {
+    as<QIntValidator>(self)->setRange(bottom, top);
+}
+
+// The smallest accepted value.
+QTF_API int qtf_qintvalidator_bottom(void *self) { return as<QIntValidator>(self)->bottom(); }
+
+// The largest accepted value.
+QTF_API int qtf_qintvalidator_top(void *self) { return as<QIntValidator>(self)->top(); }
+
+// ---------------------------------------------------------------------------
+// QDoubleValidator
+
+// Accept reals from `bottom` to `top`.
+QTF_API void *qtf_qdoublevalidator_new(double bottom, double top, int decimals, void *parent) {
+    return qtf_double_validator(bottom, top, decimals, as<QObject>(parent));
+}
+
+// Set the accepted range and decimals.
+QTF_API void qtf_qdoublevalidator_setRange(void *self, double bottom, double top, int decimals) {
+    as<QDoubleValidator>(self)->setRange(bottom, top, decimals);
+}
+
+// QDoubleValidator_StandardNotation or _ScientificNotation (default).
+QTF_API void qtf_qdoublevalidator_setNotation(void *self, int notation) {
+    as<QDoubleValidator>(self)->setNotation(QDoubleValidator::Notation(notation));
+}
+
+// The smallest accepted value.
+QTF_API double qtf_qdoublevalidator_bottom(void *self) { return as<QDoubleValidator>(self)->bottom(); }
+
+// The largest accepted value.
+QTF_API double qtf_qdoublevalidator_top(void *self) { return as<QDoubleValidator>(self)->top(); }
+
+// The maximum number of decimals.
+QTF_API int qtf_qdoublevalidator_decimals(void *self) { return as<QDoubleValidator>(self)->decimals(); }
+
+// ---------------------------------------------------------------------------
+// QRegularExpressionValidator
+
+// Accept text matching `pattern`, e.g. '[A-Z]{2}[0-9]{4}'.
+QTF_API void *qtf_qregularexpressionvalidator_new(const char *pattern, int pattern_len, void *parent) {
+    return new QRegularExpressionValidator(QRegularExpression(qtf_qstring(pattern, pattern_len)), as<QObject>(parent));
+}
+
+// Set the regular expression.
+QTF_API void qtf_qregularexpressionvalidator_setPattern(void *self, const char *pattern, int pattern_len) {
+    as<QRegularExpressionValidator>(self)->setRegularExpression(QRegularExpression(qtf_qstring(pattern, pattern_len)));
+}
+
+// The regular expression.
+QTF_API char *qtf_qregularexpressionvalidator_pattern(void *self, int *len) {
+    return qtf_to_c(as<QRegularExpressionValidator>(self)->regularExpression().pattern(), len);
+}
 
 // ---------------------------------------------------------------------------
 // signal connectors

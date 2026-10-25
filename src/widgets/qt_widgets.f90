@@ -141,6 +141,75 @@ module qt_widgets
     integer(c_int), parameter, public :: QTabWidget_West = 2
     integer(c_int), parameter, public :: QTabWidget_East = 3
 
+    ! QLineEdit::EchoMode
+    integer(c_int), parameter, public :: QLineEdit_Normal = 0
+    integer(c_int), parameter, public :: QLineEdit_NoEcho = 1
+    integer(c_int), parameter, public :: QLineEdit_Password = 2
+    integer(c_int), parameter, public :: QLineEdit_PasswordEchoOnEdit = 3
+
+    ! QDialogButtonBox::StandardButton
+    integer(c_int), parameter, public :: QDialogButtonBox_NoButton = 0
+    integer(c_int), parameter, public :: QDialogButtonBox_Ok = int(z'00000400')
+    integer(c_int), parameter, public :: QDialogButtonBox_Save = int(z'00000800')
+    integer(c_int), parameter, public :: QDialogButtonBox_SaveAll = int(z'00001000')
+    integer(c_int), parameter, public :: QDialogButtonBox_Open = int(z'00002000')
+    integer(c_int), parameter, public :: QDialogButtonBox_Yes = int(z'00004000')
+    integer(c_int), parameter, public :: QDialogButtonBox_YesToAll = int(z'00008000')
+    integer(c_int), parameter, public :: QDialogButtonBox_No = int(z'00010000')
+    integer(c_int), parameter, public :: QDialogButtonBox_NoToAll = int(z'00020000')
+    integer(c_int), parameter, public :: QDialogButtonBox_Abort = int(z'00040000')
+    integer(c_int), parameter, public :: QDialogButtonBox_Retry = int(z'00080000')
+    integer(c_int), parameter, public :: QDialogButtonBox_Ignore = int(z'00100000')
+    integer(c_int), parameter, public :: QDialogButtonBox_Close = int(z'00200000')
+    integer(c_int), parameter, public :: QDialogButtonBox_Cancel = int(z'00400000')
+    integer(c_int), parameter, public :: QDialogButtonBox_Discard = int(z'00800000')
+    integer(c_int), parameter, public :: QDialogButtonBox_Help = int(z'01000000')
+    integer(c_int), parameter, public :: QDialogButtonBox_Apply = int(z'02000000')
+    integer(c_int), parameter, public :: QDialogButtonBox_Reset = int(z'04000000')
+    integer(c_int), parameter, public :: QDialogButtonBox_RestoreDefaults = int(z'08000000')
+
+    ! QDialogButtonBox::ButtonRole
+    integer(c_int), parameter, public :: QDialogButtonBox_InvalidRole = -1
+    integer(c_int), parameter, public :: QDialogButtonBox_AcceptRole = 0
+    integer(c_int), parameter, public :: QDialogButtonBox_RejectRole = 1
+    integer(c_int), parameter, public :: QDialogButtonBox_DestructiveRole = 2
+    integer(c_int), parameter, public :: QDialogButtonBox_ActionRole = 3
+    integer(c_int), parameter, public :: QDialogButtonBox_HelpRole = 4
+    integer(c_int), parameter, public :: QDialogButtonBox_YesRole = 5
+    integer(c_int), parameter, public :: QDialogButtonBox_NoRole = 6
+    integer(c_int), parameter, public :: QDialogButtonBox_ResetRole = 7
+    integer(c_int), parameter, public :: QDialogButtonBox_ApplyRole = 8
+
+    ! QCompleter::CompletionMode and Qt::MatchFlag (for setFilterMode)
+    integer(c_int), parameter, public :: QCompleter_PopupCompletion = 0
+    integer(c_int), parameter, public :: QCompleter_UnfilteredPopupCompletion = 1
+    integer(c_int), parameter, public :: QCompleter_InlineCompletion = 2
+    integer(c_int), parameter, public :: Qt_MatchContains = 1
+    integer(c_int), parameter, public :: Qt_MatchStartsWith = 2
+    integer(c_int), parameter, public :: Qt_MatchEndsWith = 3
+
+    ! QMdiArea::ViewMode
+    integer(c_int), parameter, public :: QMdiArea_SubWindowView = 0
+    integer(c_int), parameter, public :: QMdiArea_TabbedView = 1
+
+    ! QWizard::WizardStyle, QWizard::WizardButton and QWizard::WizardOption (subset)
+    integer(c_int), parameter, public :: QWizard_ClassicStyle = 0
+    integer(c_int), parameter, public :: QWizard_ModernStyle = 1
+    integer(c_int), parameter, public :: QWizard_MacStyle = 2
+    integer(c_int), parameter, public :: QWizard_AeroStyle = 3
+    integer(c_int), parameter, public :: QWizard_BackButton = 0
+    integer(c_int), parameter, public :: QWizard_NextButton = 1
+    integer(c_int), parameter, public :: QWizard_CommitButton = 2
+    integer(c_int), parameter, public :: QWizard_FinishButton = 3
+    integer(c_int), parameter, public :: QWizard_CancelButton = 4
+    integer(c_int), parameter, public :: QWizard_HelpButton = 5
+    integer(c_int), parameter, public :: QWizard_IndependentPages = 1
+    integer(c_int), parameter, public :: QWizard_NoBackButtonOnStartPage = 16
+    integer(c_int), parameter, public :: QWizard_NoBackButtonOnLastPage = 32
+    integer(c_int), parameter, public :: QWizard_HaveFinishButtonOnEarlyPages = 256
+    integer(c_int), parameter, public :: QWizard_NoCancelButton = 512
+    integer(c_int), parameter, public :: QWizard_HaveHelpButton = 2048
+
     ! Qt::FocusReason
     integer(c_int), parameter, public :: Qt_MouseFocusReason = 0
     integer(c_int), parameter, public :: Qt_TabFocusReason = 1
@@ -266,6 +335,14 @@ module qt_widgets
         procedure :: saveGeometry => qwidget_saveGeometry
         procedure :: restoreGeometry => qwidget_restoreGeometry
         procedure :: isWindow => qwidget_isWindow
+        procedure :: showMaximized => qwidget_showMaximized
+        procedure :: showMinimized => qwidget_showMinimized
+        procedure :: showNormal => qwidget_showNormal
+        procedure :: showFullScreen => qwidget_showFullScreen
+        procedure :: isMaximized => qwidget_isMaximized
+        procedure :: isMinimized => qwidget_isMinimized
+        procedure :: activateWindow => qwidget_activateWindow
+        procedure :: raise => qwidget_raise
         procedure :: repolish => qwidget_repolish
         procedure :: x => qwidget_x
         procedure :: y => qwidget_y
@@ -381,6 +458,7 @@ module qt_widgets
     type, extends(QWidget), public :: QLineEdit
         type(QSignalString) :: textChanged   !! The text changed (by the user or by `setText`).
         type(QSignalString) :: textEdited   !! The user edited the text (not emitted by `setText`).
+        type(QSignal) :: inputRejected   !! A key press was rejected by the validator or input mask.
         type(QSignal) :: returnPressed   !! Return or Enter was pressed.
         type(QSignal) :: editingFinished   !! Return was pressed or the line edit lost focus.
     contains
@@ -394,6 +472,12 @@ module qt_widgets
         procedure :: setMaxLength => qlineedit_setMaxLength
         procedure :: maxLength => qlineedit_maxLength
         procedure :: clear => qlineedit_clear
+        procedure :: setValidator => qlineedit_setValidator
+        procedure :: hasAcceptableInput => qlineedit_hasAcceptableInput
+        procedure :: setCompleter => qlineedit_setCompleter
+        procedure :: setInputMask => qlineedit_setInputMask
+        procedure :: setEchoMode => qlineedit_setEchoMode
+        procedure :: setClearButtonEnabled => qlineedit_setClearButtonEnabled
     end type QLineEdit
     !> Constructor: `QLineEdit([text, parent])`.
     interface QLineEdit
@@ -488,6 +572,7 @@ module qt_widgets
         procedure :: itemText => qcombobox_itemText
         procedure :: findText => qcombobox_findText
         procedure :: setEditable => qcombobox_setEditable
+        procedure :: setCompleter => qcombobox_setCompleter
         procedure :: addItems => qcombobox_addItems
     end type QComboBox
     !> Constructor: `QComboBox([parent])`.
@@ -660,6 +745,13 @@ module qt_widgets
         module procedure :: qfiledialog_new
     end interface QFileDialog
 
+    !> Base of the item models (QtfTableModel, QtfTreeModel, QSortFilterProxyModel, QFileSystemModel).
+    type, extends(QObject), public :: QAbstractItemModel
+    contains
+        procedure :: rowCount => qabstractitemmodel_rowCount
+        procedure :: columnCount => qabstractitemmodel_columnCount
+    end type QAbstractItemModel
+
     !> The cell being requested from a QtfTableModel `dataRequested` slot: set its value.
     type, public :: QtfModelRequest
         type(c_ptr) :: ptr = c_null_ptr
@@ -674,15 +766,19 @@ module qt_widgets
     !> is asked for. Only visible cells are requested, so a QTableView can show large
     !> Fortran arrays without copying them into Qt. Call `refresh` after the data
     !> changes. Rows and columns are 0-based.
-    type, extends(QObject), public :: QtfTableModel
+    !>
+    !> Sorting: in a view with `setSortingEnabled(.true.)`, a click on a column title
+    !> emits `sortRequested(column, order)`; reorder the Fortran data (e.g. through a
+    !> permutation array) in the slot, and the view is refreshed. Alternatively put a
+    !> QSortFilterProxyModel between model and view.
+    type, extends(QAbstractItemModel), public :: QtfTableModel
         type(QSignalModelData) :: dataRequested   !! A cell is needed: slots get (row, column, request) and set the request's value.
         type(QSignalModelEdit) :: dataEdited   !! The user edited a cell: slots get (row, column, text); store the new value.
+        type(QSignalInt2) :: sortRequested   !! Sort by a column: slots get (column, order) with order Qt_AscendingOrder or Qt_DescendingOrder, and reorder the data.
     contains
         procedure :: attach => qtftablemodel_attach
         procedure :: setRowCount => qtftablemodel_setRowCount
         procedure :: setColumnCount => qtftablemodel_setColumnCount
-        procedure :: rowCount => qtftablemodel_rowCount
-        procedure :: columnCount => qtftablemodel_columnCount
         procedure :: setHorizontalHeaderLabels => qtftablemodel_setHorizontalHeaderLabels
         procedure :: setVerticalHeaderLabels => qtftablemodel_setVerticalHeaderLabels
         procedure :: setEditable => qtftablemodel_setEditable
@@ -703,6 +799,10 @@ module qt_widgets
         type(QSignalInt2) :: activated   !! A cell was activated (double-click or Enter): (row, column).
     contains
         procedure :: attach => qabstractitemview_attach
+        procedure :: setModel => qabstractitemview_setModel
+        procedure :: setItemDelegate => qabstractitemview_setItemDelegate
+        procedure :: setItemDelegateForColumn => qabstractitemview_setItemDelegateForColumn
+        procedure :: edit => qabstractitemview_edit
         procedure :: setAlternatingRowColors => qabstractitemview_setAlternatingRowColors
         procedure :: setSelectionMode => qabstractitemview_setSelectionMode
         procedure :: setSelectionBehavior => qabstractitemview_setSelectionBehavior
@@ -715,7 +815,6 @@ module qt_widgets
     !> A table view of a model (use QtfTableModel to show Fortran data).
     type, extends(QAbstractItemView), public :: QTableView
     contains
-        procedure :: setModel => qtableview_setModel
         procedure :: resizeColumnsToContents => qtableview_resizeColumnsToContents
         procedure :: resizeRowsToContents => qtableview_resizeRowsToContents
         procedure :: setColumnWidth => qtableview_setColumnWidth
@@ -728,11 +827,150 @@ module qt_widgets
         procedure :: setCurrentCell => qtableview_setCurrentCell
         procedure :: selectRow => qtableview_selectRow
         procedure :: setWordWrap => qtableview_setWordWrap
+        procedure :: setSortingEnabled => qtableview_setSortingEnabled
+        procedure :: sortByColumn => qtableview_sortByColumn
+        procedure :: setColumnHidden => qtableview_setColumnHidden
     end type QTableView
     !> Constructor: `QTableView([parent])`.
     interface QTableView
         module procedure :: qtableview_new
     end interface QTableView
+
+    !> A tree view of a model: a QtfTreeModel (Fortran data), a QFileSystemModel
+    !> (files), or a QSortFilterProxyModel over either.
+    !>
+    !> With a QtfTreeModel, nodes are the model's node numbers (through any proxy):
+    !> see `nodeClicked`, `currentNodeChanged`, `setCurrentNode`, `expandNode`. With
+    !> a QFileSystemModel, files are paths: see `currentFileChanged`, `fileActivated`
+    !> and `setRootPath`.
+    type, extends(QAbstractItemView), public :: QTreeView
+        type(QSignalInt) :: nodeClicked   !! A node of a QtfTreeModel was clicked.
+        type(QSignalInt) :: nodeActivated   !! A node was activated (double click or Enter).
+        type(QSignalInt) :: currentNodeChanged   !! The current node changed (-1 if none, or not a QtfTreeModel).
+        type(QSignalString) :: currentFileChanged   !! The current file of a QFileSystemModel changed: its path.
+        type(QSignalString) :: fileActivated   !! A file of a QFileSystemModel was activated (double click or Enter): its path.
+        type(QSignalInt) :: expandedNode   !! A node was expanded.
+        type(QSignalInt) :: collapsedNode   !! A node was collapsed.
+    contains
+        procedure :: attach => qtreeview_attach
+        procedure :: currentNode => qtreeview_currentNode
+        procedure :: setCurrentNode => qtreeview_setCurrentNode
+        procedure :: expandNode => qtreeview_expandNode
+        procedure :: collapseNode => qtreeview_collapseNode
+        procedure :: isNodeExpanded => qtreeview_isNodeExpanded
+        procedure :: scrollToNode => qtreeview_scrollToNode
+        procedure :: currentFilePath => qtreeview_currentFilePath
+        procedure :: setCurrentFile => qtreeview_setCurrentFile
+        procedure :: setRootPath => qtreeview_setRootPath
+        procedure :: expandAll => qtreeview_expandAll
+        procedure :: collapseAll => qtreeview_collapseAll
+        procedure :: expandToDepth => qtreeview_expandToDepth
+        procedure :: setHeaderHidden => qtreeview_setHeaderHidden
+        procedure :: setRootIsDecorated => qtreeview_setRootIsDecorated
+        procedure :: setUniformRowHeights => qtreeview_setUniformRowHeights
+        procedure :: setAnimated => qtreeview_setAnimated
+        procedure :: setIndentation => qtreeview_setIndentation
+        procedure :: resizeColumnToContents => qtreeview_resizeColumnToContents
+        procedure :: setColumnWidth => qtreeview_setColumnWidth
+        procedure :: setColumnHidden => qtreeview_setColumnHidden
+        procedure :: setSortingEnabled => qtreeview_setSortingEnabled
+        procedure :: sortByColumn => qtreeview_sortByColumn
+    end type QTreeView
+    !> Constructor: `QTreeView([parent])`.
+    interface QTreeView
+        module procedure :: qtreeview_new
+    end interface QTreeView
+
+    !> A tree model whose structure is a Fortran parent array and whose cells come
+    !> from Fortran on demand (`Qtf` marks a qt-fortran class). Nodes are numbered
+    !> 1..n in the order given: `parents(i)` is node i's parent (0 for a top-level
+    !> node), and a parent comes before its children. Children appear in node order.
+    !> Connect `dataRequested` (slots get (node, column, request)) as for
+    !> QtfTableModel; only visible cells are requested.
+    type, extends(QAbstractItemModel), public :: QtfTreeModel
+        type(QSignalModelData) :: dataRequested   !! A cell is needed: slots get (node, column, request) and set the request's value.
+        type(QSignalModelEdit) :: dataEdited   !! The user edited a cell: slots get (node, column, text).
+    contains
+        procedure :: attach => qtftreemodel_attach
+        procedure :: setParents => qtftreemodel_setParents
+        procedure :: appendNode => qtftreemodel_appendNode
+        procedure :: nodeCount => qtftreemodel_nodeCount
+        procedure :: parentNode => qtftreemodel_parentNode
+        procedure :: childCount => qtftreemodel_childCount
+        procedure :: setColumnCount => qtftreemodel_setColumnCount
+        procedure :: setHeaderLabels => qtftreemodel_setHeaderLabels
+        procedure :: setEditable => qtftreemodel_setEditable
+        procedure :: refresh => qtftreemodel_refresh
+        procedure :: refreshNode => qtftreemodel_refreshNode
+        procedure :: dataText => qtftreemodel_dataText
+    end type QtfTreeModel
+    !> Constructor: `QtfTreeModel([columns, parent])`.
+    interface QtfTreeModel
+        module procedure :: qtftreemodel_new
+    end interface QtfTreeModel
+
+    !> Sorts and filters another model for a view: `proxy%setSourceModel(model)`,
+    !> then `view%setModel(proxy)`. Rows in the view (and in the view's signals) are
+    !> then the proxy's: map them with `mapToSourceRow`. Numbers set with
+    !> `request%setNumber` sort numerically. Filtering and sorting ask the source for
+    !> every row of the key column, so for very large Fortran tables sorting through
+    !> QtfTableModel's `sortRequested` is faster.
+    type, extends(QAbstractItemModel), public :: QSortFilterProxyModel
+    contains
+        procedure :: setSourceModel => qsortfilterproxymodel_setSourceModel
+        procedure :: setFilterFixedString => qsortfilterproxymodel_setFilterFixedString
+        procedure :: setFilterRegularExpression => qsortfilterproxymodel_setFilterRegularExpression
+        procedure :: setFilterWildcard => qsortfilterproxymodel_setFilterWildcard
+        procedure :: setFilterKeyColumn => qsortfilterproxymodel_setFilterKeyColumn
+        procedure :: setFilterCaseSensitivity => qsortfilterproxymodel_setFilterCaseSensitivity
+        procedure :: setSortCaseSensitivity => qsortfilterproxymodel_setSortCaseSensitivity
+        procedure :: setRecursiveFilteringEnabled => qsortfilterproxymodel_setRecursiveFilteringEnabled
+        procedure :: setDynamicSortFilter => qsortfilterproxymodel_setDynamicSortFilter
+        procedure :: sort => qsortfilterproxymodel_sort
+        procedure :: invalidate => qsortfilterproxymodel_invalidate
+        procedure :: mapToSourceRow => qsortfilterproxymodel_mapToSourceRow
+        procedure :: mapFromSourceRow => qsortfilterproxymodel_mapFromSourceRow
+    end type QSortFilterProxyModel
+    !> Constructor: `QSortFilterProxyModel([parent])`.
+    interface QSortFilterProxyModel
+        module procedure :: qsortfilterproxymodel_new
+    end interface QSortFilterProxyModel
+
+    !> The local file system as a model, for a QTreeView (or QTableView). Columns:
+    !> name, size, type, date modified. Directories are read in the background:
+    !> `directoryLoaded` reports when a directory's contents are available.
+    type, extends(QAbstractItemModel), public :: QFileSystemModel
+        type(QSignalString) :: directoryLoaded   !! A directory's contents have been read: its path.
+        type(QSignalString) :: rootPathChanged   !! The root path changed.
+    contains
+        procedure :: attach => qfilesystemmodel_attach
+        procedure :: setRootPath => qfilesystemmodel_setRootPath
+        procedure :: rootPath => qfilesystemmodel_rootPath
+        procedure :: setNameFilters => qfilesystemmodel_setNameFilters
+        procedure :: setNameFilterDisables => qfilesystemmodel_setNameFilterDisables
+        procedure :: setReadOnly => qfilesystemmodel_setReadOnly
+        procedure :: childCount => qfilesystemmodel_childCount
+    end type QFileSystemModel
+    !> Constructor: `QFileSystemModel([parent])`.
+    interface QFileSystemModel
+        module procedure :: qfilesystemmodel_new
+    end interface QFileSystemModel
+
+    !> A cell editor for item views (`Qtf` marks a qt-fortran class): set it on a
+    !> view, for all cells or one column (`setItemDelegateForColumn`). With
+    !> `setChoices` cells are edited with a combo box of fixed choices; with
+    !> `setRange` with a spin box (`decimals = 0`: integers). The edited value
+    !> reaches the model as for a normal edit (QtfTableModel's `dataEdited`).
+    type, extends(QObject), public :: QtfItemDelegate
+    contains
+        procedure :: setChoices => qtfitemdelegate_setChoices
+        procedure :: setRange => qtfitemdelegate_setRange
+        procedure :: clear => qtfitemdelegate_clear
+    end type QtfItemDelegate
+    !> Constructor: `QtfItemDelegate([parent])`.
+    interface QtfItemDelegate
+        module procedure :: qtfitemdelegate_new
+    end interface QtfItemDelegate
 
     !> A cell of a QTableWidget. Put it in a table with `setItem`, which takes
     !> ownership.
@@ -1247,6 +1485,282 @@ module qt_widgets
     type, extends(QObject), public :: QStyle
     end type QStyle
 
+    !> The standard buttons of a dialog (OK, Cancel, Apply, ...), laid out and
+    !> labelled as the platform expects. Connect `accepted` to the dialog's `accept`
+    !> and `rejected` to its `reject`, or handle `clicked` (the standard button).
+    type, extends(QWidget), public :: QDialogButtonBox
+        type(QSignal) :: accepted   !! A button with the accept role (OK, Save, Yes, ...) was clicked.
+        type(QSignal) :: rejected   !! A button with the reject role (Cancel, Close, ...) was clicked, or Escape pressed.
+        type(QSignal) :: helpRequested   !! The Help button was clicked.
+        type(QSignalInt) :: clicked   !! A button was clicked: its standard button (QDialogButtonBox_NoButton for buttons added with text).
+        type(QSignalInt) :: clickedRole   !! A button was clicked: its role (QDialogButtonBox_AcceptRole, ...).
+    contains
+        procedure :: attach => qdialogbuttonbox_attach
+        procedure :: setStandardButtons => qdialogbuttonbox_setStandardButtons
+        procedure :: standardButtons => qdialogbuttonbox_standardButtons
+        procedure :: button => qdialogbuttonbox_button
+        procedure :: addButton => qdialogbuttonbox_addButton
+        procedure :: setOrientation => qdialogbuttonbox_setOrientation
+        procedure :: setCenterButtons => qdialogbuttonbox_setCenterButtons
+    end type QDialogButtonBox
+    !> Constructor: `QDialogButtonBox([buttons, parent])`.
+    interface QDialogButtonBox
+        module procedure :: qdialogbuttonbox_new
+    end interface QDialogButtonBox
+
+    !> Completions for a QLineEdit (`setCompleter`) or an editable QComboBox, from a
+    !> list of strings.
+    type, extends(QObject), public :: QCompleter
+        type(QSignalString) :: activated   !! The user chose a completion.
+        type(QSignalString) :: highlighted   !! A completion was highlighted in the pop-up.
+    contains
+        procedure :: attach => qcompleter_attach
+        procedure :: setItems => qcompleter_setItems
+        procedure :: setCaseSensitivity => qcompleter_setCaseSensitivity
+        procedure :: setFilterMode => qcompleter_setFilterMode
+        procedure :: setCompletionMode => qcompleter_setCompletionMode
+        procedure :: setMaxVisibleItems => qcompleter_setMaxVisibleItems
+        procedure :: setCompletionPrefix => qcompleter_setCompletionPrefix
+        procedure :: completionCount => qcompleter_completionCount
+        procedure :: currentCompletion => qcompleter_currentCompletion
+        procedure :: setCurrentRow => qcompleter_setCurrentRow
+    end type QCompleter
+    !> Constructor: `QCompleter(items [, parent])`.
+    interface QCompleter
+        module procedure :: qcompleter_new
+    end interface QCompleter
+
+    !> A date and time editor (see QDateTime).
+    type, extends(QWidget), public :: QDateTimeEdit
+        type(QSignal) :: dateTimeChanged   !! The date or time changed (read it with `dateTime`).
+    contains
+        procedure :: attach => qdatetimeedit_attach
+        procedure :: setDateTime => qdatetimeedit_setDateTime
+        procedure :: dateTime => qdatetimeedit_dateTime
+        procedure :: setMinimumDateTime => qdatetimeedit_setMinimumDateTime
+        procedure :: setMaximumDateTime => qdatetimeedit_setMaximumDateTime
+        procedure :: setDisplayFormat => qdatetimeedit_setDisplayFormat
+        procedure :: displayFormat => qdatetimeedit_displayFormat
+        procedure :: setCalendarPopup => qdatetimeedit_setCalendarPopup
+    end type QDateTimeEdit
+    !> Constructor: `QDateTimeEdit([parent])`.
+    interface QDateTimeEdit
+        module procedure :: qdatetimeedit_new
+    end interface QDateTimeEdit
+
+    !> A read-only rich-text (HTML, Markdown) viewer with navigable links, e.g. for
+    !> help pages: `setSource` a file, and links between files are followed.
+    type, extends(QTextEdit), public :: QTextBrowser
+        type(QSignalString) :: anchorClicked   !! A link was clicked: its URL.
+        type(QSignalString) :: sourceChanged   !! A new document is shown: its URL.
+        type(QSignalBool) :: backwardAvailable   !! Whether `backward` is possible changed.
+        type(QSignalBool) :: forwardAvailable   !! Whether `forward` is possible changed.
+    contains
+        procedure :: attach => qtextbrowser_attach
+        procedure :: setSource => qtextbrowser_setSource
+        procedure :: source => qtextbrowser_source
+        procedure :: setSearchPaths => qtextbrowser_setSearchPaths
+        procedure :: setOpenExternalLinks => qtextbrowser_setOpenExternalLinks
+        procedure :: setOpenLinks => qtextbrowser_setOpenLinks
+        procedure :: backward => qtextbrowser_backward
+        procedure :: forward => qtextbrowser_forward
+        procedure :: home => qtextbrowser_home
+        procedure :: reload => qtextbrowser_reload
+        procedure :: isBackwardAvailable => qtextbrowser_isBackwardAvailable
+        procedure :: isForwardAvailable => qtextbrowser_isForwardAvailable
+        procedure :: clearHistory => qtextbrowser_clearHistory
+    end type QTextBrowser
+    !> Constructor: `QTextBrowser([parent])`.
+    interface QTextBrowser
+        module procedure :: qtextbrowser_new
+    end interface QTextBrowser
+
+    !> A column of pages, each under a button title; one page is open at a time (an accordion).
+    type, extends(QFrame), public :: QToolBox
+        type(QSignalInt) :: currentChanged   !! The open page changed (0-based; -1 if none).
+    contains
+        procedure :: attach => qtoolbox_attach
+        procedure :: addItem => qtoolbox_addItem
+        procedure :: insertItem => qtoolbox_insertItem
+        procedure :: removeItem => qtoolbox_removeItem
+        procedure :: count => qtoolbox_count
+        procedure :: currentIndex => qtoolbox_currentIndex
+        procedure :: setCurrentIndex => qtoolbox_setCurrentIndex
+        procedure :: setItemText => qtoolbox_setItemText
+        procedure :: itemText => qtoolbox_itemText
+        procedure :: setItemEnabled => qtoolbox_setItemEnabled
+        procedure :: setItemIcon => qtoolbox_setItemIcon
+        procedure :: setItemToolTip => qtoolbox_setItemToolTip
+        procedure :: widget => qtoolbox_widget
+        procedure :: currentWidget => qtoolbox_currentWidget
+    end type QToolBox
+    !> Constructor: `QToolBox([parent])`.
+    interface QToolBox
+        module procedure :: qtoolbox_new
+    end interface QToolBox
+
+    !> A splash screen shown while the application starts: show it, update it with
+    !> `showMessage` (call QApplication_processEvents so it repaints), then
+    !> `finish(mainWindow)` once the main window is shown.
+    type, extends(QWidget), public :: QSplashScreen
+        type(QSignalString) :: messageChanged   !! The message changed.
+    contains
+        procedure :: attach => qsplashscreen_attach
+        procedure :: showMessage => qsplashscreen_showMessage
+        procedure :: clearMessage => qsplashscreen_clearMessage
+        procedure :: message => qsplashscreen_message
+        procedure :: finish => qsplashscreen_finish
+    end type QSplashScreen
+    !> Constructor: `QSplashScreen(pixmap)`.
+    interface QSplashScreen
+        module procedure :: qsplashscreen_new
+    end interface QSplashScreen
+
+    !> A window inside a QMdiArea (created by `addSubWindow`).
+    type, extends(QWidget), public :: QMdiSubWindow
+        type(QSignal) :: aboutToActivate   !! The window is about to become active.
+    contains
+        procedure :: attach => qmdisubwindow_attach
+        procedure :: setWidget => qmdisubwindow_setWidget
+        procedure :: widget => qmdisubwindow_widget
+        procedure :: showShaded => qmdisubwindow_showShaded
+        procedure :: isShaded => qmdisubwindow_isShaded
+    end type QMdiSubWindow
+
+    !> A multiple-document area: several sub-windows inside one main window
+    !> (typically its central widget), shown as windows or as tabs.
+    type, extends(QFrame), public :: QMdiArea
+        type(QSignal) :: subWindowActivated   !! The active sub-window changed (see `activeSubWindow`).
+    contains
+        procedure :: attach => qmdiarea_attach
+        procedure :: addSubWindow => qmdiarea_addSubWindow
+        procedure :: removeSubWindow => qmdiarea_removeSubWindow
+        procedure :: activeSubWindow => qmdiarea_activeSubWindow
+        procedure :: currentSubWindow => qmdiarea_currentSubWindow
+        procedure :: setActiveSubWindow => qmdiarea_setActiveSubWindow
+        procedure :: subWindowCount => qmdiarea_subWindowCount
+        procedure :: closeActiveSubWindow => qmdiarea_closeActiveSubWindow
+        procedure :: closeAllSubWindows => qmdiarea_closeAllSubWindows
+        procedure :: activateNextSubWindow => qmdiarea_activateNextSubWindow
+        procedure :: activatePreviousSubWindow => qmdiarea_activatePreviousSubWindow
+        procedure :: cascadeSubWindows => qmdiarea_cascadeSubWindows
+        procedure :: tileSubWindows => qmdiarea_tileSubWindows
+        procedure :: setViewMode => qmdiarea_setViewMode
+        procedure :: setTabsClosable => qmdiarea_setTabsClosable
+        procedure :: setTabsMovable => qmdiarea_setTabsMovable
+    end type QMdiArea
+    !> Constructor: `QMdiArea([parent])`.
+    interface QMdiArea
+        module procedure :: qmdiarea_new
+    end interface QMdiArea
+
+    !> A page of a QWizard. Next (or Finish) is enabled while the page is complete:
+    !> call `setComplete` as the input changes, or register mandatory fields
+    !> (`registerField('name*', lineEdit)`).
+    type, extends(QWidget), public :: QWizardPage
+        type(QSignal) :: completeChanged   !! Whether the page is complete may have changed.
+    contains
+        procedure :: attach => qwizardpage_attach
+        procedure :: setTitle => qwizardpage_setTitle
+        procedure :: title => qwizardpage_title
+        procedure :: setSubTitle => qwizardpage_setSubTitle
+        procedure :: subTitle => qwizardpage_subTitle
+        procedure :: setFinalPage => qwizardpage_setFinalPage
+        procedure :: isFinalPage => qwizardpage_isFinalPage
+        procedure :: setCommitPage => qwizardpage_setCommitPage
+        procedure :: setComplete => qwizardpage_setComplete
+        procedure :: isComplete => qwizardpage_isComplete
+        procedure :: registerField => qwizardpage_registerField
+    end type QWizardPage
+    !> Constructor: `QWizardPage([parent])`.
+    interface QWizardPage
+        module procedure :: qwizardpage_new
+    end interface QWizardPage
+
+    !> A wizard: a dialog that leads through pages (QWizardPage) with Back, Next and
+    !> Finish buttons. Pages are numbered from 0 in the order added. Read the values
+    !> of registered fields with `stringField`, `intField`, ...; run it with `exec`.
+    type, extends(QDialog), public :: QWizard
+        type(QSignalInt) :: currentIdChanged   !! The current page changed (its id).
+        type(QSignal) :: helpRequested   !! The Help button was clicked.
+    contains
+        procedure :: attach => qwizard_attach
+        procedure :: addPage => qwizard_addPage
+        procedure :: setPage => qwizard_setPage
+        procedure :: removePage => qwizard_removePage
+        procedure :: currentId => qwizard_currentId
+        procedure :: currentPage => qwizard_currentPage
+        procedure :: page => qwizard_page
+        procedure :: hasVisitedPage => qwizard_hasVisitedPage
+        procedure :: setStartId => qwizard_setStartId
+        procedure :: next => qwizard_next
+        procedure :: back => qwizard_back
+        procedure :: restart => qwizard_restart
+        procedure :: setWizardStyle => qwizard_setWizardStyle
+        procedure :: setOption => qwizard_setOption
+        procedure :: setButtonText => qwizard_setButtonText
+        procedure :: stringField => qwizard_stringField
+        procedure :: intField => qwizard_intField
+        procedure :: doubleField => qwizard_doubleField
+        procedure :: boolField => qwizard_boolField
+    end type QWizard
+    !> Constructor: `QWizard([parent])`.
+    interface QWizard
+        module procedure :: qwizard_new
+    end interface QWizard
+
+    !> Undo and redo. A command is a text (shown as "Undo <text>") and an integer id
+    !> of your choosing: `push(text, id)` records it and immediately calls the
+    !> `redoRequested(id)` slots, which must perform it; undoing calls the
+    !> `undoRequested(id)` slots, which must reverse it. Keep what each id needs
+    !> (e.g. old and new values) in your own arrays. Menu actions that follow the
+    !> stack: `createUndoAction` / `createRedoAction`.
+    type, extends(QObject), public :: QUndoStack
+        type(QSignalInt) :: redoRequested   !! Perform (or redo) the command with this id (also called by `push`).
+        type(QSignalInt) :: undoRequested   !! Reverse the command with this id.
+        type(QSignalBool) :: canUndoChanged   !! Whether undo is possible changed.
+        type(QSignalBool) :: canRedoChanged   !! Whether redo is possible changed.
+        type(QSignalInt) :: indexChanged   !! The current position in the stack changed.
+        type(QSignalBool) :: cleanChanged   !! The stack became clean (saved state) or not.
+        type(QSignalString) :: undoTextChanged   !! The text of the command `undo` would reverse changed.
+        type(QSignalString) :: redoTextChanged   !! The text of the command `redo` would perform changed.
+    contains
+        procedure :: attach => qundostack_attach
+        procedure :: push => qundostack_push
+        procedure :: undo => qundostack_undo
+        procedure :: redo => qundostack_redo
+        procedure :: canUndo => qundostack_canUndo
+        procedure :: canRedo => qundostack_canRedo
+        procedure :: undoText => qundostack_undoText
+        procedure :: redoText => qundostack_redoText
+        procedure :: count => qundostack_count
+        procedure :: index => qundostack_index
+        procedure :: setIndex => qundostack_setIndex
+        procedure :: text => qundostack_text
+        procedure :: clear => qundostack_clear
+        procedure :: setClean => qundostack_setClean
+        procedure :: isClean => qundostack_isClean
+        procedure :: setUndoLimit => qundostack_setUndoLimit
+        procedure :: beginMacro => qundostack_beginMacro
+        procedure :: endMacro => qundostack_endMacro
+        procedure :: createUndoAction => qundostack_createUndoAction
+        procedure :: createRedoAction => qundostack_createRedoAction
+    end type QUndoStack
+    !> Constructor: `QUndoStack([parent])`.
+    interface QUndoStack
+        module procedure :: qundostack_new
+    end interface QUndoStack
+
+    !> A list of the commands of an undo stack; clicking one undoes or redoes up to it.
+    type, extends(QAbstractItemView), public :: QUndoView
+    contains
+        procedure :: setEmptyLabel => qundoview_setEmptyLabel
+    end type QUndoView
+    !> Constructor: `QUndoView(stack [, parent])`.
+    interface QUndoView
+        module procedure :: qundoview_new
+    end interface QUndoView
+
     !> Constructor: `QApplication()`, with the program's command-line arguments.
     interface QApplication
         module procedure :: qapplication_new
@@ -1733,6 +2247,56 @@ contains
         res = qtf_logical(qtf_qwidget_isWindow(qtf_live(self, 'QWidget%isWindow')))
     end function qwidget_isWindow
 
+    !> Show the window maximized.
+    subroutine qwidget_showMaximized(self)
+        class(QWidget), intent(in) :: self
+        call qtf_qwidget_showMaximized(qtf_live(self, 'QWidget%showMaximized'))
+    end subroutine qwidget_showMaximized
+
+    !> Show the window minimized (iconified).
+    subroutine qwidget_showMinimized(self)
+        class(QWidget), intent(in) :: self
+        call qtf_qwidget_showMinimized(qtf_live(self, 'QWidget%showMinimized'))
+    end subroutine qwidget_showMinimized
+
+    !> Show the window at its normal size (after maximized, minimized or full screen).
+    subroutine qwidget_showNormal(self)
+        class(QWidget), intent(in) :: self
+        call qtf_qwidget_showNormal(qtf_live(self, 'QWidget%showNormal'))
+    end subroutine qwidget_showNormal
+
+    !> Show the window full screen.
+    subroutine qwidget_showFullScreen(self)
+        class(QWidget), intent(in) :: self
+        call qtf_qwidget_showFullScreen(qtf_live(self, 'QWidget%showFullScreen'))
+    end subroutine qwidget_showFullScreen
+
+    !> True if the window is maximized.
+    function qwidget_isMaximized(self) result(res)
+        class(QWidget), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qwidget_isMaximized(qtf_live(self, 'QWidget%isMaximized')))
+    end function qwidget_isMaximized
+
+    !> True if the window is minimized.
+    function qwidget_isMinimized(self) result(res)
+        class(QWidget), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qwidget_isMinimized(qtf_live(self, 'QWidget%isMinimized')))
+    end function qwidget_isMinimized
+
+    !> Make the window the active one (give it keyboard focus).
+    subroutine qwidget_activateWindow(self)
+        class(QWidget), intent(in) :: self
+        call qtf_qwidget_activateWindow(qtf_live(self, 'QWidget%activateWindow'))
+    end subroutine qwidget_activateWindow
+
+    !> Raise the window above other windows (or the widget above its siblings).
+    subroutine qwidget_raise(self)
+        class(QWidget), intent(in) :: self
+        call qtf_qwidget_raise(qtf_live(self, 'QWidget%raise'))
+    end subroutine qwidget_raise
+
     !> Re-apply the style sheet, e.g. after changing a property that a style rule selects on (`*[state="error"]`).
     subroutine qwidget_repolish(self)
         class(QWidget), intent(in) :: self
@@ -2006,6 +2570,7 @@ contains
         call self%QWidget%attach(ptr)
         self%textChanged = QSignalString(ptr, QTF_SIG_QLINEEDIT_TEXTCHANGED, self%serial)
         self%textEdited = QSignalString(ptr, QTF_SIG_QLINEEDIT_TEXTEDITED, self%serial)
+        self%inputRejected = QSignal(ptr, QTF_SIG_QLINEEDIT_INPUTREJECTED, self%serial)
         self%returnPressed = QSignal(ptr, QTF_SIG_QLINEEDIT_RETURNPRESSED, self%serial)
         self%editingFinished = QSignal(ptr, QTF_SIG_QLINEEDIT_EDITINGFINISHED, self%serial)
     end subroutine qlineedit_attach
@@ -2088,6 +2653,48 @@ contains
         class(QLineEdit), intent(in) :: self
         call qtf_qlineedit_clear(qtf_live(self, 'QLineEdit%clear'))
     end subroutine qlineedit_clear
+
+    !> Accept only input the validator allows (no argument: remove it). The line edit does not take ownership.
+    subroutine qlineedit_setValidator(self, validator)
+        class(QLineEdit), intent(in) :: self
+        class(QValidator), intent(in), optional :: validator
+        call qtf_qlineedit_setValidator(qtf_live(self, 'QLineEdit%setValidator'), qtf_ptr(validator))
+    end subroutine qlineedit_setValidator
+
+    !> True if the text satisfies the validator (or there is none).
+    function qlineedit_hasAcceptableInput(self) result(res)
+        class(QLineEdit), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qlineedit_hasAcceptableInput(qtf_live(self, 'QLineEdit%hasAcceptableInput')))
+    end function qlineedit_hasAcceptableInput
+
+    !> Offer completions while typing (no argument: remove it).
+    subroutine qlineedit_setCompleter(self, completer)
+        class(QLineEdit), intent(in) :: self
+        class(QCompleter), intent(in), optional :: completer
+        call qtf_qlineedit_setCompleter(qtf_live(self, 'QLineEdit%setCompleter'), qtf_ptr(completer))
+    end subroutine qlineedit_setCompleter
+
+    !> An input mask, e.g. '000.000.000.000' (see Qt's QLineEdit::inputMask).
+    subroutine qlineedit_setInputMask(self, mask)
+        class(QLineEdit), intent(in) :: self
+        character(len=*), intent(in) :: mask
+        call qtf_qlineedit_setInputMask(qtf_live(self, 'QLineEdit%setInputMask'), mask, len(mask, c_int))
+    end subroutine qlineedit_setInputMask
+
+    !> QLineEdit_Normal, _NoEcho, _Password or _PasswordEchoOnEdit.
+    subroutine qlineedit_setEchoMode(self, mode)
+        class(QLineEdit), intent(in) :: self
+        integer, intent(in) :: mode
+        call qtf_qlineedit_setEchoMode(qtf_live(self, 'QLineEdit%setEchoMode'), int(mode, c_int))
+    end subroutine qlineedit_setEchoMode
+
+    !> Show a clear button while there is text.
+    subroutine qlineedit_setClearButtonEnabled(self, enable)
+        class(QLineEdit), intent(in) :: self
+        logical, intent(in) :: enable
+        call qtf_qlineedit_setClearButtonEnabled(qtf_live(self, 'QLineEdit%setClearButtonEnabled'), qtf_int(enable))
+    end subroutine qlineedit_setClearButtonEnabled
 
     !> Bind to a C++ QSpinBox and its signals.
     subroutine qspinbox_attach(self, ptr)
@@ -2457,6 +3064,13 @@ contains
         logical, intent(in) :: editable
         call qtf_qcombobox_setEditable(qtf_live(self, 'QComboBox%setEditable'), qtf_int(editable))
     end subroutine qcombobox_setEditable
+
+    !> Completions for an editable combo box.
+    subroutine qcombobox_setCompleter(self, completer)
+        class(QComboBox), intent(in) :: self
+        class(QCompleter), intent(in), optional :: completer
+        call qtf_qcombobox_setCompleter(qtf_live(self, 'QComboBox%setCompleter'), qtf_ptr(completer))
+    end subroutine qcombobox_setCompleter
 
     !> Add several items; trailing blanks of each element are trimmed.
     subroutine qcombobox_addItems(self, texts)
@@ -3275,6 +3889,20 @@ contains
         res = qtf_take_string(p_, n_)
     end function QFileDialog_getExistingDirectory
 
+    !> Number of (top-level) rows.
+    function qabstractitemmodel_rowCount(self) result(res)
+        class(QAbstractItemModel), intent(in) :: self
+        integer :: res
+        res = qtf_qabstractitemmodel_rowCount(qtf_live(self, 'QAbstractItemModel%rowCount'))
+    end function qabstractitemmodel_rowCount
+
+    !> Number of columns.
+    function qabstractitemmodel_columnCount(self) result(res)
+        class(QAbstractItemModel), intent(in) :: self
+        integer :: res
+        res = qtf_qabstractitemmodel_columnCount(qtf_live(self, 'QAbstractItemModel%columnCount'))
+    end function qabstractitemmodel_columnCount
+
     !> Show `text` in the cell.
     subroutine qtfmodelrequest_setText(self, text)
         class(QtfModelRequest), intent(in) :: self
@@ -3300,9 +3928,10 @@ contains
     subroutine qtftablemodel_attach(self, ptr)
         class(QtfTableModel), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
-        call self%QObject%attach(ptr)
+        call self%QAbstractItemModel%attach(ptr)
         self%dataRequested = QSignalModelData(ptr, QTF_SIG_QTFTABLEMODEL_DATAREQUESTED, self%serial)
         self%dataEdited = QSignalModelEdit(ptr, QTF_SIG_QTFTABLEMODEL_DATAEDITED, self%serial)
+        self%sortRequested = QSignalInt2(ptr, QTF_SIG_QTFTABLEMODEL_SORTREQUESTED, self%serial)
     end subroutine qtftablemodel_attach
 
     !> A table model of the given shape.
@@ -3333,20 +3962,6 @@ contains
         integer, intent(in) :: columns
         call qtf_qtftablemodel_setColumnCount(qtf_live(self, 'QtfTableModel%setColumnCount'), int(columns, c_int))
     end subroutine qtftablemodel_setColumnCount
-
-    !> Number of rows.
-    function qtftablemodel_rowCount(self) result(res)
-        class(QtfTableModel), intent(in) :: self
-        integer :: res
-        res = qtf_qtftablemodel_rowCount(qtf_live(self, 'QtfTableModel%rowCount'))
-    end function qtftablemodel_rowCount
-
-    !> Number of columns.
-    function qtftablemodel_columnCount(self) result(res)
-        class(QtfTableModel), intent(in) :: self
-        integer :: res
-        res = qtf_qtftablemodel_columnCount(qtf_live(self, 'QtfTableModel%columnCount'))
-    end function qtftablemodel_columnCount
 
     !> Set the column titles.
     subroutine qtftablemodel_setHorizontalHeaderLabels(self, labels)
@@ -3420,6 +4035,40 @@ contains
         self%activated = QSignalInt2(ptr, QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED, self%serial)
     end subroutine qabstractitemview_attach
 
+    !> Show `model` (the view does not take ownership). Not for the item widgets (QTableWidget, ...), which have their own model.
+    subroutine qabstractitemview_setModel(self, model)
+        class(QAbstractItemView), intent(in) :: self
+        class(QAbstractItemModel), intent(in) :: model
+        call qtf_qabstractitemview_setModel(qtf_live(self, 'QAbstractItemView%setModel'), qtf_live(model, &
+                'QAbstractItemView%setModel'))
+    end subroutine qabstractitemview_setModel
+
+    !> Edit every cell with `delegate`.
+    subroutine qabstractitemview_setItemDelegate(self, delegate)
+        class(QAbstractItemView), intent(in) :: self
+        class(QtfItemDelegate), intent(in) :: delegate
+        call qtf_qabstractitemview_setItemDelegate(qtf_live(self, 'QAbstractItemView%setItemDelegate'), &
+                qtf_live(delegate, 'QAbstractItemView%setItemDelegate'))
+    end subroutine qabstractitemview_setItemDelegate
+
+    !> Edit the cells of one column with `delegate`.
+    subroutine qabstractitemview_setItemDelegateForColumn(self, column, delegate)
+        class(QAbstractItemView), intent(in) :: self
+        integer, intent(in) :: column
+        class(QtfItemDelegate), intent(in) :: delegate
+        call qtf_qabstractitemview_setItemDelegateForColumn(qtf_live(self, &
+                'QAbstractItemView%setItemDelegateForColumn'), int(column, c_int), qtf_live(delegate, &
+                        'QAbstractItemView%setItemDelegateForColumn'))
+    end subroutine qabstractitemview_setItemDelegateForColumn
+
+    !> Start editing a (top-level) cell, as a double click would.
+    subroutine qabstractitemview_edit(self, row, column)
+        class(QAbstractItemView), intent(in) :: self
+        integer, intent(in) :: row
+        integer, intent(in) :: column
+        call qtf_qabstractitemview_edit(qtf_live(self, 'QAbstractItemView%edit'), int(row, c_int), int(column, c_int))
+    end subroutine qabstractitemview_edit
+
     !> Shade every other row.
     subroutine qabstractitemview_setAlternatingRowColors(self, enable)
         class(QAbstractItemView), intent(in) :: self
@@ -3476,13 +4125,6 @@ contains
         type(QTableView) :: res
         call res%attach(qtf_qtableview_new(qtf_ptr(parent)))
     end function qtableview_new
-
-    !> Show `model` (the view does not take ownership).
-    subroutine qtableview_setModel(self, model)
-        class(QTableView), intent(in) :: self
-        class(QtfTableModel), intent(in) :: model
-        call qtf_qtableview_setModel(qtf_live(self, 'QTableView%setModel'), qtf_live(model, 'QTableView%setModel'))
-    end subroutine qtableview_setModel
 
     !> Fit the column widths to their contents.
     subroutine qtableview_resizeColumnsToContents(self)
@@ -3572,6 +4214,540 @@ contains
         logical, intent(in) :: on
         call qtf_qtableview_setWordWrap(qtf_live(self, 'QTableView%setWordWrap'), qtf_int(on))
     end subroutine qtableview_setWordWrap
+
+    !> Sort when a column title is clicked (a QtfTableModel gets `sortRequested`).
+    subroutine qtableview_setSortingEnabled(self, enable)
+        class(QTableView), intent(in) :: self
+        logical, intent(in) :: enable
+        call qtf_qtableview_setSortingEnabled(qtf_live(self, 'QTableView%setSortingEnabled'), qtf_int(enable))
+    end subroutine qtableview_setSortingEnabled
+
+    !> Sort by a column now.
+    subroutine qtableview_sortByColumn(self, column, order)
+        class(QTableView), intent(in) :: self
+        integer, intent(in) :: column
+        integer, intent(in) :: order
+        call qtf_qtableview_sortByColumn(qtf_live(self, 'QTableView%sortByColumn'), int(column, c_int), int(order, &
+                c_int))
+    end subroutine qtableview_sortByColumn
+
+    !> Hide or show a column.
+    subroutine qtableview_setColumnHidden(self, column, hide)
+        class(QTableView), intent(in) :: self
+        integer, intent(in) :: column
+        logical, intent(in) :: hide
+        call qtf_qtableview_setColumnHidden(qtf_live(self, 'QTableView%setColumnHidden'), int(column, c_int), &
+                qtf_int(hide))
+    end subroutine qtableview_setColumnHidden
+
+    !> Bind to a C++ QTreeView and its signals.
+    subroutine qtreeview_attach(self, ptr)
+        class(QTreeView), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QAbstractItemView%attach(ptr)
+        self%nodeClicked = QSignalInt(ptr, QTF_SIG_QTREEVIEW_NODECLICKED, self%serial)
+        self%nodeActivated = QSignalInt(ptr, QTF_SIG_QTREEVIEW_NODEACTIVATED, self%serial)
+        self%currentNodeChanged = QSignalInt(ptr, QTF_SIG_QTREEVIEW_CURRENTNODECHANGED, self%serial)
+        self%currentFileChanged = QSignalString(ptr, QTF_SIG_QTREEVIEW_CURRENTFILECHANGED, self%serial)
+        self%fileActivated = QSignalString(ptr, QTF_SIG_QTREEVIEW_FILEACTIVATED, self%serial)
+        self%expandedNode = QSignalInt(ptr, QTF_SIG_QTREEVIEW_EXPANDEDNODE, self%serial)
+        self%collapsedNode = QSignalInt(ptr, QTF_SIG_QTREEVIEW_COLLAPSEDNODE, self%serial)
+    end subroutine qtreeview_attach
+
+    !> Create a tree view.
+    function qtreeview_new(parent) result(res)
+        class(QWidget), intent(in), optional :: parent
+        type(QTreeView) :: res
+        call res%attach(qtf_qtreeview_new(qtf_ptr(parent)))
+    end function qtreeview_new
+
+    !> The current node of a QtfTreeModel (-1 if none).
+    function qtreeview_currentNode(self) result(res)
+        class(QTreeView), intent(in) :: self
+        integer :: res
+        res = qtf_qtreeview_currentNode(qtf_live(self, 'QTreeView%currentNode'))
+    end function qtreeview_currentNode
+
+    !> Make `node` current (its parents are expanded).
+    subroutine qtreeview_setCurrentNode(self, node)
+        class(QTreeView), intent(in) :: self
+        integer, intent(in) :: node
+        call qtf_qtreeview_setCurrentNode(qtf_live(self, 'QTreeView%setCurrentNode'), int(node, c_int))
+    end subroutine qtreeview_setCurrentNode
+
+    !> Expand a node.
+    subroutine qtreeview_expandNode(self, node)
+        class(QTreeView), intent(in) :: self
+        integer, intent(in) :: node
+        call qtf_qtreeview_expandNode(qtf_live(self, 'QTreeView%expandNode'), int(node, c_int))
+    end subroutine qtreeview_expandNode
+
+    !> Collapse a node.
+    subroutine qtreeview_collapseNode(self, node)
+        class(QTreeView), intent(in) :: self
+        integer, intent(in) :: node
+        call qtf_qtreeview_collapseNode(qtf_live(self, 'QTreeView%collapseNode'), int(node, c_int))
+    end subroutine qtreeview_collapseNode
+
+    !> True if the node is expanded.
+    function qtreeview_isNodeExpanded(self, node) result(res)
+        class(QTreeView), intent(in) :: self
+        integer, intent(in) :: node
+        logical :: res
+        res = qtf_logical(qtf_qtreeview_isNodeExpanded(qtf_live(self, 'QTreeView%isNodeExpanded'), int(node, c_int)))
+    end function qtreeview_isNodeExpanded
+
+    !> Scroll so that the node is visible (expanding its parents).
+    subroutine qtreeview_scrollToNode(self, node)
+        class(QTreeView), intent(in) :: self
+        integer, intent(in) :: node
+        call qtf_qtreeview_scrollToNode(qtf_live(self, 'QTreeView%scrollToNode'), int(node, c_int))
+    end subroutine qtreeview_scrollToNode
+
+    !> The path of the current file of a QFileSystemModel (empty if none).
+    function qtreeview_currentFilePath(self) result(res)
+        class(QTreeView), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qtreeview_currentFilePath(qtf_live(self, 'QTreeView%currentFilePath'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qtreeview_currentFilePath
+
+    !> Make the file `path` of the QFileSystemModel current.
+    subroutine qtreeview_setCurrentFile(self, path)
+        class(QTreeView), intent(in) :: self
+        character(len=*), intent(in) :: path
+        call qtf_qtreeview_setCurrentFile(qtf_live(self, 'QTreeView%setCurrentFile'), path, len(path, c_int))
+    end subroutine qtreeview_setCurrentFile
+
+    !> Show only the directory `path` of the QFileSystemModel (set the model's root path too).
+    subroutine qtreeview_setRootPath(self, path)
+        class(QTreeView), intent(in) :: self
+        character(len=*), intent(in) :: path
+        call qtf_qtreeview_setRootPath(qtf_live(self, 'QTreeView%setRootPath'), path, len(path, c_int))
+    end subroutine qtreeview_setRootPath
+
+    !> Expand every node.
+    subroutine qtreeview_expandAll(self)
+        class(QTreeView), intent(in) :: self
+        call qtf_qtreeview_expandAll(qtf_live(self, 'QTreeView%expandAll'))
+    end subroutine qtreeview_expandAll
+
+    !> Collapse every node.
+    subroutine qtreeview_collapseAll(self)
+        class(QTreeView), intent(in) :: self
+        call qtf_qtreeview_collapseAll(qtf_live(self, 'QTreeView%collapseAll'))
+    end subroutine qtreeview_collapseAll
+
+    !> Expand nodes down to `depth` levels (0: the top level).
+    subroutine qtreeview_expandToDepth(self, depth)
+        class(QTreeView), intent(in) :: self
+        integer, intent(in) :: depth
+        call qtf_qtreeview_expandToDepth(qtf_live(self, 'QTreeView%expandToDepth'), int(depth, c_int))
+    end subroutine qtreeview_expandToDepth
+
+    !> Hide the column titles.
+    subroutine qtreeview_setHeaderHidden(self, hide)
+        class(QTreeView), intent(in) :: self
+        logical, intent(in) :: hide
+        call qtf_qtreeview_setHeaderHidden(qtf_live(self, 'QTreeView%setHeaderHidden'), qtf_int(hide))
+    end subroutine qtreeview_setHeaderHidden
+
+    !> Show expand/collapse controls for top-level nodes.
+    subroutine qtreeview_setRootIsDecorated(self, show)
+        class(QTreeView), intent(in) :: self
+        logical, intent(in) :: show
+        call qtf_qtreeview_setRootIsDecorated(qtf_live(self, 'QTreeView%setRootIsDecorated'), qtf_int(show))
+    end subroutine qtreeview_setRootIsDecorated
+
+    !> Promise equal row heights (faster for large trees).
+    subroutine qtreeview_setUniformRowHeights(self, uniform)
+        class(QTreeView), intent(in) :: self
+        logical, intent(in) :: uniform
+        call qtf_qtreeview_setUniformRowHeights(qtf_live(self, 'QTreeView%setUniformRowHeights'), qtf_int(uniform))
+    end subroutine qtreeview_setUniformRowHeights
+
+    !> Animate expanding and collapsing.
+    subroutine qtreeview_setAnimated(self, enable)
+        class(QTreeView), intent(in) :: self
+        logical, intent(in) :: enable
+        call qtf_qtreeview_setAnimated(qtf_live(self, 'QTreeView%setAnimated'), qtf_int(enable))
+    end subroutine qtreeview_setAnimated
+
+    !> Indentation per level.
+    subroutine qtreeview_setIndentation(self, pixels)
+        class(QTreeView), intent(in) :: self
+        integer, intent(in) :: pixels
+        call qtf_qtreeview_setIndentation(qtf_live(self, 'QTreeView%setIndentation'), int(pixels, c_int))
+    end subroutine qtreeview_setIndentation
+
+    !> Fit a column's width to its contents.
+    subroutine qtreeview_resizeColumnToContents(self, column)
+        class(QTreeView), intent(in) :: self
+        integer, intent(in) :: column
+        call qtf_qtreeview_resizeColumnToContents(qtf_live(self, 'QTreeView%resizeColumnToContents'), int(column, &
+                c_int))
+    end subroutine qtreeview_resizeColumnToContents
+
+    !> Set a column width in pixels.
+    subroutine qtreeview_setColumnWidth(self, column, width)
+        class(QTreeView), intent(in) :: self
+        integer, intent(in) :: column
+        integer, intent(in) :: width
+        call qtf_qtreeview_setColumnWidth(qtf_live(self, 'QTreeView%setColumnWidth'), int(column, c_int), int(width, &
+                c_int))
+    end subroutine qtreeview_setColumnWidth
+
+    !> Hide or show a column.
+    subroutine qtreeview_setColumnHidden(self, column, hide)
+        class(QTreeView), intent(in) :: self
+        integer, intent(in) :: column
+        logical, intent(in) :: hide
+        call qtf_qtreeview_setColumnHidden(qtf_live(self, 'QTreeView%setColumnHidden'), int(column, c_int), &
+                qtf_int(hide))
+    end subroutine qtreeview_setColumnHidden
+
+    !> Sort when a column title is clicked (needs a sorting model, e.g. QSortFilterProxyModel).
+    subroutine qtreeview_setSortingEnabled(self, enable)
+        class(QTreeView), intent(in) :: self
+        logical, intent(in) :: enable
+        call qtf_qtreeview_setSortingEnabled(qtf_live(self, 'QTreeView%setSortingEnabled'), qtf_int(enable))
+    end subroutine qtreeview_setSortingEnabled
+
+    !> Sort by a column now.
+    subroutine qtreeview_sortByColumn(self, column, order)
+        class(QTreeView), intent(in) :: self
+        integer, intent(in) :: column
+        integer, intent(in) :: order
+        call qtf_qtreeview_sortByColumn(qtf_live(self, 'QTreeView%sortByColumn'), int(column, c_int), int(order, c_int))
+    end subroutine qtreeview_sortByColumn
+
+    !> Bind to a C++ QtfTreeModel and its signals.
+    subroutine qtftreemodel_attach(self, ptr)
+        class(QtfTreeModel), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QAbstractItemModel%attach(ptr)
+        self%dataRequested = QSignalModelData(ptr, QTF_SIG_QTFTREEMODEL_DATAREQUESTED, self%serial)
+        self%dataEdited = QSignalModelEdit(ptr, QTF_SIG_QTFTREEMODEL_DATAEDITED, self%serial)
+    end subroutine qtftreemodel_attach
+
+    !> An empty tree model with `columns` columns.
+    function qtftreemodel_new(columns, parent) result(res)
+        integer, intent(in), optional :: columns
+        class(QObject), intent(in), optional :: parent
+        type(QtfTreeModel) :: res
+        integer(c_int) :: columns_
+        columns_ = 1
+        if (present(columns)) columns_ = int(columns, c_int)
+        call res%attach(qtf_qtftreemodel_new(columns_, qtf_ptr(parent)))
+    end function qtftreemodel_new
+
+    !> Set the structure: node i's parent is `parents(i)` (0: top level; must be < i). Resets the views.
+    subroutine qtftreemodel_setParents(self, parents)
+        class(QtfTreeModel), intent(in) :: self
+        integer, intent(in) :: parents(:)
+        call qtf_qtftreemodel_setParents(qtf_live(self, 'QtfTreeModel%setParents'), int(parents, c_int), &
+                int(size(parents), c_int))
+    end subroutine qtftreemodel_setParents
+
+    !> Add a node as the last child of `parent` (0: top level); returns its number (-1 if `parent` is invalid).
+    function qtftreemodel_appendNode(self, parent) result(res)
+        class(QtfTreeModel), intent(in) :: self
+        integer, intent(in) :: parent
+        integer :: res
+        res = qtf_qtftreemodel_appendNode(qtf_live(self, 'QtfTreeModel%appendNode'), int(parent, c_int))
+    end function qtftreemodel_appendNode
+
+    !> The number of nodes.
+    function qtftreemodel_nodeCount(self) result(res)
+        class(QtfTreeModel), intent(in) :: self
+        integer :: res
+        res = qtf_qtftreemodel_nodeCount(qtf_live(self, 'QtfTreeModel%nodeCount'))
+    end function qtftreemodel_nodeCount
+
+    !> The parent of a node (0: top level; -1 if invalid).
+    function qtftreemodel_parentNode(self, node) result(res)
+        class(QtfTreeModel), intent(in) :: self
+        integer, intent(in) :: node
+        integer :: res
+        res = qtf_qtftreemodel_parentNode(qtf_live(self, 'QtfTreeModel%parentNode'), int(node, c_int))
+    end function qtftreemodel_parentNode
+
+    !> The number of children of a node (0: the top-level nodes).
+    function qtftreemodel_childCount(self, node) result(res)
+        class(QtfTreeModel), intent(in) :: self
+        integer, intent(in) :: node
+        integer :: res
+        res = qtf_qtftreemodel_childCount(qtf_live(self, 'QtfTreeModel%childCount'), int(node, c_int))
+    end function qtftreemodel_childCount
+
+    !> Set the number of columns.
+    subroutine qtftreemodel_setColumnCount(self, columns)
+        class(QtfTreeModel), intent(in) :: self
+        integer, intent(in) :: columns
+        call qtf_qtftreemodel_setColumnCount(qtf_live(self, 'QtfTreeModel%setColumnCount'), int(columns, c_int))
+    end subroutine qtftreemodel_setColumnCount
+
+    !> Set the column titles.
+    subroutine qtftreemodel_setHeaderLabels(self, labels)
+        class(QtfTreeModel), intent(in) :: self
+        character(len=*), intent(in) :: labels(:)
+        call qtf_qtftreemodel_setHeaderLabels(qtf_live(self, 'QtfTreeModel%setHeaderLabels'), labels, len(labels, &
+                c_int), int(size(labels), c_int))
+    end subroutine qtftreemodel_setHeaderLabels
+
+    !> Allow editing cells (edits arrive at `dataEdited`).
+    subroutine qtftreemodel_setEditable(self, editable)
+        class(QtfTreeModel), intent(in) :: self
+        logical, intent(in) :: editable
+        call qtf_qtftreemodel_setEditable(qtf_live(self, 'QtfTreeModel%setEditable'), qtf_int(editable))
+    end subroutine qtftreemodel_setEditable
+
+    !> Redisplay all cells (after the data changed).
+    subroutine qtftreemodel_refresh(self)
+        class(QtfTreeModel), intent(in) :: self
+        call qtf_qtftreemodel_refresh(qtf_live(self, 'QtfTreeModel%refresh'))
+    end subroutine qtftreemodel_refresh
+
+    !> Redisplay one node's cells.
+    subroutine qtftreemodel_refreshNode(self, node)
+        class(QtfTreeModel), intent(in) :: self
+        integer, intent(in) :: node
+        call qtf_qtftreemodel_refreshNode(qtf_live(self, 'QtfTreeModel%refreshNode'), int(node, c_int))
+    end subroutine qtftreemodel_refreshNode
+
+    !> The text of a cell, as a view would show it.
+    function qtftreemodel_dataText(self, node, column) result(res)
+        class(QtfTreeModel), intent(in) :: self
+        integer, intent(in) :: node
+        integer, intent(in) :: column
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qtftreemodel_dataText(qtf_live(self, 'QtfTreeModel%dataText'), int(node, c_int), int(column, c_int), &
+                n_)
+        res = qtf_take_string(p_, n_)
+    end function qtftreemodel_dataText
+
+    !> A proxy model (set its source model).
+    function qsortfilterproxymodel_new(parent) result(res)
+        class(QObject), intent(in), optional :: parent
+        type(QSortFilterProxyModel) :: res
+        call res%attach(qtf_qsortfilterproxymodel_new(qtf_ptr(parent)))
+    end function qsortfilterproxymodel_new
+
+    !> The model to sort and filter.
+    subroutine qsortfilterproxymodel_setSourceModel(self, model)
+        class(QSortFilterProxyModel), intent(in) :: self
+        class(QAbstractItemModel), intent(in) :: model
+        call qtf_qsortfilterproxymodel_setSourceModel(qtf_live(self, 'QSortFilterProxyModel%setSourceModel'), &
+                qtf_live(model, 'QSortFilterProxyModel%setSourceModel'))
+    end subroutine qsortfilterproxymodel_setSourceModel
+
+    !> Show only rows whose key column contains `pattern` (empty: all rows).
+    subroutine qsortfilterproxymodel_setFilterFixedString(self, pattern)
+        class(QSortFilterProxyModel), intent(in) :: self
+        character(len=*), intent(in) :: pattern
+        call qtf_qsortfilterproxymodel_setFilterFixedString(qtf_live(self, &
+                'QSortFilterProxyModel%setFilterFixedString'), pattern, len(pattern, c_int))
+    end subroutine qsortfilterproxymodel_setFilterFixedString
+
+    !> Show only rows whose key column matches a regular expression.
+    subroutine qsortfilterproxymodel_setFilterRegularExpression(self, pattern)
+        class(QSortFilterProxyModel), intent(in) :: self
+        character(len=*), intent(in) :: pattern
+        call qtf_qsortfilterproxymodel_setFilterRegularExpression(qtf_live(self, &
+                'QSortFilterProxyModel%setFilterRegularExpression'), pattern, len(pattern, c_int))
+    end subroutine qsortfilterproxymodel_setFilterRegularExpression
+
+    !> Show only rows whose key column matches a wildcard pattern (`*`, `?`).
+    subroutine qsortfilterproxymodel_setFilterWildcard(self, pattern)
+        class(QSortFilterProxyModel), intent(in) :: self
+        character(len=*), intent(in) :: pattern
+        call qtf_qsortfilterproxymodel_setFilterWildcard(qtf_live(self, 'QSortFilterProxyModel%setFilterWildcard'), &
+                pattern, len(pattern, c_int))
+    end subroutine qsortfilterproxymodel_setFilterWildcard
+
+    !> The column the filter looks at (-1: any column).
+    subroutine qsortfilterproxymodel_setFilterKeyColumn(self, column)
+        class(QSortFilterProxyModel), intent(in) :: self
+        integer, intent(in) :: column
+        call qtf_qsortfilterproxymodel_setFilterKeyColumn(qtf_live(self, 'QSortFilterProxyModel%setFilterKeyColumn'), &
+                int(column, c_int))
+    end subroutine qsortfilterproxymodel_setFilterKeyColumn
+
+    !> Qt_CaseInsensitive or Qt_CaseSensitive (default).
+    subroutine qsortfilterproxymodel_setFilterCaseSensitivity(self, cs)
+        class(QSortFilterProxyModel), intent(in) :: self
+        integer, intent(in) :: cs
+        call qtf_qsortfilterproxymodel_setFilterCaseSensitivity(qtf_live(self, &
+                'QSortFilterProxyModel%setFilterCaseSensitivity'), int(cs, c_int))
+    end subroutine qsortfilterproxymodel_setFilterCaseSensitivity
+
+    !> Case sensitivity when sorting text.
+    subroutine qsortfilterproxymodel_setSortCaseSensitivity(self, cs)
+        class(QSortFilterProxyModel), intent(in) :: self
+        integer, intent(in) :: cs
+        call qtf_qsortfilterproxymodel_setSortCaseSensitivity(qtf_live(self, &
+                'QSortFilterProxyModel%setSortCaseSensitivity'), int(cs, c_int))
+    end subroutine qsortfilterproxymodel_setSortCaseSensitivity
+
+    !> For trees: keep the parents of matching nodes.
+    subroutine qsortfilterproxymodel_setRecursiveFilteringEnabled(self, recursive)
+        class(QSortFilterProxyModel), intent(in) :: self
+        logical, intent(in) :: recursive
+        call qtf_qsortfilterproxymodel_setRecursiveFilteringEnabled(qtf_live(self, &
+                'QSortFilterProxyModel%setRecursiveFilteringEnabled'), qtf_int(recursive))
+    end subroutine qsortfilterproxymodel_setRecursiveFilteringEnabled
+
+    !> Re-sort and re-filter when the source changes (default true).
+    subroutine qsortfilterproxymodel_setDynamicSortFilter(self, enable)
+        class(QSortFilterProxyModel), intent(in) :: self
+        logical, intent(in) :: enable
+        call qtf_qsortfilterproxymodel_setDynamicSortFilter(qtf_live(self, &
+                'QSortFilterProxyModel%setDynamicSortFilter'), qtf_int(enable))
+    end subroutine qsortfilterproxymodel_setDynamicSortFilter
+
+    !> Sort by a column (-1: source order).
+    subroutine qsortfilterproxymodel_sort(self, column, order)
+        class(QSortFilterProxyModel), intent(in) :: self
+        integer, intent(in) :: column
+        integer, intent(in), optional :: order
+        integer(c_int) :: order_
+        order_ = Qt_AscendingOrder
+        if (present(order)) order_ = int(order, c_int)
+        call qtf_qsortfilterproxymodel_sort(qtf_live(self, 'QSortFilterProxyModel%sort'), int(column, c_int), order_)
+    end subroutine qsortfilterproxymodel_sort
+
+    !> Re-sort and re-filter now.
+    subroutine qsortfilterproxymodel_invalidate(self)
+        class(QSortFilterProxyModel), intent(in) :: self
+        call qtf_qsortfilterproxymodel_invalidate(qtf_live(self, 'QSortFilterProxyModel%invalidate'))
+    end subroutine qsortfilterproxymodel_invalidate
+
+    !> The source model's row for a proxy row (-1 if invalid).
+    function qsortfilterproxymodel_mapToSourceRow(self, row, column) result(res)
+        class(QSortFilterProxyModel), intent(in) :: self
+        integer, intent(in) :: row
+        integer, intent(in), optional :: column
+        integer :: res
+        integer(c_int) :: column_
+        column_ = 0
+        if (present(column)) column_ = int(column, c_int)
+        res = qtf_qsortfilterproxymodel_mapToSourceRow(qtf_live(self, 'QSortFilterProxyModel%mapToSourceRow'), &
+                int(row, c_int), column_)
+    end function qsortfilterproxymodel_mapToSourceRow
+
+    !> The proxy row of a source row (-1 if filtered out).
+    function qsortfilterproxymodel_mapFromSourceRow(self, row, column) result(res)
+        class(QSortFilterProxyModel), intent(in) :: self
+        integer, intent(in) :: row
+        integer, intent(in), optional :: column
+        integer :: res
+        integer(c_int) :: column_
+        column_ = 0
+        if (present(column)) column_ = int(column, c_int)
+        res = qtf_qsortfilterproxymodel_mapFromSourceRow(qtf_live(self, 'QSortFilterProxyModel%mapFromSourceRow'), &
+                int(row, c_int), column_)
+    end function qsortfilterproxymodel_mapFromSourceRow
+
+    !> Bind to a C++ QFileSystemModel and its signals.
+    subroutine qfilesystemmodel_attach(self, ptr)
+        class(QFileSystemModel), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QAbstractItemModel%attach(ptr)
+        self%directoryLoaded = QSignalString(ptr, QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED, self%serial)
+        self%rootPathChanged = QSignalString(ptr, QTF_SIG_QFILESYSTEMMODEL_ROOTPATHCHANGED, self%serial)
+    end subroutine qfilesystemmodel_attach
+
+    !> A file system model (call setRootPath).
+    function qfilesystemmodel_new(parent) result(res)
+        class(QObject), intent(in), optional :: parent
+        type(QFileSystemModel) :: res
+        call res%attach(qtf_qfilesystemmodel_new(qtf_ptr(parent)))
+    end function qfilesystemmodel_new
+
+    !> Start watching `path` (load its contents); use the view's setRootPath to show only it.
+    subroutine qfilesystemmodel_setRootPath(self, path)
+        class(QFileSystemModel), intent(in) :: self
+        character(len=*), intent(in) :: path
+        call qtf_qfilesystemmodel_setRootPath(qtf_live(self, 'QFileSystemModel%setRootPath'), path, len(path, c_int))
+    end subroutine qfilesystemmodel_setRootPath
+
+    !> The watched root path.
+    function qfilesystemmodel_rootPath(self) result(res)
+        class(QFileSystemModel), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qfilesystemmodel_rootPath(qtf_live(self, 'QFileSystemModel%rootPath'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qfilesystemmodel_rootPath
+
+    !> Show only files matching these wildcards, e.g. ['*.dat', '*.csv'].
+    subroutine qfilesystemmodel_setNameFilters(self, filters)
+        class(QFileSystemModel), intent(in) :: self
+        character(len=*), intent(in) :: filters(:)
+        call qtf_qfilesystemmodel_setNameFilters(qtf_live(self, 'QFileSystemModel%setNameFilters'), filters, &
+                len(filters, c_int), int(size(filters), c_int))
+    end subroutine qfilesystemmodel_setNameFilters
+
+    !> Show non-matching files disabled (true, default) or hide them (false).
+    subroutine qfilesystemmodel_setNameFilterDisables(self, disable)
+        class(QFileSystemModel), intent(in) :: self
+        logical, intent(in) :: disable
+        call qtf_qfilesystemmodel_setNameFilterDisables(qtf_live(self, 'QFileSystemModel%setNameFilterDisables'), &
+                qtf_int(disable))
+    end subroutine qfilesystemmodel_setNameFilterDisables
+
+    !> Allow renaming and moving files in views (false) or not (true, default).
+    subroutine qfilesystemmodel_setReadOnly(self, readOnly)
+        class(QFileSystemModel), intent(in) :: self
+        logical, intent(in) :: readOnly
+        call qtf_qfilesystemmodel_setReadOnly(qtf_live(self, 'QFileSystemModel%setReadOnly'), qtf_int(readOnly))
+    end subroutine qfilesystemmodel_setReadOnly
+
+    !> The number of entries shown in directory `path` (once loaded).
+    function qfilesystemmodel_childCount(self, path) result(res)
+        class(QFileSystemModel), intent(in) :: self
+        character(len=*), intent(in) :: path
+        integer :: res
+        res = qtf_qfilesystemmodel_childCount(qtf_live(self, 'QFileSystemModel%childCount'), path, len(path, c_int))
+    end function qfilesystemmodel_childCount
+
+    !> A delegate (give it the view as parent).
+    function qtfitemdelegate_new(parent) result(res)
+        class(QObject), intent(in), optional :: parent
+        type(QtfItemDelegate) :: res
+        call res%attach(qtf_qtfitemdelegate_new(qtf_ptr(parent)))
+    end function qtfitemdelegate_new
+
+    !> Edit with a combo box offering `choices`.
+    subroutine qtfitemdelegate_setChoices(self, choices)
+        class(QtfItemDelegate), intent(in) :: self
+        character(len=*), intent(in) :: choices(:)
+        call qtf_qtfitemdelegate_setChoices(qtf_live(self, 'QtfItemDelegate%setChoices'), choices, len(choices, &
+                c_int), int(size(choices), c_int))
+    end subroutine qtfitemdelegate_setChoices
+
+    !> Edit with a spin box limited to [minimum, maximum] (`decimals = 0`: an integer spin box).
+    subroutine qtfitemdelegate_setRange(self, minimum, maximum, decimals)
+        class(QtfItemDelegate), intent(in) :: self
+        real(c_double), intent(in) :: minimum
+        real(c_double), intent(in) :: maximum
+        integer, intent(in), optional :: decimals
+        integer(c_int) :: decimals_
+        decimals_ = 2
+        if (present(decimals)) decimals_ = int(decimals, c_int)
+        call qtf_qtfitemdelegate_setRange(qtf_live(self, 'QtfItemDelegate%setRange'), minimum, maximum, decimals_)
+    end subroutine qtfitemdelegate_setRange
+
+    !> Back to the default editor (a line edit).
+    subroutine qtfitemdelegate_clear(self)
+        class(QtfItemDelegate), intent(in) :: self
+        call qtf_qtfitemdelegate_clear(qtf_live(self, 'QtfItemDelegate%clear'))
+    end subroutine qtfitemdelegate_clear
 
     !> A cell item with `text`.
     function qtablewidgetitem_new(text) result(res)
@@ -5885,6 +7061,1118 @@ contains
         type(QIcon) :: res
         res%ptr = qtf_qstyle_standardIcon(name, len(name, c_int))
     end function QStyle_standardIcon
+
+    !> Bind to a C++ QDialogButtonBox and its signals.
+    subroutine qdialogbuttonbox_attach(self, ptr)
+        class(QDialogButtonBox), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QWidget%attach(ptr)
+        self%accepted = QSignal(ptr, QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED, self%serial)
+        self%rejected = QSignal(ptr, QTF_SIG_QDIALOGBUTTONBOX_REJECTED, self%serial)
+        self%helpRequested = QSignal(ptr, QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED, self%serial)
+        self%clicked = QSignalInt(ptr, QTF_SIG_QDIALOGBUTTONBOX_CLICKED, self%serial)
+        self%clickedRole = QSignalInt(ptr, QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE, self%serial)
+    end subroutine qdialogbuttonbox_attach
+
+    !> A button box, e.g. QDialogButtonBox(ior(QDialogButtonBox_Ok, QDialogButtonBox_Cancel)).
+    function qdialogbuttonbox_new(buttons, parent) result(res)
+        integer, intent(in), optional :: buttons
+        class(QWidget), intent(in), optional :: parent
+        type(QDialogButtonBox) :: res
+        integer(c_int) :: buttons_
+        buttons_ = QDialogButtonBox_NoButton
+        if (present(buttons)) buttons_ = int(buttons, c_int)
+        call res%attach(qtf_qdialogbuttonbox_new(buttons_, qtf_ptr(parent)))
+    end function qdialogbuttonbox_new
+
+    !> Set the standard buttons (combine with ior).
+    subroutine qdialogbuttonbox_setStandardButtons(self, buttons)
+        class(QDialogButtonBox), intent(in) :: self
+        integer, intent(in) :: buttons
+        call qtf_qdialogbuttonbox_setStandardButtons(qtf_live(self, 'QDialogButtonBox%setStandardButtons'), &
+                int(buttons, c_int))
+    end subroutine qdialogbuttonbox_setStandardButtons
+
+    !> The standard buttons.
+    function qdialogbuttonbox_standardButtons(self) result(res)
+        class(QDialogButtonBox), intent(in) :: self
+        integer :: res
+        res = qtf_qdialogbuttonbox_standardButtons(qtf_live(self, 'QDialogButtonBox%standardButtons'))
+    end function qdialogbuttonbox_standardButtons
+
+    !> A standard button (null if absent), e.g. to disable OK.
+    function qdialogbuttonbox_button(self, which) result(res)
+        class(QDialogButtonBox), intent(in) :: self
+        integer, intent(in) :: which
+        type(QPushButton) :: res
+        call res%attach(qtf_qdialogbuttonbox_button(qtf_live(self, 'QDialogButtonBox%button'), int(which, c_int)))
+    end function qdialogbuttonbox_button
+
+    !> Add a button with your own text and a role.
+    function qdialogbuttonbox_addButton(self, text, role) result(res)
+        class(QDialogButtonBox), intent(in) :: self
+        character(len=*), intent(in) :: text
+        integer, intent(in) :: role
+        type(QPushButton) :: res
+        call res%attach(qtf_qdialogbuttonbox_addButton(qtf_live(self, 'QDialogButtonBox%addButton'), text, len(text, &
+                c_int), int(role, c_int)))
+    end function qdialogbuttonbox_addButton
+
+    !> Lay the buttons out horizontally (default) or vertically.
+    subroutine qdialogbuttonbox_setOrientation(self, orientation)
+        class(QDialogButtonBox), intent(in) :: self
+        integer, intent(in) :: orientation
+        call qtf_qdialogbuttonbox_setOrientation(qtf_live(self, 'QDialogButtonBox%setOrientation'), int(orientation, &
+                c_int))
+    end subroutine qdialogbuttonbox_setOrientation
+
+    !> Center the buttons instead of aligning them as the platform does.
+    subroutine qdialogbuttonbox_setCenterButtons(self, center)
+        class(QDialogButtonBox), intent(in) :: self
+        logical, intent(in) :: center
+        call qtf_qdialogbuttonbox_setCenterButtons(qtf_live(self, 'QDialogButtonBox%setCenterButtons'), qtf_int(center))
+    end subroutine qdialogbuttonbox_setCenterButtons
+
+    !> Bind to a C++ QCompleter and its signals.
+    subroutine qcompleter_attach(self, ptr)
+        class(QCompleter), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QObject%attach(ptr)
+        self%activated = QSignalString(ptr, QTF_SIG_QCOMPLETER_ACTIVATED, self%serial)
+        self%highlighted = QSignalString(ptr, QTF_SIG_QCOMPLETER_HIGHLIGHTED, self%serial)
+    end subroutine qcompleter_attach
+
+    !> Complete from `items`.
+    function qcompleter_new(items, parent) result(res)
+        character(len=*), intent(in) :: items(:)
+        class(QObject), intent(in), optional :: parent
+        type(QCompleter) :: res
+        call res%attach(qtf_qcompleter_new(items, len(items, c_int), qtf_ptr(parent), int(size(items), c_int)))
+    end function qcompleter_new
+
+    !> Replace the completions.
+    subroutine qcompleter_setItems(self, items)
+        class(QCompleter), intent(in) :: self
+        character(len=*), intent(in) :: items(:)
+        call qtf_qcompleter_setItems(qtf_live(self, 'QCompleter%setItems'), items, len(items, c_int), &
+                int(size(items), c_int))
+    end subroutine qcompleter_setItems
+
+    !> Qt_CaseInsensitive or Qt_CaseSensitive (default).
+    subroutine qcompleter_setCaseSensitivity(self, cs)
+        class(QCompleter), intent(in) :: self
+        integer, intent(in) :: cs
+        call qtf_qcompleter_setCaseSensitivity(qtf_live(self, 'QCompleter%setCaseSensitivity'), int(cs, c_int))
+    end subroutine qcompleter_setCaseSensitivity
+
+    !> Which items match: Qt_MatchStartsWith (default), Qt_MatchContains or Qt_MatchEndsWith.
+    subroutine qcompleter_setFilterMode(self, mode)
+        class(QCompleter), intent(in) :: self
+        integer, intent(in) :: mode
+        call qtf_qcompleter_setFilterMode(qtf_live(self, 'QCompleter%setFilterMode'), int(mode, c_int))
+    end subroutine qcompleter_setFilterMode
+
+    !> QCompleter_PopupCompletion (default), _UnfilteredPopupCompletion or _InlineCompletion.
+    subroutine qcompleter_setCompletionMode(self, mode)
+        class(QCompleter), intent(in) :: self
+        integer, intent(in) :: mode
+        call qtf_qcompleter_setCompletionMode(qtf_live(self, 'QCompleter%setCompletionMode'), int(mode, c_int))
+    end subroutine qcompleter_setCompletionMode
+
+    !> Rows shown in the pop-up.
+    subroutine qcompleter_setMaxVisibleItems(self, count)
+        class(QCompleter), intent(in) :: self
+        integer, intent(in) :: count
+        call qtf_qcompleter_setMaxVisibleItems(qtf_live(self, 'QCompleter%setMaxVisibleItems'), int(count, c_int))
+    end subroutine qcompleter_setMaxVisibleItems
+
+    !> Complete `prefix` (as if typed).
+    subroutine qcompleter_setCompletionPrefix(self, prefix)
+        class(QCompleter), intent(in) :: self
+        character(len=*), intent(in) :: prefix
+        call qtf_qcompleter_setCompletionPrefix(qtf_live(self, 'QCompleter%setCompletionPrefix'), prefix, len(prefix, &
+                c_int))
+    end subroutine qcompleter_setCompletionPrefix
+
+    !> The number of completions of the current prefix.
+    function qcompleter_completionCount(self) result(res)
+        class(QCompleter), intent(in) :: self
+        integer :: res
+        res = qtf_qcompleter_completionCount(qtf_live(self, 'QCompleter%completionCount'))
+    end function qcompleter_completionCount
+
+    !> The current completion.
+    function qcompleter_currentCompletion(self) result(res)
+        class(QCompleter), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qcompleter_currentCompletion(qtf_live(self, 'QCompleter%currentCompletion'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qcompleter_currentCompletion
+
+    !> Make the `row`-th completion current (0-based); false if out of range.
+    function qcompleter_setCurrentRow(self, row) result(res)
+        class(QCompleter), intent(in) :: self
+        integer, intent(in) :: row
+        logical :: res
+        res = qtf_logical(qtf_qcompleter_setCurrentRow(qtf_live(self, 'QCompleter%setCurrentRow'), int(row, c_int)))
+    end function qcompleter_setCurrentRow
+
+    !> Bind to a C++ QDateTimeEdit and its signals.
+    subroutine qdatetimeedit_attach(self, ptr)
+        class(QDateTimeEdit), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QWidget%attach(ptr)
+        self%dateTimeChanged = QSignal(ptr, QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED, self%serial)
+    end subroutine qdatetimeedit_attach
+
+    !> Create a date-time editor.
+    function qdatetimeedit_new(parent) result(res)
+        class(QWidget), intent(in), optional :: parent
+        type(QDateTimeEdit) :: res
+        call res%attach(qtf_qdatetimeedit_new(qtf_ptr(parent)))
+    end function qdatetimeedit_new
+
+    !> Set the date and time.
+    subroutine qdatetimeedit_setDateTime(self, dateTime)
+        class(QDateTimeEdit), intent(in) :: self
+        type(QDateTime), intent(in) :: dateTime
+        call qtf_qdatetimeedit_setDateTime(qtf_live(self, 'QDateTimeEdit%setDateTime'), int(dateTime%year, c_int), &
+                int(dateTime%month, c_int), int(dateTime%day, c_int), int(dateTime%hour, c_int), int(dateTime%minute, &
+                        c_int), int(dateTime%second, c_int), int(dateTime%msec, c_int))
+    end subroutine qdatetimeedit_setDateTime
+
+    !> The date and time.
+    function qdatetimeedit_dateTime(self) result(res)
+        class(QDateTimeEdit), intent(in) :: self
+        type(QDateTime) :: res
+        integer(c_int) :: r_year
+        integer(c_int) :: r_month
+        integer(c_int) :: r_day
+        integer(c_int) :: r_hour
+        integer(c_int) :: r_minute
+        integer(c_int) :: r_second
+        integer(c_int) :: r_msec
+        call qtf_qdatetimeedit_dateTime(qtf_live(self, 'QDateTimeEdit%dateTime'), r_year, r_month, r_day, r_hour, &
+                r_minute, r_second, r_msec)
+        res%year = int(r_year)
+        res%month = int(r_month)
+        res%day = int(r_day)
+        res%hour = int(r_hour)
+        res%minute = int(r_minute)
+        res%second = int(r_second)
+        res%msec = int(r_msec)
+    end function qdatetimeedit_dateTime
+
+    !> The earliest allowed value.
+    subroutine qdatetimeedit_setMinimumDateTime(self, dateTime)
+        class(QDateTimeEdit), intent(in) :: self
+        type(QDateTime), intent(in) :: dateTime
+        call qtf_qdatetimeedit_setMinimumDateTime(qtf_live(self, 'QDateTimeEdit%setMinimumDateTime'), &
+                int(dateTime%year, c_int), int(dateTime%month, c_int), int(dateTime%day, c_int), int(dateTime%hour, &
+                        c_int), int(dateTime%minute, c_int), int(dateTime%second, c_int), int(dateTime%msec, c_int))
+    end subroutine qdatetimeedit_setMinimumDateTime
+
+    !> The latest allowed value.
+    subroutine qdatetimeedit_setMaximumDateTime(self, dateTime)
+        class(QDateTimeEdit), intent(in) :: self
+        type(QDateTime), intent(in) :: dateTime
+        call qtf_qdatetimeedit_setMaximumDateTime(qtf_live(self, 'QDateTimeEdit%setMaximumDateTime'), &
+                int(dateTime%year, c_int), int(dateTime%month, c_int), int(dateTime%day, c_int), int(dateTime%hour, &
+                        c_int), int(dateTime%minute, c_int), int(dateTime%second, c_int), int(dateTime%msec, c_int))
+    end subroutine qdatetimeedit_setMaximumDateTime
+
+    !> How the value is shown, e.g. 'yyyy-MM-dd HH:mm:ss'.
+    subroutine qdatetimeedit_setDisplayFormat(self, format)
+        class(QDateTimeEdit), intent(in) :: self
+        character(len=*), intent(in) :: format
+        call qtf_qdatetimeedit_setDisplayFormat(qtf_live(self, 'QDateTimeEdit%setDisplayFormat'), format, len(format, &
+                c_int))
+    end subroutine qdatetimeedit_setDisplayFormat
+
+    !> The display format.
+    function qdatetimeedit_displayFormat(self) result(res)
+        class(QDateTimeEdit), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qdatetimeedit_displayFormat(qtf_live(self, 'QDateTimeEdit%displayFormat'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qdatetimeedit_displayFormat
+
+    !> Pick the date from a pop-up calendar.
+    subroutine qdatetimeedit_setCalendarPopup(self, enable)
+        class(QDateTimeEdit), intent(in) :: self
+        logical, intent(in) :: enable
+        call qtf_qdatetimeedit_setCalendarPopup(qtf_live(self, 'QDateTimeEdit%setCalendarPopup'), qtf_int(enable))
+    end subroutine qdatetimeedit_setCalendarPopup
+
+    !> Bind to a C++ QTextBrowser and its signals.
+    subroutine qtextbrowser_attach(self, ptr)
+        class(QTextBrowser), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QTextEdit%attach(ptr)
+        self%anchorClicked = QSignalString(ptr, QTF_SIG_QTEXTBROWSER_ANCHORCLICKED, self%serial)
+        self%sourceChanged = QSignalString(ptr, QTF_SIG_QTEXTBROWSER_SOURCECHANGED, self%serial)
+        self%backwardAvailable = QSignalBool(ptr, QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE, self%serial)
+        self%forwardAvailable = QSignalBool(ptr, QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE, self%serial)
+    end subroutine qtextbrowser_attach
+
+    !> Create a text browser.
+    function qtextbrowser_new(parent) result(res)
+        class(QWidget), intent(in), optional :: parent
+        type(QTextBrowser) :: res
+        call res%attach(qtf_qtextbrowser_new(qtf_ptr(parent)))
+    end function qtextbrowser_new
+
+    !> Show a document: a file path, or a URL.
+    subroutine qtextbrowser_setSource(self, source)
+        class(QTextBrowser), intent(in) :: self
+        character(len=*), intent(in) :: source
+        call qtf_qtextbrowser_setSource(qtf_live(self, 'QTextBrowser%setSource'), source, len(source, c_int))
+    end subroutine qtextbrowser_setSource
+
+    !> The URL of the document shown.
+    function qtextbrowser_source(self) result(res)
+        class(QTextBrowser), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qtextbrowser_source(qtf_live(self, 'QTextBrowser%source'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qtextbrowser_source
+
+    !> Directories where relative links are looked up.
+    subroutine qtextbrowser_setSearchPaths(self, paths)
+        class(QTextBrowser), intent(in) :: self
+        character(len=*), intent(in) :: paths(:)
+        call qtf_qtextbrowser_setSearchPaths(qtf_live(self, 'QTextBrowser%setSearchPaths'), paths, len(paths, c_int), &
+                int(size(paths), c_int))
+    end subroutine qtextbrowser_setSearchPaths
+
+    !> Open http(s) links in the system browser.
+    subroutine qtextbrowser_setOpenExternalLinks(self, open)
+        class(QTextBrowser), intent(in) :: self
+        logical, intent(in) :: open
+        call qtf_qtextbrowser_setOpenExternalLinks(qtf_live(self, 'QTextBrowser%setOpenExternalLinks'), qtf_int(open))
+    end subroutine qtextbrowser_setOpenExternalLinks
+
+    !> Follow links (true, default), or only report them with `anchorClicked`.
+    subroutine qtextbrowser_setOpenLinks(self, open)
+        class(QTextBrowser), intent(in) :: self
+        logical, intent(in) :: open
+        call qtf_qtextbrowser_setOpenLinks(qtf_live(self, 'QTextBrowser%setOpenLinks'), qtf_int(open))
+    end subroutine qtextbrowser_setOpenLinks
+
+    !> Go back in the history.
+    subroutine qtextbrowser_backward(self)
+        class(QTextBrowser), intent(in) :: self
+        call qtf_qtextbrowser_backward(qtf_live(self, 'QTextBrowser%backward'))
+    end subroutine qtextbrowser_backward
+
+    !> Go forward in the history.
+    subroutine qtextbrowser_forward(self)
+        class(QTextBrowser), intent(in) :: self
+        call qtf_qtextbrowser_forward(qtf_live(self, 'QTextBrowser%forward'))
+    end subroutine qtextbrowser_forward
+
+    !> Go to the first document shown.
+    subroutine qtextbrowser_home(self)
+        class(QTextBrowser), intent(in) :: self
+        call qtf_qtextbrowser_home(qtf_live(self, 'QTextBrowser%home'))
+    end subroutine qtextbrowser_home
+
+    !> Reload the current document.
+    subroutine qtextbrowser_reload(self)
+        class(QTextBrowser), intent(in) :: self
+        call qtf_qtextbrowser_reload(qtf_live(self, 'QTextBrowser%reload'))
+    end subroutine qtextbrowser_reload
+
+    !> True if `backward` is possible.
+    function qtextbrowser_isBackwardAvailable(self) result(res)
+        class(QTextBrowser), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtextbrowser_isBackwardAvailable(qtf_live(self, 'QTextBrowser%isBackwardAvailable')))
+    end function qtextbrowser_isBackwardAvailable
+
+    !> True if `forward` is possible.
+    function qtextbrowser_isForwardAvailable(self) result(res)
+        class(QTextBrowser), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtextbrowser_isForwardAvailable(qtf_live(self, 'QTextBrowser%isForwardAvailable')))
+    end function qtextbrowser_isForwardAvailable
+
+    !> Forget the history.
+    subroutine qtextbrowser_clearHistory(self)
+        class(QTextBrowser), intent(in) :: self
+        call qtf_qtextbrowser_clearHistory(qtf_live(self, 'QTextBrowser%clearHistory'))
+    end subroutine qtextbrowser_clearHistory
+
+    !> Bind to a C++ QToolBox and its signals.
+    subroutine qtoolbox_attach(self, ptr)
+        class(QToolBox), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QFrame%attach(ptr)
+        self%currentChanged = QSignalInt(ptr, QTF_SIG_QTOOLBOX_CURRENTCHANGED, self%serial)
+    end subroutine qtoolbox_attach
+
+    !> Create a tool box.
+    function qtoolbox_new(parent) result(res)
+        class(QWidget), intent(in), optional :: parent
+        type(QToolBox) :: res
+        call res%attach(qtf_qtoolbox_new(qtf_ptr(parent)))
+    end function qtoolbox_new
+
+    !> Append a page with a title (the tool box takes ownership).
+    subroutine qtoolbox_addItem(self, widget, text)
+        class(QToolBox), intent(in) :: self
+        class(QWidget), intent(in) :: widget
+        character(len=*), intent(in) :: text
+        call qtf_qtoolbox_addItem(qtf_live(self, 'QToolBox%addItem'), qtf_live(widget, 'QToolBox%addItem'), text, &
+                len(text, c_int))
+    end subroutine qtoolbox_addItem
+
+    !> Insert a page before `index`.
+    subroutine qtoolbox_insertItem(self, index, widget, text)
+        class(QToolBox), intent(in) :: self
+        integer, intent(in) :: index
+        class(QWidget), intent(in) :: widget
+        character(len=*), intent(in) :: text
+        call qtf_qtoolbox_insertItem(qtf_live(self, 'QToolBox%insertItem'), int(index, c_int), qtf_live(widget, &
+                'QToolBox%insertItem'), text, len(text, c_int))
+    end subroutine qtoolbox_insertItem
+
+    !> Remove a page (it is not deleted).
+    subroutine qtoolbox_removeItem(self, index)
+        class(QToolBox), intent(in) :: self
+        integer, intent(in) :: index
+        call qtf_qtoolbox_removeItem(qtf_live(self, 'QToolBox%removeItem'), int(index, c_int))
+    end subroutine qtoolbox_removeItem
+
+    !> The number of pages.
+    function qtoolbox_count(self) result(res)
+        class(QToolBox), intent(in) :: self
+        integer :: res
+        res = qtf_qtoolbox_count(qtf_live(self, 'QToolBox%count'))
+    end function qtoolbox_count
+
+    !> The open page (0-based).
+    function qtoolbox_currentIndex(self) result(res)
+        class(QToolBox), intent(in) :: self
+        integer :: res
+        res = qtf_qtoolbox_currentIndex(qtf_live(self, 'QToolBox%currentIndex'))
+    end function qtoolbox_currentIndex
+
+    !> Open a page.
+    subroutine qtoolbox_setCurrentIndex(self, index)
+        class(QToolBox), intent(in) :: self
+        integer, intent(in) :: index
+        call qtf_qtoolbox_setCurrentIndex(qtf_live(self, 'QToolBox%setCurrentIndex'), int(index, c_int))
+    end subroutine qtoolbox_setCurrentIndex
+
+    !> Set a page title.
+    subroutine qtoolbox_setItemText(self, index, text)
+        class(QToolBox), intent(in) :: self
+        integer, intent(in) :: index
+        character(len=*), intent(in) :: text
+        call qtf_qtoolbox_setItemText(qtf_live(self, 'QToolBox%setItemText'), int(index, c_int), text, len(text, c_int))
+    end subroutine qtoolbox_setItemText
+
+    !> A page title.
+    function qtoolbox_itemText(self, index) result(res)
+        class(QToolBox), intent(in) :: self
+        integer, intent(in) :: index
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qtoolbox_itemText(qtf_live(self, 'QToolBox%itemText'), int(index, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function qtoolbox_itemText
+
+    !> Enable or disable a page.
+    subroutine qtoolbox_setItemEnabled(self, index, enabled)
+        class(QToolBox), intent(in) :: self
+        integer, intent(in) :: index
+        logical, intent(in) :: enabled
+        call qtf_qtoolbox_setItemEnabled(qtf_live(self, 'QToolBox%setItemEnabled'), int(index, c_int), qtf_int(enabled))
+    end subroutine qtoolbox_setItemEnabled
+
+    !> Set a page's icon (copied).
+    subroutine qtoolbox_setItemIcon(self, index, icon)
+        class(QToolBox), intent(in) :: self
+        integer, intent(in) :: index
+        type(QIcon), intent(in) :: icon
+        call qtf_qtoolbox_setItemIcon(qtf_live(self, 'QToolBox%setItemIcon'), int(index, c_int), icon%ptr)
+    end subroutine qtoolbox_setItemIcon
+
+    !> Set a page's tool tip.
+    subroutine qtoolbox_setItemToolTip(self, index, toolTip)
+        class(QToolBox), intent(in) :: self
+        integer, intent(in) :: index
+        character(len=*), intent(in) :: toolTip
+        call qtf_qtoolbox_setItemToolTip(qtf_live(self, 'QToolBox%setItemToolTip'), int(index, c_int), toolTip, &
+                len(toolTip, c_int))
+    end subroutine qtoolbox_setItemToolTip
+
+    !> The widget of a page.
+    function qtoolbox_widget(self, index) result(res)
+        class(QToolBox), intent(in) :: self
+        integer, intent(in) :: index
+        type(QWidget) :: res
+        call res%attach(qtf_qtoolbox_widget(qtf_live(self, 'QToolBox%widget'), int(index, c_int)))
+    end function qtoolbox_widget
+
+    !> The widget of the open page.
+    function qtoolbox_currentWidget(self) result(res)
+        class(QToolBox), intent(in) :: self
+        type(QWidget) :: res
+        call res%attach(qtf_qtoolbox_currentWidget(qtf_live(self, 'QToolBox%currentWidget')))
+    end function qtoolbox_currentWidget
+
+    !> Bind to a C++ QSplashScreen and its signals.
+    subroutine qsplashscreen_attach(self, ptr)
+        class(QSplashScreen), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QWidget%attach(ptr)
+        self%messageChanged = QSignalString(ptr, QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED, self%serial)
+    end subroutine qsplashscreen_attach
+
+    !> A splash screen showing `pixmap` (copied).
+    function qsplashscreen_new(pixmap) result(res)
+        type(QPixmap), intent(in) :: pixmap
+        type(QSplashScreen) :: res
+        call res%attach(qtf_qsplashscreen_new(pixmap%ptr))
+    end function qsplashscreen_new
+
+    !> Draw a message on the splash screen.
+    subroutine qsplashscreen_showMessage(self, message, alignment, color)
+        class(QSplashScreen), intent(in) :: self
+        character(len=*), intent(in) :: message
+        integer, intent(in), optional :: alignment
+        type(QColor), intent(in), optional :: color
+        integer(c_int) :: alignment_
+        type(QColor) :: color_
+        alignment_ = ior(Qt_AlignBottom, Qt_AlignHCenter)
+        if (present(alignment)) alignment_ = int(alignment, c_int)
+        color_ = Qt_black
+        if (present(color)) color_ = color
+        call qtf_qsplashscreen_showMessage(qtf_live(self, 'QSplashScreen%showMessage'), message, len(message, c_int), &
+                alignment_, int(color_%r, c_int), int(color_%g, c_int), int(color_%b, c_int), int(color_%a, c_int), &
+                        qtf_int(color_%valid))
+    end subroutine qsplashscreen_showMessage
+
+    !> Remove the message.
+    subroutine qsplashscreen_clearMessage(self)
+        class(QSplashScreen), intent(in) :: self
+        call qtf_qsplashscreen_clearMessage(qtf_live(self, 'QSplashScreen%clearMessage'))
+    end subroutine qsplashscreen_clearMessage
+
+    !> The current message.
+    function qsplashscreen_message(self) result(res)
+        class(QSplashScreen), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qsplashscreen_message(qtf_live(self, 'QSplashScreen%message'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qsplashscreen_message
+
+    !> Close the splash screen once `window` is shown.
+    subroutine qsplashscreen_finish(self, window)
+        class(QSplashScreen), intent(in) :: self
+        class(QWidget), intent(in) :: window
+        call qtf_qsplashscreen_finish(qtf_live(self, 'QSplashScreen%finish'), qtf_live(window, 'QSplashScreen%finish'))
+    end subroutine qsplashscreen_finish
+
+    !> Bind to a C++ QMdiSubWindow and its signals.
+    subroutine qmdisubwindow_attach(self, ptr)
+        class(QMdiSubWindow), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QWidget%attach(ptr)
+        self%aboutToActivate = QSignal(ptr, QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE, self%serial)
+    end subroutine qmdisubwindow_attach
+
+    !> Set the window's contents (the window takes ownership).
+    subroutine qmdisubwindow_setWidget(self, widget)
+        class(QMdiSubWindow), intent(in) :: self
+        class(QWidget), intent(in) :: widget
+        call qtf_qmdisubwindow_setWidget(qtf_live(self, 'QMdiSubWindow%setWidget'), qtf_live(widget, &
+                'QMdiSubWindow%setWidget'))
+    end subroutine qmdisubwindow_setWidget
+
+    !> The window's contents.
+    function qmdisubwindow_widget(self) result(res)
+        class(QMdiSubWindow), intent(in) :: self
+        type(QWidget) :: res
+        call res%attach(qtf_qmdisubwindow_widget(qtf_live(self, 'QMdiSubWindow%widget')))
+    end function qmdisubwindow_widget
+
+    !> Collapse the window to its title bar.
+    subroutine qmdisubwindow_showShaded(self)
+        class(QMdiSubWindow), intent(in) :: self
+        call qtf_qmdisubwindow_showShaded(qtf_live(self, 'QMdiSubWindow%showShaded'))
+    end subroutine qmdisubwindow_showShaded
+
+    !> True if collapsed to the title bar.
+    function qmdisubwindow_isShaded(self) result(res)
+        class(QMdiSubWindow), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qmdisubwindow_isShaded(qtf_live(self, 'QMdiSubWindow%isShaded')))
+    end function qmdisubwindow_isShaded
+
+    !> Bind to a C++ QMdiArea and its signals.
+    subroutine qmdiarea_attach(self, ptr)
+        class(QMdiArea), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QFrame%attach(ptr)
+        self%subWindowActivated = QSignal(ptr, QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED, self%serial)
+    end subroutine qmdiarea_attach
+
+    !> Create an MDI area.
+    function qmdiarea_new(parent) result(res)
+        class(QWidget), intent(in), optional :: parent
+        type(QMdiArea) :: res
+        call res%attach(qtf_qmdiarea_new(qtf_ptr(parent)))
+    end function qmdiarea_new
+
+    !> Show `widget` in a new sub-window (call its `show` if the area is visible).
+    function qmdiarea_addSubWindow(self, widget) result(res)
+        class(QMdiArea), intent(in) :: self
+        class(QWidget), intent(in) :: widget
+        type(QMdiSubWindow) :: res
+        call res%attach(qtf_qmdiarea_addSubWindow(qtf_live(self, 'QMdiArea%addSubWindow'), qtf_live(widget, &
+                'QMdiArea%addSubWindow')))
+    end function qmdiarea_addSubWindow
+
+    !> Remove a sub-window (the widget is not deleted).
+    subroutine qmdiarea_removeSubWindow(self, widget)
+        class(QMdiArea), intent(in) :: self
+        class(QWidget), intent(in) :: widget
+        call qtf_qmdiarea_removeSubWindow(qtf_live(self, 'QMdiArea%removeSubWindow'), qtf_live(widget, &
+                'QMdiArea%removeSubWindow'))
+    end subroutine qmdiarea_removeSubWindow
+
+    !> The active sub-window (null if none).
+    function qmdiarea_activeSubWindow(self) result(res)
+        class(QMdiArea), intent(in) :: self
+        type(QMdiSubWindow) :: res
+        call res%attach(qtf_qmdiarea_activeSubWindow(qtf_live(self, 'QMdiArea%activeSubWindow')))
+    end function qmdiarea_activeSubWindow
+
+    !> The current sub-window (also while the area is not active).
+    function qmdiarea_currentSubWindow(self) result(res)
+        class(QMdiArea), intent(in) :: self
+        type(QMdiSubWindow) :: res
+        call res%attach(qtf_qmdiarea_currentSubWindow(qtf_live(self, 'QMdiArea%currentSubWindow')))
+    end function qmdiarea_currentSubWindow
+
+    !> Activate a sub-window (no argument: none).
+    subroutine qmdiarea_setActiveSubWindow(self, window)
+        class(QMdiArea), intent(in) :: self
+        class(QMdiSubWindow), intent(in), optional :: window
+        call qtf_qmdiarea_setActiveSubWindow(qtf_live(self, 'QMdiArea%setActiveSubWindow'), qtf_ptr(window))
+    end subroutine qmdiarea_setActiveSubWindow
+
+    !> The number of sub-windows.
+    function qmdiarea_subWindowCount(self) result(res)
+        class(QMdiArea), intent(in) :: self
+        integer :: res
+        res = qtf_qmdiarea_subWindowCount(qtf_live(self, 'QMdiArea%subWindowCount'))
+    end function qmdiarea_subWindowCount
+
+    !> Close the active sub-window.
+    subroutine qmdiarea_closeActiveSubWindow(self)
+        class(QMdiArea), intent(in) :: self
+        call qtf_qmdiarea_closeActiveSubWindow(qtf_live(self, 'QMdiArea%closeActiveSubWindow'))
+    end subroutine qmdiarea_closeActiveSubWindow
+
+    !> Close all sub-windows.
+    subroutine qmdiarea_closeAllSubWindows(self)
+        class(QMdiArea), intent(in) :: self
+        call qtf_qmdiarea_closeAllSubWindows(qtf_live(self, 'QMdiArea%closeAllSubWindows'))
+    end subroutine qmdiarea_closeAllSubWindows
+
+    !> Activate the next sub-window.
+    subroutine qmdiarea_activateNextSubWindow(self)
+        class(QMdiArea), intent(in) :: self
+        call qtf_qmdiarea_activateNextSubWindow(qtf_live(self, 'QMdiArea%activateNextSubWindow'))
+    end subroutine qmdiarea_activateNextSubWindow
+
+    !> Activate the previous sub-window.
+    subroutine qmdiarea_activatePreviousSubWindow(self)
+        class(QMdiArea), intent(in) :: self
+        call qtf_qmdiarea_activatePreviousSubWindow(qtf_live(self, 'QMdiArea%activatePreviousSubWindow'))
+    end subroutine qmdiarea_activatePreviousSubWindow
+
+    !> Arrange the sub-windows in a cascade.
+    subroutine qmdiarea_cascadeSubWindows(self)
+        class(QMdiArea), intent(in) :: self
+        call qtf_qmdiarea_cascadeSubWindows(qtf_live(self, 'QMdiArea%cascadeSubWindows'))
+    end subroutine qmdiarea_cascadeSubWindows
+
+    !> Arrange the sub-windows as tiles.
+    subroutine qmdiarea_tileSubWindows(self)
+        class(QMdiArea), intent(in) :: self
+        call qtf_qmdiarea_tileSubWindows(qtf_live(self, 'QMdiArea%tileSubWindows'))
+    end subroutine qmdiarea_tileSubWindows
+
+    !> QMdiArea_SubWindowView (default) or QMdiArea_TabbedView.
+    subroutine qmdiarea_setViewMode(self, mode)
+        class(QMdiArea), intent(in) :: self
+        integer, intent(in) :: mode
+        call qtf_qmdiarea_setViewMode(qtf_live(self, 'QMdiArea%setViewMode'), int(mode, c_int))
+    end subroutine qmdiarea_setViewMode
+
+    !> In tabbed view: show close buttons on the tabs.
+    subroutine qmdiarea_setTabsClosable(self, closable)
+        class(QMdiArea), intent(in) :: self
+        logical, intent(in) :: closable
+        call qtf_qmdiarea_setTabsClosable(qtf_live(self, 'QMdiArea%setTabsClosable'), qtf_int(closable))
+    end subroutine qmdiarea_setTabsClosable
+
+    !> In tabbed view: let the user reorder the tabs.
+    subroutine qmdiarea_setTabsMovable(self, movable)
+        class(QMdiArea), intent(in) :: self
+        logical, intent(in) :: movable
+        call qtf_qmdiarea_setTabsMovable(qtf_live(self, 'QMdiArea%setTabsMovable'), qtf_int(movable))
+    end subroutine qmdiarea_setTabsMovable
+
+    !> Bind to a C++ QWizardPage and its signals.
+    subroutine qwizardpage_attach(self, ptr)
+        class(QWizardPage), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QWidget%attach(ptr)
+        self%completeChanged = QSignal(ptr, QTF_SIG_QWIZARDPAGE_COMPLETECHANGED, self%serial)
+    end subroutine qwizardpage_attach
+
+    !> Create a wizard page (lay out its widgets, then add it to a wizard).
+    function qwizardpage_new(parent) result(res)
+        class(QWidget), intent(in), optional :: parent
+        type(QWizardPage) :: res
+        call res%attach(qtf_qwizardpage_new(qtf_ptr(parent)))
+    end function qwizardpage_new
+
+    !> The page title.
+    subroutine qwizardpage_setTitle(self, title)
+        class(QWizardPage), intent(in) :: self
+        character(len=*), intent(in) :: title
+        call qtf_qwizardpage_setTitle(qtf_live(self, 'QWizardPage%setTitle'), title, len(title, c_int))
+    end subroutine qwizardpage_setTitle
+
+    !> The page title.
+    function qwizardpage_title(self) result(res)
+        class(QWizardPage), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qwizardpage_title(qtf_live(self, 'QWizardPage%title'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qwizardpage_title
+
+    !> The text under the title.
+    subroutine qwizardpage_setSubTitle(self, subTitle)
+        class(QWizardPage), intent(in) :: self
+        character(len=*), intent(in) :: subTitle
+        call qtf_qwizardpage_setSubTitle(qtf_live(self, 'QWizardPage%setSubTitle'), subTitle, len(subTitle, c_int))
+    end subroutine qwizardpage_setSubTitle
+
+    !> The subtitle.
+    function qwizardpage_subTitle(self) result(res)
+        class(QWizardPage), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qwizardpage_subTitle(qtf_live(self, 'QWizardPage%subTitle'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qwizardpage_subTitle
+
+    !> Offer Finish on this page.
+    subroutine qwizardpage_setFinalPage(self, final)
+        class(QWizardPage), intent(in) :: self
+        logical, intent(in) :: final
+        call qtf_qwizardpage_setFinalPage(qtf_live(self, 'QWizardPage%setFinalPage'), qtf_int(final))
+    end subroutine qwizardpage_setFinalPage
+
+    !> True if Finish is offered on this page.
+    function qwizardpage_isFinalPage(self) result(res)
+        class(QWizardPage), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qwizardpage_isFinalPage(qtf_live(self, 'QWizardPage%isFinalPage')))
+    end function qwizardpage_isFinalPage
+
+    !> After this page, Back is no longer possible.
+    subroutine qwizardpage_setCommitPage(self, commit)
+        class(QWizardPage), intent(in) :: self
+        logical, intent(in) :: commit
+        call qtf_qwizardpage_setCommitPage(qtf_live(self, 'QWizardPage%setCommitPage'), qtf_int(commit))
+    end subroutine qwizardpage_setCommitPage
+
+    !> Enable (true) or disable Next/Finish for this page.
+    subroutine qwizardpage_setComplete(self, complete)
+        class(QWizardPage), intent(in) :: self
+        logical, intent(in) :: complete
+        call qtf_qwizardpage_setComplete(qtf_live(self, 'QWizardPage%setComplete'), qtf_int(complete))
+    end subroutine qwizardpage_setComplete
+
+    !> True if Next/Finish is enabled (setComplete and the mandatory fields).
+    function qwizardpage_isComplete(self) result(res)
+        class(QWizardPage), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qwizardpage_isComplete(qtf_live(self, 'QWizardPage%isComplete')))
+    end function qwizardpage_isComplete
+
+    !> Make a widget's value available as the wizard field `name` (a trailing `*` makes it mandatory: Next waits until it is filled).
+    subroutine qwizardpage_registerField(self, name, widget)
+        class(QWizardPage), intent(in) :: self
+        character(len=*), intent(in) :: name
+        class(QWidget), intent(in) :: widget
+        call qtf_qwizardpage_registerField(qtf_live(self, 'QWizardPage%registerField'), name, len(name, c_int), &
+                qtf_live(widget, 'QWizardPage%registerField'))
+    end subroutine qwizardpage_registerField
+
+    !> Bind to a C++ QWizard and its signals.
+    subroutine qwizard_attach(self, ptr)
+        class(QWizard), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QDialog%attach(ptr)
+        self%currentIdChanged = QSignalInt(ptr, QTF_SIG_QWIZARD_CURRENTIDCHANGED, self%serial)
+        self%helpRequested = QSignal(ptr, QTF_SIG_QWIZARD_HELPREQUESTED, self%serial)
+    end subroutine qwizard_attach
+
+    !> Create an empty wizard.
+    function qwizard_new(parent) result(res)
+        class(QWidget), intent(in), optional :: parent
+        type(QWizard) :: res
+        call res%attach(qtf_qwizard_new(qtf_ptr(parent)))
+    end function qwizard_new
+
+    !> Append a page (the wizard takes ownership); its id is the number of pages before it.
+    subroutine qwizard_addPage(self, page)
+        class(QWizard), intent(in) :: self
+        class(QWizardPage), intent(in) :: page
+        call qtf_qwizard_addPage(qtf_live(self, 'QWizard%addPage'), qtf_live(page, 'QWizard%addPage'))
+    end subroutine qwizard_addPage
+
+    !> Add a page with a given id.
+    subroutine qwizard_setPage(self, id, page)
+        class(QWizard), intent(in) :: self
+        integer, intent(in) :: id
+        class(QWizardPage), intent(in) :: page
+        call qtf_qwizard_setPage(qtf_live(self, 'QWizard%setPage'), int(id, c_int), qtf_live(page, 'QWizard%setPage'))
+    end subroutine qwizard_setPage
+
+    !> Remove a page.
+    subroutine qwizard_removePage(self, id)
+        class(QWizard), intent(in) :: self
+        integer, intent(in) :: id
+        call qtf_qwizard_removePage(qtf_live(self, 'QWizard%removePage'), int(id, c_int))
+    end subroutine qwizard_removePage
+
+    !> The id of the current page (-1 before the wizard is shown).
+    function qwizard_currentId(self) result(res)
+        class(QWizard), intent(in) :: self
+        integer :: res
+        res = qtf_qwizard_currentId(qtf_live(self, 'QWizard%currentId'))
+    end function qwizard_currentId
+
+    !> The current page.
+    function qwizard_currentPage(self) result(res)
+        class(QWizard), intent(in) :: self
+        type(QWizardPage) :: res
+        call res%attach(qtf_qwizard_currentPage(qtf_live(self, 'QWizard%currentPage')))
+    end function qwizard_currentPage
+
+    !> The page with this id (null if none).
+    function qwizard_page(self, id) result(res)
+        class(QWizard), intent(in) :: self
+        integer, intent(in) :: id
+        type(QWizardPage) :: res
+        call res%attach(qtf_qwizard_page(qtf_live(self, 'QWizard%page'), int(id, c_int)))
+    end function qwizard_page
+
+    !> True if the page has been visited.
+    function qwizard_hasVisitedPage(self, id) result(res)
+        class(QWizard), intent(in) :: self
+        integer, intent(in) :: id
+        logical :: res
+        res = qtf_logical(qtf_qwizard_hasVisitedPage(qtf_live(self, 'QWizard%hasVisitedPage'), int(id, c_int)))
+    end function qwizard_hasVisitedPage
+
+    !> The first page.
+    subroutine qwizard_setStartId(self, id)
+        class(QWizard), intent(in) :: self
+        integer, intent(in) :: id
+        call qtf_qwizard_setStartId(qtf_live(self, 'QWizard%setStartId'), int(id, c_int))
+    end subroutine qwizard_setStartId
+
+    !> Go to the next page.
+    subroutine qwizard_next(self)
+        class(QWizard), intent(in) :: self
+        call qtf_qwizard_next(qtf_live(self, 'QWizard%next'))
+    end subroutine qwizard_next
+
+    !> Go back to the previous page.
+    subroutine qwizard_back(self)
+        class(QWizard), intent(in) :: self
+        call qtf_qwizard_back(qtf_live(self, 'QWizard%back'))
+    end subroutine qwizard_back
+
+    !> Go back to the first page.
+    subroutine qwizard_restart(self)
+        class(QWizard), intent(in) :: self
+        call qtf_qwizard_restart(qtf_live(self, 'QWizard%restart'))
+    end subroutine qwizard_restart
+
+    !> QWizard_ClassicStyle, _ModernStyle, _MacStyle or _AeroStyle.
+    subroutine qwizard_setWizardStyle(self, style)
+        class(QWizard), intent(in) :: self
+        integer, intent(in) :: style
+        call qtf_qwizard_setWizardStyle(qtf_live(self, 'QWizard%setWizardStyle'), int(style, c_int))
+    end subroutine qwizard_setWizardStyle
+
+    !> Turn an option on or off (QWizard_NoCancelButton, ...).
+    subroutine qwizard_setOption(self, option, on)
+        class(QWizard), intent(in) :: self
+        integer, intent(in) :: option
+        logical, intent(in), optional :: on
+        logical :: on_
+        on_ = .true.
+        if (present(on)) on_ = on
+        call qtf_qwizard_setOption(qtf_live(self, 'QWizard%setOption'), int(option, c_int), qtf_int(on_))
+    end subroutine qwizard_setOption
+
+    !> Change a button's text, e.g. QWizard_FinishButton.
+    subroutine qwizard_setButtonText(self, which, text)
+        class(QWizard), intent(in) :: self
+        integer, intent(in) :: which
+        character(len=*), intent(in) :: text
+        call qtf_qwizard_setButtonText(qtf_live(self, 'QWizard%setButtonText'), int(which, c_int), text, len(text, &
+                c_int))
+    end subroutine qwizard_setButtonText
+
+    !> A registered field's value as text.
+    function qwizard_stringField(self, name) result(res)
+        class(QWizard), intent(in) :: self
+        character(len=*), intent(in) :: name
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qwizard_stringField(qtf_live(self, 'QWizard%stringField'), name, len(name, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function qwizard_stringField
+
+    !> A registered field's value as an integer (e.g. a spin box or combo box index).
+    function qwizard_intField(self, name) result(res)
+        class(QWizard), intent(in) :: self
+        character(len=*), intent(in) :: name
+        integer :: res
+        res = qtf_qwizard_intField(qtf_live(self, 'QWizard%intField'), name, len(name, c_int))
+    end function qwizard_intField
+
+    !> A registered field's value as a real number.
+    function qwizard_doubleField(self, name) result(res)
+        class(QWizard), intent(in) :: self
+        character(len=*), intent(in) :: name
+        real(c_double) :: res
+        res = qtf_qwizard_doubleField(qtf_live(self, 'QWizard%doubleField'), name, len(name, c_int))
+    end function qwizard_doubleField
+
+    !> A registered field's value as a logical (e.g. a check box).
+    function qwizard_boolField(self, name) result(res)
+        class(QWizard), intent(in) :: self
+        character(len=*), intent(in) :: name
+        logical :: res
+        res = qtf_logical(qtf_qwizard_boolField(qtf_live(self, 'QWizard%boolField'), name, len(name, c_int)))
+    end function qwizard_boolField
+
+    !> Bind to a C++ QUndoStack and its signals.
+    subroutine qundostack_attach(self, ptr)
+        class(QUndoStack), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QObject%attach(ptr)
+        self%redoRequested = QSignalInt(ptr, QTF_SIG_QUNDOSTACK_REDOREQUESTED, self%serial)
+        self%undoRequested = QSignalInt(ptr, QTF_SIG_QUNDOSTACK_UNDOREQUESTED, self%serial)
+        self%canUndoChanged = QSignalBool(ptr, QTF_SIG_QUNDOSTACK_CANUNDOCHANGED, self%serial)
+        self%canRedoChanged = QSignalBool(ptr, QTF_SIG_QUNDOSTACK_CANREDOCHANGED, self%serial)
+        self%indexChanged = QSignalInt(ptr, QTF_SIG_QUNDOSTACK_INDEXCHANGED, self%serial)
+        self%cleanChanged = QSignalBool(ptr, QTF_SIG_QUNDOSTACK_CLEANCHANGED, self%serial)
+        self%undoTextChanged = QSignalString(ptr, QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED, self%serial)
+        self%redoTextChanged = QSignalString(ptr, QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED, self%serial)
+    end subroutine qundostack_attach
+
+    !> An empty undo stack.
+    function qundostack_new(parent) result(res)
+        class(QObject), intent(in), optional :: parent
+        type(QUndoStack) :: res
+        call res%attach(qtf_qundostack_new(qtf_ptr(parent)))
+    end function qundostack_new
+
+    !> Record a command and perform it (calls the redoRequested slots with `id`); discards commands that were undone.
+    subroutine qundostack_push(self, text, id)
+        class(QUndoStack), intent(in) :: self
+        character(len=*), intent(in) :: text
+        integer, intent(in) :: id
+        call qtf_qundostack_push(qtf_live(self, 'QUndoStack%push'), text, len(text, c_int), int(id, c_int))
+    end subroutine qundostack_push
+
+    !> Undo the last command.
+    subroutine qundostack_undo(self)
+        class(QUndoStack), intent(in) :: self
+        call qtf_qundostack_undo(qtf_live(self, 'QUndoStack%undo'))
+    end subroutine qundostack_undo
+
+    !> Redo the last undone command.
+    subroutine qundostack_redo(self)
+        class(QUndoStack), intent(in) :: self
+        call qtf_qundostack_redo(qtf_live(self, 'QUndoStack%redo'))
+    end subroutine qundostack_redo
+
+    !> True if there is a command to undo.
+    function qundostack_canUndo(self) result(res)
+        class(QUndoStack), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qundostack_canUndo(qtf_live(self, 'QUndoStack%canUndo')))
+    end function qundostack_canUndo
+
+    !> True if there is a command to redo.
+    function qundostack_canRedo(self) result(res)
+        class(QUndoStack), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qundostack_canRedo(qtf_live(self, 'QUndoStack%canRedo')))
+    end function qundostack_canRedo
+
+    !> The text of the command `undo` would reverse.
+    function qundostack_undoText(self) result(res)
+        class(QUndoStack), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qundostack_undoText(qtf_live(self, 'QUndoStack%undoText'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qundostack_undoText
+
+    !> The text of the command `redo` would perform.
+    function qundostack_redoText(self) result(res)
+        class(QUndoStack), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qundostack_redoText(qtf_live(self, 'QUndoStack%redoText'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qundostack_redoText
+
+    !> The number of commands.
+    function qundostack_count(self) result(res)
+        class(QUndoStack), intent(in) :: self
+        integer :: res
+        res = qtf_qundostack_count(qtf_live(self, 'QUndoStack%count'))
+    end function qundostack_count
+
+    !> The current position: commands before it are done.
+    function qundostack_index(self) result(res)
+        class(QUndoStack), intent(in) :: self
+        integer :: res
+        res = qtf_qundostack_index(qtf_live(self, 'QUndoStack%index'))
+    end function qundostack_index
+
+    !> Undo or redo until the position is `index`.
+    subroutine qundostack_setIndex(self, index)
+        class(QUndoStack), intent(in) :: self
+        integer, intent(in) :: index
+        call qtf_qundostack_setIndex(qtf_live(self, 'QUndoStack%setIndex'), int(index, c_int))
+    end subroutine qundostack_setIndex
+
+    !> The text of the command at a position.
+    function qundostack_text(self, index) result(res)
+        class(QUndoStack), intent(in) :: self
+        integer, intent(in) :: index
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qundostack_text(qtf_live(self, 'QUndoStack%text'), int(index, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function qundostack_text
+
+    !> Remove all commands (nothing is undone).
+    subroutine qundostack_clear(self)
+        class(QUndoStack), intent(in) :: self
+        call qtf_qundostack_clear(qtf_live(self, 'QUndoStack%clear'))
+    end subroutine qundostack_clear
+
+    !> Mark the current state as saved.
+    subroutine qundostack_setClean(self)
+        class(QUndoStack), intent(in) :: self
+        call qtf_qundostack_setClean(qtf_live(self, 'QUndoStack%setClean'))
+    end subroutine qundostack_setClean
+
+    !> True if the current state is the saved one.
+    function qundostack_isClean(self) result(res)
+        class(QUndoStack), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qundostack_isClean(qtf_live(self, 'QUndoStack%isClean')))
+    end function qundostack_isClean
+
+    !> Keep at most `limit` commands (0: no limit); only while the stack is empty.
+    subroutine qundostack_setUndoLimit(self, limit)
+        class(QUndoStack), intent(in) :: self
+        integer, intent(in) :: limit
+        call qtf_qundostack_setUndoLimit(qtf_live(self, 'QUndoStack%setUndoLimit'), int(limit, c_int))
+    end subroutine qundostack_setUndoLimit
+
+    !> Group the following pushes into one command (until endMacro).
+    subroutine qundostack_beginMacro(self, text)
+        class(QUndoStack), intent(in) :: self
+        character(len=*), intent(in) :: text
+        call qtf_qundostack_beginMacro(qtf_live(self, 'QUndoStack%beginMacro'), text, len(text, c_int))
+    end subroutine qundostack_beginMacro
+
+    !> End a macro.
+    subroutine qundostack_endMacro(self)
+        class(QUndoStack), intent(in) :: self
+        call qtf_qundostack_endMacro(qtf_live(self, 'QUndoStack%endMacro'))
+    end subroutine qundostack_endMacro
+
+    !> An Undo action that follows the stack (text and enabled state).
+    function qundostack_createUndoAction(self, parent, prefix) result(res)
+        class(QUndoStack), intent(in) :: self
+        class(QObject), intent(in) :: parent
+        character(len=*), intent(in), optional :: prefix
+        type(QAction) :: res
+        character(len=:), allocatable :: prefix_
+        prefix_ = ''
+        if (present(prefix)) prefix_ = prefix
+        call res%attach(qtf_qundostack_createUndoAction(qtf_live(self, 'QUndoStack%createUndoAction'), &
+                qtf_live(parent, 'QUndoStack%createUndoAction'), prefix_, len(prefix_, c_int)))
+    end function qundostack_createUndoAction
+
+    !> A Redo action that follows the stack.
+    function qundostack_createRedoAction(self, parent, prefix) result(res)
+        class(QUndoStack), intent(in) :: self
+        class(QObject), intent(in) :: parent
+        character(len=*), intent(in), optional :: prefix
+        type(QAction) :: res
+        character(len=:), allocatable :: prefix_
+        prefix_ = ''
+        if (present(prefix)) prefix_ = prefix
+        call res%attach(qtf_qundostack_createRedoAction(qtf_live(self, 'QUndoStack%createRedoAction'), &
+                qtf_live(parent, 'QUndoStack%createRedoAction'), prefix_, len(prefix_, c_int)))
+    end function qundostack_createRedoAction
+
+    !> A view of `stack`.
+    function qundoview_new(stack, parent) result(res)
+        class(QUndoStack), intent(in) :: stack
+        class(QWidget), intent(in), optional :: parent
+        type(QUndoView) :: res
+        call res%attach(qtf_qundoview_new(qtf_live(stack, 'QUndoView%new'), qtf_ptr(parent)))
+    end function qundoview_new
+
+    !> The text of the first row (the state before any command).
+    subroutine qundoview_setEmptyLabel(self, label)
+        class(QUndoView), intent(in) :: self
+        character(len=*), intent(in) :: label
+        call qtf_qundoview_setEmptyLabel(qtf_live(self, 'QUndoView%setEmptyLabel'), label, len(label, c_int))
+    end subroutine qundoview_setEmptyLabel
 
     !> Create the application object, passing the program's command-line
     !> arguments to Qt (trailing blanks of each argument are dropped), or return

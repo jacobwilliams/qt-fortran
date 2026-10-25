@@ -20,10 +20,24 @@ uses = [
 cpp_includes = [
     "QAction", "QFontMetrics", "QImage", "QKeyEvent", "QKeySequence", "QMouseEvent", "QPainter",
     "QPixmap", "QPolygonF", "QResizeEvent", "QWheelEvent", "QIcon", "QCloseEvent", "QContextMenuEvent",
+    "QValidator", "QIntValidator", "QDoubleValidator", "QRegularExpressionValidator", "QRegularExpression", "QLocale",
     "cmath", "vector",
 ]
 
 cpp_prelude = """
+// Validate `text` with a validator: QValidator_Invalid, _Intermediate or _Acceptable.
+static int qtf_validate(const QValidator *v, QString text) {
+    int pos = 0;
+    return int(v->validate(text, pos));
+}
+
+// A double validator using the C locale (a '.' decimal point, as Fortran reads numbers).
+static QDoubleValidator *qtf_double_validator(double bottom, double top, int decimals, QObject *parent) {
+    auto *v = new QDoubleValidator(bottom, top, decimals, parent);
+    v->setLocale(QLocale::c());
+    return v;
+}
+
 // Parse a color name ("red", "#ff8000", ...); returns 0 if invalid.
 QTF_API int qtf_qcolor_fromString(const char *s, int len, int *r, int *g, int *b, int *a) {
     const QColor c = QColor::fromString(qtf_qstring(s, len));
@@ -471,6 +485,13 @@ values = [
     "QPainter_Antialiasing = 1",
     "QPainter_TextAntialiasing = 2",
     "QPainter_SmoothPixmapTransform = 4",
+]
+
+[[enum]]
+doc = "QValidator::State and QDoubleValidator::Notation"
+values = [
+    "QValidator_Invalid = 0", "QValidator_Intermediate = 1", "QValidator_Acceptable = 2",
+    "QDoubleValidator_StandardNotation = 0", "QDoubleValidator_ScientificNotation = 1",
 ]
 
 [[enum]]
@@ -958,4 +979,56 @@ methods = [
     "setToolTip(tip: string) -- Tool tip shown for the action (e.g. on tool bar buttons).",
     "trigger() -- Activate the action (emits triggered, and toggled if checkable).",
     { sig = "setIcon(icon: QIcon)", cpp = "{self}->setIcon(*{icon})", doc = "Set the icon shown in menus and tool bars (the icon is copied)." },
+]
+
+# ---------------------------------------------------------------------------
+# validators (restrict what a QLineEdit accepts: line%setValidator(v))
+
+[[class]]
+name = "QValidator"
+doc = """
+Base of the validators. A line edit with a validator accepts only input that is
+acceptable, or could become so (intermediate); `hasAcceptableInput` tells
+whether the current text is complete."""
+methods = [
+    { sig = "validate(text: string) -> int", cpp = "qtf_validate({self}, {text})", doc = "How `text` fares: QValidator_Invalid, QValidator_Intermediate or QValidator_Acceptable." },
+]
+
+[[class]]
+name = "QIntValidator"
+base = "QValidator"
+doc = "Accepts integers in a range."
+ctor = "(bottom: int, top: int, parent: QObject?) -- Accept integers from `bottom` to `top`."
+methods = [
+    "setRange(bottom: int, top: int) -- Set the accepted range.",
+    "bottom() -> int -- The smallest accepted value.",
+    "top() -> int -- The largest accepted value.",
+]
+
+[[class]]
+name = "QDoubleValidator"
+base = "QValidator"
+doc = """
+Accepts real numbers in a range with at most `decimals` decimals. It uses the C
+locale (a '.' decimal point, as Fortran's `read` expects) and accepts
+scientific notation (1.5e3) unless the notation is set to standard."""
+ctor = "(bottom: double, top: double, decimals: int = 6, parent: QObject?) -- Accept reals from `bottom` to `top`."
+cpp_ctor = "qtf_double_validator({bottom}, {top}, {decimals}, {parent})"
+methods = [
+    "setRange(bottom: double, top: double, decimals: int = 6) -- Set the accepted range and decimals.",
+    "setNotation(notation: QDoubleValidator::Notation) -- QDoubleValidator_StandardNotation or _ScientificNotation (default).",
+    "bottom() -> double -- The smallest accepted value.",
+    "top() -> double -- The largest accepted value.",
+    "decimals() -> int -- The maximum number of decimals.",
+]
+
+[[class]]
+name = "QRegularExpressionValidator"
+base = "QValidator"
+doc = "Accepts text matching a regular expression (the whole text must match)."
+ctor = "(pattern: string, parent: QObject?) -- Accept text matching `pattern`, e.g. '[A-Z]{2}[0-9]{4}'."
+cpp_ctor = "new QRegularExpressionValidator(QRegularExpression({pattern}), {parent})"
+methods = [
+    { sig = "setPattern(pattern: string)", cpp = "{self}->setRegularExpression(QRegularExpression({pattern}))", doc = "Set the regular expression." },
+    { sig = "pattern() -> string", cpp = "{self}->regularExpression().pattern()", doc = "The regular expression." },
 ]

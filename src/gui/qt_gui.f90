@@ -20,6 +20,13 @@ module qt_gui
     integer(c_int), parameter, public :: QPainter_TextAntialiasing = 2
     integer(c_int), parameter, public :: QPainter_SmoothPixmapTransform = 4
 
+    ! QValidator::State and QDoubleValidator::Notation
+    integer(c_int), parameter, public :: QValidator_Invalid = 0
+    integer(c_int), parameter, public :: QValidator_Intermediate = 1
+    integer(c_int), parameter, public :: QValidator_Acceptable = 2
+    integer(c_int), parameter, public :: QDoubleValidator_StandardNotation = 0
+    integer(c_int), parameter, public :: QDoubleValidator_ScientificNotation = 1
+
     ! QContextMenuEvent::Reason
     integer(c_int), parameter, public :: QContextMenuEvent_Mouse = 0
     integer(c_int), parameter, public :: QContextMenuEvent_Keyboard = 1
@@ -309,6 +316,53 @@ module qt_gui
     interface QAction
         module procedure :: qaction_new
     end interface QAction
+
+    !> Base of the validators. A line edit with a validator accepts only input that is
+    !> acceptable, or could become so (intermediate); `hasAcceptableInput` tells
+    !> whether the current text is complete.
+    type, extends(QObject), public :: QValidator
+    contains
+        procedure :: validate => qvalidator_validate
+    end type QValidator
+
+    !> Accepts integers in a range.
+    type, extends(QValidator), public :: QIntValidator
+    contains
+        procedure :: setRange => qintvalidator_setRange
+        procedure :: bottom => qintvalidator_bottom
+        procedure :: top => qintvalidator_top
+    end type QIntValidator
+    !> Constructor: `QIntValidator(bottom, top [, parent])`.
+    interface QIntValidator
+        module procedure :: qintvalidator_new
+    end interface QIntValidator
+
+    !> Accepts real numbers in a range with at most `decimals` decimals. It uses the C
+    !> locale (a '.' decimal point, as Fortran's `read` expects) and accepts
+    !> scientific notation (1.5e3) unless the notation is set to standard.
+    type, extends(QValidator), public :: QDoubleValidator
+    contains
+        procedure :: setRange => qdoublevalidator_setRange
+        procedure :: setNotation => qdoublevalidator_setNotation
+        procedure :: bottom => qdoublevalidator_bottom
+        procedure :: top => qdoublevalidator_top
+        procedure :: decimals => qdoublevalidator_decimals
+    end type QDoubleValidator
+    !> Constructor: `QDoubleValidator(bottom, top [, decimals, parent])`.
+    interface QDoubleValidator
+        module procedure :: qdoublevalidator_new
+    end interface QDoubleValidator
+
+    !> Accepts text matching a regular expression (the whole text must match).
+    type, extends(QValidator), public :: QRegularExpressionValidator
+    contains
+        procedure :: setPattern => qregularexpressionvalidator_setPattern
+        procedure :: pattern => qregularexpressionvalidator_pattern
+    end type QRegularExpressionValidator
+    !> Constructor: `QRegularExpressionValidator(pattern [, parent])`.
+    interface QRegularExpressionValidator
+        module procedure :: qregularexpressionvalidator_new
+    end interface QRegularExpressionValidator
 
     abstract interface
         !> Slot for paint requests: draw with `painter` (do not end it).
@@ -1441,6 +1495,124 @@ contains
         type(QIcon), intent(in) :: icon
         call qtf_qaction_setIcon(qtf_live(self, 'QAction%setIcon'), icon%ptr)
     end subroutine qaction_setIcon
+
+    !> How `text` fares: QValidator_Invalid, QValidator_Intermediate or QValidator_Acceptable.
+    function qvalidator_validate(self, text) result(res)
+        class(QValidator), intent(in) :: self
+        character(len=*), intent(in) :: text
+        integer :: res
+        res = qtf_qvalidator_validate(qtf_live(self, 'QValidator%validate'), text, len(text, c_int))
+    end function qvalidator_validate
+
+    !> Accept integers from `bottom` to `top`.
+    function qintvalidator_new(bottom, top, parent) result(res)
+        integer, intent(in) :: bottom
+        integer, intent(in) :: top
+        class(QObject), intent(in), optional :: parent
+        type(QIntValidator) :: res
+        call res%attach(qtf_qintvalidator_new(int(bottom, c_int), int(top, c_int), qtf_ptr(parent)))
+    end function qintvalidator_new
+
+    !> Set the accepted range.
+    subroutine qintvalidator_setRange(self, bottom, top)
+        class(QIntValidator), intent(in) :: self
+        integer, intent(in) :: bottom
+        integer, intent(in) :: top
+        call qtf_qintvalidator_setRange(qtf_live(self, 'QIntValidator%setRange'), int(bottom, c_int), int(top, c_int))
+    end subroutine qintvalidator_setRange
+
+    !> The smallest accepted value.
+    function qintvalidator_bottom(self) result(res)
+        class(QIntValidator), intent(in) :: self
+        integer :: res
+        res = qtf_qintvalidator_bottom(qtf_live(self, 'QIntValidator%bottom'))
+    end function qintvalidator_bottom
+
+    !> The largest accepted value.
+    function qintvalidator_top(self) result(res)
+        class(QIntValidator), intent(in) :: self
+        integer :: res
+        res = qtf_qintvalidator_top(qtf_live(self, 'QIntValidator%top'))
+    end function qintvalidator_top
+
+    !> Accept reals from `bottom` to `top`.
+    function qdoublevalidator_new(bottom, top, decimals, parent) result(res)
+        real(c_double), intent(in) :: bottom
+        real(c_double), intent(in) :: top
+        integer, intent(in), optional :: decimals
+        class(QObject), intent(in), optional :: parent
+        type(QDoubleValidator) :: res
+        integer(c_int) :: decimals_
+        decimals_ = 6
+        if (present(decimals)) decimals_ = int(decimals, c_int)
+        call res%attach(qtf_qdoublevalidator_new(bottom, top, decimals_, qtf_ptr(parent)))
+    end function qdoublevalidator_new
+
+    !> Set the accepted range and decimals.
+    subroutine qdoublevalidator_setRange(self, bottom, top, decimals)
+        class(QDoubleValidator), intent(in) :: self
+        real(c_double), intent(in) :: bottom
+        real(c_double), intent(in) :: top
+        integer, intent(in), optional :: decimals
+        integer(c_int) :: decimals_
+        decimals_ = 6
+        if (present(decimals)) decimals_ = int(decimals, c_int)
+        call qtf_qdoublevalidator_setRange(qtf_live(self, 'QDoubleValidator%setRange'), bottom, top, decimals_)
+    end subroutine qdoublevalidator_setRange
+
+    !> QDoubleValidator_StandardNotation or _ScientificNotation (default).
+    subroutine qdoublevalidator_setNotation(self, notation)
+        class(QDoubleValidator), intent(in) :: self
+        integer, intent(in) :: notation
+        call qtf_qdoublevalidator_setNotation(qtf_live(self, 'QDoubleValidator%setNotation'), int(notation, c_int))
+    end subroutine qdoublevalidator_setNotation
+
+    !> The smallest accepted value.
+    function qdoublevalidator_bottom(self) result(res)
+        class(QDoubleValidator), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qdoublevalidator_bottom(qtf_live(self, 'QDoubleValidator%bottom'))
+    end function qdoublevalidator_bottom
+
+    !> The largest accepted value.
+    function qdoublevalidator_top(self) result(res)
+        class(QDoubleValidator), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qdoublevalidator_top(qtf_live(self, 'QDoubleValidator%top'))
+    end function qdoublevalidator_top
+
+    !> The maximum number of decimals.
+    function qdoublevalidator_decimals(self) result(res)
+        class(QDoubleValidator), intent(in) :: self
+        integer :: res
+        res = qtf_qdoublevalidator_decimals(qtf_live(self, 'QDoubleValidator%decimals'))
+    end function qdoublevalidator_decimals
+
+    !> Accept text matching `pattern`, e.g. '[A-Z]{2}[0-9]{4}'.
+    function qregularexpressionvalidator_new(pattern, parent) result(res)
+        character(len=*), intent(in) :: pattern
+        class(QObject), intent(in), optional :: parent
+        type(QRegularExpressionValidator) :: res
+        call res%attach(qtf_qregularexpressionvalidator_new(pattern, len(pattern, c_int), qtf_ptr(parent)))
+    end function qregularexpressionvalidator_new
+
+    !> Set the regular expression.
+    subroutine qregularexpressionvalidator_setPattern(self, pattern)
+        class(QRegularExpressionValidator), intent(in) :: self
+        character(len=*), intent(in) :: pattern
+        call qtf_qregularexpressionvalidator_setPattern(qtf_live(self, 'QRegularExpressionValidator%setPattern'), &
+                pattern, len(pattern, c_int))
+    end subroutine qregularexpressionvalidator_setPattern
+
+    !> The regular expression.
+    function qregularexpressionvalidator_pattern(self) result(res)
+        class(QRegularExpressionValidator), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qregularexpressionvalidator_pattern(qtf_live(self, 'QRegularExpressionValidator%pattern'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qregularexpressionvalidator_pattern
 
     !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalpainter_connect(self, slot, data, connection)

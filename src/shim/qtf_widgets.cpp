@@ -9,6 +9,7 @@
 #include "qtf_common.h"
 
 #include <QAbstractItemView>
+#include <QAbstractProxyModel>
 #include <QAbstractTableModel>
 #include <QAction>
 #include <QApplication>
@@ -20,14 +21,20 @@
 #include <QCloseEvent>
 #include <QColorDialog>
 #include <QComboBox>
+#include <QCompleter>
 #include <QContextMenuEvent>
 #include <QDate>
 #include <QDateEdit>
+#include <QDateTime>
+#include <QDateTimeEdit>
 #include <QDial>
 #include <QDialog>
+#include <QDialogButtonBox>
 #include <QDockWidget>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
+#include <QFileInfo>
+#include <QFileSystemModel>
 #include <QFocusEvent>
 #include <QFontDialog>
 #include <QFormLayout>
@@ -42,6 +49,8 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMainWindow>
+#include <QMdiArea>
+#include <QMdiSubWindow>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
@@ -53,24 +62,38 @@
 #include <QProgressDialog>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QRegularExpression>
 #include <QScrollArea>
 #include <QSlider>
+#include <QSortFilterProxyModel>
 #include <QSpinBox>
+#include <QSplashScreen>
 #include <QSplitter>
 #include <QStackedWidget>
 #include <QStatusBar>
+#include <QStringListModel>
 #include <QStyle>
+#include <QStyledItemDelegate>
 #include <QTabWidget>
 #include <QTableView>
 #include <QTableWidget>
+#include <QTextBrowser>
 #include <QTextEdit>
 #include <QTime>
 #include <QTimeEdit>
 #include <QToolBar>
+#include <QToolBox>
 #include <QToolButton>
+#include <QTreeView>
 #include <QTreeWidget>
+#include <QUndoStack>
+#include <QUndoView>
+#include <QUrl>
+#include <QValidator>
 #include <QVariant>
 #include <QWidget>
+#include <QWizard>
+#include <QWizardPage>
 #include <array>
 #include <string>
 #include <vector>
@@ -102,58 +125,98 @@ enum : int {
     QTF_SIG_QABSTRACTBUTTON_RELEASED = 1020,
     QTF_SIG_QLINEEDIT_TEXTCHANGED = 1021,
     QTF_SIG_QLINEEDIT_TEXTEDITED = 1022,
-    QTF_SIG_QLINEEDIT_RETURNPRESSED = 1023,
-    QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1024,
-    QTF_SIG_QSPINBOX_VALUECHANGED = 1025,
-    QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1026,
-    QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1027,
-    QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1028,
-    QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1029,
-    QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1030,
-    QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1031,
-    QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1032,
-    QTF_SIG_QCOMBOBOX_ACTIVATED = 1033,
-    QTF_SIG_QDIALOG_ACCEPTED = 1034,
-    QTF_SIG_QDIALOG_REJECTED = 1035,
-    QTF_SIG_QDIALOG_FINISHED = 1036,
-    QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1037,
-    QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1038,
-    QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1039,
-    QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1040,
-    QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1041,
-    QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1042,
-    QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1043,
-    QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1044,
-    QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1045,
-    QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1046,
-    QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1047,
-    QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1048,
-    QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1049,
-    QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1050,
-    QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1051,
-    QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1052,
-    QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1053,
-    QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1054,
-    QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1055,
-    QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1056,
-    QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1057,
-    QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1058,
-    QTF_SIG_QTABWIDGET_TABBARCLICKED = 1059,
-    QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1060,
-    QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1061,
-    QTF_SIG_QSPLITTER_SPLITTERMOVED = 1062,
-    QTF_SIG_QGROUPBOX_TOGGLED = 1063,
-    QTF_SIG_QGROUPBOX_CLICKED = 1064,
-    QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1065,
-    QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1066,
-    QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1067,
-    QTF_SIG_QBUTTONGROUP_IDCLICKED = 1068,
-    QTF_SIG_QDATEEDIT_DATECHANGED = 1069,
-    QTF_SIG_QTIMEEDIT_TIMECHANGED = 1070,
-    QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1071,
-    QTF_SIG_QCALENDARWIDGET_CLICKED = 1072,
-    QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1073,
-    QTF_SIG_QPROGRESSDIALOG_CANCELED = 1074,
+    QTF_SIG_QLINEEDIT_INPUTREJECTED = 1023,
+    QTF_SIG_QLINEEDIT_RETURNPRESSED = 1024,
+    QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1025,
+    QTF_SIG_QSPINBOX_VALUECHANGED = 1026,
+    QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1027,
+    QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1028,
+    QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1029,
+    QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1030,
+    QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1031,
+    QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1032,
+    QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1033,
+    QTF_SIG_QCOMBOBOX_ACTIVATED = 1034,
+    QTF_SIG_QDIALOG_ACCEPTED = 1035,
+    QTF_SIG_QDIALOG_REJECTED = 1036,
+    QTF_SIG_QDIALOG_FINISHED = 1037,
+    QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1038,
+    QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1039,
+    QTF_SIG_QTFTABLEMODEL_SORTREQUESTED = 1040,
+    QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1041,
+    QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1042,
+    QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1043,
+    QTF_SIG_QTREEVIEW_NODECLICKED = 1044,
+    QTF_SIG_QTREEVIEW_NODEACTIVATED = 1045,
+    QTF_SIG_QTREEVIEW_CURRENTNODECHANGED = 1046,
+    QTF_SIG_QTREEVIEW_CURRENTFILECHANGED = 1047,
+    QTF_SIG_QTREEVIEW_FILEACTIVATED = 1048,
+    QTF_SIG_QTREEVIEW_EXPANDEDNODE = 1049,
+    QTF_SIG_QTREEVIEW_COLLAPSEDNODE = 1050,
+    QTF_SIG_QTFTREEMODEL_DATAREQUESTED = 1051,
+    QTF_SIG_QTFTREEMODEL_DATAEDITED = 1052,
+    QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED = 1053,
+    QTF_SIG_QFILESYSTEMMODEL_ROOTPATHCHANGED = 1054,
+    QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1055,
+    QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1056,
+    QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1057,
+    QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1058,
+    QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1059,
+    QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1060,
+    QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1061,
+    QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1062,
+    QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1063,
+    QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1064,
+    QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1065,
+    QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1066,
+    QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1067,
+    QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1068,
+    QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1069,
+    QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1070,
+    QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1071,
+    QTF_SIG_QTABWIDGET_TABBARCLICKED = 1072,
+    QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1073,
+    QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1074,
+    QTF_SIG_QSPLITTER_SPLITTERMOVED = 1075,
+    QTF_SIG_QGROUPBOX_TOGGLED = 1076,
+    QTF_SIG_QGROUPBOX_CLICKED = 1077,
+    QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1078,
+    QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1079,
+    QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1080,
+    QTF_SIG_QBUTTONGROUP_IDCLICKED = 1081,
+    QTF_SIG_QDATEEDIT_DATECHANGED = 1082,
+    QTF_SIG_QTIMEEDIT_TIMECHANGED = 1083,
+    QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1084,
+    QTF_SIG_QCALENDARWIDGET_CLICKED = 1085,
+    QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1086,
+    QTF_SIG_QPROGRESSDIALOG_CANCELED = 1087,
+    QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED = 1088,
+    QTF_SIG_QDIALOGBUTTONBOX_REJECTED = 1089,
+    QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED = 1090,
+    QTF_SIG_QDIALOGBUTTONBOX_CLICKED = 1091,
+    QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE = 1092,
+    QTF_SIG_QCOMPLETER_ACTIVATED = 1093,
+    QTF_SIG_QCOMPLETER_HIGHLIGHTED = 1094,
+    QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED = 1095,
+    QTF_SIG_QTEXTBROWSER_ANCHORCLICKED = 1096,
+    QTF_SIG_QTEXTBROWSER_SOURCECHANGED = 1097,
+    QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE = 1098,
+    QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE = 1099,
+    QTF_SIG_QTOOLBOX_CURRENTCHANGED = 1100,
+    QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED = 1101,
+    QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE = 1102,
+    QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED = 1103,
+    QTF_SIG_QWIZARDPAGE_COMPLETECHANGED = 1104,
+    QTF_SIG_QWIZARD_CURRENTIDCHANGED = 1105,
+    QTF_SIG_QWIZARD_HELPREQUESTED = 1106,
+    QTF_SIG_QUNDOSTACK_REDOREQUESTED = 1107,
+    QTF_SIG_QUNDOSTACK_UNDOREQUESTED = 1108,
+    QTF_SIG_QUNDOSTACK_CANUNDOCHANGED = 1109,
+    QTF_SIG_QUNDOSTACK_CANREDOCHANGED = 1110,
+    QTF_SIG_QUNDOSTACK_INDEXCHANGED = 1111,
+    QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1112,
+    QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1113,
+    QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1114,
 };
 
 // QApplication keeps references to argc/argv, so they must outlive it.
@@ -174,6 +237,74 @@ QTF_API void *qtf_qapplication_new_args(const char *s, int itemlen, int n) {
     qtf_argv.push_back(nullptr);
     qtf_argc = static_cast<int>(qtf_arg_strings.size());
     return new QApplication(qtf_argc, qtf_argv.data());
+}
+
+// Replace a completer's items.
+static void qtf_completer_items(QCompleter *c, const QStringList &items) {
+    c->setModel(new QStringListModel(items, c));
+}
+
+// Show a file (a path) or a URL in a text browser.
+static void qtf_set_source(QTextBrowser *b, const QString &s) {
+    b->setSource(QFileInfo::exists(s) ? QUrl::fromLocalFile(s) : QUrl(s));
+}
+
+// QtfWizardPage: a wizard page whose completeness (the Next/Finish button) is
+// set from Fortran, and which can register fields (protected in Qt).
+class QtfWizardPage : public QWizardPage {
+  public:
+    using QWizardPage::QWizardPage;
+    bool complete = true;
+    bool isComplete() const override { return complete && QWizardPage::isComplete(); }
+    void setComplete(bool c) {
+        complete = c;
+        emit completeChanged();
+    }
+    void addField(const QString &name, QWidget *w) { registerField(name, w); }
+};
+
+static QtfWizardPage *qtf_page(QWizardPage *p) {
+    auto *q = dynamic_cast<QtfWizardPage *>(p);
+    if (!q) qFatal("QWizardPage: not created by qt-fortran");
+    return q;
+}
+
+// QtfUndoStack: an undo stack whose commands are (text, id) pairs; undoing and
+// redoing a command call the stack's Fortran undo/redo slots with its id.
+class QtfUndoStack : public QUndoStack {
+  public:
+    using QUndoStack::QUndoStack;
+    std::vector<qtf_slot> undo_handlers, redo_handlers;
+};
+
+class QtfUndoCommand : public QUndoCommand {
+  public:
+    QtfUndoCommand(QtfUndoStack *stack, const QString &text, int id) : QUndoCommand(text), stack(stack), cid(id) {}
+    void undo() override { call(stack->undo_handlers); }
+    void redo() override { call(stack->redo_handlers); }
+
+  private:
+    void call(const std::vector<qtf_slot> &handlers) {
+        qtf_args a{};
+        a.i[0] = cid;
+        qtf_emit_all(handlers, a);
+    }
+    QtfUndoStack *stack;   // owns this command
+    int cid;
+};
+
+static void qtf_undo_push(QUndoStack *s, const QString &text, int id) {
+    auto *stack = dynamic_cast<QtfUndoStack *>(s);
+    if (!stack) qFatal("QUndoStack: not created by qt-fortran");
+    stack->push(new QtfUndoCommand(stack, text, id));
+}
+
+// Attach a slot to an undo stack's undo (UNDO = true) or redo requests.
+template <bool UNDO> static bool connect_undo(void *s, const qtf_slot &ref) {
+    auto *stack = dynamic_cast<QtfUndoStack *>(static_cast<QObject *>(s));
+    if (!stack) return false;
+    (UNDO ? stack->undo_handlers : stack->redo_handlers).push_back(ref);
+    return true;
 }
 
 // Re-apply the style (sheet) to a widget, e.g. after a dynamic property changed.
@@ -331,33 +462,61 @@ struct QtfModelRequest {
     QVariant value;
 };
 
+// The Fortran slots of a Fortran-backed model (QtfTableModel, QtfTreeModel).
+struct QtfModelHandlers {
+    virtual ~QtfModelHandlers() = default;
+    std::vector<qtf_slot> data_handlers, edit_handlers, sort_handlers;
+
+    // The value of one cell, from the dataRequested slots (`key` is the row or node).
+    QVariant request(int key, int column) const {
+        QtfModelRequest req;
+        const std::vector<qtf_slot> targets = data_handlers;   // a slot may connect more
+        for (const qtf_slot &s : targets) qtf_emit_ptr_ints(s, &req, {key, column});
+        return req.value;
+    }
+
+    // Report an edit to the dataEdited slots; false if nobody listens.
+    bool edit(int key, int column, const QVariant &v) const {
+        if (edit_handlers.empty()) return false;
+        qtf_args a{};
+        const QByteArray text = v.toString().toUtf8();
+        a.i[0] = key;
+        a.i[1] = column;
+        a.s = text.constData();
+        a.slen = static_cast<int32_t>(text.size());
+        return qtf_emit_all(edit_handlers, a) > 0;
+    }
+};
+
 // QtfTableModel: a table model whose cells are provided by Fortran slots on
 // demand (dataRequested), so large Fortran arrays can be shown without copying
-// them into Qt. Edits are reported to dataEdited slots.
-class QtfTableModel : public QAbstractTableModel {
+// them into Qt. Edits are reported to dataEdited slots, and header clicks of a
+// sorting view to sortRequested slots.
+class QtfTableModel : public QAbstractTableModel, public QtfModelHandlers {
   public:
     QtfTableModel(int rows, int cols, QObject *parent) : QAbstractTableModel(parent), nrows(rows), ncols(cols) {}
 
     int nrows, ncols;
     bool editable = false;
     QStringList hlabels, vlabels;
-    std::vector<qtf_slot> data_handlers, edit_handlers;
+
+    void sort(int column, Qt::SortOrder order) override {
+        qtf_args a{};
+        a.i[0] = column;
+        a.i[1] = order;
+        if (qtf_emit_all(sort_handlers, a) > 0) refresh();
+    }
 
     int rowCount(const QModelIndex &parent) const override { return parent.isValid() ? 0 : nrows; }
     int columnCount(const QModelIndex &parent) const override { return parent.isValid() ? 0 : ncols; }
 
     QVariant data(const QModelIndex &i, int role) const override {
         if (!i.isValid() || (role != Qt::DisplayRole && role != Qt::EditRole)) return QVariant();
-        QtfModelRequest req;
-        const std::vector<qtf_slot> targets = data_handlers;   // a slot may connect more
-        for (const qtf_slot &s : targets) qtf_emit_ptr_ints(s, &req, {i.row(), i.column()});
-        return req.value;
+        return request(i.row(), i.column());
     }
 
     bool setData(const QModelIndex &i, const QVariant &v, int role) override {
-        if (!i.isValid() || role != Qt::EditRole || edit_handlers.empty()) return false;
-        const std::vector<qtf_slot> targets = edit_handlers;
-        for (const qtf_slot &s : targets) qtf_emit_ints_string(s, {i.row(), i.column()}, v.toString());
+        if (!i.isValid() || role != Qt::EditRole || !edit(i.row(), i.column(), v)) return false;
         emit dataChanged(i, i);
         return true;
     }
@@ -394,13 +553,289 @@ class QtfTableModel : public QAbstractTableModel {
     void refreshCell(int r, int c) { emit dataChanged(index(r, c), index(r, c)); }
 };
 
-// Attach a slot to a QtfTableModel's data (WHICH = 0) or edit (WHICH = 1) requests.
+// QtfTreeModel: a tree whose structure is a Fortran parent array (node i's
+// parent, 0 for top-level nodes; parents come before their children) and whose
+// cells come from Fortran slots on demand, like QtfTableModel. Nodes are
+// numbered 1..n; an index's internalId is its node.
+class QtfTreeModel : public QAbstractItemModel, public QtfModelHandlers {
+  public:
+    QtfTreeModel(int cols, QObject *parent) : QAbstractItemModel(parent), ncols(cols), children(1) {}
+
+    int ncols;
+    bool editable = false;
+    QStringList hlabels;
+    std::vector<int> parent_of{0}, row_of{0};      // by node (index 0: the root)
+    std::vector<std::vector<int>> children;         // by node
+
+    int nodeCount() const { return static_cast<int>(parent_of.size()) - 1; }
+
+    void setParents(const int *p, int n) {
+        for (int i = 0; i < n; ++i)
+            if (p[i] < 0 || p[i] > i)
+                qFatal("QtfTreeModel::setParents: the parent of node %d is %d (must be 0..%d)", i + 1, p[i], i);
+        beginResetModel();
+        parent_of.assign(1, 0);
+        row_of.assign(1, 0);
+        children.assign(n + 1, {});
+        for (int i = 1; i <= n; ++i) {
+            parent_of.push_back(p[i - 1]);
+            row_of.push_back(static_cast<int>(children[p[i - 1]].size()));
+            children[p[i - 1]].push_back(i);
+        }
+        endResetModel();
+    }
+
+    // Append a node under `parent` (0: top level); returns its number.
+    int appendNode(int parent) {
+        if (parent < 0 || parent > nodeCount()) return -1;
+        const int row = static_cast<int>(children[parent].size());
+        const int node = nodeCount() + 1;
+        beginInsertRows(nodeIndex(parent), row, row);
+        parent_of.push_back(parent);
+        row_of.push_back(row);
+        children.emplace_back();
+        children[parent].push_back(node);
+        endInsertRows();
+        return node;
+    }
+
+    QModelIndex nodeIndex(int node, int column = 0) const {
+        if (node <= 0 || node > nodeCount()) return QModelIndex();
+        return createIndex(row_of[node], column, quintptr(node));
+    }
+
+    QModelIndex index(int row, int column, const QModelIndex &parent) const override {
+        const int p = parent.isValid() ? int(parent.internalId()) : 0;
+        if (p < 0 || p > nodeCount() || row < 0 || row >= int(children[p].size()) || column < 0 || column >= ncols)
+            return QModelIndex();
+        return createIndex(row, column, quintptr(children[p][row]));
+    }
+
+    QModelIndex parent(const QModelIndex &i) const override {
+        if (!i.isValid()) return QModelIndex();
+        return nodeIndex(parent_of[int(i.internalId())]);
+    }
+
+    int rowCount(const QModelIndex &parent) const override {
+        if (parent.column() > 0) return 0;
+        const int p = parent.isValid() ? int(parent.internalId()) : 0;
+        return int(children[p].size());
+    }
+
+    int columnCount(const QModelIndex &) const override { return ncols; }
+
+    QVariant data(const QModelIndex &i, int role) const override {
+        if (!i.isValid() || (role != Qt::DisplayRole && role != Qt::EditRole)) return QVariant();
+        return request(int(i.internalId()), i.column());
+    }
+
+    bool setData(const QModelIndex &i, const QVariant &v, int role) override {
+        if (!i.isValid() || role != Qt::EditRole || !edit(int(i.internalId()), i.column(), v)) return false;
+        emit dataChanged(i, i);
+        return true;
+    }
+
+    Qt::ItemFlags flags(const QModelIndex &i) const override {
+        Qt::ItemFlags f = QAbstractItemModel::flags(i);
+        if (editable && i.isValid()) f |= Qt::ItemIsEditable;
+        return f;
+    }
+
+    QVariant headerData(int section, Qt::Orientation o, int role) const override {
+        if (o == Qt::Horizontal && role == Qt::DisplayRole && section < hlabels.size()) return hlabels[section];
+        return QAbstractItemModel::headerData(section, o, role);
+    }
+
+    void setHeaders(const QStringList &labels) {
+        hlabels = labels;
+        if (ncols > 0) emit headerDataChanged(Qt::Horizontal, 0, ncols - 1);
+    }
+
+    void setColumns(int n) {
+        beginResetModel();
+        ncols = n;
+        endResetModel();
+    }
+
+    // Redisplay every node (keeps the view's expansion state).
+    void refresh() {
+        for (int p = 0; p <= nodeCount(); ++p) {
+            const std::vector<int> &c = children[p];
+            if (!c.empty()) emit dataChanged(nodeIndex(c.front()), nodeIndex(c.back(), ncols - 1));
+        }
+    }
+
+    void refreshNode(int node) {
+        const QModelIndex a = nodeIndex(node, 0), b = nodeIndex(node, ncols - 1);
+        if (a.isValid()) emit dataChanged(a, b);
+    }
+};
+
+// Attach a slot to a Fortran-backed model's data (WHICH = 0), edit (1) or sort (2) requests.
 template <int WHICH> static bool connect_model(void *s, const qtf_slot &ref) {
-    auto *m = dynamic_cast<QtfTableModel *>(static_cast<QObject *>(s));
+    auto *m = dynamic_cast<QtfModelHandlers *>(static_cast<QObject *>(s));
     if (!m) return false;
-    (WHICH == 0 ? m->data_handlers : m->edit_handlers).push_back(ref);
+    (WHICH == 0 ? m->data_handlers : WHICH == 1 ? m->edit_handlers : m->sort_handlers).push_back(ref);
     return true;
 }
+
+// The source-model index behind a (possibly proxied) index.
+static QModelIndex qtf_source_index(QModelIndex i) {
+    while (i.isValid()) {
+        auto *p = qobject_cast<const QAbstractProxyModel *>(i.model());
+        if (!p) break;
+        i = p->mapToSource(i);
+    }
+    return i;
+}
+
+// The model at the bottom of a view's proxy chain.
+static QAbstractItemModel *qtf_source_model(const QAbstractItemView *v) {
+    QAbstractItemModel *m = v->model();
+    while (auto *p = qobject_cast<QAbstractProxyModel *>(m)) m = p->sourceModel();
+    return m;
+}
+
+// A source-model index as an index of the view's model (through its proxies).
+static QModelIndex qtf_view_index(const QAbstractItemView *v, const QModelIndex &source) {
+    std::vector<QAbstractProxyModel *> chain;
+    QAbstractItemModel *m = v->model();
+    while (auto *p = qobject_cast<QAbstractProxyModel *>(m)) {
+        chain.push_back(p);
+        m = p->sourceModel();
+    }
+    QModelIndex i = source;
+    for (auto it = chain.rbegin(); it != chain.rend(); ++it) i = (*it)->mapFromSource(i);
+    return i;
+}
+
+// The QtfTreeModel node of an index (-1 if the model is not a QtfTreeModel).
+static int qtf_node(const QModelIndex &i) {
+    const QModelIndex s = qtf_source_index(i);
+    return s.isValid() && dynamic_cast<const QtfTreeModel *>(s.model()) ? int(s.internalId()) : -1;
+}
+
+// The view index of a QtfTreeModel node (invalid if the view does not show one).
+static QModelIndex qtf_node_index(const QAbstractItemView *v, int node) {
+    auto *m = dynamic_cast<QtfTreeModel *>(qtf_source_model(v));
+    return m ? qtf_view_index(v, m->nodeIndex(node)) : QModelIndex();
+}
+
+// The file path of an index of a QFileSystemModel (empty for other models).
+static QString qtf_file_path(const QModelIndex &i) {
+    const QModelIndex s = qtf_source_index(i);
+    auto *fs = qobject_cast<const QFileSystemModel *>(s.model());
+    return fs ? fs->filePath(s) : QString();
+}
+
+// Show the directory `path` of the view's QFileSystemModel as its root.
+static void qtf_set_root_path(QAbstractItemView *v, const QString &path) {
+    if (auto *fs = qobject_cast<QFileSystemModel *>(qtf_source_model(v)))
+        v->setRootIndex(qtf_view_index(v, fs->index(path)));
+}
+
+// Make the file `path` of the view's QFileSystemModel current.
+static void qtf_set_current_file(QAbstractItemView *v, const QString &path) {
+    if (auto *fs = qobject_cast<QFileSystemModel *>(qtf_source_model(v)))
+        v->setCurrentIndex(qtf_view_index(v, fs->index(path)));
+}
+
+// QTreeView that reports current-index changes (as a node, or a file path).
+class QtfTreeView : public QTreeView {
+  public:
+    using QTreeView::QTreeView;
+    std::vector<qtf_slot> node_handlers, file_handlers;
+
+  protected:
+    void currentChanged(const QModelIndex &current, const QModelIndex &previous) override {
+        QTreeView::currentChanged(current, previous);
+        qtf_args a{};
+        a.i[0] = qtf_node(current);
+        qtf_emit_all(node_handlers, a);
+        if (!file_handlers.empty()) {
+            const std::vector<qtf_slot> targets = file_handlers;
+            const QString path = qtf_file_path(current);
+            for (const qtf_slot &s : targets) qtf_emit(s, path);
+        }
+    }
+};
+
+// Attach a slot to a QtfTreeView's current node (FILE = false) or file changes.
+template <bool FILE> static bool connect_tree(void *s, const qtf_slot &ref) {
+    auto *v = dynamic_cast<QtfTreeView *>(static_cast<QObject *>(s));
+    if (!v) return false;
+    (FILE ? v->file_handlers : v->node_handlers).push_back(ref);
+    return true;
+}
+
+// Map a proxy row (in column `column`, top level) to the source model, and back.
+static int qtf_proxy_to_source(QSortFilterProxyModel *p, int row, int column) {
+    return p->mapToSource(p->index(row, column)).row();
+}
+
+static int qtf_proxy_from_source(QSortFilterProxyModel *p, int row, int column) {
+    QAbstractItemModel *m = p->sourceModel();
+    return m ? p->mapFromSource(m->index(row, column)).row() : -1;
+}
+
+// QtfItemDelegate: a cell editor chosen per column: a combo box of fixed
+// choices, a (double) spin box with a range, or Qt's default line edit.
+class QtfItemDelegate : public QStyledItemDelegate {
+  public:
+    using QStyledItemDelegate::QStyledItemDelegate;
+    QStringList choices;
+    bool ranged = false;
+    double lo = 0, hi = 0;
+    int decimals = 2;
+
+    void setRange(double minimum, double maximum, int dec) {
+        ranged = true;
+        lo = minimum;
+        hi = maximum;
+        decimals = dec;
+    }
+
+    void clear() {
+        choices.clear();
+        ranged = false;
+    }
+
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
+                          const QModelIndex &index) const override {
+        if (!choices.isEmpty()) {
+            auto *c = new QComboBox(parent);
+            c->addItems(choices);
+            return c;
+        }
+        if (ranged && decimals == 0) {
+            auto *sb = new QSpinBox(parent);
+            sb->setRange(int(lo), int(hi));
+            return sb;
+        }
+        if (ranged) {
+            auto *sb = new QDoubleSpinBox(parent);
+            sb->setRange(lo, hi);
+            sb->setDecimals(decimals);
+            return sb;
+        }
+        return QStyledItemDelegate::createEditor(parent, option, index);
+    }
+
+    void setEditorData(QWidget *editor, const QModelIndex &index) const override {
+        const QVariant v = index.data(Qt::EditRole);
+        if (auto *c = dynamic_cast<QComboBox *>(editor)) c->setCurrentText(v.toString());
+        else if (auto *sb = dynamic_cast<QSpinBox *>(editor)) sb->setValue(v.toInt());
+        else if (auto *sb = dynamic_cast<QDoubleSpinBox *>(editor)) sb->setValue(v.toDouble());
+        else QStyledItemDelegate::setEditorData(editor, index);
+    }
+
+    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override {
+        if (auto *c = dynamic_cast<QComboBox *>(editor)) model->setData(index, c->currentText());
+        else if (auto *sb = dynamic_cast<QSpinBox *>(editor)) model->setData(index, sb->value());
+        else if (auto *sb = dynamic_cast<QDoubleSpinBox *>(editor)) model->setData(index, sb->value());
+        else QStyledItemDelegate::setModelData(editor, model, index);
+    }
+};
 
 // Attach a slot to one of the QtfWidget's event handlers. The slots are owned
 // by the widget, so they are released when it is destroyed.
@@ -629,6 +1064,30 @@ QTF_API int qtf_qwidget_restoreGeometry(void *self, const char *geometry, int ge
 // True if the widget is a top-level window.
 QTF_API int qtf_qwidget_isWindow(void *self) { return qtf_bool(as<QWidget>(self)->isWindow()); }
 
+// Show the window maximized.
+QTF_API void qtf_qwidget_showMaximized(void *self) { as<QWidget>(self)->showMaximized(); }
+
+// Show the window minimized (iconified).
+QTF_API void qtf_qwidget_showMinimized(void *self) { as<QWidget>(self)->showMinimized(); }
+
+// Show the window at its normal size (after maximized, minimized or full screen).
+QTF_API void qtf_qwidget_showNormal(void *self) { as<QWidget>(self)->showNormal(); }
+
+// Show the window full screen.
+QTF_API void qtf_qwidget_showFullScreen(void *self) { as<QWidget>(self)->showFullScreen(); }
+
+// True if the window is maximized.
+QTF_API int qtf_qwidget_isMaximized(void *self) { return qtf_bool(as<QWidget>(self)->isMaximized()); }
+
+// True if the window is minimized.
+QTF_API int qtf_qwidget_isMinimized(void *self) { return qtf_bool(as<QWidget>(self)->isMinimized()); }
+
+// Make the window the active one (give it keyboard focus).
+QTF_API void qtf_qwidget_activateWindow(void *self) { as<QWidget>(self)->activateWindow(); }
+
+// Raise the window above other windows (or the widget above its siblings).
+QTF_API void qtf_qwidget_raise(void *self) { as<QWidget>(self)->raise(); }
+
 // Re-apply the style sheet, e.g. after changing a property that a style rule selects on (`*[state="error"]`).
 QTF_API void qtf_qwidget_repolish(void *self) { qtf_repolish(as<QWidget>(self)); }
 
@@ -823,6 +1282,36 @@ QTF_API int qtf_qlineedit_maxLength(void *self) { return as<QLineEdit>(self)->ma
 
 // Clear the text.
 QTF_API void qtf_qlineedit_clear(void *self) { as<QLineEdit>(self)->clear(); }
+
+// Accept only input the validator allows (no argument: remove it). The line edit does not take ownership.
+QTF_API void qtf_qlineedit_setValidator(void *self, void *validator) {
+    as<QLineEdit>(self)->setValidator(as<QValidator>(validator));
+}
+
+// True if the text satisfies the validator (or there is none).
+QTF_API int qtf_qlineedit_hasAcceptableInput(void *self) {
+    return qtf_bool(as<QLineEdit>(self)->hasAcceptableInput());
+}
+
+// Offer completions while typing (no argument: remove it).
+QTF_API void qtf_qlineedit_setCompleter(void *self, void *completer) {
+    as<QLineEdit>(self)->setCompleter(as<QCompleter>(completer));
+}
+
+// An input mask, e.g. '000.000.000.000' (see Qt's QLineEdit::inputMask).
+QTF_API void qtf_qlineedit_setInputMask(void *self, const char *mask, int mask_len) {
+    as<QLineEdit>(self)->setInputMask(qtf_qstring(mask, mask_len));
+}
+
+// QLineEdit_Normal, _NoEcho, _Password or _PasswordEchoOnEdit.
+QTF_API void qtf_qlineedit_setEchoMode(void *self, int mode) {
+    as<QLineEdit>(self)->setEchoMode(QLineEdit::EchoMode(mode));
+}
+
+// Show a clear button while there is text.
+QTF_API void qtf_qlineedit_setClearButtonEnabled(void *self, int enable) {
+    as<QLineEdit>(self)->setClearButtonEnabled((enable != 0));
+}
 
 // ---------------------------------------------------------------------------
 // QSpinBox
@@ -1020,6 +1509,11 @@ QTF_API int qtf_qcombobox_findText(void *self, const char *text, int text_len) {
 // Allow typing a value that is not in the list.
 QTF_API void qtf_qcombobox_setEditable(void *self, int editable) {
     as<QComboBox>(self)->setEditable((editable != 0));
+}
+
+// Completions for an editable combo box.
+QTF_API void qtf_qcombobox_setCompleter(void *self, void *completer) {
+    as<QComboBox>(self)->setCompleter(as<QCompleter>(completer));
 }
 
 // ---------------------------------------------------------------------------
@@ -1407,6 +1901,17 @@ QTF_API char *qtf_qfiledialog_getExistingDirectory(const char *caption, int capt
 }
 
 // ---------------------------------------------------------------------------
+// QAbstractItemModel
+
+// Number of (top-level) rows.
+QTF_API int qtf_qabstractitemmodel_rowCount(void *self) { return as<QAbstractItemModel>(self)->rowCount(); }
+
+// Number of columns.
+QTF_API int qtf_qabstractitemmodel_columnCount(void *self) {
+    return as<QAbstractItemModel>(self)->columnCount();
+}
+
+// ---------------------------------------------------------------------------
 // QtfModelRequest
 
 // Show `text` in the cell.
@@ -1439,12 +1944,6 @@ QTF_API void qtf_qtftablemodel_setRowCount(void *self, int rows) {
 QTF_API void qtf_qtftablemodel_setColumnCount(void *self, int columns) {
     as<QtfTableModel>(self)->setShape(as<QtfTableModel>(self)->nrows, columns);
 }
-
-// Number of rows.
-QTF_API int qtf_qtftablemodel_rowCount(void *self) { return as<QtfTableModel>(self)->nrows; }
-
-// Number of columns.
-QTF_API int qtf_qtftablemodel_columnCount(void *self) { return as<QtfTableModel>(self)->ncols; }
 
 // Set the column titles.
 QTF_API void qtf_qtftablemodel_setHorizontalHeaderLabels(void *self, const char *labels, int labels_len, int n) {
@@ -1481,6 +1980,26 @@ QTF_API int qtf_qtftablemodel_setDataText(void *self, int row, int column, const
 
 // ---------------------------------------------------------------------------
 // QAbstractItemView
+
+// Show `model` (the view does not take ownership). Not for the item widgets (QTableWidget, ...), which have their own model.
+QTF_API void qtf_qabstractitemview_setModel(void *self, void *model) {
+    as<QAbstractItemView>(self)->setModel(as<QAbstractItemModel>(model));
+}
+
+// Edit every cell with `delegate`.
+QTF_API void qtf_qabstractitemview_setItemDelegate(void *self, void *delegate) {
+    as<QAbstractItemView>(self)->setItemDelegate(as<QtfItemDelegate>(delegate));
+}
+
+// Edit the cells of one column with `delegate`.
+QTF_API void qtf_qabstractitemview_setItemDelegateForColumn(void *self, int column, void *delegate) {
+    as<QAbstractItemView>(self)->setItemDelegateForColumn(column, as<QtfItemDelegate>(delegate));
+}
+
+// Start editing a (top-level) cell, as a double click would.
+QTF_API void qtf_qabstractitemview_edit(void *self, int row, int column) {
+    if (as<QAbstractItemView>(self)->model()) as<QAbstractItemView>(self)->edit(as<QAbstractItemView>(self)->model()->index(row, column));
+}
 
 // Shade every other row.
 QTF_API void qtf_qabstractitemview_setAlternatingRowColors(void *self, int enable) {
@@ -1520,11 +2039,6 @@ QTF_API void qtf_qabstractitemview_scrollToBottom(void *self) {
 
 // Create a table view.
 QTF_API void *qtf_qtableview_new(void *parent) { return new QTableView(as<QWidget>(parent)); }
-
-// Show `model` (the view does not take ownership).
-QTF_API void qtf_qtableview_setModel(void *self, void *model) {
-    as<QTableView>(self)->setModel(as<QtfTableModel>(model));
-}
 
 // Fit the column widths to their contents.
 QTF_API void qtf_qtableview_resizeColumnsToContents(void *self) {
@@ -1575,6 +2089,314 @@ QTF_API void qtf_qtableview_selectRow(void *self, int row) { as<QTableView>(self
 
 // Wrap long cell text.
 QTF_API void qtf_qtableview_setWordWrap(void *self, int on) { as<QTableView>(self)->setWordWrap((on != 0)); }
+
+// Sort when a column title is clicked (a QtfTableModel gets `sortRequested`).
+QTF_API void qtf_qtableview_setSortingEnabled(void *self, int enable) {
+    as<QTableView>(self)->setSortingEnabled((enable != 0));
+}
+
+// Sort by a column now.
+QTF_API void qtf_qtableview_sortByColumn(void *self, int column, int order) {
+    as<QTableView>(self)->sortByColumn(column, Qt::SortOrder(order));
+}
+
+// Hide or show a column.
+QTF_API void qtf_qtableview_setColumnHidden(void *self, int column, int hide) {
+    as<QTableView>(self)->setColumnHidden(column, (hide != 0));
+}
+
+// ---------------------------------------------------------------------------
+// QTreeView
+
+// Create a tree view.
+QTF_API void *qtf_qtreeview_new(void *parent) { return new QtfTreeView(as<QWidget>(parent)); }
+
+// The current node of a QtfTreeModel (-1 if none).
+QTF_API int qtf_qtreeview_currentNode(void *self) { return qtf_node(as<QTreeView>(self)->currentIndex()); }
+
+// Make `node` current (its parents are expanded).
+QTF_API void qtf_qtreeview_setCurrentNode(void *self, int node) {
+    as<QTreeView>(self)->setCurrentIndex(qtf_node_index(as<QTreeView>(self), node));
+}
+
+// Expand a node.
+QTF_API void qtf_qtreeview_expandNode(void *self, int node) {
+    as<QTreeView>(self)->expand(qtf_node_index(as<QTreeView>(self), node));
+}
+
+// Collapse a node.
+QTF_API void qtf_qtreeview_collapseNode(void *self, int node) {
+    as<QTreeView>(self)->collapse(qtf_node_index(as<QTreeView>(self), node));
+}
+
+// True if the node is expanded.
+QTF_API int qtf_qtreeview_isNodeExpanded(void *self, int node) {
+    return qtf_bool(as<QTreeView>(self)->isExpanded(qtf_node_index(as<QTreeView>(self), node)));
+}
+
+// Scroll so that the node is visible (expanding its parents).
+QTF_API void qtf_qtreeview_scrollToNode(void *self, int node) {
+    as<QTreeView>(self)->scrollTo(qtf_node_index(as<QTreeView>(self), node));
+}
+
+// The path of the current file of a QFileSystemModel (empty if none).
+QTF_API char *qtf_qtreeview_currentFilePath(void *self, int *len) {
+    return qtf_to_c(qtf_file_path(as<QTreeView>(self)->currentIndex()), len);
+}
+
+// Make the file `path` of the QFileSystemModel current.
+QTF_API void qtf_qtreeview_setCurrentFile(void *self, const char *path, int path_len) {
+    qtf_set_current_file(as<QTreeView>(self), qtf_qstring(path, path_len));
+}
+
+// Show only the directory `path` of the QFileSystemModel (set the model's root path too).
+QTF_API void qtf_qtreeview_setRootPath(void *self, const char *path, int path_len) {
+    qtf_set_root_path(as<QTreeView>(self), qtf_qstring(path, path_len));
+}
+
+// Expand every node.
+QTF_API void qtf_qtreeview_expandAll(void *self) { as<QTreeView>(self)->expandAll(); }
+
+// Collapse every node.
+QTF_API void qtf_qtreeview_collapseAll(void *self) { as<QTreeView>(self)->collapseAll(); }
+
+// Expand nodes down to `depth` levels (0: the top level).
+QTF_API void qtf_qtreeview_expandToDepth(void *self, int depth) { as<QTreeView>(self)->expandToDepth(depth); }
+
+// Hide the column titles.
+QTF_API void qtf_qtreeview_setHeaderHidden(void *self, int hide) {
+    as<QTreeView>(self)->setHeaderHidden((hide != 0));
+}
+
+// Show expand/collapse controls for top-level nodes.
+QTF_API void qtf_qtreeview_setRootIsDecorated(void *self, int show) {
+    as<QTreeView>(self)->setRootIsDecorated((show != 0));
+}
+
+// Promise equal row heights (faster for large trees).
+QTF_API void qtf_qtreeview_setUniformRowHeights(void *self, int uniform) {
+    as<QTreeView>(self)->setUniformRowHeights((uniform != 0));
+}
+
+// Animate expanding and collapsing.
+QTF_API void qtf_qtreeview_setAnimated(void *self, int enable) {
+    as<QTreeView>(self)->setAnimated((enable != 0));
+}
+
+// Indentation per level.
+QTF_API void qtf_qtreeview_setIndentation(void *self, int pixels) {
+    as<QTreeView>(self)->setIndentation(pixels);
+}
+
+// Fit a column's width to its contents.
+QTF_API void qtf_qtreeview_resizeColumnToContents(void *self, int column) {
+    as<QTreeView>(self)->resizeColumnToContents(column);
+}
+
+// Set a column width in pixels.
+QTF_API void qtf_qtreeview_setColumnWidth(void *self, int column, int width) {
+    as<QTreeView>(self)->setColumnWidth(column, width);
+}
+
+// Hide or show a column.
+QTF_API void qtf_qtreeview_setColumnHidden(void *self, int column, int hide) {
+    as<QTreeView>(self)->setColumnHidden(column, (hide != 0));
+}
+
+// Sort when a column title is clicked (needs a sorting model, e.g. QSortFilterProxyModel).
+QTF_API void qtf_qtreeview_setSortingEnabled(void *self, int enable) {
+    as<QTreeView>(self)->setSortingEnabled((enable != 0));
+}
+
+// Sort by a column now.
+QTF_API void qtf_qtreeview_sortByColumn(void *self, int column, int order) {
+    as<QTreeView>(self)->sortByColumn(column, Qt::SortOrder(order));
+}
+
+// ---------------------------------------------------------------------------
+// QtfTreeModel
+
+// An empty tree model with `columns` columns.
+QTF_API void *qtf_qtftreemodel_new(int columns, void *parent) {
+    return new QtfTreeModel(columns, as<QObject>(parent));
+}
+
+// Set the structure: node i's parent is `parents(i)` (0: top level; must be < i). Resets the views.
+QTF_API void qtf_qtftreemodel_setParents(void *self, const int *parents, int n) {
+    as<QtfTreeModel>(self)->setParents(parents, n);
+}
+
+// Add a node as the last child of `parent` (0: top level); returns its number (-1 if `parent` is invalid).
+QTF_API int qtf_qtftreemodel_appendNode(void *self, int parent) {
+    return as<QtfTreeModel>(self)->appendNode(parent);
+}
+
+// The number of nodes.
+QTF_API int qtf_qtftreemodel_nodeCount(void *self) { return as<QtfTreeModel>(self)->nodeCount(); }
+
+// The parent of a node (0: top level; -1 if invalid).
+QTF_API int qtf_qtftreemodel_parentNode(void *self, int node) {
+    return (node >= 1 && node <= as<QtfTreeModel>(self)->nodeCount()) ? as<QtfTreeModel>(self)->parent_of[node] : -1;
+}
+
+// The number of children of a node (0: the top-level nodes).
+QTF_API int qtf_qtftreemodel_childCount(void *self, int node) {
+    return (node >= 0 && node <= as<QtfTreeModel>(self)->nodeCount()) ? int(as<QtfTreeModel>(self)->children[node].size()) : 0;
+}
+
+// Set the number of columns.
+QTF_API void qtf_qtftreemodel_setColumnCount(void *self, int columns) {
+    as<QtfTreeModel>(self)->setColumns(columns);
+}
+
+// Set the column titles.
+QTF_API void qtf_qtftreemodel_setHeaderLabels(void *self, const char *labels, int labels_len, int n) {
+    as<QtfTreeModel>(self)->setHeaders(qtf_qstringlist(labels, labels_len, n));
+}
+
+// Allow editing cells (edits arrive at `dataEdited`).
+QTF_API void qtf_qtftreemodel_setEditable(void *self, int editable) {
+    as<QtfTreeModel>(self)->editable = (editable != 0);
+}
+
+// Redisplay all cells (after the data changed).
+QTF_API void qtf_qtftreemodel_refresh(void *self) { as<QtfTreeModel>(self)->refresh(); }
+
+// Redisplay one node's cells.
+QTF_API void qtf_qtftreemodel_refreshNode(void *self, int node) { as<QtfTreeModel>(self)->refreshNode(node); }
+
+// The text of a cell, as a view would show it.
+QTF_API char *qtf_qtftreemodel_dataText(void *self, int node, int column, int *len) {
+    return qtf_to_c(as<QtfTreeModel>(self)->data(as<QtfTreeModel>(self)->nodeIndex(node, column), Qt::DisplayRole).toString(), len);
+}
+
+// ---------------------------------------------------------------------------
+// QSortFilterProxyModel
+
+// A proxy model (set its source model).
+QTF_API void *qtf_qsortfilterproxymodel_new(void *parent) {
+    return new QSortFilterProxyModel(as<QObject>(parent));
+}
+
+// The model to sort and filter.
+QTF_API void qtf_qsortfilterproxymodel_setSourceModel(void *self, void *model) {
+    as<QSortFilterProxyModel>(self)->setSourceModel(as<QAbstractItemModel>(model));
+}
+
+// Show only rows whose key column contains `pattern` (empty: all rows).
+QTF_API void qtf_qsortfilterproxymodel_setFilterFixedString(void *self, const char *pattern, int pattern_len) {
+    as<QSortFilterProxyModel>(self)->setFilterFixedString(qtf_qstring(pattern, pattern_len));
+}
+
+// Show only rows whose key column matches a regular expression.
+QTF_API void qtf_qsortfilterproxymodel_setFilterRegularExpression(void *self, const char *pattern, int pattern_len) {
+    as<QSortFilterProxyModel>(self)->setFilterRegularExpression(QRegularExpression(qtf_qstring(pattern, pattern_len)));
+}
+
+// Show only rows whose key column matches a wildcard pattern (`*`, `?`).
+QTF_API void qtf_qsortfilterproxymodel_setFilterWildcard(void *self, const char *pattern, int pattern_len) {
+    as<QSortFilterProxyModel>(self)->setFilterWildcard(qtf_qstring(pattern, pattern_len));
+}
+
+// The column the filter looks at (-1: any column).
+QTF_API void qtf_qsortfilterproxymodel_setFilterKeyColumn(void *self, int column) {
+    as<QSortFilterProxyModel>(self)->setFilterKeyColumn(column);
+}
+
+// Qt_CaseInsensitive or Qt_CaseSensitive (default).
+QTF_API void qtf_qsortfilterproxymodel_setFilterCaseSensitivity(void *self, int cs) {
+    as<QSortFilterProxyModel>(self)->setFilterCaseSensitivity(Qt::CaseSensitivity(cs));
+}
+
+// Case sensitivity when sorting text.
+QTF_API void qtf_qsortfilterproxymodel_setSortCaseSensitivity(void *self, int cs) {
+    as<QSortFilterProxyModel>(self)->setSortCaseSensitivity(Qt::CaseSensitivity(cs));
+}
+
+// For trees: keep the parents of matching nodes.
+QTF_API void qtf_qsortfilterproxymodel_setRecursiveFilteringEnabled(void *self, int recursive) {
+    as<QSortFilterProxyModel>(self)->setRecursiveFilteringEnabled((recursive != 0));
+}
+
+// Re-sort and re-filter when the source changes (default true).
+QTF_API void qtf_qsortfilterproxymodel_setDynamicSortFilter(void *self, int enable) {
+    as<QSortFilterProxyModel>(self)->setDynamicSortFilter((enable != 0));
+}
+
+// Sort by a column (-1: source order).
+QTF_API void qtf_qsortfilterproxymodel_sort(void *self, int column, int order) {
+    as<QSortFilterProxyModel>(self)->sort(column, Qt::SortOrder(Qt::SortOrder(order)));
+}
+
+// Re-sort and re-filter now.
+QTF_API void qtf_qsortfilterproxymodel_invalidate(void *self) {
+    as<QSortFilterProxyModel>(self)->invalidate();
+}
+
+// The source model's row for a proxy row (-1 if invalid).
+QTF_API int qtf_qsortfilterproxymodel_mapToSourceRow(void *self, int row, int column) {
+    return qtf_proxy_to_source(as<QSortFilterProxyModel>(self), row, column);
+}
+
+// The proxy row of a source row (-1 if filtered out).
+QTF_API int qtf_qsortfilterproxymodel_mapFromSourceRow(void *self, int row, int column) {
+    return qtf_proxy_from_source(as<QSortFilterProxyModel>(self), row, column);
+}
+
+// ---------------------------------------------------------------------------
+// QFileSystemModel
+
+// A file system model (call setRootPath).
+QTF_API void *qtf_qfilesystemmodel_new(void *parent) { return new QFileSystemModel(as<QObject>(parent)); }
+
+// Start watching `path` (load its contents); use the view's setRootPath to show only it.
+QTF_API void qtf_qfilesystemmodel_setRootPath(void *self, const char *path, int path_len) {
+    as<QFileSystemModel>(self)->setRootPath(qtf_qstring(path, path_len));
+}
+
+// The watched root path.
+QTF_API char *qtf_qfilesystemmodel_rootPath(void *self, int *len) {
+    return qtf_to_c(as<QFileSystemModel>(self)->rootPath(), len);
+}
+
+// Show only files matching these wildcards, e.g. ['*.dat', '*.csv'].
+QTF_API void qtf_qfilesystemmodel_setNameFilters(void *self, const char *filters, int filters_len, int n) {
+    as<QFileSystemModel>(self)->setNameFilters(qtf_qstringlist(filters, filters_len, n));
+}
+
+// Show non-matching files disabled (true, default) or hide them (false).
+QTF_API void qtf_qfilesystemmodel_setNameFilterDisables(void *self, int disable) {
+    as<QFileSystemModel>(self)->setNameFilterDisables((disable != 0));
+}
+
+// Allow renaming and moving files in views (false) or not (true, default).
+QTF_API void qtf_qfilesystemmodel_setReadOnly(void *self, int readOnly) {
+    as<QFileSystemModel>(self)->setReadOnly((readOnly != 0));
+}
+
+// The number of entries shown in directory `path` (once loaded).
+QTF_API int qtf_qfilesystemmodel_childCount(void *self, const char *path, int path_len) {
+    return as<QFileSystemModel>(self)->rowCount(as<QFileSystemModel>(self)->index(qtf_qstring(path, path_len)));
+}
+
+// ---------------------------------------------------------------------------
+// QtfItemDelegate
+
+// A delegate (give it the view as parent).
+QTF_API void *qtf_qtfitemdelegate_new(void *parent) { return new QtfItemDelegate(as<QObject>(parent)); }
+
+// Edit with a combo box offering `choices`.
+QTF_API void qtf_qtfitemdelegate_setChoices(void *self, const char *choices, int choices_len, int n) {
+    as<QtfItemDelegate>(self)->choices = qtf_qstringlist(choices, choices_len, n);
+}
+
+// Edit with a spin box limited to [minimum, maximum] (`decimals = 0`: an integer spin box).
+QTF_API void qtf_qtfitemdelegate_setRange(void *self, double minimum, double maximum, int decimals) {
+    as<QtfItemDelegate>(self)->setRange(minimum, maximum, decimals);
+}
+
+// Back to the default editor (a line edit).
+QTF_API void qtf_qtfitemdelegate_clear(void *self) { as<QtfItemDelegate>(self)->clear(); }
 
 // ---------------------------------------------------------------------------
 // QTableWidgetItem
@@ -2862,6 +3684,590 @@ QTF_API void *qtf_qstyle_standardIcon(const char *name, int name_len) {
 }
 
 // ---------------------------------------------------------------------------
+// QDialogButtonBox
+
+// A button box, e.g. QDialogButtonBox(ior(QDialogButtonBox_Ok, QDialogButtonBox_Cancel)).
+QTF_API void *qtf_qdialogbuttonbox_new(int buttons, void *parent) {
+    return new QDialogButtonBox(QDialogButtonBox::StandardButtons(QDialogButtonBox::StandardButtons(buttons)), as<QWidget>(parent));
+}
+
+// Set the standard buttons (combine with ior).
+QTF_API void qtf_qdialogbuttonbox_setStandardButtons(void *self, int buttons) {
+    as<QDialogButtonBox>(self)->setStandardButtons(QDialogButtonBox::StandardButtons(buttons));
+}
+
+// The standard buttons.
+QTF_API int qtf_qdialogbuttonbox_standardButtons(void *self) {
+    return int(as<QDialogButtonBox>(self)->standardButtons());
+}
+
+// A standard button (null if absent), e.g. to disable OK.
+QTF_API void *qtf_qdialogbuttonbox_button(void *self, int which) {
+    return as<QDialogButtonBox>(self)->button(QDialogButtonBox::StandardButton(which));
+}
+
+// Add a button with your own text and a role.
+QTF_API void *qtf_qdialogbuttonbox_addButton(void *self, const char *text, int text_len, int role) {
+    return as<QDialogButtonBox>(self)->addButton(qtf_qstring(text, text_len), QDialogButtonBox::ButtonRole(role));
+}
+
+// Lay the buttons out horizontally (default) or vertically.
+QTF_API void qtf_qdialogbuttonbox_setOrientation(void *self, int orientation) {
+    as<QDialogButtonBox>(self)->setOrientation(Qt::Orientation(orientation));
+}
+
+// Center the buttons instead of aligning them as the platform does.
+QTF_API void qtf_qdialogbuttonbox_setCenterButtons(void *self, int center) {
+    as<QDialogButtonBox>(self)->setCenterButtons((center != 0));
+}
+
+// ---------------------------------------------------------------------------
+// QCompleter
+
+// Complete from `items`.
+QTF_API void *qtf_qcompleter_new(const char *items, int items_len, void *parent, int n) {
+    return new QCompleter(qtf_qstringlist(items, items_len, n), as<QObject>(parent));
+}
+
+// Replace the completions.
+QTF_API void qtf_qcompleter_setItems(void *self, const char *items, int items_len, int n) {
+    qtf_completer_items(as<QCompleter>(self), qtf_qstringlist(items, items_len, n));
+}
+
+// Qt_CaseInsensitive or Qt_CaseSensitive (default).
+QTF_API void qtf_qcompleter_setCaseSensitivity(void *self, int cs) {
+    as<QCompleter>(self)->setCaseSensitivity(Qt::CaseSensitivity(cs));
+}
+
+// Which items match: Qt_MatchStartsWith (default), Qt_MatchContains or Qt_MatchEndsWith.
+QTF_API void qtf_qcompleter_setFilterMode(void *self, int mode) {
+    as<QCompleter>(self)->setFilterMode(Qt::MatchFlags(mode));
+}
+
+// QCompleter_PopupCompletion (default), _UnfilteredPopupCompletion or _InlineCompletion.
+QTF_API void qtf_qcompleter_setCompletionMode(void *self, int mode) {
+    as<QCompleter>(self)->setCompletionMode(QCompleter::CompletionMode(mode));
+}
+
+// Rows shown in the pop-up.
+QTF_API void qtf_qcompleter_setMaxVisibleItems(void *self, int count) {
+    as<QCompleter>(self)->setMaxVisibleItems(count);
+}
+
+// Complete `prefix` (as if typed).
+QTF_API void qtf_qcompleter_setCompletionPrefix(void *self, const char *prefix, int prefix_len) {
+    as<QCompleter>(self)->setCompletionPrefix(qtf_qstring(prefix, prefix_len));
+}
+
+// The number of completions of the current prefix.
+QTF_API int qtf_qcompleter_completionCount(void *self) { return as<QCompleter>(self)->completionCount(); }
+
+// The current completion.
+QTF_API char *qtf_qcompleter_currentCompletion(void *self, int *len) {
+    return qtf_to_c(as<QCompleter>(self)->currentCompletion(), len);
+}
+
+// Make the `row`-th completion current (0-based); false if out of range.
+QTF_API int qtf_qcompleter_setCurrentRow(void *self, int row) {
+    return qtf_bool(as<QCompleter>(self)->setCurrentRow(row));
+}
+
+// ---------------------------------------------------------------------------
+// QDateTimeEdit
+
+// Create a date-time editor.
+QTF_API void *qtf_qdatetimeedit_new(void *parent) { return new QDateTimeEdit(as<QWidget>(parent)); }
+
+// Set the date and time.
+QTF_API void qtf_qdatetimeedit_setDateTime(void *self, int dateTime_year, int dateTime_month, int dateTime_day, int dateTime_hour, int dateTime_minute, int dateTime_second, int dateTime_msec) {
+    as<QDateTimeEdit>(self)->setDateTime(QDateTime(QDate(dateTime_year, dateTime_month, dateTime_day), QTime(dateTime_hour, dateTime_minute, dateTime_second, dateTime_msec)));
+}
+
+// The date and time.
+QTF_API void qtf_qdatetimeedit_dateTime(void *self, int *res_year, int *res_month, int *res_day, int *res_hour, int *res_minute, int *res_second, int *res_msec) {
+    const auto v_ = as<QDateTimeEdit>(self)->dateTime();
+    *res_year = v_.date().year();
+    *res_month = v_.date().month();
+    *res_day = v_.date().day();
+    *res_hour = v_.time().hour();
+    *res_minute = v_.time().minute();
+    *res_second = v_.time().second();
+    *res_msec = v_.time().msec();
+}
+
+// The earliest allowed value.
+QTF_API void qtf_qdatetimeedit_setMinimumDateTime(void *self, int dateTime_year, int dateTime_month, int dateTime_day, int dateTime_hour, int dateTime_minute, int dateTime_second, int dateTime_msec) {
+    as<QDateTimeEdit>(self)->setMinimumDateTime(QDateTime(QDate(dateTime_year, dateTime_month, dateTime_day), QTime(dateTime_hour, dateTime_minute, dateTime_second, dateTime_msec)));
+}
+
+// The latest allowed value.
+QTF_API void qtf_qdatetimeedit_setMaximumDateTime(void *self, int dateTime_year, int dateTime_month, int dateTime_day, int dateTime_hour, int dateTime_minute, int dateTime_second, int dateTime_msec) {
+    as<QDateTimeEdit>(self)->setMaximumDateTime(QDateTime(QDate(dateTime_year, dateTime_month, dateTime_day), QTime(dateTime_hour, dateTime_minute, dateTime_second, dateTime_msec)));
+}
+
+// How the value is shown, e.g. 'yyyy-MM-dd HH:mm:ss'.
+QTF_API void qtf_qdatetimeedit_setDisplayFormat(void *self, const char *format, int format_len) {
+    as<QDateTimeEdit>(self)->setDisplayFormat(qtf_qstring(format, format_len));
+}
+
+// The display format.
+QTF_API char *qtf_qdatetimeedit_displayFormat(void *self, int *len) {
+    return qtf_to_c(as<QDateTimeEdit>(self)->displayFormat(), len);
+}
+
+// Pick the date from a pop-up calendar.
+QTF_API void qtf_qdatetimeedit_setCalendarPopup(void *self, int enable) {
+    as<QDateTimeEdit>(self)->setCalendarPopup((enable != 0));
+}
+
+// ---------------------------------------------------------------------------
+// QTextBrowser
+
+// Create a text browser.
+QTF_API void *qtf_qtextbrowser_new(void *parent) { return new QTextBrowser(as<QWidget>(parent)); }
+
+// Show a document: a file path, or a URL.
+QTF_API void qtf_qtextbrowser_setSource(void *self, const char *source, int source_len) {
+    qtf_set_source(as<QTextBrowser>(self), qtf_qstring(source, source_len));
+}
+
+// The URL of the document shown.
+QTF_API char *qtf_qtextbrowser_source(void *self, int *len) {
+    return qtf_to_c(as<QTextBrowser>(self)->source().toString(), len);
+}
+
+// Directories where relative links are looked up.
+QTF_API void qtf_qtextbrowser_setSearchPaths(void *self, const char *paths, int paths_len, int n) {
+    as<QTextBrowser>(self)->setSearchPaths(qtf_qstringlist(paths, paths_len, n));
+}
+
+// Open http(s) links in the system browser.
+QTF_API void qtf_qtextbrowser_setOpenExternalLinks(void *self, int open) {
+    as<QTextBrowser>(self)->setOpenExternalLinks((open != 0));
+}
+
+// Follow links (true, default), or only report them with `anchorClicked`.
+QTF_API void qtf_qtextbrowser_setOpenLinks(void *self, int open) {
+    as<QTextBrowser>(self)->setOpenLinks((open != 0));
+}
+
+// Go back in the history.
+QTF_API void qtf_qtextbrowser_backward(void *self) { as<QTextBrowser>(self)->backward(); }
+
+// Go forward in the history.
+QTF_API void qtf_qtextbrowser_forward(void *self) { as<QTextBrowser>(self)->forward(); }
+
+// Go to the first document shown.
+QTF_API void qtf_qtextbrowser_home(void *self) { as<QTextBrowser>(self)->home(); }
+
+// Reload the current document.
+QTF_API void qtf_qtextbrowser_reload(void *self) { as<QTextBrowser>(self)->reload(); }
+
+// True if `backward` is possible.
+QTF_API int qtf_qtextbrowser_isBackwardAvailable(void *self) {
+    return qtf_bool(as<QTextBrowser>(self)->isBackwardAvailable());
+}
+
+// True if `forward` is possible.
+QTF_API int qtf_qtextbrowser_isForwardAvailable(void *self) {
+    return qtf_bool(as<QTextBrowser>(self)->isForwardAvailable());
+}
+
+// Forget the history.
+QTF_API void qtf_qtextbrowser_clearHistory(void *self) { as<QTextBrowser>(self)->clearHistory(); }
+
+// ---------------------------------------------------------------------------
+// QToolBox
+
+// Create a tool box.
+QTF_API void *qtf_qtoolbox_new(void *parent) { return new QToolBox(as<QWidget>(parent)); }
+
+// Append a page with a title (the tool box takes ownership).
+QTF_API void qtf_qtoolbox_addItem(void *self, void *widget, const char *text, int text_len) {
+    as<QToolBox>(self)->addItem(as<QWidget>(widget), qtf_qstring(text, text_len));
+}
+
+// Insert a page before `index`.
+QTF_API void qtf_qtoolbox_insertItem(void *self, int index, void *widget, const char *text, int text_len) {
+    as<QToolBox>(self)->insertItem(index, as<QWidget>(widget), qtf_qstring(text, text_len));
+}
+
+// Remove a page (it is not deleted).
+QTF_API void qtf_qtoolbox_removeItem(void *self, int index) { as<QToolBox>(self)->removeItem(index); }
+
+// The number of pages.
+QTF_API int qtf_qtoolbox_count(void *self) { return as<QToolBox>(self)->count(); }
+
+// The open page (0-based).
+QTF_API int qtf_qtoolbox_currentIndex(void *self) { return as<QToolBox>(self)->currentIndex(); }
+
+// Open a page.
+QTF_API void qtf_qtoolbox_setCurrentIndex(void *self, int index) {
+    as<QToolBox>(self)->setCurrentIndex(index);
+}
+
+// Set a page title.
+QTF_API void qtf_qtoolbox_setItemText(void *self, int index, const char *text, int text_len) {
+    as<QToolBox>(self)->setItemText(index, qtf_qstring(text, text_len));
+}
+
+// A page title.
+QTF_API char *qtf_qtoolbox_itemText(void *self, int index, int *len) {
+    return qtf_to_c(as<QToolBox>(self)->itemText(index), len);
+}
+
+// Enable or disable a page.
+QTF_API void qtf_qtoolbox_setItemEnabled(void *self, int index, int enabled) {
+    as<QToolBox>(self)->setItemEnabled(index, (enabled != 0));
+}
+
+// Set a page's icon (copied).
+QTF_API void qtf_qtoolbox_setItemIcon(void *self, int index, void *icon) {
+    as<QToolBox>(self)->setItemIcon(index, *as<QIcon>(icon));
+}
+
+// Set a page's tool tip.
+QTF_API void qtf_qtoolbox_setItemToolTip(void *self, int index, const char *toolTip, int toolTip_len) {
+    as<QToolBox>(self)->setItemToolTip(index, qtf_qstring(toolTip, toolTip_len));
+}
+
+// The widget of a page.
+QTF_API void *qtf_qtoolbox_widget(void *self, int index) { return as<QToolBox>(self)->widget(index); }
+
+// The widget of the open page.
+QTF_API void *qtf_qtoolbox_currentWidget(void *self) { return as<QToolBox>(self)->currentWidget(); }
+
+// ---------------------------------------------------------------------------
+// QSplashScreen
+
+// A splash screen showing `pixmap` (copied).
+QTF_API void *qtf_qsplashscreen_new(void *pixmap) { return new QSplashScreen(*as<QPixmap>(pixmap)); }
+
+// Draw a message on the splash screen.
+QTF_API void qtf_qsplashscreen_showMessage(void *self, const char *message, int message_len, int alignment, int color_r, int color_g, int color_b, int color_a, int color_valid) {
+    as<QSplashScreen>(self)->showMessage(qtf_qstring(message, message_len), Qt::Alignment(alignment), QColor(color_r, color_g, color_b, color_a));
+}
+
+// Remove the message.
+QTF_API void qtf_qsplashscreen_clearMessage(void *self) { as<QSplashScreen>(self)->clearMessage(); }
+
+// The current message.
+QTF_API char *qtf_qsplashscreen_message(void *self, int *len) {
+    return qtf_to_c(as<QSplashScreen>(self)->message(), len);
+}
+
+// Close the splash screen once `window` is shown.
+QTF_API void qtf_qsplashscreen_finish(void *self, void *window) {
+    as<QSplashScreen>(self)->finish(as<QWidget>(window));
+}
+
+// ---------------------------------------------------------------------------
+// QMdiSubWindow
+
+// Set the window's contents (the window takes ownership).
+QTF_API void qtf_qmdisubwindow_setWidget(void *self, void *widget) {
+    as<QMdiSubWindow>(self)->setWidget(as<QWidget>(widget));
+}
+
+// The window's contents.
+QTF_API void *qtf_qmdisubwindow_widget(void *self) { return as<QMdiSubWindow>(self)->widget(); }
+
+// Collapse the window to its title bar.
+QTF_API void qtf_qmdisubwindow_showShaded(void *self) { as<QMdiSubWindow>(self)->showShaded(); }
+
+// True if collapsed to the title bar.
+QTF_API int qtf_qmdisubwindow_isShaded(void *self) { return qtf_bool(as<QMdiSubWindow>(self)->isShaded()); }
+
+// ---------------------------------------------------------------------------
+// QMdiArea
+
+// Create an MDI area.
+QTF_API void *qtf_qmdiarea_new(void *parent) { return new QMdiArea(as<QWidget>(parent)); }
+
+// Show `widget` in a new sub-window (call its `show` if the area is visible).
+QTF_API void *qtf_qmdiarea_addSubWindow(void *self, void *widget) {
+    return as<QMdiArea>(self)->addSubWindow(as<QWidget>(widget));
+}
+
+// Remove a sub-window (the widget is not deleted).
+QTF_API void qtf_qmdiarea_removeSubWindow(void *self, void *widget) {
+    as<QMdiArea>(self)->removeSubWindow(as<QWidget>(widget));
+}
+
+// The active sub-window (null if none).
+QTF_API void *qtf_qmdiarea_activeSubWindow(void *self) { return as<QMdiArea>(self)->activeSubWindow(); }
+
+// The current sub-window (also while the area is not active).
+QTF_API void *qtf_qmdiarea_currentSubWindow(void *self) { return as<QMdiArea>(self)->currentSubWindow(); }
+
+// Activate a sub-window (no argument: none).
+QTF_API void qtf_qmdiarea_setActiveSubWindow(void *self, void *window) {
+    as<QMdiArea>(self)->setActiveSubWindow(as<QMdiSubWindow>(window));
+}
+
+// The number of sub-windows.
+QTF_API int qtf_qmdiarea_subWindowCount(void *self) {
+    return int(as<QMdiArea>(self)->subWindowList().size());
+}
+
+// Close the active sub-window.
+QTF_API void qtf_qmdiarea_closeActiveSubWindow(void *self) { as<QMdiArea>(self)->closeActiveSubWindow(); }
+
+// Close all sub-windows.
+QTF_API void qtf_qmdiarea_closeAllSubWindows(void *self) { as<QMdiArea>(self)->closeAllSubWindows(); }
+
+// Activate the next sub-window.
+QTF_API void qtf_qmdiarea_activateNextSubWindow(void *self) { as<QMdiArea>(self)->activateNextSubWindow(); }
+
+// Activate the previous sub-window.
+QTF_API void qtf_qmdiarea_activatePreviousSubWindow(void *self) {
+    as<QMdiArea>(self)->activatePreviousSubWindow();
+}
+
+// Arrange the sub-windows in a cascade.
+QTF_API void qtf_qmdiarea_cascadeSubWindows(void *self) { as<QMdiArea>(self)->cascadeSubWindows(); }
+
+// Arrange the sub-windows as tiles.
+QTF_API void qtf_qmdiarea_tileSubWindows(void *self) { as<QMdiArea>(self)->tileSubWindows(); }
+
+// QMdiArea_SubWindowView (default) or QMdiArea_TabbedView.
+QTF_API void qtf_qmdiarea_setViewMode(void *self, int mode) {
+    as<QMdiArea>(self)->setViewMode(QMdiArea::ViewMode(mode));
+}
+
+// In tabbed view: show close buttons on the tabs.
+QTF_API void qtf_qmdiarea_setTabsClosable(void *self, int closable) {
+    as<QMdiArea>(self)->setTabsClosable((closable != 0));
+}
+
+// In tabbed view: let the user reorder the tabs.
+QTF_API void qtf_qmdiarea_setTabsMovable(void *self, int movable) {
+    as<QMdiArea>(self)->setTabsMovable((movable != 0));
+}
+
+// ---------------------------------------------------------------------------
+// QWizardPage
+
+// Create a wizard page (lay out its widgets, then add it to a wizard).
+QTF_API void *qtf_qwizardpage_new(void *parent) { return new QtfWizardPage(as<QWidget>(parent)); }
+
+// The page title.
+QTF_API void qtf_qwizardpage_setTitle(void *self, const char *title, int title_len) {
+    as<QWizardPage>(self)->setTitle(qtf_qstring(title, title_len));
+}
+
+// The page title.
+QTF_API char *qtf_qwizardpage_title(void *self, int *len) {
+    return qtf_to_c(as<QWizardPage>(self)->title(), len);
+}
+
+// The text under the title.
+QTF_API void qtf_qwizardpage_setSubTitle(void *self, const char *subTitle, int subTitle_len) {
+    as<QWizardPage>(self)->setSubTitle(qtf_qstring(subTitle, subTitle_len));
+}
+
+// The subtitle.
+QTF_API char *qtf_qwizardpage_subTitle(void *self, int *len) {
+    return qtf_to_c(as<QWizardPage>(self)->subTitle(), len);
+}
+
+// Offer Finish on this page.
+QTF_API void qtf_qwizardpage_setFinalPage(void *self, int final) {
+    as<QWizardPage>(self)->setFinalPage((final != 0));
+}
+
+// True if Finish is offered on this page.
+QTF_API int qtf_qwizardpage_isFinalPage(void *self) { return qtf_bool(as<QWizardPage>(self)->isFinalPage()); }
+
+// After this page, Back is no longer possible.
+QTF_API void qtf_qwizardpage_setCommitPage(void *self, int commit) {
+    as<QWizardPage>(self)->setCommitPage((commit != 0));
+}
+
+// Enable (true) or disable Next/Finish for this page.
+QTF_API void qtf_qwizardpage_setComplete(void *self, int complete) {
+    qtf_page(as<QWizardPage>(self))->setComplete((complete != 0));
+}
+
+// True if Next/Finish is enabled (setComplete and the mandatory fields).
+QTF_API int qtf_qwizardpage_isComplete(void *self) { return qtf_bool(as<QWizardPage>(self)->isComplete()); }
+
+// Make a widget's value available as the wizard field `name` (a trailing `*` makes it mandatory: Next waits until it is filled).
+QTF_API void qtf_qwizardpage_registerField(void *self, const char *name, int name_len, void *widget) {
+    qtf_page(as<QWizardPage>(self))->addField(qtf_qstring(name, name_len), as<QWidget>(widget));
+}
+
+// ---------------------------------------------------------------------------
+// QWizard
+
+// Create an empty wizard.
+QTF_API void *qtf_qwizard_new(void *parent) { return new QWizard(as<QWidget>(parent)); }
+
+// Append a page (the wizard takes ownership); its id is the number of pages before it.
+QTF_API void qtf_qwizard_addPage(void *self, void *page) {
+    as<QWizard>(self)->addPage(as<QWizardPage>(page));
+}
+
+// Add a page with a given id.
+QTF_API void qtf_qwizard_setPage(void *self, int id, void *page) {
+    as<QWizard>(self)->setPage(id, as<QWizardPage>(page));
+}
+
+// Remove a page.
+QTF_API void qtf_qwizard_removePage(void *self, int id) { as<QWizard>(self)->removePage(id); }
+
+// The id of the current page (-1 before the wizard is shown).
+QTF_API int qtf_qwizard_currentId(void *self) { return as<QWizard>(self)->currentId(); }
+
+// The current page.
+QTF_API void *qtf_qwizard_currentPage(void *self) { return as<QWizard>(self)->currentPage(); }
+
+// The page with this id (null if none).
+QTF_API void *qtf_qwizard_page(void *self, int id) { return as<QWizard>(self)->page(id); }
+
+// True if the page has been visited.
+QTF_API int qtf_qwizard_hasVisitedPage(void *self, int id) {
+    return qtf_bool(as<QWizard>(self)->hasVisitedPage(id));
+}
+
+// The first page.
+QTF_API void qtf_qwizard_setStartId(void *self, int id) { as<QWizard>(self)->setStartId(id); }
+
+// Go to the next page.
+QTF_API void qtf_qwizard_next(void *self) { as<QWizard>(self)->next(); }
+
+// Go back to the previous page.
+QTF_API void qtf_qwizard_back(void *self) { as<QWizard>(self)->back(); }
+
+// Go back to the first page.
+QTF_API void qtf_qwizard_restart(void *self) { as<QWizard>(self)->restart(); }
+
+// QWizard_ClassicStyle, _ModernStyle, _MacStyle or _AeroStyle.
+QTF_API void qtf_qwizard_setWizardStyle(void *self, int style) {
+    as<QWizard>(self)->setWizardStyle(QWizard::WizardStyle(style));
+}
+
+// Turn an option on or off (QWizard_NoCancelButton, ...).
+QTF_API void qtf_qwizard_setOption(void *self, int option, int on) {
+    as<QWizard>(self)->setOption(QWizard::WizardOption(option), (on != 0));
+}
+
+// Change a button's text, e.g. QWizard_FinishButton.
+QTF_API void qtf_qwizard_setButtonText(void *self, int which, const char *text, int text_len) {
+    as<QWizard>(self)->setButtonText(QWizard::WizardButton(which), qtf_qstring(text, text_len));
+}
+
+// A registered field's value as text.
+QTF_API char *qtf_qwizard_stringField(void *self, const char *name, int name_len, int *len) {
+    return qtf_to_c(as<QWizard>(self)->field(qtf_qstring(name, name_len)).toString(), len);
+}
+
+// A registered field's value as an integer (e.g. a spin box or combo box index).
+QTF_API int qtf_qwizard_intField(void *self, const char *name, int name_len) {
+    return as<QWizard>(self)->field(qtf_qstring(name, name_len)).toInt();
+}
+
+// A registered field's value as a real number.
+QTF_API double qtf_qwizard_doubleField(void *self, const char *name, int name_len) {
+    return as<QWizard>(self)->field(qtf_qstring(name, name_len)).toDouble();
+}
+
+// A registered field's value as a logical (e.g. a check box).
+QTF_API int qtf_qwizard_boolField(void *self, const char *name, int name_len) {
+    return qtf_bool(as<QWizard>(self)->field(qtf_qstring(name, name_len)).toBool());
+}
+
+// ---------------------------------------------------------------------------
+// QUndoStack
+
+// An empty undo stack.
+QTF_API void *qtf_qundostack_new(void *parent) { return new QtfUndoStack(as<QObject>(parent)); }
+
+// Record a command and perform it (calls the redoRequested slots with `id`); discards commands that were undone.
+QTF_API void qtf_qundostack_push(void *self, const char *text, int text_len, int id) {
+    qtf_undo_push(as<QUndoStack>(self), qtf_qstring(text, text_len), id);
+}
+
+// Undo the last command.
+QTF_API void qtf_qundostack_undo(void *self) { as<QUndoStack>(self)->undo(); }
+
+// Redo the last undone command.
+QTF_API void qtf_qundostack_redo(void *self) { as<QUndoStack>(self)->redo(); }
+
+// True if there is a command to undo.
+QTF_API int qtf_qundostack_canUndo(void *self) { return qtf_bool(as<QUndoStack>(self)->canUndo()); }
+
+// True if there is a command to redo.
+QTF_API int qtf_qundostack_canRedo(void *self) { return qtf_bool(as<QUndoStack>(self)->canRedo()); }
+
+// The text of the command `undo` would reverse.
+QTF_API char *qtf_qundostack_undoText(void *self, int *len) {
+    return qtf_to_c(as<QUndoStack>(self)->undoText(), len);
+}
+
+// The text of the command `redo` would perform.
+QTF_API char *qtf_qundostack_redoText(void *self, int *len) {
+    return qtf_to_c(as<QUndoStack>(self)->redoText(), len);
+}
+
+// The number of commands.
+QTF_API int qtf_qundostack_count(void *self) { return as<QUndoStack>(self)->count(); }
+
+// The current position: commands before it are done.
+QTF_API int qtf_qundostack_index(void *self) { return as<QUndoStack>(self)->index(); }
+
+// Undo or redo until the position is `index`.
+QTF_API void qtf_qundostack_setIndex(void *self, int index) { as<QUndoStack>(self)->setIndex(index); }
+
+// The text of the command at a position.
+QTF_API char *qtf_qundostack_text(void *self, int index, int *len) {
+    return qtf_to_c(as<QUndoStack>(self)->text(index), len);
+}
+
+// Remove all commands (nothing is undone).
+QTF_API void qtf_qundostack_clear(void *self) { as<QUndoStack>(self)->clear(); }
+
+// Mark the current state as saved.
+QTF_API void qtf_qundostack_setClean(void *self) { as<QUndoStack>(self)->setClean(); }
+
+// True if the current state is the saved one.
+QTF_API int qtf_qundostack_isClean(void *self) { return qtf_bool(as<QUndoStack>(self)->isClean()); }
+
+// Keep at most `limit` commands (0: no limit); only while the stack is empty.
+QTF_API void qtf_qundostack_setUndoLimit(void *self, int limit) { as<QUndoStack>(self)->setUndoLimit(limit); }
+
+// Group the following pushes into one command (until endMacro).
+QTF_API void qtf_qundostack_beginMacro(void *self, const char *text, int text_len) {
+    as<QUndoStack>(self)->beginMacro(qtf_qstring(text, text_len));
+}
+
+// End a macro.
+QTF_API void qtf_qundostack_endMacro(void *self) { as<QUndoStack>(self)->endMacro(); }
+
+// An Undo action that follows the stack (text and enabled state).
+QTF_API void *qtf_qundostack_createUndoAction(void *self, void *parent, const char *prefix, int prefix_len) {
+    return as<QUndoStack>(self)->createUndoAction(as<QObject>(parent), qtf_qstring(prefix, prefix_len));
+}
+
+// A Redo action that follows the stack.
+QTF_API void *qtf_qundostack_createRedoAction(void *self, void *parent, const char *prefix, int prefix_len) {
+    return as<QUndoStack>(self)->createRedoAction(as<QObject>(parent), qtf_qstring(prefix, prefix_len));
+}
+
+// ---------------------------------------------------------------------------
+// QUndoView
+
+// A view of `stack`.
+QTF_API void *qtf_qundoview_new(void *stack, void *parent) {
+    return new QUndoView(as<QUndoStack>(stack), as<QWidget>(parent));
+}
+
+// The text of the first row (the state before any command).
+QTF_API void qtf_qundoview_setEmptyLabel(void *self, const char *label, int label_len) {
+    as<QUndoView>(self)->setEmptyLabel(qtf_qstring(label, label_len));
+}
+
+// ---------------------------------------------------------------------------
 // signal connectors
 
 static const bool qtf_widgets_registered = [] {
@@ -2899,6 +4305,9 @@ static const bool qtf_widgets_registered = [] {
     });
     qtf_register_connector(QTF_SIG_QLINEEDIT_TEXTEDITED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QLineEdit>(s), &QLineEdit::textEdited, as<QLineEdit>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QLINEEDIT_INPUTREJECTED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QLineEdit>(s), &QLineEdit::inputRejected, as<QLineEdit>(s), [ref]() { qtf_emit(ref); }));
     });
     qtf_register_connector(QTF_SIG_QLINEEDIT_RETURNPRESSED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QLineEdit>(s), &QLineEdit::returnPressed, as<QLineEdit>(s), [ref]() { qtf_emit(ref); }));
@@ -2944,6 +4353,7 @@ static const bool qtf_widgets_registered = [] {
     });
     qtf_register_connector(QTF_SIG_QTFTABLEMODEL_DATAREQUESTED, connect_model<0>);
     qtf_register_connector(QTF_SIG_QTFTABLEMODEL_DATAEDITED, connect_model<1>);
+    qtf_register_connector(QTF_SIG_QTFTABLEMODEL_SORTREQUESTED, connect_model<2>);
     qtf_register_connector(QTF_SIG_QABSTRACTITEMVIEW_CLICKED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QAbstractItemView>(s), &QAbstractItemView::clicked, as<QAbstractItemView>(s), [ref](const QModelIndex &i) { qtf_emit_ints(ref, {i.row(), i.column()}); }));
     });
@@ -2952,6 +4362,31 @@ static const bool qtf_widgets_registered = [] {
     });
     qtf_register_connector(QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QAbstractItemView>(s), &QAbstractItemView::activated, as<QAbstractItemView>(s), [ref](const QModelIndex &i) { qtf_emit_ints(ref, {i.row(), i.column()}); }));
+    });
+    qtf_register_connector(QTF_SIG_QTREEVIEW_NODECLICKED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTreeView>(s), &QTreeView::clicked, as<QTreeView>(s), [ref](const QModelIndex &i) { qtf_emit_int(ref, qtf_node(i)); }));
+    });
+    qtf_register_connector(QTF_SIG_QTREEVIEW_NODEACTIVATED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTreeView>(s), &QTreeView::activated, as<QTreeView>(s), [ref](const QModelIndex &i) { qtf_emit_int(ref, qtf_node(i)); }));
+    });
+    qtf_register_connector(QTF_SIG_QTREEVIEW_CURRENTNODECHANGED, connect_tree<false>);
+    qtf_register_connector(QTF_SIG_QTREEVIEW_CURRENTFILECHANGED, connect_tree<true>);
+    qtf_register_connector(QTF_SIG_QTREEVIEW_FILEACTIVATED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTreeView>(s), &QTreeView::activated, as<QTreeView>(s), [ref](const QModelIndex &i) { qtf_emit(ref, qtf_file_path(i)); }));
+    });
+    qtf_register_connector(QTF_SIG_QTREEVIEW_EXPANDEDNODE, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTreeView>(s), &QTreeView::expanded, as<QTreeView>(s), [ref](const QModelIndex &i) { qtf_emit_int(ref, qtf_node(i)); }));
+    });
+    qtf_register_connector(QTF_SIG_QTREEVIEW_COLLAPSEDNODE, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTreeView>(s), &QTreeView::collapsed, as<QTreeView>(s), [ref](const QModelIndex &i) { qtf_emit_int(ref, qtf_node(i)); }));
+    });
+    qtf_register_connector(QTF_SIG_QTFTREEMODEL_DATAREQUESTED, connect_model<0>);
+    qtf_register_connector(QTF_SIG_QTFTREEMODEL_DATAEDITED, connect_model<1>);
+    qtf_register_connector(QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QFileSystemModel>(s), &QFileSystemModel::directoryLoaded, as<QFileSystemModel>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QFILESYSTEMMODEL_ROOTPATHCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QFileSystemModel>(s), &QFileSystemModel::rootPathChanged, as<QFileSystemModel>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QTABLEWIDGET_CELLCLICKED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QTableWidget>(s), &QTableWidget::cellClicked, as<QTableWidget>(s), [ref](int a, int b) { qtf_emit_ints(ref, {a, b}); }));
@@ -3051,6 +4486,83 @@ static const bool qtf_widgets_registered = [] {
     });
     qtf_register_connector(QTF_SIG_QPROGRESSDIALOG_CANCELED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QProgressDialog>(s), &QProgressDialog::canceled, as<QProgressDialog>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QDialogButtonBox>(s), &QDialogButtonBox::accepted, as<QDialogButtonBox>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QDIALOGBUTTONBOX_REJECTED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QDialogButtonBox>(s), &QDialogButtonBox::rejected, as<QDialogButtonBox>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QDialogButtonBox>(s), &QDialogButtonBox::helpRequested, as<QDialogButtonBox>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QDIALOGBUTTONBOX_CLICKED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QDialogButtonBox>(s), &QDialogButtonBox::clicked, as<QDialogButtonBox>(s), [ref, s](QAbstractButton *b) { qtf_emit_int(ref, int(as<QDialogButtonBox>(s)->standardButton(b))); }));
+    });
+    qtf_register_connector(QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QDialogButtonBox>(s), &QDialogButtonBox::clicked, as<QDialogButtonBox>(s), [ref, s](QAbstractButton *b) { qtf_emit_int(ref, int(as<QDialogButtonBox>(s)->buttonRole(b))); }));
+    });
+    qtf_register_connector(QTF_SIG_QCOMPLETER_ACTIVATED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QCompleter>(s), qOverload<const QString &>(&QCompleter::activated), as<QCompleter>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QCOMPLETER_HIGHLIGHTED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QCompleter>(s), qOverload<const QString &>(&QCompleter::highlighted), as<QCompleter>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QDateTimeEdit>(s), &QDateTimeEdit::dateTimeChanged, as<QDateTimeEdit>(s), [ref](const QDateTime &) { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QTEXTBROWSER_ANCHORCLICKED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTextBrowser>(s), &QTextBrowser::anchorClicked, as<QTextBrowser>(s), [ref](const QUrl &u) { qtf_emit(ref, u.toString()); }));
+    });
+    qtf_register_connector(QTF_SIG_QTEXTBROWSER_SOURCECHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTextBrowser>(s), &QTextBrowser::sourceChanged, as<QTextBrowser>(s), [ref](const QUrl &u) { qtf_emit(ref, u.toString()); }));
+    });
+    qtf_register_connector(QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTextBrowser>(s), &QTextBrowser::backwardAvailable, as<QTextBrowser>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTextBrowser>(s), &QTextBrowser::forwardAvailable, as<QTextBrowser>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QTOOLBOX_CURRENTCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QToolBox>(s), &QToolBox::currentChanged, as<QToolBox>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QSplashScreen>(s), &QSplashScreen::messageChanged, as<QSplashScreen>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QMdiSubWindow>(s), &QMdiSubWindow::aboutToActivate, as<QMdiSubWindow>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QMdiArea>(s), &QMdiArea::subWindowActivated, as<QMdiArea>(s), [ref](QMdiSubWindow *) { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QWIZARDPAGE_COMPLETECHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QWizardPage>(s), &QWizardPage::completeChanged, as<QWizardPage>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QWIZARD_CURRENTIDCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QWizard>(s), &QWizard::currentIdChanged, as<QWizard>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QWIZARD_HELPREQUESTED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QWizard>(s), &QWizard::helpRequested, as<QWizard>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QUNDOSTACK_REDOREQUESTED, connect_undo<false>);
+    qtf_register_connector(QTF_SIG_QUNDOSTACK_UNDOREQUESTED, connect_undo<true>);
+    qtf_register_connector(QTF_SIG_QUNDOSTACK_CANUNDOCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QUndoStack>(s), &QUndoStack::canUndoChanged, as<QUndoStack>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QUNDOSTACK_CANREDOCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QUndoStack>(s), &QUndoStack::canRedoChanged, as<QUndoStack>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QUNDOSTACK_INDEXCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QUndoStack>(s), &QUndoStack::indexChanged, as<QUndoStack>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QUNDOSTACK_CLEANCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QUndoStack>(s), &QUndoStack::cleanChanged, as<QUndoStack>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QUndoStack>(s), &QUndoStack::undoTextChanged, as<QUndoStack>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QUndoStack>(s), &QUndoStack::redoTextChanged, as<QUndoStack>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
     });
     return true;
 }();

@@ -96,12 +96,14 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 | Core | `QObject` (with dynamic properties and `findChild`), `QTimer`, `QEvent`, `QDateTime`, `QSettings` (persistent preferences, window geometry and layout), `QThread` (run Fortran work in a worker thread) |
 | Application | `QApplication` (command-line arguments, organization/application names) |
 | Widgets | `QWidget`, `QFrame`, `QLabel`, `QPushButton`, `QToolButton`, `QCheckBox`, `QRadioButton`, `QButtonGroup`, `QLineEdit`, `QSpinBox`, `QDoubleSpinBox`, `QSlider`, `QDial`, `QComboBox`, `QProgressBar`, `QLCDNumber`, `QDateEdit`, `QTimeEdit`, `QCalendarWidget`, `QtfWidget` (custom painting/events) |
-| Text | `QTextEdit`, `QPlainTextEdit` |
-| Item views | `QTableWidget`, `QListWidget`, `QTreeWidget`, and `QTableView` with `QtfTableModel` (cells come from Fortran on demand, so large arrays aren't copied) |
-| Containers | `QTabWidget`, `QStackedWidget`, `QSplitter`, `QScrollArea`, `QGroupBox`, `QDockWidget` |
+| Input helpers | `QDateTimeEdit`, validators (`QIntValidator`, `QDoubleValidator`, `QRegularExpressionValidator`), `QCompleter` |
+| Text | `QTextEdit`, `QPlainTextEdit`, `QTextBrowser` (help pages with links) |
+| Item views | `QTableWidget`, `QListWidget`, `QTreeWidget`; `QTableView` with `QtfTableModel` and `QTreeView` with `QtfTreeModel` (cells come from Fortran on demand, so large arrays aren't copied); `QSortFilterProxyModel`, `QFileSystemModel`, `QtfItemDelegate` (combo / spin-box cell editors) |
+| Containers | `QTabWidget`, `QStackedWidget`, `QSplitter`, `QScrollArea`, `QGroupBox`, `QDockWidget`, `QToolBox`, `QMdiArea` |
+| Undo | `QUndoStack` (commands are Fortran slots), `QUndoView` |
 | Layouts | `QVBoxLayout`, `QHBoxLayout`, `QGridLayout`, `QFormLayout`, size policies |
 | Main window | `QMainWindow`, `QMenuBar`, `QMenu`, `QToolBar`, `QStatusBar`, `QAction`, docks |
-| Dialogs | `QDialog`, `QMessageBox`, `QFileDialog`, `QInputDialog`, `QColorDialog`, `QFontDialog`, `QProgressDialog` |
+| Dialogs | `QDialog`, `QDialogButtonBox`, `QMessageBox`, `QFileDialog`, `QInputDialog`, `QColorDialog`, `QFontDialog`, `QProgressDialog`, `QWizard`, `QSplashScreen` |
 | Painting | `QPainter`, `QImage`, `QPixmap`, `QColor`, `QPen`, `QBrush`, `QFont` |
 | Arrays as images | `QImage_fromArray` (a 2D Fortran array through a colormap: viridis, magma, inferno, plasma, coolwarm, gray; NaN transparent), `QImage_colorbar` |
 | Icons | `QIcon` (files or generated images), `QStyle_standardIcon`, icons on actions, buttons, tabs, items and windows |
@@ -353,6 +355,35 @@ A few conventions to know (the full list is in [plan.md](plan.md)):
     Deleting a running thread (for example with its parent window) asks it to
     stop and waits. A finished thread can be started again. Time Series Lab
     uses this pattern.
+- **Models with Fortran data**: views ask for cells as they need them, so
+  millions of rows cost nothing up front.
+  - *Tables*: `QtfTableModel`. A slot receives `(row, column, request)` and
+    fills `request`.
+  - *Trees*: `QtfTreeModel`. Give the structure once as a parent array; the
+    nodes are your own array indices:
+
+    ```fortran
+    tree = QtfTreeModel(2, window)
+    call tree%dataRequested%connect(on_cell, state)   ! on_cell(node, column, request, data)
+    call tree%setParents([0, 0, 1, 1, 2])             ! nodes 3, 4 under 1; node 5 under 2
+    view = QTreeView()
+    call view%setModel(tree)
+    call view%currentNodeChanged%connect(on_select, state)
+    ```
+
+  - *Sorting*: with `view%setSortingEnabled(.true.)`, a table model's
+    `sortRequested(column, order)` lets you sort your own arrays, e.g. through
+    a permutation. For generic sorting and filtering, put a
+    `QSortFilterProxyModel` between model and view. View rows are then the
+    proxy's, so map them back with `proxy%mapToSourceRow(row)`.
+  - *Cell editors*: `QtfItemDelegate` gives a column a combo-box editor
+    (`setChoices`) or a spin-box editor (`setRange`).
+- **Undo/redo**: a command is a text and an integer id of your choosing.
+  `stack%push('Set value', id)` records it and immediately calls your
+  `redoRequested(id)` slot, which performs it. `undo` calls your
+  `undoRequested(id)` slot, which reverses it. Keep what each id needs (old
+  and new values) in your own arrays. `stack%createUndoAction(window)` makes
+  a menu action that tracks the stack.
 - **Dates and times**: `QDateTime` is a value type with fields `year` …
   `msec`, in local time.
 

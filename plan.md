@@ -353,7 +353,7 @@ Legacy fixed-function GL and a high-level scene API were the alternatives consid
 
 ## Roadmap: what Qt coverage is still missing
 
-Current coverage is about 50 classes across QtCore, QtGui, QtWidgets and QtOpenGL.
+Current coverage is about 90 classes across QtCore, QtGui, QtWidgets and QtOpenGL.
 The gaps below are grouped by area. The **priorities** list at the end orders
 them by value to Fortran (scientific) users. Most widget and dialog items are
 spec-only work now; items marked *(design)* need new machinery.
@@ -378,8 +378,38 @@ spec-only work now; items marked *(design)* need new machinery.
     `QBoxLayout%setStretchFactor`.
   - Value types `QDate` and `QTime` (in qt_core).
   - **Deferred:** `QGraphicsView` / `QGraphicsScene` (2D scene graph).
-  - Not yet: a model for `QTreeView`/`QListView` (only the table model exists),
-    item icons and check states.
+  - **Done (complex-application widgets):**
+    - Models: a `QAbstractItemModel` base for all models; `setModel` moved to
+      `QAbstractItemView`. **`QtfTreeModel`**: the structure is a Fortran
+      parent array (node i's parent, parents before children), kept in the
+      shim as integers; cells come from `dataRequested(node, column, request)`;
+      `appendNode` for incremental growth. Both Fortran models share
+      `QtfModelHandlers` (data/edit/sort slot lists).
+    - Sorting: `QtfTableModel%sortRequested(column, order)` (from a sorting
+      view's header) lets Fortran sort its own arrays; `QSortFilterProxyModel`
+      for generic sort and filter (fixed string, regular expression, wildcard,
+      recursive for trees), with `mapToSourceRow` / `mapFromSourceRow`.
+    - `QTreeView` (a `QtfTreeView` subclass for current-index changes): node
+      signals and methods that see through proxy chains (`nodeClicked`,
+      `currentNodeChanged`, `setCurrentNode`, `expandNode`, ...), and file
+      signals for a `QFileSystemModel` (`currentFileChanged`, `fileActivated`,
+      `setRootPath`, `setCurrentFile`).
+    - `QtfItemDelegate`: per-column combo-box (fixed choices) or spin-box
+      (range, decimals) cell editors.
+    - `QDialogButtonBox` (standard buttons, roles, `clicked` as the standard
+      button), validators (`QIntValidator`, `QDoubleValidator` in the C
+      locale, `QRegularExpressionValidator`; in qt_gui), `QCompleter`,
+      `QLineEdit` validator/completer/input mask/echo mode.
+    - `QDateTimeEdit` (QDateTime value type), `QTextBrowser` (help pages with
+      links and history), `QToolBox`, `QSplashScreen`, `QMdiArea` +
+      `QMdiSubWindow`, `QWizard` + `QWizardPage` (a `QtfWizardPage` subclass:
+      `setComplete`, and `registerField`, protected in Qt), window states
+      (`showMaximized`, ..., `raise`).
+    - Undo: `QUndoStack` (a `QtfUndoStack`) with commands as (text, id):
+      `push` calls the `redoRequested(id)` slots, undo the `undoRequested(id)`
+      slots; macros, clean state, undo/redo actions; `QUndoView`.
+  - Not yet: `QListView` with a Fortran list model, item icons and check
+    states in the Fortran models, custom-painted cells.
 - **Gui**
   - **Done:** `QIcon` (from files or pixmaps), `QStyle_standardIcon(name)`, and
     icons on actions, buttons, tabs, table/tree items and windows.
