@@ -107,8 +107,8 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 | Painting | `QPainter`, `QImage`, `QPixmap`, `QColor`, `QPen`, `QBrush`, `QFont` |
 | Arrays as images | `QImage_fromArray` (a 2D Fortran array through a colormap: viridis, magma, inferno, plasma, coolwarm, gray; NaN transparent), `QImage_colorbar` |
 | Icons | `QIcon` (files or generated images), `QStyle_standardIcon`, icons on actions, buttons, tabs, items and windows |
-| Events | `QMouseEvent`, `QKeyEvent`, `QWheelEvent`, `QResizeEvent`; on any widget: `QCloseEvent` (veto closing), `QContextMenuEvent`, enter/leave, focus in/out, show/hide |
-| OpenGL | `QtfOpenGLWidget`, `QOpenGLShaderProgram`, `QOpenGLBuffer`, `QOpenGLVertexArrayObject`, `QSurfaceFormat`, `QMatrix4x4`, and `glClear`, `glDrawArrays`, `glDrawElements`, ... |
+| Events | `QMouseEvent`, `QKeyEvent`, `QWheelEvent`, `QResizeEvent`; on any widget: `QCloseEvent` (veto closing), `QContextMenuEvent`, enter/leave, focus in/out, show/hide; on any object: `QtfEventFilter` (input events can be consumed) |
+| OpenGL | `QtfOpenGLWidget`, `QOpenGLShaderProgram`, `QOpenGLBuffer`, `QOpenGLVertexArrayObject`, `QSurfaceFormat`, `QMatrix4x4`, and `glClear`, `glDrawArrays`, `glDrawElements`, ...; for external engines: `QWindow`, `QOpenGLContext`, `QWidget_createWindowContainer` |
 
 ## Getting started
 
@@ -402,6 +402,25 @@ A few conventions to know (the full list is in [plans/plan.md](plans/plan.md)):
     Call `w%repolish()` after changing one.
   - `call window%findChild('okButton', button)` finds a descendant by
     `objectName`.
+- **External rendering engines** (e.g. OpenFrames) can draw into a Qt
+  window from their own render thread.
+  - *Setup*: create a plain `QWindow` with `setSurfaceType(QSurface_OpenGLSurface)`
+    and embed it with `QWidget_createWindowContainer(window, parent)`. Give
+    the engine make-current and swap-buffers callbacks that call
+    `context%makeCurrent(window)` and `context%swapBuffers(window)` on a
+    `QOpenGLContext`.
+  - *Events*: `QtfEventFilter(window)` forwards the window's expose, resize,
+    mouse and key events to your slots. Start the engine on the first expose.
+  - *Threads*: on Windows and Linux the context can be created and used on
+    the render thread. macOS (`QOpenGLContext_supportsThreadedOpenGL()` is
+    false) needs AppKit's updates on the main thread, as OpenFrames does it:
+    - set `Qt_AA_DontCheckOpenGLContextThreadAffinity`;
+    - create the context on the GUI thread;
+    - on each expose and resize, pause the engine, then do `makeCurrent` and
+      `doneCurrent` on the GUI thread;
+    - release the context after every frame.
+  - [test/test_render_thread.f90](test/test_render_thread.f90) is a complete,
+    engine-free example of both paths.
 - **Closing and settings**: every widget has `closeEvent` and `contextMenuEvent`
   signals. A close slot can keep the window open:
 

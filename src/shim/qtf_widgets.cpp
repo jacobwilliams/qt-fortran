@@ -32,6 +32,7 @@
 #include <QDialogButtonBox>
 #include <QDockWidget>
 #include <QDoubleSpinBox>
+#include <QExposeEvent>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFileSystemModel>
@@ -92,6 +93,7 @@
 #include <QValidator>
 #include <QVariant>
 #include <QWidget>
+#include <QWindow>
 #include <QWizard>
 #include <QWizardPage>
 #include <array>
@@ -217,6 +219,22 @@ enum : int {
     QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1112,
     QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1113,
     QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1114,
+    QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT = 1115,
+    QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT = 1116,
+    QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT = 1117,
+    QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT = 1118,
+    QTF_SIG_QTFEVENTFILTER_WHEELEVENT = 1119,
+    QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT = 1120,
+    QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT = 1121,
+    QTF_SIG_QTFEVENTFILTER_RESIZEEVENT = 1122,
+    QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT = 1123,
+    QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST = 1124,
+    QTF_SIG_QTFEVENTFILTER_ENTEREVENT = 1125,
+    QTF_SIG_QTFEVENTFILTER_LEAVEEVENT = 1126,
+    QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT = 1127,
+    QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1128,
+    QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1129,
+    QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1130,
 };
 
 // QApplication keeps references to argc/argv, so they must outlive it.
@@ -323,7 +341,87 @@ static QIcon *qtf_standard_icon(const QString &name) {
     return new QIcon(ok ? QApplication::style()->standardIcon(QStyle::StandardPixmap(v)) : QIcon());
 }
 
-// Events every widget forwards to Fortran slots through a QtfEventFilter.
+// QtfEventFilter: forwards the events of any QObject (a QWindow, a widget, a
+// widget's viewport, the application) to Fortran slots. Input events can be
+// consumed: before the slots run the event is marked ignored, and a slot that
+// calls event%accept() stops it there. The other events are only observed.
+enum qtf_any_event {
+    QTF_ANY_MOUSEPRESS,
+    QTF_ANY_MOUSERELEASE,
+    QTF_ANY_MOUSEMOVE,
+    QTF_ANY_MOUSEDOUBLECLICK,
+    QTF_ANY_WHEEL,
+    QTF_ANY_KEYPRESS,
+    QTF_ANY_KEYRELEASE,          // last consumable event
+    QTF_ANY_RESIZE,
+    QTF_ANY_EXPOSE,
+    QTF_ANY_UPDATEREQUEST,
+    QTF_ANY_ENTER,
+    QTF_ANY_LEAVE,
+    QTF_ANY_FOCUSIN,
+    QTF_ANY_FOCUSOUT,
+    QTF_ANY_SHOW,
+    QTF_ANY_HIDE,
+    QTF_ANY_COUNT
+};
+
+class QtfEventFilter : public QObject {
+  public:
+    explicit QtfEventFilter(QObject *target) : QObject(target) { target->installEventFilter(this); }
+    std::array<std::vector<qtf_slot>, QTF_ANY_COUNT> handlers;
+
+  protected:
+    static int kind(QEvent::Type t) {
+        switch (t) {
+        case QEvent::MouseButtonPress: return QTF_ANY_MOUSEPRESS;
+        case QEvent::MouseButtonRelease: return QTF_ANY_MOUSERELEASE;
+        case QEvent::MouseMove: return QTF_ANY_MOUSEMOVE;
+        case QEvent::MouseButtonDblClick: return QTF_ANY_MOUSEDOUBLECLICK;
+        case QEvent::Wheel: return QTF_ANY_WHEEL;
+        case QEvent::KeyPress: return QTF_ANY_KEYPRESS;
+        case QEvent::KeyRelease: return QTF_ANY_KEYRELEASE;
+        case QEvent::Resize: return QTF_ANY_RESIZE;
+        case QEvent::Expose: return QTF_ANY_EXPOSE;
+        case QEvent::UpdateRequest: return QTF_ANY_UPDATEREQUEST;
+        case QEvent::Enter: return QTF_ANY_ENTER;
+        case QEvent::Leave: return QTF_ANY_LEAVE;
+        case QEvent::FocusIn: return QTF_ANY_FOCUSIN;
+        case QEvent::FocusOut: return QTF_ANY_FOCUSOUT;
+        case QEvent::Show: return QTF_ANY_SHOW;
+        case QEvent::Hide: return QTF_ANY_HIDE;
+        default: return -1;
+        }
+    }
+
+    bool eventFilter(QObject *o, QEvent *e) override {
+        const int k = o == parent() ? kind(e->type()) : -1;
+        if (k < 0 || handlers[k].empty()) return QObject::eventFilter(o, e);
+        qtf_args a{};
+        a.p = e;
+        if (k == QTF_ANY_FOCUSIN || k == QTF_ANY_FOCUSOUT) a.i[0] = static_cast<QFocusEvent *>(e)->reason();
+        if (k <= QTF_ANY_KEYRELEASE) {
+            const bool accepted = e->isAccepted();
+            e->ignore();
+            if (qtf_emit_all(handlers[k], a) > 0 && e->isAccepted()) return true;   // consumed
+            e->setAccepted(accepted);
+            return false;
+        }
+        qtf_emit_all(handlers[k], a);
+        return false;
+    }
+};
+
+// Attach a slot to one of the events a QtfEventFilter forwards.
+template <qtf_any_event EV> static bool connect_any(void *s, const qtf_slot &ref) {
+    auto *f = dynamic_cast<QtfEventFilter *>(static_cast<QObject *>(s));
+    if (!f) return false;
+    f->handlers[EV].push_back(ref);
+    return true;
+}
+
+// Events every widget forwards to Fortran slots through a QtfWidgetEventFilter
+// (the conveniences closeEvent, focusInEvent, ... on QWidget; see also the
+// general QtfEventFilter above).
 enum qtf_filter_event {
     QTF_FILTER_CLOSE,
     QTF_FILTER_CONTEXTMENU,
@@ -340,17 +438,17 @@ enum qtf_filter_event {
 // events to Fortran slots. One is created per widget when the first such slot
 // is connected; as a child of the widget it (and the slots it holds) is
 // destroyed with the widget.
-class QtfEventFilter : public QObject {
+class QtfWidgetEventFilter : public QObject {
   public:
-    explicit QtfEventFilter(QWidget *w) : QObject(w) { w->installEventFilter(this); }
+    explicit QtfWidgetEventFilter(QWidget *w) : QObject(w) { w->installEventFilter(this); }
 
     std::array<std::vector<qtf_slot>, QTF_FILTER_COUNT> handlers;
 
     // The widget's filter, created on first use.
-    static QtfEventFilter *of(QWidget *w) {
+    static QtfWidgetEventFilter *of(QWidget *w) {
         for (QObject *c : w->children())
-            if (auto *f = dynamic_cast<QtfEventFilter *>(c)) return f;
-        return new QtfEventFilter(w);
+            if (auto *f = dynamic_cast<QtfWidgetEventFilter *>(c)) return f;
+        return new QtfWidgetEventFilter(w);
     }
 
   protected:
@@ -388,9 +486,9 @@ class QtfEventFilter : public QObject {
     }
 };
 
-// Attach a slot to one of the events a widget forwards through its QtfEventFilter.
+// Attach a slot to one of the events a widget forwards through its QtfWidgetEventFilter.
 template <qtf_filter_event EV> static bool connect_filter(void *s, const qtf_slot &ref) {
-    QtfEventFilter::of(static_cast<QWidget *>(s))->handlers[EV].push_back(ref);
+    QtfWidgetEventFilter::of(static_cast<QWidget *>(s))->handlers[EV].push_back(ref);
     return true;
 }
 
@@ -864,6 +962,16 @@ QTF_API void qtf_qapplication_processEvents(void) { QApplication::processEvents(
 // The active modal dialog (null if none).
 QTF_API void *qtf_qapplication_activeModalWidget(void) { return QApplication::activeModalWidget(); }
 
+// Set an application attribute (a Qt_AA_* constant); some must be set before the application is created.
+QTF_API void qtf_qapplication_setAttribute(int attribute, int on) {
+    QCoreApplication::setAttribute(Qt::ApplicationAttribute(Qt::ApplicationAttribute(attribute)), (on != 0));
+}
+
+// True if an application attribute is set.
+QTF_API int qtf_qapplication_testAttribute(int attribute) {
+    return qtf_bool(QCoreApplication::testAttribute(Qt::ApplicationAttribute(Qt::ApplicationAttribute(attribute))));
+}
+
 // Set the organization name (used by QSettings to find the settings).
 QTF_API void qtf_qapplication_setOrganizationName(const char *name, int name_len) {
     QApplication::setOrganizationName(qtf_qstring(name, name_len));
@@ -1073,6 +1181,14 @@ QTF_API int qtf_qwidget_restoreGeometry(void *self, const char *geometry, int ge
 
 // True if the widget is a top-level window.
 QTF_API int qtf_qwidget_isWindow(void *self) { return qtf_bool(as<QWidget>(self)->isWindow()); }
+
+// Physical pixels per logical pixel of the widget's screen (2 on a typical HiDPI display).
+QTF_API double qtf_qwidget_devicePixelRatio(void *self) { return as<QWidget>(self)->devicePixelRatio(); }
+
+// A widget that embeds `window` (e.g. an OpenGL QWindow rendered by an external engine) in a widget layout; the container takes ownership of the window.
+QTF_API void *qtf_qwidget_createWindowContainer(void *window, void *parent) {
+    return QWidget::createWindowContainer(as<QWindow>(window), as<QWidget>(parent));
+}
 
 // Show the window maximized.
 QTF_API void qtf_qwidget_showMaximized(void *self) { as<QWidget>(self)->showMaximized(); }
@@ -4283,6 +4399,12 @@ QTF_API void qtf_qundoview_setEmptyLabel(void *self, const char *label, int labe
 }
 
 // ---------------------------------------------------------------------------
+// QtfEventFilter
+
+// Forward the events of `target`.
+QTF_API void *qtf_qtfeventfilter_new(void *target) { return new QtfEventFilter(as<QObject>(target)); }
+
+// ---------------------------------------------------------------------------
 // signal connectors
 
 static const bool qtf_widgets_registered = [] {
@@ -4579,6 +4701,22 @@ static const bool qtf_widgets_registered = [] {
     qtf_register_connector(QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QUndoStack>(s), &QUndoStack::redoTextChanged, as<QUndoStack>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
     });
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT, connect_any<QTF_ANY_MOUSEPRESS>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT, connect_any<QTF_ANY_MOUSERELEASE>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT, connect_any<QTF_ANY_MOUSEMOVE>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT, connect_any<QTF_ANY_MOUSEDOUBLECLICK>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_WHEELEVENT, connect_any<QTF_ANY_WHEEL>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT, connect_any<QTF_ANY_KEYPRESS>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT, connect_any<QTF_ANY_KEYRELEASE>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_RESIZEEVENT, connect_any<QTF_ANY_RESIZE>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT, connect_any<QTF_ANY_EXPOSE>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST, connect_any<QTF_ANY_UPDATEREQUEST>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_ENTEREVENT, connect_any<QTF_ANY_ENTER>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_LEAVEEVENT, connect_any<QTF_ANY_LEAVE>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT, connect_any<QTF_ANY_FOCUSIN>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT, connect_any<QTF_ANY_FOCUSOUT>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_SHOWEVENT, connect_any<QTF_ANY_SHOW>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_HIDEEVENT, connect_any<QTF_ANY_HIDE>);
     return true;
 }();
 

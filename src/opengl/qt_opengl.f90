@@ -204,8 +204,43 @@ module qt_opengl
         module procedure :: qopenglvertexarrayobject_new
     end interface QOpenGLVertexArrayObject
 
+    !> An OpenGL context you manage yourself, for rendering into a QWindow with
+    !> an OpenGL surface (instead of QtfOpenGLWidget). This is how external
+    !> engines draw into a Qt window: `makeCurrent(window)`, render, and
+    !> `swapBuffers(window)`.
+    !>
+    !> A context can be used from another thread (an engine's render thread).
+    !> Where `QOpenGLContext_supportsThreadedOpenGL()` is true (Windows, Linux),
+    !> create and use it on that thread. On macOS it is false: AppKit must attach
+    !> the context to the window on the main thread. There, as OpenFrames does,
+    !> set Qt_AA_DontCheckOpenGLContextThreadAffinity, create the context on the
+    !> GUI thread, and on every expose and resize pause the engine and call
+    !> `makeCurrent(window)` + `doneCurrent()` on the GUI thread before it renders
+    !> again; the engine must release the context (`doneCurrent`) after each frame.
+    !>
+    !> Do not connect Fortran slots to Qt signals of objects that live on another
+    !> thread: those slots would run on that thread.
+    type, extends(QObject), public :: QOpenGLContext
+    contains
+        procedure :: setFormat => qopenglcontext_setFormat
+        procedure :: create => qopenglcontext_create
+        procedure :: isValid => qopenglcontext_isValid
+        procedure :: makeCurrent => qopenglcontext_makeCurrent
+        procedure :: doneCurrent => qopenglcontext_doneCurrent
+        procedure :: swapBuffers => qopenglcontext_swapBuffers
+        procedure :: format => qopenglcontext_format
+        procedure :: defaultFramebufferObject => qopenglcontext_defaultFramebufferObject
+    end type QOpenGLContext
+    !> Constructor: `QOpenGLContext([parent])`.
+    interface QOpenGLContext
+        module procedure :: qopenglcontext_new
+    end interface QOpenGLContext
+
     public :: QSurfaceFormat_setDefaultFormat
+    public :: QOpenGLContext_supportsThreadedOpenGL
+    public :: QOpenGLContext_hasCurrentContext
     public :: glClearColor
+    public :: glReadPixel
     public :: glClear
     public :: glEnable
     public :: glDisable
@@ -671,6 +706,83 @@ contains
         call qtf_qopenglvertexarrayobject_destroy(qtf_live(self, 'QOpenGLVertexArrayObject%destroy'))
     end subroutine qopenglvertexarrayobject_destroy
 
+    !> A context (set its format, then `create`).
+    function qopenglcontext_new(parent) result(res)
+        class(QObject), intent(in), optional :: parent
+        type(QOpenGLContext) :: res
+        call res%attach(qtf_qopenglcontext_new(qtf_ptr(parent)))
+    end function qopenglcontext_new
+
+    !> Request a format (version, profile, ...) before `create`; by default the QSurfaceFormat default format.
+    subroutine qopenglcontext_setFormat(self, format)
+        class(QOpenGLContext), intent(in) :: self
+        type(QSurfaceFormat), intent(in) :: format
+        call qtf_qopenglcontext_setFormat(qtf_live(self, 'QOpenGLContext%setFormat'), format%ptr)
+    end subroutine qopenglcontext_setFormat
+
+    !> Create the native context; false if that fails (e.g. no OpenGL).
+    function qopenglcontext_create(self) result(res)
+        class(QOpenGLContext), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qopenglcontext_create(qtf_live(self, 'QOpenGLContext%create')))
+    end function qopenglcontext_create
+
+    !> True after a successful `create`.
+    function qopenglcontext_isValid(self) result(res)
+        class(QOpenGLContext), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qopenglcontext_isValid(qtf_live(self, 'QOpenGLContext%isValid')))
+    end function qopenglcontext_isValid
+
+    !> Make the context current on the calling thread, drawing to `window`.
+    function qopenglcontext_makeCurrent(self, window) result(res)
+        class(QOpenGLContext), intent(in) :: self
+        class(QWindow), intent(in) :: window
+        logical :: res
+        res = qtf_logical(qtf_qopenglcontext_makeCurrent(qtf_live(self, 'QOpenGLContext%makeCurrent'), &
+                qtf_live(window, 'QOpenGLContext%makeCurrent')))
+    end function qopenglcontext_makeCurrent
+
+    !> Release the context from the calling thread.
+    subroutine qopenglcontext_doneCurrent(self)
+        class(QOpenGLContext), intent(in) :: self
+        call qtf_qopenglcontext_doneCurrent(qtf_live(self, 'QOpenGLContext%doneCurrent'))
+    end subroutine qopenglcontext_doneCurrent
+
+    !> Show the frame rendered into `window`.
+    subroutine qopenglcontext_swapBuffers(self, window)
+        class(QOpenGLContext), intent(in) :: self
+        class(QWindow), intent(in) :: window
+        call qtf_qopenglcontext_swapBuffers(qtf_live(self, 'QOpenGLContext%swapBuffers'), qtf_live(window, &
+                'QOpenGLContext%swapBuffers'))
+    end subroutine qopenglcontext_swapBuffers
+
+    !> The format of the actual context; delete it when done.
+    function qopenglcontext_format(self) result(res)
+        class(QOpenGLContext), intent(in) :: self
+        type(QSurfaceFormat) :: res
+        res%ptr = qtf_qopenglcontext_format(qtf_live(self, 'QOpenGLContext%format'))
+    end function qopenglcontext_format
+
+    !> The framebuffer that renders to the surface (normally 0 for a window).
+    function qopenglcontext_defaultFramebufferObject(self) result(res)
+        class(QOpenGLContext), intent(in) :: self
+        integer :: res
+        res = qtf_qopenglcontext_defaultFramebufferObject(qtf_live(self, 'QOpenGLContext%defaultFramebufferObject'))
+    end function qopenglcontext_defaultFramebufferObject
+
+    !> True if contexts can be used from threads other than the GUI thread on this platform.
+    function QOpenGLContext_supportsThreadedOpenGL() result(res)
+        logical :: res
+        res = qtf_logical(qtf_qopenglcontext_supportsThreadedOpenGL())
+    end function QOpenGLContext_supportsThreadedOpenGL
+
+    !> True if the calling thread has a current context.
+    function QOpenGLContext_hasCurrentContext() result(res)
+        logical :: res
+        res = qtf_logical(qtf_qopenglcontext_hasCurrentContext())
+    end function QOpenGLContext_hasCurrentContext
+
     !> Set the color used by glClear for the color buffer (components 0..1).
     subroutine glClearColor(red, green, blue, alpha)
         real(c_double), intent(in) :: red
@@ -679,6 +791,22 @@ contains
         real(c_double), intent(in) :: alpha
         call qtf_glClearColor(red, green, blue, alpha)
     end subroutine glClearColor
+
+    !> The color of one pixel of the current framebuffer (from the bottom left), e.g. to check rendering.
+    function glReadPixel(x, y) result(res)
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        type(QColor) :: res
+        integer(c_int) :: r_r
+        integer(c_int) :: r_g
+        integer(c_int) :: r_b
+        integer(c_int) :: r_a
+        call qtf_glReadPixel(int(x, c_int), int(y, c_int), r_r, r_g, r_b, r_a)
+        res%r = int(r_r)
+        res%g = int(r_g)
+        res%b = int(r_b)
+        res%a = int(r_a)
+    end function glReadPixel
 
     !> Clear buffers, e.g. ior(GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT).
     subroutine glClear(mask)

@@ -30,7 +30,7 @@ clangxx = "*"
 build = "python tools/fpm_qt.py build"
 test = { cmd = "python tools/fpm_qt.py test", env = { QT_QPA_PLATFORM = "offscreen" } }
 # the OpenGL test needs a real display (the offscreen platform has no OpenGL)
-test-gl = "python tools/fpm_qt.py test test_opengl"
+test-gl = "python tools/fpm_qt.py test test_opengl test_render_thread"
 example = "python tools/fpm_qt.py run --example"
 gen = "python tools/gen_bindings.py && python tools/gen_c_interfaces.py"
 gen-check = "python tools/gen_bindings.py --check && python tools/gen_c_interfaces.py --check"

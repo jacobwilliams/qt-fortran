@@ -37,7 +37,7 @@ uses = [
 handle_types = ["QImage"]
 cpp_includes = [
     "QColor", "QGenericMatrix", "QImage", "QKeyEvent", "QMatrix4x4", "QMouseEvent", "QOpenGLBuffer",
-    "QOpenGLContext", "QOpenGLFunctions", "QOpenGLShaderProgram", "QOpenGLVertexArrayObject",
+    "QOpenGLContext", "QOpenGLFunctions", "QOpenGLShaderProgram", "QOpenGLVertexArrayObject", "QWindow",
     "QOpenGLWidget", "QSurfaceFormat", "QVector3D", "QVector4D", "QWheelEvent", "array", "vector",
 ]
 
@@ -46,6 +46,14 @@ cpp_prelude = """
 static QOpenGLFunctions *qtf_gl() {
     QOpenGLContext *ctx = QOpenGLContext::currentContext();
     return ctx ? ctx->functions() : nullptr;
+}
+
+// The color of one pixel of the current framebuffer (x, y from the bottom left).
+static QColor qtf_gl_read_pixel(int x, int y) {
+    QOpenGLFunctions *f = qtf_gl();
+    unsigned char p[4] = {0, 0, 0, 0};
+    if (f) f->glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, p);
+    return QColor(p[0], p[1], p[2], p[3]);
 }
 
 static QString qtf_gl_string(int name) {
@@ -154,6 +162,7 @@ template <qtf_gl_event EV> static bool connect_gl_event(void *s, const qtf_slot 
 
 functions = [
     { sig = "glClearColor(red: double, green: double, blue: double, alpha: double)", cpp = "if (auto *f = qtf_gl()) f->glClearColor(GLfloat({red}), GLfloat({green}), GLfloat({blue}), GLfloat({alpha}))", doc = "Set the color used by glClear for the color buffer (components 0..1)." },
+    { sig = "glReadPixel(x: int, y: int) -> QColor", cpp = "qtf_gl_read_pixel({x}, {y})", doc = "The color of one pixel of the current framebuffer (from the bottom left), e.g. to check rendering." },
     { sig = "glClear(mask: int)", cpp = "if (auto *f = qtf_gl()) f->glClear(GLbitfield({mask}))", doc = "Clear buffers, e.g. ior(GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT)." },
     { sig = "glEnable(cap: int)", cpp = "if (auto *f = qtf_gl()) f->glEnable(GLenum({cap}))", doc = "Enable a capability, e.g. GL_DEPTH_TEST." },
     { sig = "glDisable(cap: int)", cpp = "if (auto *f = qtf_gl()) f->glDisable(GLenum({cap}))", doc = "Disable a capability." },
@@ -177,6 +186,7 @@ functions = [
 [value_types.QColor]
 fields = ["r: int", "g: int", "b: int", "a: int"]
 cpp = "QColor({r}, {g}, {b}, {a})"
+out = { r = "{v}.red()", g = "{v}.green()", b = "{v}.blue()", a = "{v}.alpha()" }
 
 [value_types.QMatrix4x4]
 fields = ["m: double[16]"]
@@ -387,4 +397,37 @@ methods = [
     "bind() -- Bind it (attribute setup is recorded / restored).",
     "release() -- Unbind it.",
     "destroy() -- Destroy the object (with the context current).",
+]
+
+[[class]]
+name = "QOpenGLContext"
+doc = """
+An OpenGL context you manage yourself, for rendering into a QWindow with
+an OpenGL surface (instead of QtfOpenGLWidget). This is how external
+engines draw into a Qt window: `makeCurrent(window)`, render, and
+`swapBuffers(window)`.
+
+A context can be used from another thread (an engine's render thread).
+Where `QOpenGLContext_supportsThreadedOpenGL()` is true (Windows, Linux),
+create and use it on that thread. On macOS it is false: AppKit must attach
+the context to the window on the main thread. There, as OpenFrames does,
+set Qt_AA_DontCheckOpenGLContextThreadAffinity, create the context on the
+GUI thread, and on every expose and resize pause the engine and call
+`makeCurrent(window)` + `doneCurrent()` on the GUI thread before it renders
+again; the engine must release the context (`doneCurrent`) after each frame.
+
+Do not connect Fortran slots to Qt signals of objects that live on another
+thread: those slots would run on that thread."""
+ctor = "(parent: QObject?) -- A context (set its format, then `create`)."
+methods = [
+    { sig = "setFormat(format: QSurfaceFormat)", cpp = "{self}->setFormat(*{format})", doc = "Request a format (version, profile, ...) before `create`; by default the QSurfaceFormat default format." },
+    "create() -> bool -- Create the native context; false if that fails (e.g. no OpenGL).",
+    "isValid() -> bool -- True after a successful `create`.",
+    "makeCurrent(window: QWindow) -> bool -- Make the context current on the calling thread, drawing to `window`.",
+    "doneCurrent() -- Release the context from the calling thread.",
+    "swapBuffers(window: QWindow) -- Show the frame rendered into `window`.",
+    { sig = "format() -> QSurfaceFormat", cpp = "new QSurfaceFormat({self}->format())", doc = "The format of the actual context; delete it when done." },
+    "defaultFramebufferObject() -> int -- The framebuffer that renders to the surface (normally 0 for a window).",
+    { sig = "static supportsThreadedOpenGL() -> bool", cpp = "QOpenGLContext::supportsThreadedOpenGL()", doc = "True if contexts can be used from threads other than the GUI thread on this platform." },
+    { sig = "static hasCurrentContext() -> bool", cpp = "QOpenGLContext::currentContext() != nullptr", doc = "True if the calling thread has a current context." },
 ]

@@ -24,6 +24,7 @@
 #include <QVector3D>
 #include <QVector4D>
 #include <QWheelEvent>
+#include <QWindow>
 #include <array>
 #include <vector>
 
@@ -47,6 +48,14 @@ enum : int {
 static QOpenGLFunctions *qtf_gl() {
     QOpenGLContext *ctx = QOpenGLContext::currentContext();
     return ctx ? ctx->functions() : nullptr;
+}
+
+// The color of one pixel of the current framebuffer (x, y from the bottom left).
+static QColor qtf_gl_read_pixel(int x, int y) {
+    QOpenGLFunctions *f = qtf_gl();
+    unsigned char p[4] = {0, 0, 0, 0};
+    if (f) f->glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, p);
+    return QColor(p[0], p[1], p[2], p[3]);
 }
 
 static QString qtf_gl_string(int name) {
@@ -405,11 +414,70 @@ QTF_API void qtf_qopenglvertexarrayobject_destroy(void *self) {
 }
 
 // ---------------------------------------------------------------------------
+// QOpenGLContext
+
+// A context (set its format, then `create`).
+QTF_API void *qtf_qopenglcontext_new(void *parent) { return new QOpenGLContext(as<QObject>(parent)); }
+
+// Request a format (version, profile, ...) before `create`; by default the QSurfaceFormat default format.
+QTF_API void qtf_qopenglcontext_setFormat(void *self, void *format) {
+    as<QOpenGLContext>(self)->setFormat(*as<QSurfaceFormat>(format));
+}
+
+// Create the native context; false if that fails (e.g. no OpenGL).
+QTF_API int qtf_qopenglcontext_create(void *self) { return qtf_bool(as<QOpenGLContext>(self)->create()); }
+
+// True after a successful `create`.
+QTF_API int qtf_qopenglcontext_isValid(void *self) { return qtf_bool(as<QOpenGLContext>(self)->isValid()); }
+
+// Make the context current on the calling thread, drawing to `window`.
+QTF_API int qtf_qopenglcontext_makeCurrent(void *self, void *window) {
+    return qtf_bool(as<QOpenGLContext>(self)->makeCurrent(as<QWindow>(window)));
+}
+
+// Release the context from the calling thread.
+QTF_API void qtf_qopenglcontext_doneCurrent(void *self) { as<QOpenGLContext>(self)->doneCurrent(); }
+
+// Show the frame rendered into `window`.
+QTF_API void qtf_qopenglcontext_swapBuffers(void *self, void *window) {
+    as<QOpenGLContext>(self)->swapBuffers(as<QWindow>(window));
+}
+
+// The format of the actual context; delete it when done.
+QTF_API void *qtf_qopenglcontext_format(void *self) {
+    return new QSurfaceFormat(as<QOpenGLContext>(self)->format());
+}
+
+// The framebuffer that renders to the surface (normally 0 for a window).
+QTF_API int qtf_qopenglcontext_defaultFramebufferObject(void *self) {
+    return as<QOpenGLContext>(self)->defaultFramebufferObject();
+}
+
+// True if contexts can be used from threads other than the GUI thread on this platform.
+QTF_API int qtf_qopenglcontext_supportsThreadedOpenGL(void) {
+    return qtf_bool(QOpenGLContext::supportsThreadedOpenGL());
+}
+
+// True if the calling thread has a current context.
+QTF_API int qtf_qopenglcontext_hasCurrentContext(void) {
+    return qtf_bool(QOpenGLContext::currentContext() != nullptr);
+}
+
+// ---------------------------------------------------------------------------
 // functions
 
 // Set the color used by glClear for the color buffer (components 0..1).
 QTF_API void qtf_glClearColor(double red, double green, double blue, double alpha) {
     if (auto *f = qtf_gl()) f->glClearColor(GLfloat(red), GLfloat(green), GLfloat(blue), GLfloat(alpha));
+}
+
+// The color of one pixel of the current framebuffer (from the bottom left), e.g. to check rendering.
+QTF_API void qtf_glReadPixel(int x, int y, int *res_r, int *res_g, int *res_b, int *res_a) {
+    const auto v_ = qtf_gl_read_pixel(x, y);
+    *res_r = v_.red();
+    *res_g = v_.green();
+    *res_b = v_.blue();
+    *res_a = v_.alpha();
 }
 
 // Clear buffers, e.g. ior(GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT).

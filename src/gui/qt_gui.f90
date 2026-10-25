@@ -27,6 +27,15 @@ module qt_gui
     integer(c_int), parameter, public :: QDoubleValidator_StandardNotation = 0
     integer(c_int), parameter, public :: QDoubleValidator_ScientificNotation = 1
 
+    ! QSurface::SurfaceType
+    integer(c_int), parameter, public :: QSurface_RasterSurface = 0
+    integer(c_int), parameter, public :: QSurface_OpenGLSurface = 1
+    integer(c_int), parameter, public :: QSurface_RasterGLSurface = 2
+    integer(c_int), parameter, public :: QSurface_OpenVGSurface = 3
+    integer(c_int), parameter, public :: QSurface_VulkanSurface = 4
+    integer(c_int), parameter, public :: QSurface_MetalSurface = 5
+    integer(c_int), parameter, public :: QSurface_Direct3DSurface = 6
+
     ! QContextMenuEvent::Reason
     integer(c_int), parameter, public :: QContextMenuEvent_Mouse = 0
     integer(c_int), parameter, public :: QContextMenuEvent_Keyboard = 1
@@ -363,6 +372,39 @@ module qt_gui
     interface QRegularExpressionValidator
         module procedure :: qregularexpressionvalidator_new
     end interface QRegularExpressionValidator
+
+    !> A native window: a surface that something other than Qt's widgets draws
+    !> on, typically an external rendering engine with its own OpenGL context
+    !> (QOpenGLContext) or swap chain. Embed it among widgets with
+    !> QWidget_createWindowContainer, and receive its events with a QtfEventFilter
+    !> (expose, resize, mouse, keys). Sizes are in logical pixels: multiply by
+    !> `devicePixelRatio` for physical pixels.
+    type, extends(QObject), public :: QWindow
+        type(QSignalInt) :: widthChanged   !! The width changed.
+        type(QSignalInt) :: heightChanged   !! The height changed.
+        type(QSignalBool) :: visibleChanged   !! The window was shown or hidden.
+        type(QSignal) :: activeChanged   !! The window became active or inactive.
+    contains
+        procedure :: attach => qwindow_attach
+        procedure :: setSurfaceType => qwindow_setSurfaceType
+        procedure :: surfaceType => qwindow_surfaceType
+        procedure :: create => qwindow_create
+        procedure :: show => qwindow_show
+        procedure :: hide => qwindow_hide
+        procedure :: isVisible => qwindow_isVisible
+        procedure :: isExposed => qwindow_isExposed
+        procedure :: resize => qwindow_resize
+        procedure :: width => qwindow_width
+        procedure :: height => qwindow_height
+        procedure :: devicePixelRatio => qwindow_devicePixelRatio
+        procedure :: setTitle => qwindow_setTitle
+        procedure :: title => qwindow_title
+        procedure :: requestUpdate => qwindow_requestUpdate
+    end type QWindow
+    !> Constructor: `QWindow([parent])`.
+    interface QWindow
+        module procedure :: qwindow_new
+    end interface QWindow
 
     abstract interface
         !> Slot for paint requests: draw with `painter` (do not end it).
@@ -1613,6 +1655,122 @@ contains
         p_ = qtf_qregularexpressionvalidator_pattern(qtf_live(self, 'QRegularExpressionValidator%pattern'), n_)
         res = qtf_take_string(p_, n_)
     end function qregularexpressionvalidator_pattern
+
+    !> Bind to a C++ QWindow and its signals.
+    subroutine qwindow_attach(self, ptr)
+        class(QWindow), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QObject%attach(ptr)
+        self%widthChanged = QSignalInt(ptr, QTF_SIG_QWINDOW_WIDTHCHANGED, self%serial)
+        self%heightChanged = QSignalInt(ptr, QTF_SIG_QWINDOW_HEIGHTCHANGED, self%serial)
+        self%visibleChanged = QSignalBool(ptr, QTF_SIG_QWINDOW_VISIBLECHANGED, self%serial)
+        self%activeChanged = QSignal(ptr, QTF_SIG_QWINDOW_ACTIVECHANGED, self%serial)
+    end subroutine qwindow_attach
+
+    !> Create a window (set its surface type before it is shown).
+    function qwindow_new(parent) result(res)
+        class(QWindow), intent(in), optional :: parent
+        type(QWindow) :: res
+        call res%attach(qtf_qwindow_new(qtf_ptr(parent)))
+    end function qwindow_new
+
+    !> What renders the window: QSurface_OpenGLSurface, _RasterSurface, _VulkanSurface, ...
+    subroutine qwindow_setSurfaceType(self, type)
+        class(QWindow), intent(in) :: self
+        integer, intent(in) :: type
+        call qtf_qwindow_setSurfaceType(qtf_live(self, 'QWindow%setSurfaceType'), int(type, c_int))
+    end subroutine qwindow_setSurfaceType
+
+    !> The surface type.
+    function qwindow_surfaceType(self) result(res)
+        class(QWindow), intent(in) :: self
+        integer :: res
+        res = qtf_qwindow_surfaceType(qtf_live(self, 'QWindow%surfaceType'))
+    end function qwindow_surfaceType
+
+    !> Create the native window now (normally done when it is first shown).
+    subroutine qwindow_create(self)
+        class(QWindow), intent(in) :: self
+        call qtf_qwindow_create(qtf_live(self, 'QWindow%create'))
+    end subroutine qwindow_create
+
+    !> Show the window.
+    subroutine qwindow_show(self)
+        class(QWindow), intent(in) :: self
+        call qtf_qwindow_show(qtf_live(self, 'QWindow%show'))
+    end subroutine qwindow_show
+
+    !> Hide the window.
+    subroutine qwindow_hide(self)
+        class(QWindow), intent(in) :: self
+        call qtf_qwindow_hide(qtf_live(self, 'QWindow%hide'))
+    end subroutine qwindow_hide
+
+    !> True if the window is shown.
+    function qwindow_isVisible(self) result(res)
+        class(QWindow), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qwindow_isVisible(qtf_live(self, 'QWindow%isVisible')))
+    end function qwindow_isVisible
+
+    !> True while the window is visible on screen (render only then).
+    function qwindow_isExposed(self) result(res)
+        class(QWindow), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qwindow_isExposed(qtf_live(self, 'QWindow%isExposed')))
+    end function qwindow_isExposed
+
+    !> Resize, in logical pixels.
+    subroutine qwindow_resize(self, width, height)
+        class(QWindow), intent(in) :: self
+        integer, intent(in) :: width
+        integer, intent(in) :: height
+        call qtf_qwindow_resize(qtf_live(self, 'QWindow%resize'), int(width, c_int), int(height, c_int))
+    end subroutine qwindow_resize
+
+    !> Width in logical pixels.
+    function qwindow_width(self) result(res)
+        class(QWindow), intent(in) :: self
+        integer :: res
+        res = qtf_qwindow_width(qtf_live(self, 'QWindow%width'))
+    end function qwindow_width
+
+    !> Height in logical pixels.
+    function qwindow_height(self) result(res)
+        class(QWindow), intent(in) :: self
+        integer :: res
+        res = qtf_qwindow_height(qtf_live(self, 'QWindow%height'))
+    end function qwindow_height
+
+    !> Physical pixels per logical pixel (2 on a typical HiDPI display).
+    function qwindow_devicePixelRatio(self) result(res)
+        class(QWindow), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qwindow_devicePixelRatio(qtf_live(self, 'QWindow%devicePixelRatio'))
+    end function qwindow_devicePixelRatio
+
+    !> The window title (for a top-level window).
+    subroutine qwindow_setTitle(self, title)
+        class(QWindow), intent(in) :: self
+        character(len=*), intent(in) :: title
+        call qtf_qwindow_setTitle(qtf_live(self, 'QWindow%setTitle'), title, len(title, c_int))
+    end subroutine qwindow_setTitle
+
+    !> The window title.
+    function qwindow_title(self) result(res)
+        class(QWindow), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qwindow_title(qtf_live(self, 'QWindow%title'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qwindow_title
+
+    !> Ask for an UpdateRequest event (a QtfEventFilter's `updateRequest`) at the next frame, for render loops on the GUI thread.
+    subroutine qwindow_requestUpdate(self)
+        class(QWindow), intent(in) :: self
+        call qtf_qwindow_requestUpdate(qtf_live(self, 'QWindow%requestUpdate'))
+    end subroutine qwindow_requestUpdate
 
     !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalpainter_connect(self, slot, data, connection)

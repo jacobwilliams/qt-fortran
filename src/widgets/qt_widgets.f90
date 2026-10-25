@@ -141,6 +141,18 @@ module qt_widgets
     integer(c_int), parameter, public :: QTabWidget_West = 2
     integer(c_int), parameter, public :: QTabWidget_East = 3
 
+    ! Qt::ApplicationAttribute (subset)
+    integer(c_int), parameter, public :: Qt_AA_DontShowIconsInMenus = 2
+    integer(c_int), parameter, public :: Qt_AA_NativeWindows = 3
+    integer(c_int), parameter, public :: Qt_AA_DontCreateNativeWidgetSiblings = 4
+    integer(c_int), parameter, public :: Qt_AA_DontUseNativeMenuBar = 6
+    integer(c_int), parameter, public :: Qt_AA_UseDesktopOpenGL = 15
+    integer(c_int), parameter, public :: Qt_AA_UseOpenGLES = 16
+    integer(c_int), parameter, public :: Qt_AA_UseSoftwareOpenGL = 17
+    integer(c_int), parameter, public :: Qt_AA_ShareOpenGLContexts = 18
+    integer(c_int), parameter, public :: Qt_AA_DontUseNativeDialogs = 23
+    integer(c_int), parameter, public :: Qt_AA_DontCheckOpenGLContextThreadAffinity = 26
+
     ! Qt::CaseSensitivity
     integer(c_int), parameter, public :: Qt_CaseInsensitive = 0
     integer(c_int), parameter, public :: Qt_CaseSensitive = 1
@@ -341,6 +353,7 @@ module qt_widgets
         procedure :: saveGeometry => qwidget_saveGeometry
         procedure :: restoreGeometry => qwidget_restoreGeometry
         procedure :: isWindow => qwidget_isWindow
+        procedure :: devicePixelRatio => qwidget_devicePixelRatio
         procedure :: showMaximized => qwidget_showMaximized
         procedure :: showMinimized => qwidget_showMinimized
         procedure :: showNormal => qwidget_showNormal
@@ -1768,6 +1781,43 @@ module qt_widgets
         module procedure :: qundoview_new
     end interface QUndoView
 
+    !> Forwards the events of any object -- a QWindow, a widget, a widget's
+    !> viewport, the application -- to Fortran slots (`Qtf` marks a qt-fortran
+    !> class). Create one per object: `events = QtfEventFilter(window)`; it is a
+    !> child of the object, so it goes away with it.
+    !>
+    !> Input events (mouse, wheel, keys) can be consumed: they arrive marked
+    !> ignored, and a slot that calls `event%accept()` stops the event there (the
+    !> object never sees it); otherwise it continues as usual. The other events are
+    !> only observed.
+    !>
+    !> Slots run on the thread the object belongs to (the GUI thread for windows
+    !> and widgets).
+    type, extends(QObject), public :: QtfEventFilter
+        type(QSignalMouseEvent) :: mousePressEvent   !! Mouse button pressed (accept to consume).
+        type(QSignalMouseEvent) :: mouseReleaseEvent   !! Mouse button released (accept to consume).
+        type(QSignalMouseEvent) :: mouseMoveEvent   !! Mouse moved (accept to consume).
+        type(QSignalMouseEvent) :: mouseDoubleClickEvent   !! Mouse button double-clicked (accept to consume).
+        type(QSignalWheelEvent) :: wheelEvent   !! Wheel turned (accept to consume).
+        type(QSignalKeyEvent) :: keyPressEvent   !! Key pressed (accept to consume).
+        type(QSignalKeyEvent) :: keyReleaseEvent   !! Key released (accept to consume).
+        type(QSignalResizeEvent) :: resizeEvent   !! The object was resized (logical pixels).
+        type(QSignal) :: exposeEvent   !! A window was exposed or hidden on screen: check its `isExposed()`.
+        type(QSignal) :: updateRequest   !! A window's `requestUpdate` came due: render a frame.
+        type(QSignal) :: enterEvent   !! The mouse entered.
+        type(QSignal) :: leaveEvent   !! The mouse left.
+        type(QSignalInt) :: focusInEvent   !! Keyboard focus gained: the reason (a Qt_*FocusReason constant).
+        type(QSignalInt) :: focusOutEvent   !! Keyboard focus lost: the reason.
+        type(QSignal) :: showEvent   !! Shown.
+        type(QSignal) :: hideEvent   !! Hidden.
+    contains
+        procedure :: attach => qtfeventfilter_attach
+    end type QtfEventFilter
+    !> Constructor: `QtfEventFilter(target)`.
+    interface QtfEventFilter
+        module procedure :: qtfeventfilter_new
+    end interface QtfEventFilter
+
     !> Constructor: `QApplication()`, with the program's command-line arguments.
     interface QApplication
         module procedure :: qapplication_new
@@ -1840,11 +1890,14 @@ module qt_widgets
     public :: QApplication_quit
     public :: QApplication_processEvents
     public :: QApplication_activeModalWidget
+    public :: QApplication_setAttribute
+    public :: QApplication_testAttribute
     public :: QApplication_setOrganizationName
     public :: QApplication_organizationName
     public :: QApplication_setOrganizationDomain
     public :: QApplication_setApplicationName
     public :: QApplication_applicationName
+    public :: QWidget_createWindowContainer
     public :: QMessageBox_information
     public :: QMessageBox_warning
     public :: QMessageBox_critical
@@ -1893,6 +1946,23 @@ contains
         type(QWidget) :: res
         call res%attach(qtf_qapplication_activeModalWidget())
     end function QApplication_activeModalWidget
+
+    !> Set an application attribute (a Qt_AA_* constant); some must be set before the application is created.
+    subroutine QApplication_setAttribute(attribute, on)
+        integer, intent(in) :: attribute
+        logical, intent(in), optional :: on
+        logical :: on_
+        on_ = .true.
+        if (present(on)) on_ = on
+        call qtf_qapplication_setAttribute(int(attribute, c_int), qtf_int(on_))
+    end subroutine QApplication_setAttribute
+
+    !> True if an application attribute is set.
+    function QApplication_testAttribute(attribute) result(res)
+        integer, intent(in) :: attribute
+        logical :: res
+        res = qtf_logical(qtf_qapplication_testAttribute(int(attribute, c_int)))
+    end function QApplication_testAttribute
 
     !> Set the organization name (used by QSettings to find the settings).
     subroutine QApplication_setOrganizationName(name)
@@ -2269,6 +2339,22 @@ contains
         logical :: res
         res = qtf_logical(qtf_qwidget_isWindow(qtf_live(self, 'QWidget%isWindow')))
     end function qwidget_isWindow
+
+    !> Physical pixels per logical pixel of the widget's screen (2 on a typical HiDPI display).
+    function qwidget_devicePixelRatio(self) result(res)
+        class(QWidget), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qwidget_devicePixelRatio(qtf_live(self, 'QWidget%devicePixelRatio'))
+    end function qwidget_devicePixelRatio
+
+    !> A widget that embeds `window` (e.g. an OpenGL QWindow rendered by an external engine) in a widget layout; the container takes ownership of the window.
+    function QWidget_createWindowContainer(window, parent) result(res)
+        class(QWindow), intent(in) :: window
+        class(QWidget), intent(in), optional :: parent
+        type(QWidget) :: res
+        call res%attach(qtf_qwidget_createWindowContainer(qtf_live(window, 'QWidget%createWindowContainer'), &
+                qtf_ptr(parent)))
+    end function QWidget_createWindowContainer
 
     !> Show the window maximized.
     subroutine qwidget_showMaximized(self)
@@ -8205,6 +8291,36 @@ contains
         character(len=*), intent(in) :: label
         call qtf_qundoview_setEmptyLabel(qtf_live(self, 'QUndoView%setEmptyLabel'), label, len(label, c_int))
     end subroutine qundoview_setEmptyLabel
+
+    !> Bind to a C++ QtfEventFilter and its signals.
+    subroutine qtfeventfilter_attach(self, ptr)
+        class(QtfEventFilter), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QObject%attach(ptr)
+        self%mousePressEvent = QSignalMouseEvent(ptr, QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT, self%serial)
+        self%mouseReleaseEvent = QSignalMouseEvent(ptr, QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT, self%serial)
+        self%mouseMoveEvent = QSignalMouseEvent(ptr, QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT, self%serial)
+        self%mouseDoubleClickEvent = QSignalMouseEvent(ptr, QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT, self%serial)
+        self%wheelEvent = QSignalWheelEvent(ptr, QTF_SIG_QTFEVENTFILTER_WHEELEVENT, self%serial)
+        self%keyPressEvent = QSignalKeyEvent(ptr, QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT, self%serial)
+        self%keyReleaseEvent = QSignalKeyEvent(ptr, QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT, self%serial)
+        self%resizeEvent = QSignalResizeEvent(ptr, QTF_SIG_QTFEVENTFILTER_RESIZEEVENT, self%serial)
+        self%exposeEvent = QSignal(ptr, QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT, self%serial)
+        self%updateRequest = QSignal(ptr, QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST, self%serial)
+        self%enterEvent = QSignal(ptr, QTF_SIG_QTFEVENTFILTER_ENTEREVENT, self%serial)
+        self%leaveEvent = QSignal(ptr, QTF_SIG_QTFEVENTFILTER_LEAVEEVENT, self%serial)
+        self%focusInEvent = QSignalInt(ptr, QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT, self%serial)
+        self%focusOutEvent = QSignalInt(ptr, QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT, self%serial)
+        self%showEvent = QSignal(ptr, QTF_SIG_QTFEVENTFILTER_SHOWEVENT, self%serial)
+        self%hideEvent = QSignal(ptr, QTF_SIG_QTFEVENTFILTER_HIDEEVENT, self%serial)
+    end subroutine qtfeventfilter_attach
+
+    !> Forward the events of `target`.
+    function qtfeventfilter_new(target) result(res)
+        class(QObject), intent(in) :: target
+        type(QtfEventFilter) :: res
+        call res%attach(qtf_qtfeventfilter_new(qtf_live(target, 'QtfEventFilter%new')))
+    end function qtfeventfilter_new
 
     !> Create the application object, passing the program's command-line
     !> arguments to Qt (trailing blanks of each argument are dropped), or return

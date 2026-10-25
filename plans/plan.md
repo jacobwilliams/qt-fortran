@@ -339,6 +339,33 @@ Legacy fixed-function GL and a high-level scene API were the alternatives consid
 - **`QMatrix4x4`** is pure Fortran (`src/opengl/qt_matrix.f90`), not a binding.
   - Column-major `m(4,4)`, with Qt's post-multiply semantics and angles in degrees.
   - It's passed to C++ as a value type with a `double[16]` field.
+- **External engines** (OpenFrames-style: the host owns the context and a
+  `QWindow`, and the engine renders from its own thread through make-current
+  and swap-buffers callbacks):
+  - Bindings: plain `QWindow` (gui), `QOpenGLContext` (opengl),
+    `QWidget_createWindowContainer`, `QApplication_setAttribute`, and
+    `glReadPixel` for checks.
+  - No `QtfWindow` subclass is needed: everything the host needs from the
+    window is an event, so the general `QtfEventFilter` (widgets module,
+    since it uses the gui event signal types; any QObject; input events
+    consumable by `event%accept()`) forwards them. The per-widget
+    conveniences (`closeEvent`, ...) use a separate internal
+    `QtfWidgetEventFilter`.
+  - Threads: where `QOpenGLContext::supportsThreadedOpenGL()` is true, create
+    and use the context on the render thread. On macOS it is false: making a
+    window's context current off the main thread crashes in
+    `-[NSOpenGLContext setView:]`. The fix is OpenFrames' recipe:
+    - set `Qt::AA_DontCheckOpenGLContextThreadAffinity`;
+    - create the context on the GUI thread;
+    - on each expose and resize, pause the engine, then `makeCurrent` +
+      `doneCurrent` on the GUI thread;
+    - release the context after every frame.
+  - `QOpenGLContext`'s signals are not bound: a slot connected to a Qt
+    signal of an object on another thread would run there, and the slot
+    registry is GUI-thread only.
+  - Tested by `test_render_thread` (in `pixi run test-gl`): a simulated
+    engine thread renders through C callbacks, including a resize while it
+    renders.
 - **Portability:** request OpenGL 3.3 core via `QSurfaceFormat_setDefaultFormat`
   before creating the application, and use `#version 330 core` shaders.
   - Works with macOS (4.1 core via Metal), Mesa and desktop drivers.

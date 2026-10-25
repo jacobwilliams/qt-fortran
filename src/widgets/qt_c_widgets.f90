@@ -123,6 +123,22 @@ module qt_c_widgets
     integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1112
     integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1113
     integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1114
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT = 1115
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT = 1116
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT = 1117
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT = 1118
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_WHEELEVENT = 1119
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT = 1120
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT = 1121
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_RESIZEEVENT = 1122
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT = 1123
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST = 1124
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_ENTEREVENT = 1125
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_LEAVEEVENT = 1126
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT = 1127
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1128
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1129
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1130
 
     interface
 
@@ -181,6 +197,26 @@ module qt_c_widgets
             implicit none
             type(c_ptr) :: res
         end function qtf_qapplication_activeModalWidget
+
+        !> Set an application attribute (a Qt_AA_* constant); some must be set before the application is created.
+        !>
+        !> C: `void qtf_qapplication_setAttribute(int attribute, int on)`
+        subroutine qtf_qapplication_setAttribute(attribute, on) bind(C, name='qtf_qapplication_setAttribute')
+            import :: c_int
+            implicit none
+            integer(c_int), value :: attribute
+            integer(c_int), value :: on
+        end subroutine qtf_qapplication_setAttribute
+
+        !> True if an application attribute is set.
+        !>
+        !> C: `int qtf_qapplication_testAttribute(int attribute)`
+        function qtf_qapplication_testAttribute(attribute) result(res) bind(C, name='qtf_qapplication_testAttribute')
+            import :: c_int
+            implicit none
+            integer(c_int), value :: attribute
+            integer(c_int) :: res
+        end function qtf_qapplication_testAttribute
 
         !> Set the organization name (used by QSettings to find the settings).
         !>
@@ -687,6 +723,28 @@ module qt_c_widgets
             type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qwidget_isWindow
+
+        !> Physical pixels per logical pixel of the widget's screen (2 on a typical HiDPI display).
+        !>
+        !> C: `double qtf_qwidget_devicePixelRatio(void *self)`
+        function qtf_qwidget_devicePixelRatio(self) result(res) bind(C, name='qtf_qwidget_devicePixelRatio')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qwidget_devicePixelRatio
+
+        !> A widget that embeds `window` (e.g. an OpenGL QWindow rendered by an external engine) in a widget layout; the container takes ownership of the window.
+        !>
+        !> C: `void *qtf_qwidget_createWindowContainer(void *window, void *parent)`
+        function qtf_qwidget_createWindowContainer(window, parent) &
+                result(res) bind(C, name='qtf_qwidget_createWindowContainer')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: window
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qwidget_createWindowContainer
 
         !> Show the window maximized.
         !>
@@ -8068,10 +8126,21 @@ module qt_c_widgets
             integer(c_int), value :: label_len
         end subroutine qtf_qundoview_setEmptyLabel
 
+        !> Forward the events of `target`.
+        !>
+        !> C: `void *qtf_qtfeventfilter_new(void *target)`
+        function qtf_qtfeventfilter_new(target) result(res) bind(C, name='qtf_qtfeventfilter_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: target
+            type(c_ptr) :: res
+        end function qtf_qtfeventfilter_new
+
     end interface
 
     public :: qtf_qapplication_new_args, qtf_qapplication_arguments, qtf_qapplication_exec
     public :: qtf_qapplication_quit, qtf_qapplication_processEvents, qtf_qapplication_activeModalWidget
+    public :: qtf_qapplication_setAttribute, qtf_qapplication_testAttribute
     public :: qtf_qapplication_setOrganizationName, qtf_qapplication_organizationName
     public :: qtf_qapplication_setOrganizationDomain, qtf_qapplication_setApplicationName
     public :: qtf_qapplication_applicationName, qtf_qwidget_new, qtf_qwidget_show, qtf_qwidget_hide
@@ -8087,14 +8156,15 @@ module qt_c_widgets
     public :: qtf_qwidget_setMaximumHeight, qtf_qwidget_setFixedWidth, qtf_qwidget_setFixedHeight
     public :: qtf_qwidget_setSizePolicy, qtf_qwidget_setContentsMargins, qtf_qwidget_setWindowIcon
     public :: qtf_qwidget_saveGeometry, qtf_qwidget_restoreGeometry, qtf_qwidget_isWindow
-    public :: qtf_qwidget_showMaximized, qtf_qwidget_showMinimized, qtf_qwidget_showNormal
-    public :: qtf_qwidget_showFullScreen, qtf_qwidget_isMaximized, qtf_qwidget_isMinimized
-    public :: qtf_qwidget_activateWindow, qtf_qwidget_raise, qtf_qwidget_repolish, qtf_qwidget_x
-    public :: qtf_qwidget_y, qtf_qwidget_move, qtf_qtfwidget_new, qtf_qframe_new, qtf_qframe_setFrameShape
-    public :: qtf_qframe_frameShape, qtf_qframe_setFrameShadow, qtf_qframe_setLineWidth, qtf_qlabel_new
-    public :: qtf_qlabel_setText, qtf_qlabel_text, qtf_qlabel_setAlignment, qtf_qlabel_setWordWrap
-    public :: qtf_qlabel_setPixmap, qtf_qlabel_setScaledContents, qtf_qabstractbutton_setText
-    public :: qtf_qabstractbutton_text, qtf_qabstractbutton_setCheckable, qtf_qabstractbutton_isCheckable
+    public :: qtf_qwidget_devicePixelRatio, qtf_qwidget_createWindowContainer, qtf_qwidget_showMaximized
+    public :: qtf_qwidget_showMinimized, qtf_qwidget_showNormal, qtf_qwidget_showFullScreen
+    public :: qtf_qwidget_isMaximized, qtf_qwidget_isMinimized, qtf_qwidget_activateWindow, qtf_qwidget_raise
+    public :: qtf_qwidget_repolish, qtf_qwidget_x, qtf_qwidget_y, qtf_qwidget_move, qtf_qtfwidget_new
+    public :: qtf_qframe_new, qtf_qframe_setFrameShape, qtf_qframe_frameShape, qtf_qframe_setFrameShadow
+    public :: qtf_qframe_setLineWidth, qtf_qlabel_new, qtf_qlabel_setText, qtf_qlabel_text
+    public :: qtf_qlabel_setAlignment, qtf_qlabel_setWordWrap, qtf_qlabel_setPixmap
+    public :: qtf_qlabel_setScaledContents, qtf_qabstractbutton_setText, qtf_qabstractbutton_text
+    public :: qtf_qabstractbutton_setCheckable, qtf_qabstractbutton_isCheckable
     public :: qtf_qabstractbutton_setChecked, qtf_qabstractbutton_isChecked, qtf_qabstractbutton_click
     public :: qtf_qabstractbutton_toggle, qtf_qabstractbutton_setIcon, qtf_qabstractbutton_setIconSize
     public :: qtf_qpushbutton_new, qtf_qpushbutton_setDefault, qtf_qcheckbox_new, qtf_qradiobutton_new
@@ -8321,6 +8391,6 @@ module qt_c_widgets
     public :: qtf_qundostack_setIndex, qtf_qundostack_text, qtf_qundostack_clear, qtf_qundostack_setClean
     public :: qtf_qundostack_isClean, qtf_qundostack_setUndoLimit, qtf_qundostack_beginMacro
     public :: qtf_qundostack_endMacro, qtf_qundostack_createUndoAction, qtf_qundostack_createRedoAction
-    public :: qtf_qundoview_new, qtf_qundoview_setEmptyLabel
+    public :: qtf_qundoview_new, qtf_qundoview_setEmptyLabel, qtf_qtfeventfilter_new
 
 end module qt_c_widgets

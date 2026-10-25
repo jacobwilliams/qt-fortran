@@ -10,6 +10,10 @@ module qt_c_gui
     ! Signal ids: must match `enum qtf_signal` in src/shim/qtf_common.h.
     integer(c_int), parameter, public :: QTF_SIG_QACTION_TRIGGERED = 2000
     integer(c_int), parameter, public :: QTF_SIG_QACTION_TOGGLED = 2001
+    integer(c_int), parameter, public :: QTF_SIG_QWINDOW_WIDTHCHANGED = 2002
+    integer(c_int), parameter, public :: QTF_SIG_QWINDOW_HEIGHTCHANGED = 2003
+    integer(c_int), parameter, public :: QTF_SIG_QWINDOW_VISIBLECHANGED = 2004
+    integer(c_int), parameter, public :: QTF_SIG_QWINDOW_ACTIVECHANGED = 2005
 
     interface
 
@@ -1327,6 +1331,155 @@ module qt_c_gui
             type(c_ptr) :: res
         end function qtf_qregularexpressionvalidator_pattern
 
+        !> Create a window (set its surface type before it is shown).
+        !>
+        !> C: `void *qtf_qwindow_new(void *parent)`
+        function qtf_qwindow_new(parent) result(res) bind(C, name='qtf_qwindow_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qwindow_new
+
+        !> What renders the window: QSurface_OpenGLSurface, _RasterSurface, _VulkanSurface, ...
+        !>
+        !> C: `void qtf_qwindow_setSurfaceType(void *self, int type)`
+        subroutine qtf_qwindow_setSurfaceType(self, type) bind(C, name='qtf_qwindow_setSurfaceType')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: type
+        end subroutine qtf_qwindow_setSurfaceType
+
+        !> The surface type.
+        !>
+        !> C: `int qtf_qwindow_surfaceType(void *self)`
+        function qtf_qwindow_surfaceType(self) result(res) bind(C, name='qtf_qwindow_surfaceType')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwindow_surfaceType
+
+        !> Create the native window now (normally done when it is first shown).
+        !>
+        !> C: `void qtf_qwindow_create(void *self)`
+        subroutine qtf_qwindow_create(self) bind(C, name='qtf_qwindow_create')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qwindow_create
+
+        !> Show the window.
+        !>
+        !> C: `void qtf_qwindow_show(void *self)`
+        subroutine qtf_qwindow_show(self) bind(C, name='qtf_qwindow_show')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qwindow_show
+
+        !> Hide the window.
+        !>
+        !> C: `void qtf_qwindow_hide(void *self)`
+        subroutine qtf_qwindow_hide(self) bind(C, name='qtf_qwindow_hide')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qwindow_hide
+
+        !> True if the window is shown.
+        !>
+        !> C: `int qtf_qwindow_isVisible(void *self)`
+        function qtf_qwindow_isVisible(self) result(res) bind(C, name='qtf_qwindow_isVisible')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwindow_isVisible
+
+        !> True while the window is visible on screen (render only then).
+        !>
+        !> C: `int qtf_qwindow_isExposed(void *self)`
+        function qtf_qwindow_isExposed(self) result(res) bind(C, name='qtf_qwindow_isExposed')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwindow_isExposed
+
+        !> Resize, in logical pixels.
+        !>
+        !> C: `void qtf_qwindow_resize(void *self, int width, int height)`
+        subroutine qtf_qwindow_resize(self, width, height) bind(C, name='qtf_qwindow_resize')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: width
+            integer(c_int), value :: height
+        end subroutine qtf_qwindow_resize
+
+        !> Width in logical pixels.
+        !>
+        !> C: `int qtf_qwindow_width(void *self)`
+        function qtf_qwindow_width(self) result(res) bind(C, name='qtf_qwindow_width')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwindow_width
+
+        !> Height in logical pixels.
+        !>
+        !> C: `int qtf_qwindow_height(void *self)`
+        function qtf_qwindow_height(self) result(res) bind(C, name='qtf_qwindow_height')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwindow_height
+
+        !> Physical pixels per logical pixel (2 on a typical HiDPI display).
+        !>
+        !> C: `double qtf_qwindow_devicePixelRatio(void *self)`
+        function qtf_qwindow_devicePixelRatio(self) result(res) bind(C, name='qtf_qwindow_devicePixelRatio')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qwindow_devicePixelRatio
+
+        !> The window title (for a top-level window).
+        !>
+        !> C: `void qtf_qwindow_setTitle(void *self, const char *title, int title_len)`
+        subroutine qtf_qwindow_setTitle(self, title, title_len) bind(C, name='qtf_qwindow_setTitle')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: title
+            integer(c_int), value :: title_len
+        end subroutine qtf_qwindow_setTitle
+
+        !> The window title.
+        !>
+        !> C: `char *qtf_qwindow_title(void *self, int *len)`
+        function qtf_qwindow_title(self, len) result(res) bind(C, name='qtf_qwindow_title')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qwindow_title
+
+        !> Ask for an UpdateRequest event (a QtfEventFilter's `updateRequest`) at the next frame, for render loops on the GUI thread.
+        !>
+        !> C: `void qtf_qwindow_requestUpdate(void *self)`
+        subroutine qtf_qwindow_requestUpdate(self) bind(C, name='qtf_qwindow_requestUpdate')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qwindow_requestUpdate
+
     end interface
 
     public :: qtf_qcolor_fromString, qtf_qimage_fromArray, qtf_qimage_colorbar, qtf_qimage_delete
@@ -1362,5 +1515,9 @@ module qt_c_gui
     public :: qtf_qdoublevalidator_setNotation, qtf_qdoublevalidator_bottom, qtf_qdoublevalidator_top
     public :: qtf_qdoublevalidator_decimals, qtf_qregularexpressionvalidator_new
     public :: qtf_qregularexpressionvalidator_setPattern, qtf_qregularexpressionvalidator_pattern
+    public :: qtf_qwindow_new, qtf_qwindow_setSurfaceType, qtf_qwindow_surfaceType, qtf_qwindow_create
+    public :: qtf_qwindow_show, qtf_qwindow_hide, qtf_qwindow_isVisible, qtf_qwindow_isExposed
+    public :: qtf_qwindow_resize, qtf_qwindow_width, qtf_qwindow_height, qtf_qwindow_devicePixelRatio
+    public :: qtf_qwindow_setTitle, qtf_qwindow_title, qtf_qwindow_requestUpdate
 
 end module qt_c_gui

@@ -627,6 +627,116 @@ module qt_c_opengl
             type(c_ptr), value :: self
         end subroutine qtf_qopenglvertexarrayobject_destroy
 
+        !> A context (set its format, then `create`).
+        !>
+        !> C: `void *qtf_qopenglcontext_new(void *parent)`
+        function qtf_qopenglcontext_new(parent) result(res) bind(C, name='qtf_qopenglcontext_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qopenglcontext_new
+
+        !> Request a format (version, profile, ...) before `create`; by default the QSurfaceFormat default format.
+        !>
+        !> C: `void qtf_qopenglcontext_setFormat(void *self, void *format)`
+        subroutine qtf_qopenglcontext_setFormat(self, format) bind(C, name='qtf_qopenglcontext_setFormat')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: format
+        end subroutine qtf_qopenglcontext_setFormat
+
+        !> Create the native context; false if that fails (e.g. no OpenGL).
+        !>
+        !> C: `int qtf_qopenglcontext_create(void *self)`
+        function qtf_qopenglcontext_create(self) result(res) bind(C, name='qtf_qopenglcontext_create')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qopenglcontext_create
+
+        !> True after a successful `create`.
+        !>
+        !> C: `int qtf_qopenglcontext_isValid(void *self)`
+        function qtf_qopenglcontext_isValid(self) result(res) bind(C, name='qtf_qopenglcontext_isValid')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qopenglcontext_isValid
+
+        !> Make the context current on the calling thread, drawing to `window`.
+        !>
+        !> C: `int qtf_qopenglcontext_makeCurrent(void *self, void *window)`
+        function qtf_qopenglcontext_makeCurrent(self, window) result(res) bind(C, name='qtf_qopenglcontext_makeCurrent')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: window
+            integer(c_int) :: res
+        end function qtf_qopenglcontext_makeCurrent
+
+        !> Release the context from the calling thread.
+        !>
+        !> C: `void qtf_qopenglcontext_doneCurrent(void *self)`
+        subroutine qtf_qopenglcontext_doneCurrent(self) bind(C, name='qtf_qopenglcontext_doneCurrent')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qopenglcontext_doneCurrent
+
+        !> Show the frame rendered into `window`.
+        !>
+        !> C: `void qtf_qopenglcontext_swapBuffers(void *self, void *window)`
+        subroutine qtf_qopenglcontext_swapBuffers(self, window) bind(C, name='qtf_qopenglcontext_swapBuffers')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: window
+        end subroutine qtf_qopenglcontext_swapBuffers
+
+        !> The format of the actual context; delete it when done.
+        !>
+        !> C: `void *qtf_qopenglcontext_format(void *self)`
+        function qtf_qopenglcontext_format(self) result(res) bind(C, name='qtf_qopenglcontext_format')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qopenglcontext_format
+
+        !> The framebuffer that renders to the surface (normally 0 for a window).
+        !>
+        !> C: `int qtf_qopenglcontext_defaultFramebufferObject(void *self)`
+        function qtf_qopenglcontext_defaultFramebufferObject(self) &
+                result(res) bind(C, name='qtf_qopenglcontext_defaultFramebufferObject')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qopenglcontext_defaultFramebufferObject
+
+        !> True if contexts can be used from threads other than the GUI thread on this platform.
+        !>
+        !> C: `int qtf_qopenglcontext_supportsThreadedOpenGL(void)`
+        function qtf_qopenglcontext_supportsThreadedOpenGL() &
+                result(res) bind(C, name='qtf_qopenglcontext_supportsThreadedOpenGL')
+            import :: c_int
+            implicit none
+            integer(c_int) :: res
+        end function qtf_qopenglcontext_supportsThreadedOpenGL
+
+        !> True if the calling thread has a current context.
+        !>
+        !> C: `int qtf_qopenglcontext_hasCurrentContext(void)`
+        function qtf_qopenglcontext_hasCurrentContext() result(res) bind(C, name='qtf_qopenglcontext_hasCurrentContext')
+            import :: c_int
+            implicit none
+            integer(c_int) :: res
+        end function qtf_qopenglcontext_hasCurrentContext
+
         !> Set the color used by glClear for the color buffer (components 0..1).
         !>
         !> C: `void qtf_glClearColor(double red, double green, double blue, double alpha)`
@@ -638,6 +748,20 @@ module qt_c_opengl
             real(c_double), value :: blue
             real(c_double), value :: alpha
         end subroutine qtf_glClearColor
+
+        !> The color of one pixel of the current framebuffer (from the bottom left), e.g. to check rendering.
+        !>
+        !> C: `void qtf_glReadPixel(int x, int y, int *res_r, int *res_g, int *res_b, int *res_a)`
+        subroutine qtf_glReadPixel(x, y, res_r, res_g, res_b, res_a) bind(C, name='qtf_glReadPixel')
+            import :: c_int
+            implicit none
+            integer(c_int), value :: x
+            integer(c_int), value :: y
+            integer(c_int), intent(out) :: res_r
+            integer(c_int), intent(out) :: res_g
+            integer(c_int), intent(out) :: res_b
+            integer(c_int), intent(out) :: res_a
+        end subroutine qtf_glReadPixel
 
         !> Clear buffers, e.g. ior(GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT).
         !>
@@ -825,8 +949,13 @@ module qt_c_opengl
     public :: qtf_qopenglbuffer_allocateFloats, qtf_qopenglbuffer_allocateIndices
     public :: qtf_qopenglvertexarrayobject_new, qtf_qopenglvertexarrayobject_create
     public :: qtf_qopenglvertexarrayobject_isCreated, qtf_qopenglvertexarrayobject_bind
-    public :: qtf_qopenglvertexarrayobject_release, qtf_qopenglvertexarrayobject_destroy, qtf_glClearColor
-    public :: qtf_glClear, qtf_glEnable, qtf_glDisable, qtf_glViewport, qtf_glDrawArrays, qtf_glDrawElements
+    public :: qtf_qopenglvertexarrayobject_release, qtf_qopenglvertexarrayobject_destroy
+    public :: qtf_qopenglcontext_new, qtf_qopenglcontext_setFormat, qtf_qopenglcontext_create
+    public :: qtf_qopenglcontext_isValid, qtf_qopenglcontext_makeCurrent, qtf_qopenglcontext_doneCurrent
+    public :: qtf_qopenglcontext_swapBuffers, qtf_qopenglcontext_format
+    public :: qtf_qopenglcontext_defaultFramebufferObject, qtf_qopenglcontext_supportsThreadedOpenGL
+    public :: qtf_qopenglcontext_hasCurrentContext, qtf_glClearColor, qtf_glReadPixel, qtf_glClear
+    public :: qtf_glEnable, qtf_glDisable, qtf_glViewport, qtf_glDrawArrays, qtf_glDrawElements
     public :: qtf_glLineWidth, qtf_glBlendFunc, qtf_glDepthFunc, qtf_glDepthMask, qtf_glCullFace
     public :: qtf_glFrontFace, qtf_glPolygonOffset, qtf_glFlush, qtf_glFinish, qtf_glGetError, qtf_glGetString
 

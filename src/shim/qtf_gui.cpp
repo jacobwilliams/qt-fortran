@@ -28,6 +28,7 @@
 #include <QResizeEvent>
 #include <QValidator>
 #include <QWheelEvent>
+#include <QWindow>
 #include <cmath>
 #include <vector>
 
@@ -37,6 +38,10 @@ template <typename T> static T *as(void *p) { return static_cast<T *>(p); }
 enum : int {
     QTF_SIG_QACTION_TRIGGERED = 2000,
     QTF_SIG_QACTION_TOGGLED = 2001,
+    QTF_SIG_QWINDOW_WIDTHCHANGED = 2002,
+    QTF_SIG_QWINDOW_HEIGHTCHANGED = 2003,
+    QTF_SIG_QWINDOW_VISIBLECHANGED = 2004,
+    QTF_SIG_QWINDOW_ACTIVECHANGED = 2005,
 };
 
 // Validate `text` with a validator: QValidator_Invalid, _Intermediate or _Acceptable.
@@ -643,6 +648,60 @@ QTF_API char *qtf_qregularexpressionvalidator_pattern(void *self, int *len) {
 }
 
 // ---------------------------------------------------------------------------
+// QWindow
+
+// Create a window (set its surface type before it is shown).
+QTF_API void *qtf_qwindow_new(void *parent) { return new QWindow(as<QWindow>(parent)); }
+
+// What renders the window: QSurface_OpenGLSurface, _RasterSurface, _VulkanSurface, ...
+QTF_API void qtf_qwindow_setSurfaceType(void *self, int type) {
+    as<QWindow>(self)->setSurfaceType(QSurface::SurfaceType(type));
+}
+
+// The surface type.
+QTF_API int qtf_qwindow_surfaceType(void *self) { return int(as<QWindow>(self)->surfaceType()); }
+
+// Create the native window now (normally done when it is first shown).
+QTF_API void qtf_qwindow_create(void *self) { as<QWindow>(self)->create(); }
+
+// Show the window.
+QTF_API void qtf_qwindow_show(void *self) { as<QWindow>(self)->show(); }
+
+// Hide the window.
+QTF_API void qtf_qwindow_hide(void *self) { as<QWindow>(self)->hide(); }
+
+// True if the window is shown.
+QTF_API int qtf_qwindow_isVisible(void *self) { return qtf_bool(as<QWindow>(self)->isVisible()); }
+
+// True while the window is visible on screen (render only then).
+QTF_API int qtf_qwindow_isExposed(void *self) { return qtf_bool(as<QWindow>(self)->isExposed()); }
+
+// Resize, in logical pixels.
+QTF_API void qtf_qwindow_resize(void *self, int width, int height) {
+    as<QWindow>(self)->resize(width, height);
+}
+
+// Width in logical pixels.
+QTF_API int qtf_qwindow_width(void *self) { return as<QWindow>(self)->width(); }
+
+// Height in logical pixels.
+QTF_API int qtf_qwindow_height(void *self) { return as<QWindow>(self)->height(); }
+
+// Physical pixels per logical pixel (2 on a typical HiDPI display).
+QTF_API double qtf_qwindow_devicePixelRatio(void *self) { return as<QWindow>(self)->devicePixelRatio(); }
+
+// The window title (for a top-level window).
+QTF_API void qtf_qwindow_setTitle(void *self, const char *title, int title_len) {
+    as<QWindow>(self)->setTitle(qtf_qstring(title, title_len));
+}
+
+// The window title.
+QTF_API char *qtf_qwindow_title(void *self, int *len) { return qtf_to_c(as<QWindow>(self)->title(), len); }
+
+// Ask for an UpdateRequest event (a QtfEventFilter's `updateRequest`) at the next frame, for render loops on the GUI thread.
+QTF_API void qtf_qwindow_requestUpdate(void *self) { as<QWindow>(self)->requestUpdate(); }
+
+// ---------------------------------------------------------------------------
 // signal connectors
 
 static const bool qtf_gui_registered = [] {
@@ -651,6 +710,18 @@ static const bool qtf_gui_registered = [] {
     });
     qtf_register_connector(QTF_SIG_QACTION_TOGGLED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QAction>(s), &QAction::toggled, as<QAction>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QWINDOW_WIDTHCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QWindow>(s), &QWindow::widthChanged, as<QWindow>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QWINDOW_HEIGHTCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QWindow>(s), &QWindow::heightChanged, as<QWindow>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QWINDOW_VISIBLECHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QWindow>(s), &QWindow::visibleChanged, as<QWindow>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QWINDOW_ACTIVECHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QWindow>(s), &QWindow::activeChanged, as<QWindow>(s), [ref]() { qtf_emit(ref); }));
     });
     return true;
 }();

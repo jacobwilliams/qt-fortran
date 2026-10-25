@@ -20,6 +20,7 @@ uses = [
 cpp_includes = [
     "QAction", "QFontMetrics", "QImage", "QKeyEvent", "QKeySequence", "QMouseEvent", "QPainter",
     "QPixmap", "QPolygonF", "QResizeEvent", "QWheelEvent", "QIcon", "QCloseEvent", "QContextMenuEvent",
+    "QWindow",
     "QValidator", "QIntValidator", "QDoubleValidator", "QRegularExpressionValidator", "QRegularExpression", "QLocale",
     "cmath", "vector",
 ]
@@ -492,6 +493,14 @@ doc = "QValidator::State and QDoubleValidator::Notation"
 values = [
     "QValidator_Invalid = 0", "QValidator_Intermediate = 1", "QValidator_Acceptable = 2",
     "QDoubleValidator_StandardNotation = 0", "QDoubleValidator_ScientificNotation = 1",
+]
+
+[[enum]]
+doc = "QSurface::SurfaceType"
+values = [
+    "QSurface_RasterSurface = 0", "QSurface_OpenGLSurface = 1", "QSurface_RasterGLSurface = 2",
+    "QSurface_OpenVGSurface = 3", "QSurface_VulkanSurface = 4", "QSurface_MetalSurface = 5",
+    "QSurface_Direct3DSurface = 6",
 ]
 
 [[enum]]
@@ -1031,4 +1040,40 @@ cpp_ctor = "new QRegularExpressionValidator(QRegularExpression({pattern}), {pare
 methods = [
     { sig = "setPattern(pattern: string)", cpp = "{self}->setRegularExpression(QRegularExpression({pattern}))", doc = "Set the regular expression." },
     { sig = "pattern() -> string", cpp = "{self}->regularExpression().pattern()", doc = "The regular expression." },
+]
+
+# ---------------------------------------------------------------------------
+# windows
+
+[[class]]
+name = "QWindow"
+doc = """
+A native window: a surface that something other than Qt's widgets draws
+on, typically an external rendering engine with its own OpenGL context
+(QOpenGLContext) or swap chain. Embed it among widgets with
+QWidget_createWindowContainer, and receive its events with a QtfEventFilter
+(expose, resize, mouse, keys). Sizes are in logical pixels: multiply by
+`devicePixelRatio` for physical pixels."""
+ctor = "(parent: QWindow?) -- Create a window (set its surface type before it is shown)."
+signals = [
+    "widthChanged: int -- The width changed.",
+    "heightChanged: int -- The height changed.",
+    "visibleChanged: bool -- The window was shown or hidden.",
+    "activeChanged: void -- The window became active or inactive.",
+]
+methods = [
+    "setSurfaceType(type: QSurface::SurfaceType) -- What renders the window: QSurface_OpenGLSurface, _RasterSurface, _VulkanSurface, ...",
+    "surfaceType() -> QSurface::SurfaceType -- The surface type.",
+    "create() -- Create the native window now (normally done when it is first shown).",
+    "show() -- Show the window.",
+    "hide() -- Hide the window.",
+    "isVisible() -> bool -- True if the window is shown.",
+    "isExposed() -> bool -- True while the window is visible on screen (render only then).",
+    "resize(width: int, height: int) -- Resize, in logical pixels.",
+    "width() -> int -- Width in logical pixels.",
+    "height() -> int -- Height in logical pixels.",
+    "devicePixelRatio() -> double -- Physical pixels per logical pixel (2 on a typical HiDPI display).",
+    "setTitle(title: string) -- The window title (for a top-level window).",
+    "title() -> string -- The window title.",
+    "requestUpdate() -- Ask for an UpdateRequest event (a QtfEventFilter's `updateRequest`) at the next frame, for render loops on the GUI thread.",
 ]

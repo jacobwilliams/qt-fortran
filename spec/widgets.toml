@@ -28,7 +28,7 @@ cpp_includes = [
     "QTime", "QTimeEdit", "QToolButton", "QTreeWidget", "QVariant", "QIcon", "QMetaEnum", "QStyle", "string",
     "QCloseEvent", "QContextMenuEvent", "QByteArray", "QFocusEvent",
     "QAbstractProxyModel", "QFileSystemModel", "QSortFilterProxyModel", "QStyledItemDelegate", "QTreeView",
-    "QRegularExpression", "QCompleter", "QDialogButtonBox", "QDateTimeEdit", "QTextBrowser", "QToolBox",
+    "QExposeEvent", "QWindow", "QRegularExpression", "QCompleter", "QDialogButtonBox", "QDateTimeEdit", "QTextBrowser", "QToolBox",
     "QSplashScreen", "QMdiArea", "QMdiSubWindow", "QWizard", "QWizardPage", "QUndoStack", "QUndoView",
     "QStringListModel", "QUrl", "QFileInfo", "QValidator", "QDateTime",
 ]
@@ -138,7 +138,87 @@ static QIcon *qtf_standard_icon(const QString &name) {
     return new QIcon(ok ? QApplication::style()->standardIcon(QStyle::StandardPixmap(v)) : QIcon());
 }
 
-// Events every widget forwards to Fortran slots through a QtfEventFilter.
+// QtfEventFilter: forwards the events of any QObject (a QWindow, a widget, a
+// widget's viewport, the application) to Fortran slots. Input events can be
+// consumed: before the slots run the event is marked ignored, and a slot that
+// calls event%accept() stops it there. The other events are only observed.
+enum qtf_any_event {
+    QTF_ANY_MOUSEPRESS,
+    QTF_ANY_MOUSERELEASE,
+    QTF_ANY_MOUSEMOVE,
+    QTF_ANY_MOUSEDOUBLECLICK,
+    QTF_ANY_WHEEL,
+    QTF_ANY_KEYPRESS,
+    QTF_ANY_KEYRELEASE,          // last consumable event
+    QTF_ANY_RESIZE,
+    QTF_ANY_EXPOSE,
+    QTF_ANY_UPDATEREQUEST,
+    QTF_ANY_ENTER,
+    QTF_ANY_LEAVE,
+    QTF_ANY_FOCUSIN,
+    QTF_ANY_FOCUSOUT,
+    QTF_ANY_SHOW,
+    QTF_ANY_HIDE,
+    QTF_ANY_COUNT
+};
+
+class QtfEventFilter : public QObject {
+  public:
+    explicit QtfEventFilter(QObject *target) : QObject(target) { target->installEventFilter(this); }
+    std::array<std::vector<qtf_slot>, QTF_ANY_COUNT> handlers;
+
+  protected:
+    static int kind(QEvent::Type t) {
+        switch (t) {
+        case QEvent::MouseButtonPress: return QTF_ANY_MOUSEPRESS;
+        case QEvent::MouseButtonRelease: return QTF_ANY_MOUSERELEASE;
+        case QEvent::MouseMove: return QTF_ANY_MOUSEMOVE;
+        case QEvent::MouseButtonDblClick: return QTF_ANY_MOUSEDOUBLECLICK;
+        case QEvent::Wheel: return QTF_ANY_WHEEL;
+        case QEvent::KeyPress: return QTF_ANY_KEYPRESS;
+        case QEvent::KeyRelease: return QTF_ANY_KEYRELEASE;
+        case QEvent::Resize: return QTF_ANY_RESIZE;
+        case QEvent::Expose: return QTF_ANY_EXPOSE;
+        case QEvent::UpdateRequest: return QTF_ANY_UPDATEREQUEST;
+        case QEvent::Enter: return QTF_ANY_ENTER;
+        case QEvent::Leave: return QTF_ANY_LEAVE;
+        case QEvent::FocusIn: return QTF_ANY_FOCUSIN;
+        case QEvent::FocusOut: return QTF_ANY_FOCUSOUT;
+        case QEvent::Show: return QTF_ANY_SHOW;
+        case QEvent::Hide: return QTF_ANY_HIDE;
+        default: return -1;
+        }
+    }
+
+    bool eventFilter(QObject *o, QEvent *e) override {
+        const int k = o == parent() ? kind(e->type()) : -1;
+        if (k < 0 || handlers[k].empty()) return QObject::eventFilter(o, e);
+        qtf_args a{};
+        a.p = e;
+        if (k == QTF_ANY_FOCUSIN || k == QTF_ANY_FOCUSOUT) a.i[0] = static_cast<QFocusEvent *>(e)->reason();
+        if (k <= QTF_ANY_KEYRELEASE) {
+            const bool accepted = e->isAccepted();
+            e->ignore();
+            if (qtf_emit_all(handlers[k], a) > 0 && e->isAccepted()) return true;   // consumed
+            e->setAccepted(accepted);
+            return false;
+        }
+        qtf_emit_all(handlers[k], a);
+        return false;
+    }
+};
+
+// Attach a slot to one of the events a QtfEventFilter forwards.
+template <qtf_any_event EV> static bool connect_any(void *s, const qtf_slot &ref) {
+    auto *f = dynamic_cast<QtfEventFilter *>(static_cast<QObject *>(s));
+    if (!f) return false;
+    f->handlers[EV].push_back(ref);
+    return true;
+}
+
+// Events every widget forwards to Fortran slots through a QtfWidgetEventFilter
+// (the conveniences closeEvent, focusInEvent, ... on QWidget; see also the
+// general QtfEventFilter above).
 enum qtf_filter_event {
     QTF_FILTER_CLOSE,
     QTF_FILTER_CONTEXTMENU,
@@ -155,17 +235,17 @@ enum qtf_filter_event {
 // events to Fortran slots. One is created per widget when the first such slot
 // is connected; as a child of the widget it (and the slots it holds) is
 // destroyed with the widget.
-class QtfEventFilter : public QObject {
+class QtfWidgetEventFilter : public QObject {
   public:
-    explicit QtfEventFilter(QWidget *w) : QObject(w) { w->installEventFilter(this); }
+    explicit QtfWidgetEventFilter(QWidget *w) : QObject(w) { w->installEventFilter(this); }
 
     std::array<std::vector<qtf_slot>, QTF_FILTER_COUNT> handlers;
 
     // The widget's filter, created on first use.
-    static QtfEventFilter *of(QWidget *w) {
+    static QtfWidgetEventFilter *of(QWidget *w) {
         for (QObject *c : w->children())
-            if (auto *f = dynamic_cast<QtfEventFilter *>(c)) return f;
-        return new QtfEventFilter(w);
+            if (auto *f = dynamic_cast<QtfWidgetEventFilter *>(c)) return f;
+        return new QtfWidgetEventFilter(w);
     }
 
   protected:
@@ -203,9 +283,9 @@ class QtfEventFilter : public QObject {
     }
 };
 
-// Attach a slot to one of the events a widget forwards through its QtfEventFilter.
+// Attach a slot to one of the events a widget forwards through its QtfWidgetEventFilter.
 template <qtf_filter_event EV> static bool connect_filter(void *s, const qtf_slot &ref) {
-    QtfEventFilter::of(static_cast<QWidget *>(s))->handlers[EV].push_back(ref);
+    QtfWidgetEventFilter::of(static_cast<QWidget *>(s))->handlers[EV].push_back(ref);
     return true;
 }
 
@@ -1055,6 +1135,15 @@ doc = "QTabWidget::TabPosition"
 values = ["QTabWidget_North = 0", "QTabWidget_South = 1", "QTabWidget_West = 2", "QTabWidget_East = 3"]
 
 [[enum]]
+doc = "Qt::ApplicationAttribute (subset)"
+values = [
+    "Qt_AA_DontShowIconsInMenus = 2", "Qt_AA_NativeWindows = 3", "Qt_AA_DontCreateNativeWidgetSiblings = 4",
+    "Qt_AA_DontUseNativeMenuBar = 6", "Qt_AA_UseDesktopOpenGL = 15", "Qt_AA_UseOpenGLES = 16",
+    "Qt_AA_UseSoftwareOpenGL = 17", "Qt_AA_ShareOpenGLContexts = 18", "Qt_AA_DontUseNativeDialogs = 23",
+    "Qt_AA_DontCheckOpenGLContextThreadAffinity = 26",
+]
+
+[[enum]]
 doc = "Qt::CaseSensitivity"
 values = ["Qt_CaseInsensitive = 0", "Qt_CaseSensitive = 1"]
 
@@ -1154,6 +1243,8 @@ methods = [
     { sig = "static quit()", doc = "Ask the event loop to exit (`exec` then returns 0).", nopass = true },
     { sig = "static processEvents()", doc = "Process pending events, then return.", nopass = true },
     "static activeModalWidget() -> QWidget -- The active modal dialog (null if none).",
+    { sig = "static setAttribute(attribute: Qt::ApplicationAttribute, on: bool = .true.)", cpp = "QCoreApplication::setAttribute(Qt::ApplicationAttribute({attribute}), {on})", doc = "Set an application attribute (a Qt_AA_* constant); some must be set before the application is created." },
+    { sig = "static testAttribute(attribute: Qt::ApplicationAttribute) -> bool", cpp = "QCoreApplication::testAttribute(Qt::ApplicationAttribute({attribute}))", doc = "True if an application attribute is set." },
     "static setOrganizationName(name: string) -- Set the organization name (used by QSettings to find the settings).",
     "static organizationName() -> string -- The organization name.",
     "static setOrganizationDomain(domain: string) -- Set the organization's Internet domain (used by QSettings on macOS).",
@@ -1219,6 +1310,8 @@ methods = [
     { sig = "saveGeometry() -> string", cpp = "QString::fromLatin1({self}->saveGeometry().toBase64())", doc = "The window's position and size as text (base64), e.g. to store with QSettings." },
     { sig = "restoreGeometry(geometry: string) -> bool", cpp = "{self}->restoreGeometry(QByteArray::fromBase64({geometry}.toLatin1()))", doc = "Restore a geometry from `saveGeometry`; false (and no change) if it is invalid." },
     "isWindow() -> bool -- True if the widget is a top-level window.",
+    "devicePixelRatio() -> double -- Physical pixels per logical pixel of the widget's screen (2 on a typical HiDPI display).",
+    { sig = "static createWindowContainer(window: QWindow, parent: QWidget?) -> QWidget", doc = "A widget that embeds `window` (e.g. an OpenGL QWindow rendered by an external engine) in a widget layout; the container takes ownership of the window." },
     "showMaximized() -- Show the window maximized.",
     "showMinimized() -- Show the window minimized (iconified).",
     "showNormal() -- Show the window at its normal size (after maximized, minimized or full screen).",
@@ -2752,4 +2845,43 @@ doc = "A list of the commands of an undo stack; clicking one undoes or redoes up
 ctor = "(stack: QUndoStack, parent: QWidget?) -- A view of `stack`."
 methods = [
     "setEmptyLabel(label: string) -- The text of the first row (the state before any command).",
+]
+
+# ---------------------------------------------------------------------------
+# events of any object
+
+[[class]]
+name = "QtfEventFilter"
+doc = """
+Forwards the events of any object -- a QWindow, a widget, a widget's
+viewport, the application -- to Fortran slots (`Qtf` marks a qt-fortran
+class). Create one per object: `events = QtfEventFilter(window)`; it is a
+child of the object, so it goes away with it.
+
+Input events (mouse, wheel, keys) can be consumed: they arrive marked
+ignored, and a slot that calls `event%accept()` stops the event there (the
+object never sees it); otherwise it continues as usual. The other events are
+only observed.
+
+Slots run on the thread the object belongs to (the GUI thread for windows
+and widgets)."""
+ctor = "(target: QObject) -- Forward the events of `target`."
+cpp_ctor = "new QtfEventFilter({target})"
+signals = [
+    { sig = "mousePressEvent: mouse", doc = "Mouse button pressed (accept to consume).", connector = "connect_any<QTF_ANY_MOUSEPRESS>" },
+    { sig = "mouseReleaseEvent: mouse", doc = "Mouse button released (accept to consume).", connector = "connect_any<QTF_ANY_MOUSERELEASE>" },
+    { sig = "mouseMoveEvent: mouse", doc = "Mouse moved (accept to consume).", connector = "connect_any<QTF_ANY_MOUSEMOVE>" },
+    { sig = "mouseDoubleClickEvent: mouse", doc = "Mouse button double-clicked (accept to consume).", connector = "connect_any<QTF_ANY_MOUSEDOUBLECLICK>" },
+    { sig = "wheelEvent: wheel", doc = "Wheel turned (accept to consume).", connector = "connect_any<QTF_ANY_WHEEL>" },
+    { sig = "keyPressEvent: key", doc = "Key pressed (accept to consume).", connector = "connect_any<QTF_ANY_KEYPRESS>" },
+    { sig = "keyReleaseEvent: key", doc = "Key released (accept to consume).", connector = "connect_any<QTF_ANY_KEYRELEASE>" },
+    { sig = "resizeEvent: resize", doc = "The object was resized (logical pixels).", connector = "connect_any<QTF_ANY_RESIZE>" },
+    { sig = "exposeEvent: void", doc = "A window was exposed or hidden on screen: check its `isExposed()`.", connector = "connect_any<QTF_ANY_EXPOSE>" },
+    { sig = "updateRequest: void", doc = "A window's `requestUpdate` came due: render a frame.", connector = "connect_any<QTF_ANY_UPDATEREQUEST>" },
+    { sig = "enterEvent: void", doc = "The mouse entered.", connector = "connect_any<QTF_ANY_ENTER>" },
+    { sig = "leaveEvent: void", doc = "The mouse left.", connector = "connect_any<QTF_ANY_LEAVE>" },
+    { sig = "focusInEvent: int", doc = "Keyboard focus gained: the reason (a Qt_*FocusReason constant).", connector = "connect_any<QTF_ANY_FOCUSIN>" },
+    { sig = "focusOutEvent: int", doc = "Keyboard focus lost: the reason.", connector = "connect_any<QTF_ANY_FOCUSOUT>" },
+    { sig = "showEvent: void", doc = "Shown.", connector = "connect_any<QTF_ANY_SHOW>" },
+    { sig = "hideEvent: void", doc = "Hidden.", connector = "connect_any<QTF_ANY_HIDE>" },
 ]
