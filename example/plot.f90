@@ -14,6 +14,7 @@ module plot_slots
     integer, parameter :: nsamples = 400, max_markers = 32
     real(dp), parameter :: ymax = 1.6_dp   !! data range shown at zoom 1: [-ymax, ymax]
 
+    !> Widgets and data of the live plot.
     type :: plot_state
         type(QMainWindow) :: window
         type(QtfWidget) :: canvas
@@ -33,6 +34,7 @@ contains
 
     ! ---- plot geometry: data <-> pixel coordinates
 
+    !> The plot rectangle inside a canvas of `w` x `h` pixels.
     subroutine plot_area(w, h, x0, x1, y0, y1)
         integer, intent(in) :: w, h
         real(dp), intent(out) :: x0, x1, y0, y1
@@ -42,11 +44,13 @@ contains
         y1 = h - 25
     end subroutine plot_area
 
+    !> Pixel x coordinate of sample index `i`.
     pure real(dp) function px(i, x0, x1)
         real(dp), intent(in) :: i, x0, x1
         px = x0 + (i - 1) * (x1 - x0) / (nsamples - 1)
     end function px
 
+    !> Pixel y coordinate of value `v`.
     pure real(dp) function py(v, zoom, y0, y1)
         real(dp), intent(in) :: v, zoom, y0, y1
         py = (y0 + y1) / 2 - v * zoom * (y1 - y0) / (2 * ymax)
@@ -66,6 +70,7 @@ contains
 
     ! ---- slots
 
+    !> Advance the trace and repaint; handles `--screenshot`.
     subroutine on_tick(data)
         class(*), intent(inout), optional :: data
         logical :: ok
@@ -86,6 +91,7 @@ contains
         end select
     end subroutine on_tick
 
+    !> Draw the grid, labels, trace and markers.
     subroutine on_paint(painter, data)
         type(QPainter), intent(inout) :: painter
         class(*), intent(inout), optional :: data
@@ -152,6 +158,7 @@ contains
         v = ((y0 + y1) / 2 - y) * 2 * ymax / ((y1 - y0) * s%zoom)
     end subroutine to_data
 
+    !> Left click: add a marker at the clicked point.
     subroutine on_press(event, data)
         type(QMouseEvent), intent(in) :: event
         class(*), intent(inout), optional :: data
@@ -172,6 +179,7 @@ contains
         end select
     end subroutine on_press
 
+    !> Show the sample and value under the cursor in the status bar.
     subroutine on_move(event, data)
         type(QMouseEvent), intent(in) :: event
         class(*), intent(inout), optional :: data
@@ -186,6 +194,7 @@ contains
         end select
     end subroutine on_move
 
+    !> Zoom vertically.
     subroutine on_wheel(event, data)
         type(QWheelEvent), intent(in) :: event
         class(*), intent(inout), optional :: data
@@ -196,6 +205,7 @@ contains
         end select
     end subroutine on_wheel
 
+    !> Space: pause or resume; C: clear the markers.
     subroutine on_key(event, data)
         type(QKeyEvent), intent(in) :: event
         class(*), intent(inout), optional :: data
@@ -211,6 +221,7 @@ contains
         end select
     end subroutine on_key
 
+    !> Stop or restart the timer.
     subroutine on_pause(checked, data)
         logical, intent(in) :: checked
         class(*), intent(inout), optional :: data
@@ -226,6 +237,7 @@ contains
         end select
     end subroutine on_pause
 
+    !> Save the plot as a PNG file chosen in a dialog.
     subroutine on_save(data)
         class(*), intent(inout), optional :: data
         character(len=:), allocatable :: path
@@ -245,6 +257,7 @@ contains
         end select
     end subroutine on_save
 
+    !> Quit the application.
     subroutine on_quit(data)
         class(*), intent(inout), optional :: data
         call QApplication_quit()
@@ -252,6 +265,7 @@ contains
 
 end module plot_slots
 
+!> A live scrolling plot (see the module documentation).
 program plot
 
     use qt

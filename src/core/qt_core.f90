@@ -52,26 +52,31 @@ module qt_core
     abstract interface
         !> Slot for signals without arguments.
         subroutine qt_slot(data)
+            implicit none
             class(*), intent(inout), optional :: data
         end subroutine qt_slot
         !> Slot for signals with a single string argument.
         subroutine qt_slot_string(value, data)
+            implicit none
             character(len=*), intent(in) :: value
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_string
         !> Slot for signals with a single logical argument.
         subroutine qt_slot_bool(value, data)
+            implicit none
             logical, intent(in) :: value
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_bool
         !> Slot for signals with a single integer argument.
         subroutine qt_slot_int(value, data)
+            implicit none
             integer, intent(in) :: value
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_int
         !> Slot for signals with a single real argument.
         subroutine qt_slot_double(value, data)
             import :: c_double
+            implicit none
             real(c_double), intent(in) :: value
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_double
@@ -87,8 +92,10 @@ module qt_core
     end type qt_slot_handler
 
     abstract interface
+        !> Deliver one emission to the typed slot, converting the raw arguments.
         subroutine qt_handler_invoke(self, args, data)
             import :: qt_slot_handler, qtf_args
+            implicit none
             class(qt_slot_handler), intent(in) :: self
             type(qtf_args), intent(in) :: args
             class(*), pointer, intent(in) :: data   !! null if no data was given
@@ -135,6 +142,7 @@ module qt_core
         procedure :: connect => qsignaldouble_connect
     end type QSignalDouble
 
+    !> Base of all Qt objects: a handle (`ptr`) to a C++ QObject plus its signals.
     type, public :: QObject
         type(c_ptr) :: ptr = c_null_ptr
         type(QSignal) :: destroyed
@@ -151,10 +159,12 @@ module qt_core
         procedure :: className => qobject_className
         procedure :: inherits => qobject_inherits
     end type QObject
+    !> Constructor: `QObject([parent])`.
     interface QObject
         module procedure :: qobject_new
     end interface QObject
 
+    !> A repeating or single-shot timer; connect to `timeout`.
     type, extends(QObject), public :: QTimer
         type(QSignal) :: timeout
     contains
@@ -167,6 +177,7 @@ module qt_core
         procedure :: setSingleShot => qtimer_setSingleShot
         procedure :: isSingleShot => qtimer_isSingleShot
     end type QTimer
+    !> Constructor: `QTimer([parent])`.
     interface QTimer
         module procedure :: qtimer_new
     end interface QTimer
@@ -192,6 +203,7 @@ module qt_core
     integer, parameter :: SLOT_VOID = 1, SLOT_STRING = 2, SLOT_BOOL = 3, SLOT_INT = 4, SLOT_DOUBLE = 5, &
                           SLOT_HANDLER = 6
 
+    !> One registered Fortran slot: its kind, procedure pointer and user data.
     type :: slot_entry
         integer :: kind = 0     !! 0 = free
         procedure(qt_slot), pointer, nopass :: void => null()
@@ -316,6 +328,7 @@ contains
     ! ------------------------------------------------------------------
     ! signals
 
+    !> Connect a slot (with optional user data) to this signal.
     subroutine qsignal_connect(self, slot, data)
         class(QSignal), intent(in) :: self
         procedure(qt_slot) :: slot
@@ -327,6 +340,7 @@ contains
         call connect_slot(self%sender, self%id, id)
     end subroutine qsignal_connect
 
+    !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalstring_connect(self, slot, data)
         class(QSignalString), intent(in) :: self
         procedure(qt_slot_string) :: slot
@@ -338,6 +352,7 @@ contains
         call connect_slot(self%sender, self%id, id)
     end subroutine qsignalstring_connect
 
+    !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalbool_connect(self, slot, data)
         class(QSignalBool), intent(in) :: self
         procedure(qt_slot_bool) :: slot
@@ -349,6 +364,7 @@ contains
         call connect_slot(self%sender, self%id, id)
     end subroutine qsignalbool_connect
 
+    !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalint_connect(self, slot, data)
         class(QSignalInt), intent(in) :: self
         procedure(qt_slot_int) :: slot
@@ -360,6 +376,7 @@ contains
         call connect_slot(self%sender, self%id, id)
     end subroutine qsignalint_connect
 
+    !> Connect a slot (with optional user data) to this signal.
     subroutine qsignaldouble_connect(self, slot, data)
         class(QSignalDouble), intent(in) :: self
         procedure(qt_slot_double) :: slot
@@ -388,21 +405,25 @@ contains
     ! ------------------------------------------------------------------
     ! QEvent
 
+    !> The event type (a QEvent_* constant).
     integer function qevent_type(self)
         class(QEvent), intent(in) :: self
         qevent_type = qtf_qevent_type(self%ptr)
     end function qevent_type
 
+    !> Mark the event as handled.
     subroutine qevent_accept(self)
         class(QEvent), intent(in) :: self
         call qtf_qevent_accept(self%ptr)
     end subroutine qevent_accept
 
+    !> Mark the event as not handled, so it may propagate to the parent widget.
     subroutine qevent_ignore(self)
         class(QEvent), intent(in) :: self
         call qtf_qevent_ignore(self%ptr)
     end subroutine qevent_ignore
 
+    !> True if the event was accepted.
     logical function qevent_isAccepted(self)
         class(QEvent), intent(in) :: self
         qevent_isAccepted = qtf_logical(qtf_qevent_isAccepted(self%ptr))
@@ -432,6 +453,7 @@ contains
         if (present(obj)) qtf_ptr = obj%ptr
     end function qtf_ptr
 
+    !> Create a QObject, owned by `parent` if given.
     function qobject_new(parent) result(o)
         class(QObject), intent(in), optional :: parent
         type(QObject) :: o
@@ -448,6 +470,7 @@ contains
         self%objectNameChanged = QSignalString(ptr, QTF_SIG_QOBJECT_OBJECTNAMECHANGED)
     end subroutine qobject_attach
 
+    !> True if this handle does not refer to an object.
     logical function qobject_isNull(self)
         class(QObject), intent(in) :: self
         qobject_isNull = .not. c_associated(self%ptr)
@@ -466,6 +489,7 @@ contains
         call qtf_qobject_deleteLater(self%ptr)
     end subroutine qobject_deleteLater
 
+    !> The object's name.
     function qobject_objectName(self) result(name)
         class(QObject), intent(in) :: self
         character(len=:), allocatable :: name
@@ -475,6 +499,7 @@ contains
         name = qtf_take_string(p, n)
     end function qobject_objectName
 
+    !> Set the object's name (emits objectNameChanged).
     subroutine qobject_setObjectName(self, name)
         class(QObject), intent(in) :: self
         character(len=*), intent(in) :: name
@@ -488,6 +513,7 @@ contains
         call qtf_qobject_setParent(self%ptr, qtf_ptr(parent))
     end subroutine qobject_setParent
 
+    !> The parent object (a null handle if there is none).
     function qobject_parent(self) result(parent)
         class(QObject), intent(in) :: self
         type(QObject) :: parent
@@ -504,6 +530,7 @@ contains
         name = qtf_take_string(p, n)
     end function qobject_className
 
+    !> True if the object is an instance of `className` or of a class derived from it.
     logical function qobject_inherits(self, className)
         class(QObject), intent(in) :: self
         character(len=*), intent(in) :: className
@@ -513,12 +540,14 @@ contains
     ! ------------------------------------------------------------------
     ! QTimer
 
+    !> Create a timer, owned by `parent` if given.
     function qtimer_new(parent) result(t)
         class(QObject), intent(in), optional :: parent
         type(QTimer) :: t
         call t%attach(qtf_qtimer_new(qtf_ptr(parent)))
     end function qtimer_new
 
+    !> Bind to a C++ QTimer and its `timeout` signal.
     subroutine qtimer_attach(self, ptr)
         class(QTimer), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
@@ -536,33 +565,39 @@ contains
         call qtf_qtimer_start(self%ptr, m)
     end subroutine qtimer_start
 
+    !> Stop the timer.
     subroutine qtimer_stop(self)
         class(QTimer), intent(in) :: self
         call qtf_qtimer_stop(self%ptr)
     end subroutine qtimer_stop
 
+    !> Set the timeout interval in milliseconds.
     subroutine qtimer_setInterval(self, msec)
         class(QTimer), intent(in) :: self
         integer, intent(in) :: msec
         call qtf_qtimer_setInterval(self%ptr, int(msec, c_int))
     end subroutine qtimer_setInterval
 
+    !> The timeout interval in milliseconds.
     integer function qtimer_interval(self)
         class(QTimer), intent(in) :: self
         qtimer_interval = qtf_qtimer_interval(self%ptr)
     end function qtimer_interval
 
+    !> True while the timer is running.
     logical function qtimer_isActive(self)
         class(QTimer), intent(in) :: self
         qtimer_isActive = qtf_logical(qtf_qtimer_isActive(self%ptr))
     end function qtimer_isActive
 
+    !> Fire only once per start (`.true.`) or repeatedly.
     subroutine qtimer_setSingleShot(self, singleShot)
         class(QTimer), intent(in) :: self
         logical, intent(in) :: singleShot
         call qtf_qtimer_setSingleShot(self%ptr, qtf_int(singleShot))
     end subroutine qtimer_setSingleShot
 
+    !> True if the timer fires only once per start.
     logical function qtimer_isSingleShot(self)
         class(QTimer), intent(in) :: self
         qtimer_isSingleShot = qtf_logical(qtf_qtimer_isSingleShot(self%ptr))

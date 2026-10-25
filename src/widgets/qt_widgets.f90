@@ -71,10 +71,12 @@ module qt_widgets
         procedure, nopass :: quit => QApplication_quit
         procedure, nopass :: processEvents => QApplication_processEvents
     end type QApplication
+    !> Constructor: `QApplication()`. Returns the existing application if there is one.
     interface QApplication
         module procedure :: qapplication_new
     end interface QApplication
 
+    !> Base of all user interface objects; a widget without a parent is a window.
     type, extends(QObject), public :: QWidget
     contains
         procedure :: show => qwidget_show
@@ -106,6 +108,7 @@ module qt_widgets
         procedure :: grab => qwidget_grab
         procedure :: addAction => qwidget_addAction
     end type QWidget
+    !> Constructor: `QWidget([parent])`.
     interface QWidget
         module procedure :: qwidget_new
     end interface QWidget
@@ -131,10 +134,12 @@ module qt_widgets
     contains
         procedure :: attach => qtfwidget_attach
     end type QtfWidget
+    !> Constructor: `QtfWidget([parent])`.
     interface QtfWidget
         module procedure :: qtfwidget_new
     end interface QtfWidget
 
+    !> Displays text.
     type, extends(QWidget), public :: QLabel
     contains
         procedure :: setText => qlabel_setText
@@ -142,6 +147,7 @@ module qt_widgets
         procedure :: setAlignment => qlabel_setAlignment
         procedure :: setWordWrap => qlabel_setWordWrap
     end type QLabel
+    !> Constructor: `QLabel([text, parent])`.
     interface QLabel
         module procedure :: qlabel_new
     end interface QLabel
@@ -165,26 +171,33 @@ module qt_widgets
         procedure :: toggle => qabstractbutton_toggle
     end type QAbstractButton
 
+    !> A command button.
     type, extends(QAbstractButton), public :: QPushButton
     contains
         procedure :: setDefault => qpushbutton_setDefault
     end type QPushButton
+    !> Constructor: `QPushButton([text, parent])`.
     interface QPushButton
         module procedure :: qpushbutton_new
     end interface QPushButton
 
+    !> A check box with a text label.
     type, extends(QAbstractButton), public :: QCheckBox
     end type QCheckBox
+    !> Constructor: `QCheckBox([text, parent])`.
     interface QCheckBox
         module procedure :: qcheckbox_new
     end interface QCheckBox
 
+    !> A radio button; radio buttons with the same parent are mutually exclusive.
     type, extends(QAbstractButton), public :: QRadioButton
     end type QRadioButton
+    !> Constructor: `QRadioButton([text, parent])`.
     interface QRadioButton
         module procedure :: qradiobutton_new
     end interface QRadioButton
 
+    !> A one-line text editor.
     type, extends(QWidget), public :: QLineEdit
         type(QSignalString) :: textChanged
         type(QSignalString) :: textEdited
@@ -202,10 +215,12 @@ module qt_widgets
         procedure :: maxLength => qlineedit_maxLength
         procedure :: clear => qlineedit_clear
     end type QLineEdit
+    !> Constructor: `QLineEdit([text, parent])`.
     interface QLineEdit
         module procedure :: qlineedit_new
     end interface QLineEdit
 
+    !> An integer spin box.
     type, extends(QWidget), public :: QSpinBox
         type(QSignalInt) :: valueChanged
     contains
@@ -220,6 +235,7 @@ module qt_widgets
         procedure :: setPrefix => qspinbox_setPrefix
         procedure :: setSuffix => qspinbox_setSuffix
     end type QSpinBox
+    !> Constructor: `QSpinBox([parent])`.
     interface QSpinBox
         module procedure :: qspinbox_new
     end interface QSpinBox
@@ -241,10 +257,12 @@ module qt_widgets
         procedure :: setPrefix => qdoublespinbox_setPrefix
         procedure :: setSuffix => qdoublespinbox_setSuffix
     end type QDoubleSpinBox
+    !> Constructor: `QDoubleSpinBox([parent])`.
     interface QDoubleSpinBox
         module procedure :: qdoublespinbox_new
     end interface QDoubleSpinBox
 
+    !> Base of sliders: an integer value within a range.
     type, extends(QWidget), public :: QAbstractSlider
         type(QSignalInt) :: valueChanged
         type(QSignalInt) :: sliderMoved
@@ -263,12 +281,15 @@ module qt_widgets
         procedure :: orientation => qabstractslider_orientation
     end type QAbstractSlider
 
+    !> A horizontal or vertical slider.
     type, extends(QAbstractSlider), public :: QSlider
     end type QSlider
+    !> Constructor: `QSlider([orientation, parent])`.
     interface QSlider
         module procedure :: qslider_new
     end interface QSlider
 
+    !> A drop-down list of items.
     type, extends(QWidget), public :: QComboBox
         type(QSignalInt) :: currentIndexChanged
         type(QSignalString) :: currentTextChanged
@@ -289,6 +310,7 @@ module qt_widgets
         procedure :: findText => qcombobox_findText
         procedure :: setEditable => qcombobox_setEditable
     end type QComboBox
+    !> Constructor: `QComboBox([parent])`.
     interface QComboBox
         module procedure :: qcombobox_new
     end interface QComboBox
@@ -303,6 +325,7 @@ module qt_widgets
         procedure :: count => qlayout_count
     end type QLayout
 
+    !> Lines up widgets horizontally or vertically.
     type, extends(QLayout), public :: QBoxLayout
     contains
         procedure :: addWidget => qboxlayout_addWidget
@@ -311,18 +334,23 @@ module qt_widgets
         procedure :: addSpacing => qboxlayout_addSpacing
     end type QBoxLayout
 
+    !> Lines up widgets vertically.
     type, extends(QBoxLayout), public :: QVBoxLayout
     end type QVBoxLayout
+    !> Constructor: `QVBoxLayout([parent])`.
     interface QVBoxLayout
         module procedure :: qvboxlayout_new
     end interface QVBoxLayout
 
+    !> Lines up widgets horizontally.
     type, extends(QBoxLayout), public :: QHBoxLayout
     end type QHBoxLayout
+    !> Constructor: `QHBoxLayout([parent])`.
     interface QHBoxLayout
         module procedure :: qhboxlayout_new
     end interface QHBoxLayout
 
+    !> Lays out widgets in a grid.
     type, extends(QLayout), public :: QGridLayout
     contains
         procedure :: addWidget => qgridlayout_addWidget
@@ -332,10 +360,12 @@ module qt_widgets
         procedure :: rowCount => qgridlayout_rowCount
         procedure :: columnCount => qgridlayout_columnCount
     end type QGridLayout
+    !> Constructor: `QGridLayout([parent])`.
     interface QGridLayout
         module procedure :: qgridlayout_new
     end interface QGridLayout
 
+    !> The status bar at the bottom of a main window.
     type, extends(QWidget), public :: QStatusBar
     contains
         procedure :: showMessage => qstatusbar_showMessage
@@ -343,6 +373,7 @@ module qt_widgets
         procedure :: currentMessage => qstatusbar_currentMessage
     end type QStatusBar
 
+    !> An application main window: menu bar, tool bars, central widget and status bar.
     type, extends(QWidget), public :: QMainWindow
     contains
         procedure :: setCentralWidget => qmainwindow_setCentralWidget
@@ -351,6 +382,7 @@ module qt_widgets
         procedure :: menuBar => qmainwindow_menuBar
         procedure :: addToolBar => qmainwindow_addToolBar
     end type QMainWindow
+    !> Constructor: `QMainWindow([parent])`.
     interface QMainWindow
         module procedure :: qmainwindow_new
     end interface QMainWindow
@@ -363,10 +395,12 @@ module qt_widgets
         procedure :: title => qmenu_title
         procedure :: menuAction => qmenu_menuAction
     end type QMenu
+    !> Constructor: `QMenu(title [, parent])`.
     interface QMenu
         module procedure :: qmenu_new
     end interface QMenu
 
+    !> A horizontal menu bar.
     type, extends(QWidget), public :: QMenuBar
     contains
         procedure :: addMenu => qmenubar_addMenu
@@ -379,6 +413,7 @@ module qt_widgets
         procedure :: addWidget => qtoolbar_addWidget
     end type QToolBar
 
+    !> Base of dialog windows.
     type, extends(QWidget), public :: QDialog
         type(QSignal) :: accepted
         type(QSignal) :: rejected
@@ -393,10 +428,12 @@ module qt_widgets
         procedure :: result => qdialog_result
         procedure :: setModal => qdialog_setModal
     end type QDialog
+    !> Constructor: `QDialog([parent])`.
     interface QDialog
         module procedure :: qdialog_new
     end interface QDialog
 
+    !> A modal dialog showing a message and standard buttons.
     type, extends(QDialog), public :: QMessageBox
     contains
         procedure :: setText => qmessagebox_setText
@@ -408,10 +445,12 @@ module qt_widgets
         procedure :: setDefaultButton => qmessagebox_setDefaultButton
         procedure :: button => qmessagebox_button
     end type QMessageBox
+    !> Constructor: `QMessageBox([parent])`.
     interface QMessageBox
         module procedure :: qmessagebox_new
     end interface QMessageBox
 
+    !> A dialog to choose files or directories.
     type, extends(QDialog), public :: QFileDialog
     contains
         procedure :: setFileMode => qfiledialog_setFileMode
@@ -423,6 +462,7 @@ module qt_widgets
         procedure :: selectFile => qfiledialog_selectFile
         procedure :: selectedFiles => qfiledialog_selectedFiles
     end type QFileDialog
+    !> Constructor: `QFileDialog([caption, directory, filter, parent])`.
     interface QFileDialog
         module procedure :: qfiledialog_new
     end interface QFileDialog
@@ -439,6 +479,7 @@ contains
     ! ------------------------------------------------------------------
     ! QApplication
 
+    !> Create the application object (or return the existing one).
     function qapplication_new() result(app)
         type(QApplication) :: app
         call app%attach(qtf_qapplication_new())
@@ -449,10 +490,12 @@ contains
         QApplication_exec = qtf_qapplication_exec()
     end function QApplication_exec
 
+    !> Ask the event loop to exit (`exec` then returns 0).
     subroutine QApplication_quit()
         call qtf_qapplication_quit()
     end subroutine QApplication_quit
 
+    !> Process pending events, then return.
     subroutine QApplication_processEvents()
         call qtf_qapplication_processEvents()
     end subroutine QApplication_processEvents
@@ -466,83 +509,98 @@ contains
     ! ------------------------------------------------------------------
     ! QWidget
 
+    !> Create a widget; without a parent it is a top-level window.
     function qwidget_new(parent) result(w)
         class(QWidget), intent(in), optional :: parent
         type(QWidget) :: w
         call w%attach(qtf_qwidget_new(qtf_ptr(parent)))
     end function qwidget_new
 
+    !> Show the widget and its children.
     subroutine qwidget_show(self)
         class(QWidget), intent(in) :: self
         call qtf_qwidget_show(self%ptr)
     end subroutine qwidget_show
 
+    !> Hide the widget.
     subroutine qwidget_hide(self)
         class(QWidget), intent(in) :: self
         call qtf_qwidget_hide(self%ptr)
     end subroutine qwidget_hide
 
+    !> Close the widget (a window is hidden).
     subroutine qwidget_close(self)
         class(QWidget), intent(in) :: self
         call qtf_qwidget_close(self%ptr)
     end subroutine qwidget_close
 
+    !> Show or hide the widget.
     subroutine qwidget_setVisible(self, visible)
         class(QWidget), intent(in) :: self
         logical, intent(in) :: visible
         call qtf_qwidget_setVisible(self%ptr, qtf_int(visible))
     end subroutine qwidget_setVisible
 
+    !> True if the widget is shown.
     logical function qwidget_isVisible(self)
         class(QWidget), intent(in) :: self
         qwidget_isVisible = qtf_logical(qtf_qwidget_isVisible(self%ptr))
     end function qwidget_isVisible
 
+    !> Enable or disable user input.
     subroutine qwidget_setEnabled(self, enabled)
         class(QWidget), intent(in) :: self
         logical, intent(in) :: enabled
         call qtf_qwidget_setEnabled(self%ptr, qtf_int(enabled))
     end subroutine qwidget_setEnabled
 
+    !> True if the widget accepts user input.
     logical function qwidget_isEnabled(self)
         class(QWidget), intent(in) :: self
         qwidget_isEnabled = qtf_logical(qtf_qwidget_isEnabled(self%ptr))
     end function qwidget_isEnabled
 
+    !> Resize to `width` x `height` pixels.
     subroutine qwidget_resize(self, width, height)
         class(QWidget), intent(in) :: self
         integer, intent(in) :: width, height
         call qtf_qwidget_resize(self%ptr, int(width, c_int), int(height, c_int))
     end subroutine qwidget_resize
 
+    !> Width in pixels.
     integer function qwidget_width(self)
         class(QWidget), intent(in) :: self
         qwidget_width = qtf_qwidget_width(self%ptr)
     end function qwidget_width
 
+    !> Height in pixels.
     integer function qwidget_height(self)
         class(QWidget), intent(in) :: self
         qwidget_height = qtf_qwidget_height(self%ptr)
     end function qwidget_height
 
+    !> Set the smallest allowed size.
     subroutine qwidget_setMinimumSize(self, width, height)
         class(QWidget), intent(in) :: self
         integer, intent(in) :: width, height
         call qtf_qwidget_setMinimumSize(self%ptr, int(width, c_int), int(height, c_int))
     end subroutine qwidget_setMinimumSize
 
+    !> Fix the size (the user cannot resize it).
     subroutine qwidget_setFixedSize(self, width, height)
         class(QWidget), intent(in) :: self
         integer, intent(in) :: width, height
         call qtf_qwidget_setFixedSize(self%ptr, int(width, c_int), int(height, c_int))
     end subroutine qwidget_setFixedSize
 
+    !> Set the title shown in the window's title bar.
     subroutine qwidget_setWindowTitle(self, title)
         class(QWidget), intent(in) :: self
         character(len=*), intent(in) :: title
         call qtf_qwidget_setWindowTitle(self%ptr, title, len(title, c_int))
     end subroutine qwidget_setWindowTitle
 
+    !> The window title.
     function qwidget_windowTitle(self) result(title)
         class(QWidget), intent(in) :: self
         character(len=:), allocatable :: title
@@ -552,12 +610,14 @@ contains
         title = qtf_take_string(p, n)
     end function qwidget_windowTitle
 
+    !> Set the tool tip shown on hover.
     subroutine qwidget_setToolTip(self, text)
         class(QWidget), intent(in) :: self
         character(len=*), intent(in) :: text
         call qtf_qwidget_setToolTip(self%ptr, text, len(text, c_int))
     end subroutine qwidget_setToolTip
 
+    !> The tool tip.
     function qwidget_toolTip(self) result(text)
         class(QWidget), intent(in) :: self
         character(len=:), allocatable :: text
@@ -567,12 +627,14 @@ contains
         text = qtf_take_string(p, n)
     end function qwidget_toolTip
 
+    !> Set a Qt style sheet (CSS-like) for the widget and its children.
     subroutine qwidget_setStyleSheet(self, styleSheet)
         class(QWidget), intent(in) :: self
         character(len=*), intent(in) :: styleSheet
         call qtf_qwidget_setStyleSheet(self%ptr, styleSheet, len(styleSheet, c_int))
     end subroutine qwidget_setStyleSheet
 
+    !> Give the widget keyboard focus.
     subroutine qwidget_setFocus(self)
         class(QWidget), intent(in) :: self
         call qtf_qwidget_setFocus(self%ptr)
@@ -585,6 +647,7 @@ contains
         call qtf_qwidget_setLayout(self%ptr, layout%ptr)
     end subroutine qwidget_setLayout
 
+    !> The widget's layout (a null handle if there is none).
     function qwidget_layout(self) result(layout)
         class(QWidget), intent(in) :: self
         type(QLayout) :: layout
@@ -603,23 +666,27 @@ contains
         call qtf_qwidget_repaint(self%ptr)
     end subroutine qwidget_repaint
 
+    !> Receive mouse moves even when no button is pressed.
     subroutine qwidget_setMouseTracking(self, enable)
         class(QWidget), intent(in) :: self
         logical, intent(in) :: enable
         call qtf_qwidget_setMouseTracking(self%ptr, qtf_int(enable))
     end subroutine qwidget_setMouseTracking
 
+    !> True if mouse tracking is enabled.
     logical function qwidget_hasMouseTracking(self)
         class(QWidget), intent(in) :: self
         qwidget_hasMouseTracking = qtf_logical(qtf_qwidget_hasMouseTracking(self%ptr))
     end function qwidget_hasMouseTracking
 
+    !> How the widget accepts keyboard focus (a Qt_*Focus constant).
     subroutine qwidget_setFocusPolicy(self, policy)
         class(QWidget), intent(in) :: self
         integer, intent(in) :: policy
         call qtf_qwidget_setFocusPolicy(self%ptr, int(policy, c_int))
     end subroutine qwidget_setFocusPolicy
 
+    !> True if the widget has keyboard focus.
     logical function qwidget_hasFocus(self)
         class(QWidget), intent(in) :: self
         qwidget_hasFocus = qtf_logical(qtf_qwidget_hasFocus(self%ptr))
@@ -642,12 +709,14 @@ contains
     ! ------------------------------------------------------------------
     ! QtfWidget
 
+    !> Create a QtfWidget; without a parent it is a top-level window.
     function qtfwidget_new(parent) result(w)
         class(QWidget), intent(in), optional :: parent
         type(QtfWidget) :: w
         call w%attach(qtf_qtfwidget_new(qtf_ptr(parent)))
     end function qtfwidget_new
 
+    !> Bind to a C++ QtfWidget and its event signals.
     subroutine qtfwidget_attach(self, ptr)
         class(QtfWidget), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
@@ -666,6 +735,7 @@ contains
     ! ------------------------------------------------------------------
     ! QLabel
 
+    !> Create a label showing `text`.
     function qlabel_new(text, parent) result(w)
         character(len=*), intent(in), optional :: text
         class(QWidget), intent(in), optional :: parent
@@ -677,12 +747,14 @@ contains
         end if
     end function qlabel_new
 
+    !> Set the label text (plain or rich text).
     subroutine qlabel_setText(self, text)
         class(QLabel), intent(in) :: self
         character(len=*), intent(in) :: text
         call qtf_qlabel_setText(self%ptr, text, len(text, c_int))
     end subroutine qlabel_setText
 
+    !> The label text.
     function qlabel_text(self) result(text)
         class(QLabel), intent(in) :: self
         character(len=:), allocatable :: text
@@ -692,12 +764,14 @@ contains
         text = qtf_take_string(p, n)
     end function qlabel_text
 
+    !> Align the text (a combination of Qt_Align* flags).
     subroutine qlabel_setAlignment(self, alignment)
         class(QLabel), intent(in) :: self
         integer, intent(in) :: alignment
         call qtf_qlabel_setAlignment(self%ptr, int(alignment, c_int))
     end subroutine qlabel_setAlignment
 
+    !> Wrap long text across lines.
     subroutine qlabel_setWordWrap(self, on)
         class(QLabel), intent(in) :: self
         logical, intent(in) :: on
@@ -707,6 +781,7 @@ contains
     ! ------------------------------------------------------------------
     ! QAbstractButton, QPushButton, QCheckBox, QRadioButton
 
+    !> Bind to a C++ button and its signals.
     subroutine qabstractbutton_attach(self, ptr)
         class(QAbstractButton), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
@@ -717,12 +792,14 @@ contains
         self%released = QSignal(ptr, QTF_SIG_QABSTRACTBUTTON_RELEASED)
     end subroutine qabstractbutton_attach
 
+    !> Set the button text (`&` marks the mnemonic).
     subroutine qabstractbutton_setText(self, text)
         class(QAbstractButton), intent(in) :: self
         character(len=*), intent(in) :: text
         call qtf_qabstractbutton_setText(self%ptr, text, len(text, c_int))
     end subroutine qabstractbutton_setText
 
+    !> The button text.
     function qabstractbutton_text(self) result(text)
         class(QAbstractButton), intent(in) :: self
         character(len=:), allocatable :: text
@@ -732,23 +809,27 @@ contains
         text = qtf_take_string(p, n)
     end function qabstractbutton_text
 
+    !> Make the button a toggle (or a plain push button).
     subroutine qabstractbutton_setCheckable(self, checkable)
         class(QAbstractButton), intent(in) :: self
         logical, intent(in) :: checkable
         call qtf_qabstractbutton_setCheckable(self%ptr, qtf_int(checkable))
     end subroutine qabstractbutton_setCheckable
 
+    !> True if the button is a toggle.
     logical function qabstractbutton_isCheckable(self)
         class(QAbstractButton), intent(in) :: self
         qabstractbutton_isCheckable = qtf_logical(qtf_qabstractbutton_isCheckable(self%ptr))
     end function qabstractbutton_isCheckable
 
+    !> Check or uncheck the button (emits toggled).
     subroutine qabstractbutton_setChecked(self, checked)
         class(QAbstractButton), intent(in) :: self
         logical, intent(in) :: checked
         call qtf_qabstractbutton_setChecked(self%ptr, qtf_int(checked))
     end subroutine qabstractbutton_setChecked
 
+    !> True if the button is checked.
     logical function qabstractbutton_isChecked(self)
         class(QAbstractButton), intent(in) :: self
         qabstractbutton_isChecked = qtf_logical(qtf_qabstractbutton_isChecked(self%ptr))
@@ -760,11 +841,13 @@ contains
         call qtf_qabstractbutton_click(self%ptr)
     end subroutine qabstractbutton_click
 
+    !> Toggle the checked state (emits toggled).
     subroutine qabstractbutton_toggle(self)
         class(QAbstractButton), intent(in) :: self
         call qtf_qabstractbutton_toggle(self%ptr)
     end subroutine qabstractbutton_toggle
 
+    !> Create a push button with `text`.
     function qpushbutton_new(text, parent) result(b)
         character(len=*), intent(in), optional :: text
         class(QWidget), intent(in), optional :: parent
@@ -776,12 +859,14 @@ contains
         end if
     end function qpushbutton_new
 
+    !> Make this the default button of its dialog (activated by Enter).
     subroutine qpushbutton_setDefault(self, default)
         class(QPushButton), intent(in) :: self
         logical, intent(in) :: default
         call qtf_qpushbutton_setDefault(self%ptr, qtf_int(default))
     end subroutine qpushbutton_setDefault
 
+    !> Create a check box with `text`.
     function qcheckbox_new(text, parent) result(b)
         character(len=*), intent(in), optional :: text
         class(QWidget), intent(in), optional :: parent
@@ -793,6 +878,7 @@ contains
         end if
     end function qcheckbox_new
 
+    !> Create a radio button with `text`.
     function qradiobutton_new(text, parent) result(b)
         character(len=*), intent(in), optional :: text
         class(QWidget), intent(in), optional :: parent
@@ -807,6 +893,7 @@ contains
     ! ------------------------------------------------------------------
     ! QLineEdit
 
+    !> Create a line edit, optionally with initial `text`.
     function qlineedit_new(text, parent) result(e)
         character(len=*), intent(in), optional :: text
         class(QWidget), intent(in), optional :: parent
@@ -818,6 +905,7 @@ contains
         end if
     end function qlineedit_new
 
+    !> Bind to a C++ QLineEdit and its signals.
     subroutine qlineedit_attach(self, ptr)
         class(QLineEdit), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
@@ -828,12 +916,14 @@ contains
         self%editingFinished = QSignal(ptr, QTF_SIG_QLINEEDIT_EDITINGFINISHED)
     end subroutine qlineedit_attach
 
+    !> Set the text (emits textChanged, not textEdited).
     subroutine qlineedit_setText(self, text)
         class(QLineEdit), intent(in) :: self
         character(len=*), intent(in) :: text
         call qtf_qlineedit_setText(self%ptr, text, len(text, c_int))
     end subroutine qlineedit_setText
 
+    !> The current text.
     function qlineedit_text(self) result(text)
         class(QLineEdit), intent(in) :: self
         character(len=:), allocatable :: text
@@ -843,12 +933,14 @@ contains
         text = qtf_take_string(p, n)
     end function qlineedit_text
 
+    !> Set the grey hint shown while the line edit is empty.
     subroutine qlineedit_setPlaceholderText(self, text)
         class(QLineEdit), intent(in) :: self
         character(len=*), intent(in) :: text
         call qtf_qlineedit_setPlaceholderText(self%ptr, text, len(text, c_int))
     end subroutine qlineedit_setPlaceholderText
 
+    !> The placeholder text.
     function qlineedit_placeholderText(self) result(text)
         class(QLineEdit), intent(in) :: self
         character(len=:), allocatable :: text
@@ -858,28 +950,33 @@ contains
         text = qtf_take_string(p, n)
     end function qlineedit_placeholderText
 
+    !> Make the text read-only (or editable).
     subroutine qlineedit_setReadOnly(self, readOnly)
         class(QLineEdit), intent(in) :: self
         logical, intent(in) :: readOnly
         call qtf_qlineedit_setReadOnly(self%ptr, qtf_int(readOnly))
     end subroutine qlineedit_setReadOnly
 
+    !> True if the text is read-only.
     logical function qlineedit_isReadOnly(self)
         class(QLineEdit), intent(in) :: self
         qlineedit_isReadOnly = qtf_logical(qtf_qlineedit_isReadOnly(self%ptr))
     end function qlineedit_isReadOnly
 
+    !> Limit the text to `n` characters (longer text is truncated).
     subroutine qlineedit_setMaxLength(self, n)
         class(QLineEdit), intent(in) :: self
         integer, intent(in) :: n
         call qtf_qlineedit_setMaxLength(self%ptr, int(n, c_int))
     end subroutine qlineedit_setMaxLength
 
+    !> The maximum text length.
     integer function qlineedit_maxLength(self)
         class(QLineEdit), intent(in) :: self
         qlineedit_maxLength = qtf_qlineedit_maxLength(self%ptr)
     end function qlineedit_maxLength
 
+    !> Clear the text.
     subroutine qlineedit_clear(self)
         class(QLineEdit), intent(in) :: self
         call qtf_qlineedit_clear(self%ptr)
@@ -888,12 +985,14 @@ contains
     ! ------------------------------------------------------------------
     ! QSpinBox
 
+    !> Create a spin box (range 0..99).
     function qspinbox_new(parent) result(s)
         class(QWidget), intent(in), optional :: parent
         type(QSpinBox) :: s
         call s%attach(qtf_qspinbox_new(qtf_ptr(parent)))
     end function qspinbox_new
 
+    !> Bind to a C++ QSpinBox and its signals.
     subroutine qspinbox_attach(self, ptr)
         class(QSpinBox), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
@@ -901,50 +1000,59 @@ contains
         self%valueChanged = QSignalInt(ptr, QTF_SIG_QSPINBOX_VALUECHANGED)
     end subroutine qspinbox_attach
 
+    !> Set the allowed range.
     subroutine qspinbox_setRange(self, minimum, maximum)
         class(QSpinBox), intent(in) :: self
         integer, intent(in) :: minimum, maximum
         call qtf_qspinbox_setRange(self%ptr, int(minimum, c_int), int(maximum, c_int))
     end subroutine qspinbox_setRange
 
+    !> The smallest allowed value.
     integer function qspinbox_minimum(self)
         class(QSpinBox), intent(in) :: self
         qspinbox_minimum = qtf_qspinbox_minimum(self%ptr)
     end function qspinbox_minimum
 
+    !> The largest allowed value.
     integer function qspinbox_maximum(self)
         class(QSpinBox), intent(in) :: self
         qspinbox_maximum = qtf_qspinbox_maximum(self%ptr)
     end function qspinbox_maximum
 
+    !> Set the value (clamped to the range; emits valueChanged if it changes).
     subroutine qspinbox_setValue(self, value)
         class(QSpinBox), intent(in) :: self
         integer, intent(in) :: value
         call qtf_qspinbox_setValue(self%ptr, int(value, c_int))
     end subroutine qspinbox_setValue
 
+    !> The current value.
     integer function qspinbox_value(self)
         class(QSpinBox), intent(in) :: self
         qspinbox_value = qtf_qspinbox_value(self%ptr)
     end function qspinbox_value
 
+    !> Step used by the arrows and arrow keys.
     subroutine qspinbox_setSingleStep(self, step)
         class(QSpinBox), intent(in) :: self
         integer, intent(in) :: step
         call qtf_qspinbox_setSingleStep(self%ptr, int(step, c_int))
     end subroutine qspinbox_setSingleStep
 
+    !> Step used by the arrows and arrow keys.
     integer function qspinbox_singleStep(self)
         class(QSpinBox), intent(in) :: self
         qspinbox_singleStep = qtf_qspinbox_singleStep(self%ptr)
     end function qspinbox_singleStep
 
+    !> Text shown before the value.
     subroutine qspinbox_setPrefix(self, prefix)
         class(QSpinBox), intent(in) :: self
         character(len=*), intent(in) :: prefix
         call qtf_qspinbox_setPrefix(self%ptr, prefix, len(prefix, c_int))
     end subroutine qspinbox_setPrefix
 
+    !> Text shown after the value, e.g. ' px'.
     subroutine qspinbox_setSuffix(self, suffix)
         class(QSpinBox), intent(in) :: self
         character(len=*), intent(in) :: suffix
@@ -954,12 +1062,14 @@ contains
     ! ------------------------------------------------------------------
     ! QDoubleSpinBox
 
+    !> Create a spin box for real values (range 0..99.99).
     function qdoublespinbox_new(parent) result(s)
         class(QWidget), intent(in), optional :: parent
         type(QDoubleSpinBox) :: s
         call s%attach(qtf_qdoublespinbox_new(qtf_ptr(parent)))
     end function qdoublespinbox_new
 
+    !> Bind to a C++ QDoubleSpinBox and its signals.
     subroutine qdoublespinbox_attach(self, ptr)
         class(QDoubleSpinBox), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
@@ -967,61 +1077,72 @@ contains
         self%valueChanged = QSignalDouble(ptr, QTF_SIG_QDOUBLESPINBOX_VALUECHANGED)
     end subroutine qdoublespinbox_attach
 
+    !> Set the allowed range.
     subroutine qdoublespinbox_setRange(self, minimum, maximum)
         class(QDoubleSpinBox), intent(in) :: self
         real(c_double), intent(in) :: minimum, maximum
         call qtf_qdoublespinbox_setRange(self%ptr, minimum, maximum)
     end subroutine qdoublespinbox_setRange
 
+    !> The smallest allowed value.
     real(c_double) function qdoublespinbox_minimum(self)
         class(QDoubleSpinBox), intent(in) :: self
         qdoublespinbox_minimum = qtf_qdoublespinbox_minimum(self%ptr)
     end function qdoublespinbox_minimum
 
+    !> The largest allowed value.
     real(c_double) function qdoublespinbox_maximum(self)
         class(QDoubleSpinBox), intent(in) :: self
         qdoublespinbox_maximum = qtf_qdoublespinbox_maximum(self%ptr)
     end function qdoublespinbox_maximum
 
+    !> Set the value (clamped to the range and rounded to `decimals`).
     subroutine qdoublespinbox_setValue(self, value)
         class(QDoubleSpinBox), intent(in) :: self
         real(c_double), intent(in) :: value
         call qtf_qdoublespinbox_setValue(self%ptr, value)
     end subroutine qdoublespinbox_setValue
 
+    !> The current value.
     real(c_double) function qdoublespinbox_value(self)
         class(QDoubleSpinBox), intent(in) :: self
         qdoublespinbox_value = qtf_qdoublespinbox_value(self%ptr)
     end function qdoublespinbox_value
 
+    !> Step used by the arrows and arrow keys.
     subroutine qdoublespinbox_setSingleStep(self, step)
         class(QDoubleSpinBox), intent(in) :: self
         real(c_double), intent(in) :: step
         call qtf_qdoublespinbox_setSingleStep(self%ptr, step)
     end subroutine qdoublespinbox_setSingleStep
 
+    !> Step used by the arrows and arrow keys.
     real(c_double) function qdoublespinbox_singleStep(self)
         class(QDoubleSpinBox), intent(in) :: self
         qdoublespinbox_singleStep = qtf_qdoublespinbox_singleStep(self%ptr)
     end function qdoublespinbox_singleStep
 
+    !> Number of decimals shown (values are rounded to it).
     subroutine qdoublespinbox_setDecimals(self, decimals)
         class(QDoubleSpinBox), intent(in) :: self
         integer, intent(in) :: decimals
         call qtf_qdoublespinbox_setDecimals(self%ptr, int(decimals, c_int))
     end subroutine qdoublespinbox_setDecimals
 
+    !> Number of decimals shown.
     integer function qdoublespinbox_decimals(self)
         class(QDoubleSpinBox), intent(in) :: self
         qdoublespinbox_decimals = qtf_qdoublespinbox_decimals(self%ptr)
     end function qdoublespinbox_decimals
 
+    !> Text shown before the value.
     subroutine qdoublespinbox_setPrefix(self, prefix)
         class(QDoubleSpinBox), intent(in) :: self
         character(len=*), intent(in) :: prefix
         call qtf_qdoublespinbox_setPrefix(self%ptr, prefix, len(prefix, c_int))
     end subroutine qdoublespinbox_setPrefix
 
+    !> Text shown after the value.
     subroutine qdoublespinbox_setSuffix(self, suffix)
         class(QDoubleSpinBox), intent(in) :: self
         character(len=*), intent(in) :: suffix
@@ -1042,6 +1163,7 @@ contains
         call s%attach(qtf_qslider_new(o, qtf_ptr(parent)))
     end function qslider_new
 
+    !> Bind to a C++ slider and its signals.
     subroutine qabstractslider_attach(self, ptr)
         class(QAbstractSlider), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
@@ -1052,51 +1174,60 @@ contains
         self%sliderReleased = QSignal(ptr, QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED)
     end subroutine qabstractslider_attach
 
+    !> Set the allowed range.
     subroutine qabstractslider_setRange(self, minimum, maximum)
         class(QAbstractSlider), intent(in) :: self
         integer, intent(in) :: minimum, maximum
         call qtf_qabstractslider_setRange(self%ptr, int(minimum, c_int), int(maximum, c_int))
     end subroutine qabstractslider_setRange
 
+    !> The smallest allowed value.
     integer function qabstractslider_minimum(self)
         class(QAbstractSlider), intent(in) :: self
         qabstractslider_minimum = qtf_qabstractslider_minimum(self%ptr)
     end function qabstractslider_minimum
 
+    !> The largest allowed value.
     integer function qabstractslider_maximum(self)
         class(QAbstractSlider), intent(in) :: self
         qabstractslider_maximum = qtf_qabstractslider_maximum(self%ptr)
     end function qabstractslider_maximum
 
+    !> Set the value (clamped to the range; emits valueChanged if it changes).
     subroutine qabstractslider_setValue(self, value)
         class(QAbstractSlider), intent(in) :: self
         integer, intent(in) :: value
         call qtf_qabstractslider_setValue(self%ptr, int(value, c_int))
     end subroutine qabstractslider_setValue
 
+    !> The current value.
     integer function qabstractslider_value(self)
         class(QAbstractSlider), intent(in) :: self
         qabstractslider_value = qtf_qabstractslider_value(self%ptr)
     end function qabstractslider_value
 
+    !> Step used by the arrow keys.
     subroutine qabstractslider_setSingleStep(self, step)
         class(QAbstractSlider), intent(in) :: self
         integer, intent(in) :: step
         call qtf_qabstractslider_setSingleStep(self%ptr, int(step, c_int))
     end subroutine qabstractslider_setSingleStep
 
+    !> Step used by Page Up/Down and clicks on the groove.
     subroutine qabstractslider_setPageStep(self, step)
         class(QAbstractSlider), intent(in) :: self
         integer, intent(in) :: step
         call qtf_qabstractslider_setPageStep(self%ptr, int(step, c_int))
     end subroutine qabstractslider_setPageStep
 
+    !> Set the orientation (Qt_Horizontal or Qt_Vertical).
     subroutine qabstractslider_setOrientation(self, orientation)
         class(QAbstractSlider), intent(in) :: self
         integer, intent(in) :: orientation
         call qtf_qabstractslider_setOrientation(self%ptr, int(orientation, c_int))
     end subroutine qabstractslider_setOrientation
 
+    !> The orientation (Qt_Horizontal or Qt_Vertical).
     integer function qabstractslider_orientation(self)
         class(QAbstractSlider), intent(in) :: self
         qabstractslider_orientation = qtf_qabstractslider_orientation(self%ptr)
@@ -1105,12 +1236,14 @@ contains
     ! ------------------------------------------------------------------
     ! QComboBox
 
+    !> Create an empty combo box.
     function qcombobox_new(parent) result(c)
         class(QWidget), intent(in), optional :: parent
         type(QComboBox) :: c
         call c%attach(qtf_qcombobox_new(qtf_ptr(parent)))
     end function qcombobox_new
 
+    !> Bind to a C++ QComboBox and its signals.
     subroutine qcombobox_attach(self, ptr)
         class(QComboBox), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
@@ -1120,6 +1253,7 @@ contains
         self%activated = QSignalInt(ptr, QTF_SIG_QCOMBOBOX_ACTIVATED)
     end subroutine qcombobox_attach
 
+    !> Append an item.
     subroutine qcombobox_addItem(self, text)
         class(QComboBox), intent(in) :: self
         character(len=*), intent(in) :: text
@@ -1136,6 +1270,7 @@ contains
         end do
     end subroutine qcombobox_addItems
 
+    !> Insert an item before position `index` (0-based).
     subroutine qcombobox_insertItem(self, index, text)
         class(QComboBox), intent(in) :: self
         integer, intent(in) :: index
@@ -1143,17 +1278,20 @@ contains
         call qtf_qcombobox_insertItem(self%ptr, int(index, c_int), text, len(text, c_int))
     end subroutine qcombobox_insertItem
 
+    !> Remove the item at `index` (0-based).
     subroutine qcombobox_removeItem(self, index)
         class(QComboBox), intent(in) :: self
         integer, intent(in) :: index
         call qtf_qcombobox_removeItem(self%ptr, int(index, c_int))
     end subroutine qcombobox_removeItem
 
+    !> Remove all items.
     subroutine qcombobox_clear(self)
         class(QComboBox), intent(in) :: self
         call qtf_qcombobox_clear(self%ptr)
     end subroutine qcombobox_clear
 
+    !> Number of items.
     integer function qcombobox_count(self)
         class(QComboBox), intent(in) :: self
         qcombobox_count = qtf_qcombobox_count(self%ptr)
@@ -1165,12 +1303,14 @@ contains
         qcombobox_currentIndex = qtf_qcombobox_currentIndex(self%ptr)
     end function qcombobox_currentIndex
 
+    !> Select the item at `index` (0-based).
     subroutine qcombobox_setCurrentIndex(self, index)
         class(QComboBox), intent(in) :: self
         integer, intent(in) :: index
         call qtf_qcombobox_setCurrentIndex(self%ptr, int(index, c_int))
     end subroutine qcombobox_setCurrentIndex
 
+    !> Text of the current item.
     function qcombobox_currentText(self) result(text)
         class(QComboBox), intent(in) :: self
         character(len=:), allocatable :: text
@@ -1180,12 +1320,14 @@ contains
         text = qtf_take_string(p, n)
     end function qcombobox_currentText
 
+    !> Select the item with this text (or set the text, if editable).
     subroutine qcombobox_setCurrentText(self, text)
         class(QComboBox), intent(in) :: self
         character(len=*), intent(in) :: text
         call qtf_qcombobox_setCurrentText(self%ptr, text, len(text, c_int))
     end subroutine qcombobox_setCurrentText
 
+    !> Text of the item at `index` (0-based).
     function qcombobox_itemText(self, index) result(text)
         class(QComboBox), intent(in) :: self
         integer, intent(in) :: index
@@ -1203,6 +1345,7 @@ contains
         qcombobox_findText = qtf_qcombobox_findText(self%ptr, text, len(text, c_int))
     end function qcombobox_findText
 
+    !> Allow typing a value that is not in the list.
     subroutine qcombobox_setEditable(self, editable)
         class(QComboBox), intent(in) :: self
         logical, intent(in) :: editable
@@ -1212,6 +1355,7 @@ contains
     ! ------------------------------------------------------------------
     ! QLayout, QBoxLayout, QVBoxLayout, QHBoxLayout, QGridLayout
 
+    !> Set the margins around the layout, in pixels.
     subroutine qlayout_setContentsMargins(self, left, top, right, bottom)
         class(QLayout), intent(in) :: self
         integer, intent(in) :: left, top, right, bottom
@@ -1219,12 +1363,14 @@ contains
                                             int(right, c_int), int(bottom, c_int))
     end subroutine qlayout_setContentsMargins
 
+    !> Set the space between items, in pixels.
     subroutine qlayout_setSpacing(self, spacing)
         class(QLayout), intent(in) :: self
         integer, intent(in) :: spacing
         call qtf_qlayout_setSpacing(self%ptr, int(spacing, c_int))
     end subroutine qlayout_setSpacing
 
+    !> The space between items, in pixels.
     integer function qlayout_spacing(self)
         class(QLayout), intent(in) :: self
         qlayout_spacing = qtf_qlayout_spacing(self%ptr)
@@ -1250,6 +1396,7 @@ contains
         call l%attach(qtf_qhboxlayout_new(qtf_ptr(parent)))
     end function qhboxlayout_new
 
+    !> Append a widget, with optional stretch factor and alignment.
     subroutine qboxlayout_addWidget(self, widget, stretch, alignment)
         class(QBoxLayout), intent(in) :: self
         class(QWidget), intent(in) :: widget
@@ -1262,6 +1409,7 @@ contains
         call qtf_qboxlayout_addWidget(self%ptr, widget%ptr, s, a)
     end subroutine qboxlayout_addWidget
 
+    !> Append a nested layout, with an optional stretch factor.
     subroutine qboxlayout_addLayout(self, layout, stretch)
         class(QBoxLayout), intent(in) :: self
         class(QLayout), intent(in) :: layout
@@ -1272,6 +1420,7 @@ contains
         call qtf_qboxlayout_addLayout(self%ptr, layout%ptr, s)
     end subroutine qboxlayout_addLayout
 
+    !> Append stretchable empty space.
     subroutine qboxlayout_addStretch(self, stretch)
         class(QBoxLayout), intent(in) :: self
         integer, intent(in), optional :: stretch
@@ -1281,6 +1430,7 @@ contains
         call qtf_qboxlayout_addStretch(self%ptr, s)
     end subroutine qboxlayout_addStretch
 
+    !> Append fixed empty space of `size` pixels.
     subroutine qboxlayout_addSpacing(self, size)
         class(QBoxLayout), intent(in) :: self
         integer, intent(in) :: size
@@ -1310,6 +1460,7 @@ contains
         call qtf_qgridlayout_addWidget(self%ptr, widget%ptr, int(row, c_int), int(column, c_int), rs, cs, a)
     end subroutine qgridlayout_addWidget
 
+    !> Add a nested layout at (row, column), both 0-based, optionally spanning cells.
     subroutine qgridlayout_addLayout(self, layout, row, column, rowSpan, columnSpan, alignment)
         class(QGridLayout), intent(in) :: self
         class(QLayout), intent(in) :: layout
@@ -1325,23 +1476,27 @@ contains
         call qtf_qgridlayout_addLayout(self%ptr, layout%ptr, int(row, c_int), int(column, c_int), rs, cs, a)
     end subroutine qgridlayout_addLayout
 
+    !> Set the stretch factor of `row` (0-based).
     subroutine qgridlayout_setRowStretch(self, row, stretch)
         class(QGridLayout), intent(in) :: self
         integer, intent(in) :: row, stretch
         call qtf_qgridlayout_setRowStretch(self%ptr, int(row, c_int), int(stretch, c_int))
     end subroutine qgridlayout_setRowStretch
 
+    !> Set the stretch factor of `column` (0-based).
     subroutine qgridlayout_setColumnStretch(self, column, stretch)
         class(QGridLayout), intent(in) :: self
         integer, intent(in) :: column, stretch
         call qtf_qgridlayout_setColumnStretch(self%ptr, int(column, c_int), int(stretch, c_int))
     end subroutine qgridlayout_setColumnStretch
 
+    !> Number of rows.
     integer function qgridlayout_rowCount(self)
         class(QGridLayout), intent(in) :: self
         qgridlayout_rowCount = qtf_qgridlayout_rowCount(self%ptr)
     end function qgridlayout_rowCount
 
+    !> Number of columns.
     integer function qgridlayout_columnCount(self)
         class(QGridLayout), intent(in) :: self
         qgridlayout_columnCount = qtf_qgridlayout_columnCount(self%ptr)
@@ -1361,11 +1516,13 @@ contains
         call qtf_qstatusbar_showMessage(self%ptr, message, len(message, c_int), t)
     end subroutine qstatusbar_showMessage
 
+    !> Remove the current message.
     subroutine qstatusbar_clearMessage(self)
         class(QStatusBar), intent(in) :: self
         call qtf_qstatusbar_clearMessage(self%ptr)
     end subroutine qstatusbar_clearMessage
 
+    !> The message currently shown.
     function qstatusbar_currentMessage(self) result(message)
         class(QStatusBar), intent(in) :: self
         character(len=:), allocatable :: message
@@ -1375,6 +1532,7 @@ contains
         message = qtf_take_string(p, n)
     end function qstatusbar_currentMessage
 
+    !> Create a main window.
     function qmainwindow_new(parent) result(m)
         class(QWidget), intent(in), optional :: parent
         type(QMainWindow) :: m
@@ -1388,6 +1546,7 @@ contains
         call qtf_qmainwindow_setCentralWidget(self%ptr, widget%ptr)
     end subroutine qmainwindow_setCentralWidget
 
+    !> The central widget (a null handle if there is none).
     function qmainwindow_centralWidget(self) result(w)
         class(QMainWindow), intent(in) :: self
         type(QWidget) :: w
@@ -1443,12 +1602,14 @@ contains
         call menu%attach(qtf_qmenu_addMenu(self%ptr, title, len(title, c_int)))
     end function qmenu_addMenu
 
+    !> Append a separator line.
     subroutine qmenu_addSeparator(self)
         class(QMenu), intent(in) :: self
         type(c_ptr) :: sep
         sep = qtf_qmenu_addSeparator(self%ptr)
     end subroutine qmenu_addSeparator
 
+    !> The menu title.
     function qmenu_title(self) result(title)
         class(QMenu), intent(in) :: self
         character(len=:), allocatable :: title
@@ -1465,12 +1626,14 @@ contains
         call action%attach(qtf_qmenu_menuAction(self%ptr))
     end function qmenu_menuAction
 
+    !> Append a separator.
     subroutine qtoolbar_addSeparator(self)
         class(QToolBar), intent(in) :: self
         type(c_ptr) :: sep
         sep = qtf_qtoolbar_addSeparator(self%ptr)
     end subroutine qtoolbar_addSeparator
 
+    !> Append a widget (e.g. a combo box) to the tool bar.
     subroutine qtoolbar_addWidget(self, widget)
         class(QToolBar), intent(in) :: self
         class(QWidget), intent(in) :: widget
@@ -1481,12 +1644,14 @@ contains
     ! ------------------------------------------------------------------
     ! QDialog
 
+    !> Create a dialog.
     function qdialog_new(parent) result(d)
         class(QWidget), intent(in), optional :: parent
         type(QDialog) :: d
         call d%attach(qtf_qdialog_new(qtf_ptr(parent)))
     end function qdialog_new
 
+    !> Bind to a C++ QDialog and its signals.
     subroutine qdialog_attach(self, ptr)
         class(QDialog), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
@@ -1508,27 +1673,32 @@ contains
         call qtf_qdialog_open(self%ptr)
     end subroutine qdialog_open
 
+    !> Close with result QDialog_Accepted (emits accepted and finished).
     subroutine qdialog_accept(self)
         class(QDialog), intent(in) :: self
         call qtf_qdialog_accept(self%ptr)
     end subroutine qdialog_accept
 
+    !> Close with result QDialog_Rejected (emits rejected and finished).
     subroutine qdialog_reject(self)
         class(QDialog), intent(in) :: self
         call qtf_qdialog_reject(self%ptr)
     end subroutine qdialog_reject
 
+    !> Close with result code `r` (emits finished).
     subroutine qdialog_done(self, r)
         class(QDialog), intent(in) :: self
         integer, intent(in) :: r
         call qtf_qdialog_done(self%ptr, int(r, c_int))
     end subroutine qdialog_done
 
+    !> The result code set by `accept`, `reject` or `done`.
     integer function qdialog_result(self)
         class(QDialog), intent(in) :: self
         qdialog_result = qtf_qdialog_result(self%ptr)
     end function qdialog_result
 
+    !> Make the dialog modal when shown with `show`.
     subroutine qdialog_setModal(self, modal)
         class(QDialog), intent(in) :: self
         logical, intent(in) :: modal
@@ -1538,18 +1708,21 @@ contains
     ! ------------------------------------------------------------------
     ! QMessageBox
 
+    !> Create a message box.
     function qmessagebox_new(parent) result(m)
         class(QWidget), intent(in), optional :: parent
         type(QMessageBox) :: m
         call m%attach(qtf_qmessagebox_new(qtf_ptr(parent)))
     end function qmessagebox_new
 
+    !> Set the main message.
     subroutine qmessagebox_setText(self, text)
         class(QMessageBox), intent(in) :: self
         character(len=*), intent(in) :: text
         call qtf_qmessagebox_setText(self%ptr, text, len(text, c_int))
     end subroutine qmessagebox_setText
 
+    !> The main message.
     function qmessagebox_text(self) result(text)
         class(QMessageBox), intent(in) :: self
         character(len=:), allocatable :: text
@@ -1559,12 +1732,14 @@ contains
         text = qtf_take_string(p, n)
     end function qmessagebox_text
 
+    !> Set secondary text shown below the message.
     subroutine qmessagebox_setInformativeText(self, text)
         class(QMessageBox), intent(in) :: self
         character(len=*), intent(in) :: text
         call qtf_qmessagebox_setInformativeText(self%ptr, text, len(text, c_int))
     end subroutine qmessagebox_setInformativeText
 
+    !> The secondary text.
     function qmessagebox_informativeText(self) result(text)
         class(QMessageBox), intent(in) :: self
         character(len=:), allocatable :: text
@@ -1574,6 +1749,7 @@ contains
         text = qtf_take_string(p, n)
     end function qmessagebox_informativeText
 
+    !> Set the icon (a QMessageBox_Icon_* constant).
     subroutine qmessagebox_setIcon(self, icon)
         class(QMessageBox), intent(in) :: self
         integer, intent(in) :: icon
@@ -1587,6 +1763,7 @@ contains
         call qtf_qmessagebox_setStandardButtons(self%ptr, int(buttons, c_int))
     end subroutine qmessagebox_setStandardButtons
 
+    !> Set the button activated by Enter (a QMessageBox_* standard button).
     subroutine qmessagebox_setDefaultButton(self, button)
         class(QMessageBox), intent(in) :: self
         integer, intent(in) :: button
@@ -1675,6 +1852,7 @@ contains
                                           f, len(f, c_int)))
     end function qfiledialog_new
 
+    !> The optional string `s`, or '' if it is absent.
     pure function opt_string(s) result(r)
         character(len=*), intent(in), optional :: s
         character(len=:), allocatable :: r
@@ -1682,18 +1860,21 @@ contains
         if (present(s)) r = s
     end function opt_string
 
+    !> What may be selected (QFileDialog_AnyFile, _ExistingFile, _Directory, _ExistingFiles).
     subroutine qfiledialog_setFileMode(self, mode)
         class(QFileDialog), intent(in) :: self
         integer, intent(in) :: mode
         call qtf_qfiledialog_setFileMode(self%ptr, int(mode, c_int))
     end subroutine qfiledialog_setFileMode
 
+    !> Open (QFileDialog_AcceptOpen) or save (QFileDialog_AcceptSave) mode.
     subroutine qfiledialog_setAcceptMode(self, mode)
         class(QFileDialog), intent(in) :: self
         integer, intent(in) :: mode
         call qtf_qfiledialog_setAcceptMode(self%ptr, int(mode, c_int))
     end subroutine qfiledialog_setAcceptMode
 
+    !> Enable (default) or disable a QFileDialog_* option.
     subroutine qfiledialog_setOption(self, option, on)
         class(QFileDialog), intent(in) :: self
         integer, intent(in) :: option
@@ -1711,18 +1892,21 @@ contains
         call qtf_qfiledialog_setNameFilter(self%ptr, filter, len(filter, c_int))
     end subroutine qfiledialog_setNameFilter
 
+    !> Set the directory shown.
     subroutine qfiledialog_setDirectory(self, directory)
         class(QFileDialog), intent(in) :: self
         character(len=*), intent(in) :: directory
         call qtf_qfiledialog_setDirectory(self%ptr, directory, len(directory, c_int))
     end subroutine qfiledialog_setDirectory
 
+    !> Suffix added to file names typed without one (e.g. 'png').
     subroutine qfiledialog_setDefaultSuffix(self, suffix)
         class(QFileDialog), intent(in) :: self
         character(len=*), intent(in) :: suffix
         call qtf_qfiledialog_setDefaultSuffix(self%ptr, suffix, len(suffix, c_int))
     end subroutine qfiledialog_setDefaultSuffix
 
+    !> Preselect a file name (relative to the directory, or absolute).
     subroutine qfiledialog_selectFile(self, filename)
         class(QFileDialog), intent(in) :: self
         character(len=*), intent(in) :: filename

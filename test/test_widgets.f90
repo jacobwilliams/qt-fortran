@@ -6,6 +6,7 @@ module test_widgets_slots
 
 contains
 
+    !> Increment the integer passed as `data`.
     subroutine count_calls(data)
         class(*), intent(inout), optional :: data
         select type (data)
@@ -16,6 +17,7 @@ contains
 
 end module test_widgets_slots
 
+!> Tests QWidget and QLabel properties, ownership and UTF-8 strings.
 program test_widgets
 
     use qt

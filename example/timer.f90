@@ -4,6 +4,7 @@ module timer_slots
     use qt
     implicit none
 
+    !> State of the countdown window.
     type :: countdown
         type(QLabel) :: label
         type(QTimer) :: timer
@@ -12,6 +13,7 @@ module timer_slots
 
 contains
 
+    !> Count down once per second; quit at zero.
     subroutine on_tick(data)
         class(*), intent(inout), optional :: data
         character(len=32) :: buf
@@ -30,6 +32,7 @@ contains
 
 end module timer_slots
 
+!> A window counting down with QTimer, then closing the application.
 program timer
 
     use qt

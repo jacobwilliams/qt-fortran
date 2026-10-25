@@ -60,6 +60,7 @@ RETURNS = {
 }
 
 DECL = re.compile(r"QTF_API\s+([\w\s\*]+?)\s*\b(qtf_\w+)\s*\(([^)]*)\)", re.S)
+COMMENT = re.compile(r"((?:[ \t]*//[^\n]*\n)*)[ \t]*QTF_API\s+[\w\s\*]+?\b(qtf_\w+)\s*\(", re.S)
 
 
 def fail(msg):
@@ -78,6 +79,17 @@ def parse_param(text, func):
         if m:
             return m.group(1), decl, kind
     fail(f"unsupported parameter '{text}' in {func}")
+
+
+def docstring(name, rtype, params, comments):
+    """FORD docstring lines: the shim's `//` comment above the function, then its C prototype."""
+    proto = f"{normalize(rtype)} {name}({', '.join(normalize(p) for p in params.split(',') if p.strip())})"
+    proto = proto.replace("* ", "*")
+    lines = [f"!> {c}" for c in comments.get(name, [])]
+    if lines:
+        lines.append("!>")
+    lines.append(f"!> C: `{proto}`")
+    return "\n".join(f"        {l}" for l in lines)
 
 
 def interface(rtype, name, params):
@@ -103,6 +115,7 @@ def interface(rtype, name, params):
         out = [first + " &", "                " + tail.strip()]
     if kinds:
         out.append(f"            import :: {', '.join(sorted(kinds))}")
+    out.append("            implicit none")
     out += [f"            {l}" for l in lines]
     if ret:
         out.append(f"            {ret[0]} :: res")
@@ -122,7 +135,13 @@ def generate(shim, module, signal_range):
     if not decls:
         fail(f"no QTF_API functions found in {shim}")
     names = [d[1] for d in decls]
-    ifaces = "\n\n".join(interface(*d) for d in decls)
+    comments = {}
+    for block, name in COMMENT.findall(src):
+        text = [l.strip()[2:].strip() for l in block.splitlines() if l.strip().startswith("//")]
+        # skip section rulers (// -----) and the section titles that follow them
+        if text and not set(text[0]) <= set("-"):
+            comments[name] = text
+    ifaces = "\n\n".join(docstring(d[1], d[0], d[2], comments) + "\n" + interface(*d) for d in decls)
     sigs = signal_ids(*signal_range)
     sig_block = ""
     if sigs:

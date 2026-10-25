@@ -6,6 +6,7 @@ module test_dialogs_slots
     use qt
     implicit none
 
+    !> Records dialog signals.
     type :: dialog_log
         integer :: accepted = 0
         integer :: finished = -1
@@ -44,6 +45,7 @@ contains
         call b%click()
     end subroutine click_no
 
+    !> Count accepted emissions.
     subroutine on_accepted(data)
         class(*), intent(inout), optional :: data
         select type (data)
@@ -52,6 +54,7 @@ contains
         end select
     end subroutine on_accepted
 
+    !> Record the result code of finished.
     subroutine on_finished(value, data)
         integer, intent(in) :: value
         class(*), intent(inout), optional :: data
@@ -63,6 +66,7 @@ contains
 
 end module test_dialogs_slots
 
+!> Tests modal dialogs and message boxes.
 program test_dialogs
 
     use qt

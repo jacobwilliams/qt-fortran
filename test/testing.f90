@@ -7,6 +7,7 @@ module testing
 
 contains
 
+    !> Print 'ok: what', or stop with an error if `cond` is false.
     subroutine check(cond, what)
         logical, intent(in) :: cond
         character(len=*), intent(in) :: what

@@ -14,165 +14,223 @@ module qt_c_core
 
     interface
 
+        !> C: `void qtf_free(void *p)`
         subroutine qtf_free(p) bind(C, name='qtf_free')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: p
         end subroutine qtf_free
 
+        !> C: `void qtf_set_dispatcher(qtf_dispatch_fn dispatch, qtf_release_fn release)`
         subroutine qtf_set_dispatcher(dispatch, release) bind(C, name='qtf_set_dispatcher')
             import :: c_funptr
+            implicit none
             type(c_funptr), value :: dispatch
             type(c_funptr), value :: release
         end subroutine qtf_set_dispatcher
 
+        !> Returns 1 on success. On failure the slot is released before returning.
+        !>
+        !> C: `int qtf_connect(void *sender, int signal, int slot)`
         function qtf_connect(sender, signal, slot) result(res) bind(C, name='qtf_connect')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: sender
             integer(c_int), value :: signal
             integer(c_int), value :: slot
             integer(c_int) :: res
         end function qtf_connect
 
+        !> C: `void *qtf_qobject_new(void *parent)`
         function qtf_qobject_new(parent) result(res) bind(C, name='qtf_qobject_new')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qobject_new
 
+        !> C: `void qtf_qobject_delete(void *o)`
         subroutine qtf_qobject_delete(o) bind(C, name='qtf_qobject_delete')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: o
         end subroutine qtf_qobject_delete
 
+        !> C: `void qtf_qobject_deleteLater(void *o)`
         subroutine qtf_qobject_deleteLater(o) bind(C, name='qtf_qobject_deleteLater')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: o
         end subroutine qtf_qobject_deleteLater
 
+        !> C: `char *qtf_qobject_objectName(void *o, int *len)`
         function qtf_qobject_objectName(o, len) result(res) bind(C, name='qtf_qobject_objectName')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: o
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qobject_objectName
 
+        !> C: `void qtf_qobject_setObjectName(void *o, const char *s, int len)`
         subroutine qtf_qobject_setObjectName(o, s, len) bind(C, name='qtf_qobject_setObjectName')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: o
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qobject_setObjectName
 
+        !> C: `void qtf_qobject_setParent(void *o, void *parent)`
         subroutine qtf_qobject_setParent(o, parent) bind(C, name='qtf_qobject_setParent')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: o
             type(c_ptr), value :: parent
         end subroutine qtf_qobject_setParent
 
+        !> C: `void *qtf_qobject_parent(void *o)`
         function qtf_qobject_parent(o) result(res) bind(C, name='qtf_qobject_parent')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: o
             type(c_ptr) :: res
         end function qtf_qobject_parent
 
+        !> C: `char *qtf_qobject_className(void *o, int *len)`
         function qtf_qobject_className(o, len) result(res) bind(C, name='qtf_qobject_className')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: o
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qobject_className
 
+        !> C: `int qtf_qobject_inherits(void *o, const char *s, int len)`
         function qtf_qobject_inherits(o, s, len) result(res) bind(C, name='qtf_qobject_inherits')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: o
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
             integer(c_int) :: res
         end function qtf_qobject_inherits
 
+        !> C: `int qtf_qevent_type(void *e)`
         function qtf_qevent_type(e) result(res) bind(C, name='qtf_qevent_type')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: e
             integer(c_int) :: res
         end function qtf_qevent_type
 
+        !> C: `void qtf_qevent_accept(void *e)`
         subroutine qtf_qevent_accept(e) bind(C, name='qtf_qevent_accept')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: e
         end subroutine qtf_qevent_accept
 
+        !> C: `void qtf_qevent_ignore(void *e)`
         subroutine qtf_qevent_ignore(e) bind(C, name='qtf_qevent_ignore')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: e
         end subroutine qtf_qevent_ignore
 
+        !> C: `int qtf_qevent_isAccepted(void *e)`
         function qtf_qevent_isAccepted(e) result(res) bind(C, name='qtf_qevent_isAccepted')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: e
             integer(c_int) :: res
         end function qtf_qevent_isAccepted
 
+        !> C: `void qtf_qevent_delete(void *e)`
         subroutine qtf_qevent_delete(e) bind(C, name='qtf_qevent_delete')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: e
         end subroutine qtf_qevent_delete
 
+        !> C: `int qtf_qcoreapplication_sendEvent(void *receiver, void *e)`
         function qtf_qcoreapplication_sendEvent(receiver, e) result(res) bind(C, name='qtf_qcoreapplication_sendEvent')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: receiver
             type(c_ptr), value :: e
             integer(c_int) :: res
         end function qtf_qcoreapplication_sendEvent
 
+        !> C: `void *qtf_qtimer_new(void *parent)`
         function qtf_qtimer_new(parent) result(res) bind(C, name='qtf_qtimer_new')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qtimer_new
 
+        !> msec < 0: start with the current interval
+        !>
+        !> C: `void qtf_qtimer_start(void *t, int msec)`
         subroutine qtf_qtimer_start(t, msec) bind(C, name='qtf_qtimer_start')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: t
             integer(c_int), value :: msec
         end subroutine qtf_qtimer_start
 
+        !> C: `void qtf_qtimer_stop(void *t)`
         subroutine qtf_qtimer_stop(t) bind(C, name='qtf_qtimer_stop')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: t
         end subroutine qtf_qtimer_stop
 
+        !> C: `void qtf_qtimer_setInterval(void *t, int msec)`
         subroutine qtf_qtimer_setInterval(t, msec) bind(C, name='qtf_qtimer_setInterval')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: t
             integer(c_int), value :: msec
         end subroutine qtf_qtimer_setInterval
 
+        !> C: `int qtf_qtimer_interval(void *t)`
         function qtf_qtimer_interval(t) result(res) bind(C, name='qtf_qtimer_interval')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: t
             integer(c_int) :: res
         end function qtf_qtimer_interval
 
+        !> C: `int qtf_qtimer_isActive(void *t)`
         function qtf_qtimer_isActive(t) result(res) bind(C, name='qtf_qtimer_isActive')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: t
             integer(c_int) :: res
         end function qtf_qtimer_isActive
 
+        !> C: `void qtf_qtimer_setSingleShot(void *t, int b)`
         subroutine qtf_qtimer_setSingleShot(t, b) bind(C, name='qtf_qtimer_setSingleShot')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: t
             integer(c_int), value :: b
         end subroutine qtf_qtimer_setSingleShot
 
+        !> C: `int qtf_qtimer_isSingleShot(void *t)`
         function qtf_qtimer_isSingleShot(t) result(res) bind(C, name='qtf_qtimer_isSingleShot')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: t
             integer(c_int) :: res
         end function qtf_qtimer_isSingleShot
 
+        !> C: `void qtf_qtimer_singleShot(int msec, int slot)`
         subroutine qtf_qtimer_singleShot(msec, slot) bind(C, name='qtf_qtimer_singleShot')
             import :: c_int
+            implicit none
             integer(c_int), value :: msec
             integer(c_int), value :: slot
         end subroutine qtf_qtimer_singleShot

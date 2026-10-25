@@ -17,6 +17,7 @@ module test_controls_slots
 
 contains
 
+    !> Count an emission of a signal without arguments.
     subroutine on_void(data)
         class(*), intent(inout), optional :: data
         select type (data)
@@ -25,6 +26,7 @@ contains
         end select
     end subroutine on_void
 
+    !> Record a logical signal argument.
     subroutine on_bool(value, data)
         logical, intent(in) :: value
         class(*), intent(inout), optional :: data
@@ -35,6 +37,7 @@ contains
         end select
     end subroutine on_bool
 
+    !> Record an integer signal argument.
     subroutine on_int(value, data)
         integer, intent(in) :: value
         class(*), intent(inout), optional :: data
@@ -45,6 +48,7 @@ contains
         end select
     end subroutine on_int
 
+    !> Record a real signal argument.
     subroutine on_double(value, data)
         real(c_double), intent(in) :: value
         class(*), intent(inout), optional :: data
@@ -55,6 +59,7 @@ contains
         end select
     end subroutine on_double
 
+    !> Record a string signal argument.
     subroutine on_string(value, data)
         character(len=*), intent(in) :: value
         class(*), intent(inout), optional :: data
@@ -67,6 +72,7 @@ contains
 
 end module test_controls_slots
 
+!> Tests input widgets and every signal argument kind.
 program test_controls
 
     use qt

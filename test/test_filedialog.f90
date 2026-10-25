@@ -21,6 +21,7 @@ contains
         call d%attach(w%ptr)
     end function active_file_dialog
 
+    !> Select the existing test file in the active file dialog and accept it.
     subroutine choose_existing(data)
         class(*), intent(inout), optional :: data
         type(QFileDialog) :: d
@@ -33,6 +34,7 @@ contains
         call d%accept()
     end subroutine choose_existing
 
+    !> Enter a new file name in the active file dialog and accept it.
     subroutine choose_new(data)
         class(*), intent(inout), optional :: data
         type(QFileDialog) :: d
@@ -45,6 +47,7 @@ contains
         call d%accept()
     end subroutine choose_new
 
+    !> Cancel the active file dialog.
     subroutine cancel(data)
         class(*), intent(inout), optional :: data
         type(QFileDialog) :: d
@@ -58,6 +61,7 @@ contains
 
 end module test_filedialog_slots
 
+!> Tests the static and object QFileDialog APIs.
 program test_filedialog
 
     use qt
@@ -111,6 +115,7 @@ program test_filedialog
 
 contains
 
+    !> True if `s` ends with `suffix`.
     logical function ends_with(s, suffix)
         character(len=*), intent(in) :: s, suffix
         ends_with = .false.

@@ -176,7 +176,15 @@ pixi run test              # headless (QT_QPA_PLATFORM=offscreen)
 pixi run example hello     # run an example (hello, timer, form, plot)
 pixi run gen               # regenerate src/*/qt_c_*.f90 after changing the shim
 pixi run gen-check         # fail if the generated modules are stale (CI)
+pixi run lint              # docstrings + implicit none in interface bodies (CI)
 ```
+
+Every module, program, procedure, derived type and generic interface has a
+FORD docstring (`!>` before or `!!` after, per `ford.md`), and every interface
+body has `implicit none`. Interface bodies do not inherit the host's implicit
+typing rules. `tools/check_fortran.py` enforces both. The generated raw modules
+take their docstrings from the `//` comment above each shim function, plus its
+C prototype.
 
 `plot --screenshot out.png` renders the live plot headlessly to a PNG (with
 `QT_QPA_PLATFORM=offscreen`). This is useful for docs and visual checks.
@@ -195,6 +203,7 @@ src/
 shim/      qtf_common.h qtf_core.cpp qtf_gui.cpp qtf_widgets.cpp   (built into libqtf)
 tools/     fpm_qt.py           builds the shim, drives fpm
            gen_c_interfaces.py generates the raw bind(C) modules from the shim
+           check_fortran.py    docstring / implicit-none checker
 example/   hello, timer, form, plot
 test/      testing.f90 (check helper), test_core, test_widgets, test_controls, test_layouts,
            test_dialogs, test_gui, test_events, test_menus, test_filedialog

@@ -40,675 +40,893 @@ module qt_c_widgets
 
     interface
 
+        !> C: `void *qtf_qapplication_new(void)`
         function qtf_qapplication_new() result(res) bind(C, name='qtf_qapplication_new')
             import :: c_ptr
+            implicit none
             type(c_ptr) :: res
         end function qtf_qapplication_new
 
+        !> C: `int qtf_qapplication_exec(void)`
         function qtf_qapplication_exec() result(res) bind(C, name='qtf_qapplication_exec')
             import :: c_int
+            implicit none
             integer(c_int) :: res
         end function qtf_qapplication_exec
 
+        !> C: `void qtf_qapplication_quit(void)`
         subroutine qtf_qapplication_quit() bind(C, name='qtf_qapplication_quit')
+            implicit none
         end subroutine qtf_qapplication_quit
 
+        !> C: `void qtf_qapplication_processEvents(void)`
         subroutine qtf_qapplication_processEvents() bind(C, name='qtf_qapplication_processEvents')
+            implicit none
         end subroutine qtf_qapplication_processEvents
 
+        !> C: `void *qtf_qapplication_activeModalWidget(void)`
         function qtf_qapplication_activeModalWidget() result(res) bind(C, name='qtf_qapplication_activeModalWidget')
             import :: c_ptr
+            implicit none
             type(c_ptr) :: res
         end function qtf_qapplication_activeModalWidget
 
+        !> C: `void *qtf_qwidget_new(void *parent)`
         function qtf_qwidget_new(parent) result(res) bind(C, name='qtf_qwidget_new')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qwidget_new
 
+        !> C: `void qtf_qwidget_show(void *w)`
         subroutine qtf_qwidget_show(w) bind(C, name='qtf_qwidget_show')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: w
         end subroutine qtf_qwidget_show
 
+        !> C: `void qtf_qwidget_hide(void *w)`
         subroutine qtf_qwidget_hide(w) bind(C, name='qtf_qwidget_hide')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: w
         end subroutine qtf_qwidget_hide
 
+        !> C: `void qtf_qwidget_close(void *w)`
         subroutine qtf_qwidget_close(w) bind(C, name='qtf_qwidget_close')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: w
         end subroutine qtf_qwidget_close
 
+        !> C: `void qtf_qwidget_setVisible(void *w, int b)`
         subroutine qtf_qwidget_setVisible(w, b) bind(C, name='qtf_qwidget_setVisible')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int), value :: b
         end subroutine qtf_qwidget_setVisible
 
+        !> C: `int qtf_qwidget_isVisible(void *w)`
         function qtf_qwidget_isVisible(w) result(res) bind(C, name='qtf_qwidget_isVisible')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int) :: res
         end function qtf_qwidget_isVisible
 
+        !> C: `void qtf_qwidget_setEnabled(void *w, int b)`
         subroutine qtf_qwidget_setEnabled(w, b) bind(C, name='qtf_qwidget_setEnabled')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int), value :: b
         end subroutine qtf_qwidget_setEnabled
 
+        !> C: `int qtf_qwidget_isEnabled(void *w)`
         function qtf_qwidget_isEnabled(w) result(res) bind(C, name='qtf_qwidget_isEnabled')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int) :: res
         end function qtf_qwidget_isEnabled
 
+        !> C: `void qtf_qwidget_resize(void *w, int width, int height)`
         subroutine qtf_qwidget_resize(w, width, height) bind(C, name='qtf_qwidget_resize')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int), value :: width
             integer(c_int), value :: height
         end subroutine qtf_qwidget_resize
 
+        !> C: `int qtf_qwidget_width(void *w)`
         function qtf_qwidget_width(w) result(res) bind(C, name='qtf_qwidget_width')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int) :: res
         end function qtf_qwidget_width
 
+        !> C: `int qtf_qwidget_height(void *w)`
         function qtf_qwidget_height(w) result(res) bind(C, name='qtf_qwidget_height')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int) :: res
         end function qtf_qwidget_height
 
+        !> C: `void qtf_qwidget_setMinimumSize(void *w, int width, int height)`
         subroutine qtf_qwidget_setMinimumSize(w, width, height) bind(C, name='qtf_qwidget_setMinimumSize')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int), value :: width
             integer(c_int), value :: height
         end subroutine qtf_qwidget_setMinimumSize
 
+        !> C: `void qtf_qwidget_setFixedSize(void *w, int width, int height)`
         subroutine qtf_qwidget_setFixedSize(w, width, height) bind(C, name='qtf_qwidget_setFixedSize')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int), value :: width
             integer(c_int), value :: height
         end subroutine qtf_qwidget_setFixedSize
 
+        !> C: `void qtf_qwidget_setWindowTitle(void *w, const char *s, int len)`
         subroutine qtf_qwidget_setWindowTitle(w, s, len) bind(C, name='qtf_qwidget_setWindowTitle')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qwidget_setWindowTitle
 
+        !> C: `char *qtf_qwidget_windowTitle(void *w, int *len)`
         function qtf_qwidget_windowTitle(w, len) result(res) bind(C, name='qtf_qwidget_windowTitle')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qwidget_windowTitle
 
+        !> C: `void qtf_qwidget_setToolTip(void *w, const char *s, int len)`
         subroutine qtf_qwidget_setToolTip(w, s, len) bind(C, name='qtf_qwidget_setToolTip')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qwidget_setToolTip
 
+        !> C: `char *qtf_qwidget_toolTip(void *w, int *len)`
         function qtf_qwidget_toolTip(w, len) result(res) bind(C, name='qtf_qwidget_toolTip')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qwidget_toolTip
 
+        !> C: `void qtf_qwidget_setStyleSheet(void *w, const char *s, int len)`
         subroutine qtf_qwidget_setStyleSheet(w, s, len) bind(C, name='qtf_qwidget_setStyleSheet')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qwidget_setStyleSheet
 
+        !> C: `void qtf_qwidget_setFocus(void *w)`
         subroutine qtf_qwidget_setFocus(w) bind(C, name='qtf_qwidget_setFocus')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: w
         end subroutine qtf_qwidget_setFocus
 
+        !> C: `void qtf_qwidget_setLayout(void *w, void *layout)`
         subroutine qtf_qwidget_setLayout(w, layout) bind(C, name='qtf_qwidget_setLayout')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: w
             type(c_ptr), value :: layout
         end subroutine qtf_qwidget_setLayout
 
+        !> C: `void *qtf_qwidget_layout(void *w)`
         function qtf_qwidget_layout(w) result(res) bind(C, name='qtf_qwidget_layout')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: w
             type(c_ptr) :: res
         end function qtf_qwidget_layout
 
+        !> C: `void qtf_qwidget_update(void *w)`
         subroutine qtf_qwidget_update(w) bind(C, name='qtf_qwidget_update')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: w
         end subroutine qtf_qwidget_update
 
+        !> C: `void qtf_qwidget_repaint(void *w)`
         subroutine qtf_qwidget_repaint(w) bind(C, name='qtf_qwidget_repaint')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: w
         end subroutine qtf_qwidget_repaint
 
+        !> C: `void qtf_qwidget_setMouseTracking(void *w, int b)`
         subroutine qtf_qwidget_setMouseTracking(w, b) bind(C, name='qtf_qwidget_setMouseTracking')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int), value :: b
         end subroutine qtf_qwidget_setMouseTracking
 
+        !> C: `int qtf_qwidget_hasMouseTracking(void *w)`
         function qtf_qwidget_hasMouseTracking(w) result(res) bind(C, name='qtf_qwidget_hasMouseTracking')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int) :: res
         end function qtf_qwidget_hasMouseTracking
 
+        !> C: `void qtf_qwidget_setFocusPolicy(void *w, int policy)`
         subroutine qtf_qwidget_setFocusPolicy(w, policy) bind(C, name='qtf_qwidget_setFocusPolicy')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int), value :: policy
         end subroutine qtf_qwidget_setFocusPolicy
 
+        !> C: `int qtf_qwidget_hasFocus(void *w)`
         function qtf_qwidget_hasFocus(w) result(res) bind(C, name='qtf_qwidget_hasFocus')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int) :: res
         end function qtf_qwidget_hasFocus
 
+        !> Render the widget into a new pixmap (works for hidden widgets too).
+        !>
+        !> C: `void *qtf_qwidget_grab(void *w)`
         function qtf_qwidget_grab(w) result(res) bind(C, name='qtf_qwidget_grab')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: w
             type(c_ptr) :: res
         end function qtf_qwidget_grab
 
+        !> C: `void qtf_qwidget_addAction(void *w, void *action)`
         subroutine qtf_qwidget_addAction(w, action) bind(C, name='qtf_qwidget_addAction')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: w
             type(c_ptr), value :: action
         end subroutine qtf_qwidget_addAction
 
+        !> C: `void *qtf_qtfwidget_new(void *parent)`
         function qtf_qtfwidget_new(parent) result(res) bind(C, name='qtf_qtfwidget_new')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qtfwidget_new
 
+        !> C: `void *qtf_qlabel_new(const char *s, int len, void *parent)`
         function qtf_qlabel_new(s, len, parent) result(res) bind(C, name='qtf_qlabel_new')
             import :: c_char, c_int, c_ptr
+            implicit none
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qlabel_new
 
+        !> C: `void qtf_qlabel_setText(void *w, const char *s, int len)`
         subroutine qtf_qlabel_setText(w, s, len) bind(C, name='qtf_qlabel_setText')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qlabel_setText
 
+        !> C: `char *qtf_qlabel_text(void *w, int *len)`
         function qtf_qlabel_text(w, len) result(res) bind(C, name='qtf_qlabel_text')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qlabel_text
 
+        !> C: `void qtf_qlabel_setAlignment(void *w, int flags)`
         subroutine qtf_qlabel_setAlignment(w, flags) bind(C, name='qtf_qlabel_setAlignment')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int), value :: flags
         end subroutine qtf_qlabel_setAlignment
 
+        !> C: `void qtf_qlabel_setWordWrap(void *w, int b)`
         subroutine qtf_qlabel_setWordWrap(w, b) bind(C, name='qtf_qlabel_setWordWrap')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: w
             integer(c_int), value :: b
         end subroutine qtf_qlabel_setWordWrap
 
+        !> C: `void *qtf_qpushbutton_new(const char *s, int len, void *parent)`
         function qtf_qpushbutton_new(s, len, parent) result(res) bind(C, name='qtf_qpushbutton_new')
             import :: c_char, c_int, c_ptr
+            implicit none
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qpushbutton_new
 
+        !> C: `void *qtf_qcheckbox_new(const char *s, int len, void *parent)`
         function qtf_qcheckbox_new(s, len, parent) result(res) bind(C, name='qtf_qcheckbox_new')
             import :: c_char, c_int, c_ptr
+            implicit none
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qcheckbox_new
 
+        !> C: `void *qtf_qradiobutton_new(const char *s, int len, void *parent)`
         function qtf_qradiobutton_new(s, len, parent) result(res) bind(C, name='qtf_qradiobutton_new')
             import :: c_char, c_int, c_ptr
+            implicit none
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qradiobutton_new
 
+        !> C: `void qtf_qabstractbutton_setText(void *b, const char *s, int len)`
         subroutine qtf_qabstractbutton_setText(b, s, len) bind(C, name='qtf_qabstractbutton_setText')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: b
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qabstractbutton_setText
 
+        !> C: `char *qtf_qabstractbutton_text(void *b, int *len)`
         function qtf_qabstractbutton_text(b, len) result(res) bind(C, name='qtf_qabstractbutton_text')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: b
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qabstractbutton_text
 
+        !> C: `void qtf_qabstractbutton_setCheckable(void *b, int v)`
         subroutine qtf_qabstractbutton_setCheckable(b, v) bind(C, name='qtf_qabstractbutton_setCheckable')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: b
             integer(c_int), value :: v
         end subroutine qtf_qabstractbutton_setCheckable
 
+        !> C: `int qtf_qabstractbutton_isCheckable(void *b)`
         function qtf_qabstractbutton_isCheckable(b) result(res) bind(C, name='qtf_qabstractbutton_isCheckable')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: b
             integer(c_int) :: res
         end function qtf_qabstractbutton_isCheckable
 
+        !> C: `void qtf_qabstractbutton_setChecked(void *b, int v)`
         subroutine qtf_qabstractbutton_setChecked(b, v) bind(C, name='qtf_qabstractbutton_setChecked')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: b
             integer(c_int), value :: v
         end subroutine qtf_qabstractbutton_setChecked
 
+        !> C: `int qtf_qabstractbutton_isChecked(void *b)`
         function qtf_qabstractbutton_isChecked(b) result(res) bind(C, name='qtf_qabstractbutton_isChecked')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: b
             integer(c_int) :: res
         end function qtf_qabstractbutton_isChecked
 
+        !> C: `void qtf_qabstractbutton_click(void *b)`
         subroutine qtf_qabstractbutton_click(b) bind(C, name='qtf_qabstractbutton_click')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: b
         end subroutine qtf_qabstractbutton_click
 
+        !> C: `void qtf_qabstractbutton_toggle(void *b)`
         subroutine qtf_qabstractbutton_toggle(b) bind(C, name='qtf_qabstractbutton_toggle')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: b
         end subroutine qtf_qabstractbutton_toggle
 
+        !> C: `void qtf_qpushbutton_setDefault(void *b, int v)`
         subroutine qtf_qpushbutton_setDefault(b, v) bind(C, name='qtf_qpushbutton_setDefault')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: b
             integer(c_int), value :: v
         end subroutine qtf_qpushbutton_setDefault
 
+        !> C: `void *qtf_qlineedit_new(const char *s, int len, void *parent)`
         function qtf_qlineedit_new(s, len, parent) result(res) bind(C, name='qtf_qlineedit_new')
             import :: c_char, c_int, c_ptr
+            implicit none
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qlineedit_new
 
+        !> C: `void qtf_qlineedit_setText(void *e, const char *s, int len)`
         subroutine qtf_qlineedit_setText(e, s, len) bind(C, name='qtf_qlineedit_setText')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: e
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qlineedit_setText
 
+        !> C: `char *qtf_qlineedit_text(void *e, int *len)`
         function qtf_qlineedit_text(e, len) result(res) bind(C, name='qtf_qlineedit_text')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: e
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qlineedit_text
 
+        !> C: `void qtf_qlineedit_setPlaceholderText(void *e, const char *s, int len)`
         subroutine qtf_qlineedit_setPlaceholderText(e, s, len) bind(C, name='qtf_qlineedit_setPlaceholderText')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: e
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qlineedit_setPlaceholderText
 
+        !> C: `char *qtf_qlineedit_placeholderText(void *e, int *len)`
         function qtf_qlineedit_placeholderText(e, len) result(res) bind(C, name='qtf_qlineedit_placeholderText')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: e
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qlineedit_placeholderText
 
+        !> C: `void qtf_qlineedit_setReadOnly(void *e, int b)`
         subroutine qtf_qlineedit_setReadOnly(e, b) bind(C, name='qtf_qlineedit_setReadOnly')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: e
             integer(c_int), value :: b
         end subroutine qtf_qlineedit_setReadOnly
 
+        !> C: `int qtf_qlineedit_isReadOnly(void *e)`
         function qtf_qlineedit_isReadOnly(e) result(res) bind(C, name='qtf_qlineedit_isReadOnly')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: e
             integer(c_int) :: res
         end function qtf_qlineedit_isReadOnly
 
+        !> C: `void qtf_qlineedit_setMaxLength(void *e, int n)`
         subroutine qtf_qlineedit_setMaxLength(e, n) bind(C, name='qtf_qlineedit_setMaxLength')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: e
             integer(c_int), value :: n
         end subroutine qtf_qlineedit_setMaxLength
 
+        !> C: `int qtf_qlineedit_maxLength(void *e)`
         function qtf_qlineedit_maxLength(e) result(res) bind(C, name='qtf_qlineedit_maxLength')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: e
             integer(c_int) :: res
         end function qtf_qlineedit_maxLength
 
+        !> C: `void qtf_qlineedit_clear(void *e)`
         subroutine qtf_qlineedit_clear(e) bind(C, name='qtf_qlineedit_clear')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: e
         end subroutine qtf_qlineedit_clear
 
+        !> C: `void *qtf_qspinbox_new(void *parent)`
         function qtf_qspinbox_new(parent) result(res) bind(C, name='qtf_qspinbox_new')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qspinbox_new
 
+        !> C: `void qtf_qspinbox_setRange(void *s, int lo, int hi)`
         subroutine qtf_qspinbox_setRange(s, lo, hi) bind(C, name='qtf_qspinbox_setRange')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int), value :: lo
             integer(c_int), value :: hi
         end subroutine qtf_qspinbox_setRange
 
+        !> C: `int qtf_qspinbox_minimum(void *s)`
         function qtf_qspinbox_minimum(s) result(res) bind(C, name='qtf_qspinbox_minimum')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int) :: res
         end function qtf_qspinbox_minimum
 
+        !> C: `int qtf_qspinbox_maximum(void *s)`
         function qtf_qspinbox_maximum(s) result(res) bind(C, name='qtf_qspinbox_maximum')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int) :: res
         end function qtf_qspinbox_maximum
 
+        !> C: `void qtf_qspinbox_setValue(void *s, int v)`
         subroutine qtf_qspinbox_setValue(s, v) bind(C, name='qtf_qspinbox_setValue')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int), value :: v
         end subroutine qtf_qspinbox_setValue
 
+        !> C: `int qtf_qspinbox_value(void *s)`
         function qtf_qspinbox_value(s) result(res) bind(C, name='qtf_qspinbox_value')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int) :: res
         end function qtf_qspinbox_value
 
+        !> C: `void qtf_qspinbox_setSingleStep(void *s, int v)`
         subroutine qtf_qspinbox_setSingleStep(s, v) bind(C, name='qtf_qspinbox_setSingleStep')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int), value :: v
         end subroutine qtf_qspinbox_setSingleStep
 
+        !> C: `int qtf_qspinbox_singleStep(void *s)`
         function qtf_qspinbox_singleStep(s) result(res) bind(C, name='qtf_qspinbox_singleStep')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int) :: res
         end function qtf_qspinbox_singleStep
 
+        !> C: `void qtf_qspinbox_setPrefix(void *s, const char *p, int len)`
         subroutine qtf_qspinbox_setPrefix(s, p, len) bind(C, name='qtf_qspinbox_setPrefix')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             character(kind=c_char), dimension(*), intent(in) :: p
             integer(c_int), value :: len
         end subroutine qtf_qspinbox_setPrefix
 
+        !> C: `void qtf_qspinbox_setSuffix(void *s, const char *p, int len)`
         subroutine qtf_qspinbox_setSuffix(s, p, len) bind(C, name='qtf_qspinbox_setSuffix')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             character(kind=c_char), dimension(*), intent(in) :: p
             integer(c_int), value :: len
         end subroutine qtf_qspinbox_setSuffix
 
+        !> C: `void *qtf_qdoublespinbox_new(void *parent)`
         function qtf_qdoublespinbox_new(parent) result(res) bind(C, name='qtf_qdoublespinbox_new')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qdoublespinbox_new
 
+        !> C: `void qtf_qdoublespinbox_setRange(void *s, double lo, double hi)`
         subroutine qtf_qdoublespinbox_setRange(s, lo, hi) bind(C, name='qtf_qdoublespinbox_setRange')
             import :: c_double, c_ptr
+            implicit none
             type(c_ptr), value :: s
             real(c_double), value :: lo
             real(c_double), value :: hi
         end subroutine qtf_qdoublespinbox_setRange
 
+        !> C: `double qtf_qdoublespinbox_minimum(void *s)`
         function qtf_qdoublespinbox_minimum(s) result(res) bind(C, name='qtf_qdoublespinbox_minimum')
             import :: c_double, c_ptr
+            implicit none
             type(c_ptr), value :: s
             real(c_double) :: res
         end function qtf_qdoublespinbox_minimum
 
+        !> C: `double qtf_qdoublespinbox_maximum(void *s)`
         function qtf_qdoublespinbox_maximum(s) result(res) bind(C, name='qtf_qdoublespinbox_maximum')
             import :: c_double, c_ptr
+            implicit none
             type(c_ptr), value :: s
             real(c_double) :: res
         end function qtf_qdoublespinbox_maximum
 
+        !> C: `void qtf_qdoublespinbox_setValue(void *s, double v)`
         subroutine qtf_qdoublespinbox_setValue(s, v) bind(C, name='qtf_qdoublespinbox_setValue')
             import :: c_double, c_ptr
+            implicit none
             type(c_ptr), value :: s
             real(c_double), value :: v
         end subroutine qtf_qdoublespinbox_setValue
 
+        !> C: `double qtf_qdoublespinbox_value(void *s)`
         function qtf_qdoublespinbox_value(s) result(res) bind(C, name='qtf_qdoublespinbox_value')
             import :: c_double, c_ptr
+            implicit none
             type(c_ptr), value :: s
             real(c_double) :: res
         end function qtf_qdoublespinbox_value
 
+        !> C: `void qtf_qdoublespinbox_setSingleStep(void *s, double v)`
         subroutine qtf_qdoublespinbox_setSingleStep(s, v) bind(C, name='qtf_qdoublespinbox_setSingleStep')
             import :: c_double, c_ptr
+            implicit none
             type(c_ptr), value :: s
             real(c_double), value :: v
         end subroutine qtf_qdoublespinbox_setSingleStep
 
+        !> C: `double qtf_qdoublespinbox_singleStep(void *s)`
         function qtf_qdoublespinbox_singleStep(s) result(res) bind(C, name='qtf_qdoublespinbox_singleStep')
             import :: c_double, c_ptr
+            implicit none
             type(c_ptr), value :: s
             real(c_double) :: res
         end function qtf_qdoublespinbox_singleStep
 
+        !> C: `void qtf_qdoublespinbox_setDecimals(void *s, int n)`
         subroutine qtf_qdoublespinbox_setDecimals(s, n) bind(C, name='qtf_qdoublespinbox_setDecimals')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int), value :: n
         end subroutine qtf_qdoublespinbox_setDecimals
 
+        !> C: `int qtf_qdoublespinbox_decimals(void *s)`
         function qtf_qdoublespinbox_decimals(s) result(res) bind(C, name='qtf_qdoublespinbox_decimals')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int) :: res
         end function qtf_qdoublespinbox_decimals
 
+        !> C: `void qtf_qdoublespinbox_setPrefix(void *s, const char *p, int len)`
         subroutine qtf_qdoublespinbox_setPrefix(s, p, len) bind(C, name='qtf_qdoublespinbox_setPrefix')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             character(kind=c_char), dimension(*), intent(in) :: p
             integer(c_int), value :: len
         end subroutine qtf_qdoublespinbox_setPrefix
 
+        !> C: `void qtf_qdoublespinbox_setSuffix(void *s, const char *p, int len)`
         subroutine qtf_qdoublespinbox_setSuffix(s, p, len) bind(C, name='qtf_qdoublespinbox_setSuffix')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             character(kind=c_char), dimension(*), intent(in) :: p
             integer(c_int), value :: len
         end subroutine qtf_qdoublespinbox_setSuffix
 
+        !> C: `void *qtf_qslider_new(int orientation, void *parent)`
         function qtf_qslider_new(orientation, parent) result(res) bind(C, name='qtf_qslider_new')
             import :: c_int, c_ptr
+            implicit none
             integer(c_int), value :: orientation
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qslider_new
 
+        !> C: `void qtf_qabstractslider_setRange(void *s, int lo, int hi)`
         subroutine qtf_qabstractslider_setRange(s, lo, hi) bind(C, name='qtf_qabstractslider_setRange')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int), value :: lo
             integer(c_int), value :: hi
         end subroutine qtf_qabstractslider_setRange
 
+        !> C: `int qtf_qabstractslider_minimum(void *s)`
         function qtf_qabstractslider_minimum(s) result(res) bind(C, name='qtf_qabstractslider_minimum')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int) :: res
         end function qtf_qabstractslider_minimum
 
+        !> C: `int qtf_qabstractslider_maximum(void *s)`
         function qtf_qabstractslider_maximum(s) result(res) bind(C, name='qtf_qabstractslider_maximum')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int) :: res
         end function qtf_qabstractslider_maximum
 
+        !> C: `void qtf_qabstractslider_setValue(void *s, int v)`
         subroutine qtf_qabstractslider_setValue(s, v) bind(C, name='qtf_qabstractslider_setValue')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int), value :: v
         end subroutine qtf_qabstractslider_setValue
 
+        !> C: `int qtf_qabstractslider_value(void *s)`
         function qtf_qabstractslider_value(s) result(res) bind(C, name='qtf_qabstractslider_value')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int) :: res
         end function qtf_qabstractslider_value
 
+        !> C: `void qtf_qabstractslider_setSingleStep(void *s, int v)`
         subroutine qtf_qabstractslider_setSingleStep(s, v) bind(C, name='qtf_qabstractslider_setSingleStep')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int), value :: v
         end subroutine qtf_qabstractslider_setSingleStep
 
+        !> C: `void qtf_qabstractslider_setPageStep(void *s, int v)`
         subroutine qtf_qabstractslider_setPageStep(s, v) bind(C, name='qtf_qabstractslider_setPageStep')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int), value :: v
         end subroutine qtf_qabstractslider_setPageStep
 
+        !> C: `void qtf_qabstractslider_setOrientation(void *s, int o)`
         subroutine qtf_qabstractslider_setOrientation(s, o) bind(C, name='qtf_qabstractslider_setOrientation')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int), value :: o
         end subroutine qtf_qabstractslider_setOrientation
 
+        !> C: `int qtf_qabstractslider_orientation(void *s)`
         function qtf_qabstractslider_orientation(s) result(res) bind(C, name='qtf_qabstractslider_orientation')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: s
             integer(c_int) :: res
         end function qtf_qabstractslider_orientation
 
+        !> C: `void *qtf_qcombobox_new(void *parent)`
         function qtf_qcombobox_new(parent) result(res) bind(C, name='qtf_qcombobox_new')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qcombobox_new
 
+        !> C: `void qtf_qcombobox_addItem(void *c, const char *s, int len)`
         subroutine qtf_qcombobox_addItem(c, s, len) bind(C, name='qtf_qcombobox_addItem')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: c
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qcombobox_addItem
 
+        !> C: `void qtf_qcombobox_insertItem(void *c, int index, const char *s, int len)`
         subroutine qtf_qcombobox_insertItem(c, index, s, len) bind(C, name='qtf_qcombobox_insertItem')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: c
             integer(c_int), value :: index
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qcombobox_insertItem
 
+        !> C: `void qtf_qcombobox_removeItem(void *c, int index)`
         subroutine qtf_qcombobox_removeItem(c, index) bind(C, name='qtf_qcombobox_removeItem')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: c
             integer(c_int), value :: index
         end subroutine qtf_qcombobox_removeItem
 
+        !> C: `void qtf_qcombobox_clear(void *c)`
         subroutine qtf_qcombobox_clear(c) bind(C, name='qtf_qcombobox_clear')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: c
         end subroutine qtf_qcombobox_clear
 
+        !> C: `int qtf_qcombobox_count(void *c)`
         function qtf_qcombobox_count(c) result(res) bind(C, name='qtf_qcombobox_count')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: c
             integer(c_int) :: res
         end function qtf_qcombobox_count
 
+        !> C: `int qtf_qcombobox_currentIndex(void *c)`
         function qtf_qcombobox_currentIndex(c) result(res) bind(C, name='qtf_qcombobox_currentIndex')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: c
             integer(c_int) :: res
         end function qtf_qcombobox_currentIndex
 
+        !> C: `void qtf_qcombobox_setCurrentIndex(void *c, int index)`
         subroutine qtf_qcombobox_setCurrentIndex(c, index) bind(C, name='qtf_qcombobox_setCurrentIndex')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: c
             integer(c_int), value :: index
         end subroutine qtf_qcombobox_setCurrentIndex
 
+        !> C: `char *qtf_qcombobox_currentText(void *c, int *len)`
         function qtf_qcombobox_currentText(c, len) result(res) bind(C, name='qtf_qcombobox_currentText')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: c
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qcombobox_currentText
 
+        !> C: `void qtf_qcombobox_setCurrentText(void *c, const char *s, int len)`
         subroutine qtf_qcombobox_setCurrentText(c, s, len) bind(C, name='qtf_qcombobox_setCurrentText')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: c
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qcombobox_setCurrentText
 
+        !> C: `char *qtf_qcombobox_itemText(void *c, int index, int *len)`
         function qtf_qcombobox_itemText(c, index, len) result(res) bind(C, name='qtf_qcombobox_itemText')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: c
             integer(c_int), value :: index
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qcombobox_itemText
 
+        !> C: `int qtf_qcombobox_findText(void *c, const char *s, int len)`
         function qtf_qcombobox_findText(c, s, len) result(res) bind(C, name='qtf_qcombobox_findText')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: c
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
             integer(c_int) :: res
         end function qtf_qcombobox_findText
 
+        !> C: `void qtf_qcombobox_setEditable(void *c, int b)`
         subroutine qtf_qcombobox_setEditable(c, b) bind(C, name='qtf_qcombobox_setEditable')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: c
             integer(c_int), value :: b
         end subroutine qtf_qcombobox_setEditable
 
+        !> C: `void qtf_qlayout_setContentsMargins(void *l, int left, int top, int right, int bottom)`
         subroutine qtf_qlayout_setContentsMargins(l, left, top, right, bottom) &
                 bind(C, name='qtf_qlayout_setContentsMargins')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: l
             integer(c_int), value :: left
             integer(c_int), value :: top
@@ -716,72 +934,94 @@ module qt_c_widgets
             integer(c_int), value :: bottom
         end subroutine qtf_qlayout_setContentsMargins
 
+        !> C: `void qtf_qlayout_setSpacing(void *l, int s)`
         subroutine qtf_qlayout_setSpacing(l, s) bind(C, name='qtf_qlayout_setSpacing')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: l
             integer(c_int), value :: s
         end subroutine qtf_qlayout_setSpacing
 
+        !> C: `int qtf_qlayout_spacing(void *l)`
         function qtf_qlayout_spacing(l) result(res) bind(C, name='qtf_qlayout_spacing')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: l
             integer(c_int) :: res
         end function qtf_qlayout_spacing
 
+        !> C: `int qtf_qlayout_count(void *l)`
         function qtf_qlayout_count(l) result(res) bind(C, name='qtf_qlayout_count')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: l
             integer(c_int) :: res
         end function qtf_qlayout_count
 
+        !> C: `void *qtf_qvboxlayout_new(void *parent)`
         function qtf_qvboxlayout_new(parent) result(res) bind(C, name='qtf_qvboxlayout_new')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qvboxlayout_new
 
+        !> C: `void *qtf_qhboxlayout_new(void *parent)`
         function qtf_qhboxlayout_new(parent) result(res) bind(C, name='qtf_qhboxlayout_new')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qhboxlayout_new
 
+        !> C: `void qtf_qboxlayout_addWidget(void *l, void *w, int stretch, int alignment)`
         subroutine qtf_qboxlayout_addWidget(l, w, stretch, alignment) bind(C, name='qtf_qboxlayout_addWidget')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: l
             type(c_ptr), value :: w
             integer(c_int), value :: stretch
             integer(c_int), value :: alignment
         end subroutine qtf_qboxlayout_addWidget
 
+        !> C: `void qtf_qboxlayout_addLayout(void *l, void *child, int stretch)`
         subroutine qtf_qboxlayout_addLayout(l, child, stretch) bind(C, name='qtf_qboxlayout_addLayout')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: l
             type(c_ptr), value :: child
             integer(c_int), value :: stretch
         end subroutine qtf_qboxlayout_addLayout
 
+        !> C: `void qtf_qboxlayout_addStretch(void *l, int stretch)`
         subroutine qtf_qboxlayout_addStretch(l, stretch) bind(C, name='qtf_qboxlayout_addStretch')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: l
             integer(c_int), value :: stretch
         end subroutine qtf_qboxlayout_addStretch
 
+        !> C: `void qtf_qboxlayout_addSpacing(void *l, int size)`
         subroutine qtf_qboxlayout_addSpacing(l, size) bind(C, name='qtf_qboxlayout_addSpacing')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: l
             integer(c_int), value :: size
         end subroutine qtf_qboxlayout_addSpacing
 
+        !> C: `void *qtf_qgridlayout_new(void *parent)`
         function qtf_qgridlayout_new(parent) result(res) bind(C, name='qtf_qgridlayout_new')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qgridlayout_new
 
+        !> C: `void qtf_qgridlayout_addWidget(void *l, void *w, int row, int col, int rowSpan, int colSpan, int alignment)`
         subroutine qtf_qgridlayout_addWidget(l, w, row, col, rowSpan, colSpan, alignment) &
                 bind(C, name='qtf_qgridlayout_addWidget')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: l
             type(c_ptr), value :: w
             integer(c_int), value :: row
@@ -791,9 +1031,11 @@ module qt_c_widgets
             integer(c_int), value :: alignment
         end subroutine qtf_qgridlayout_addWidget
 
+        !> C: `void qtf_qgridlayout_addLayout(void *l, void *child, int row, int col, int rowSpan, int colSpan, int alignment)`
         subroutine qtf_qgridlayout_addLayout(l, child, row, col, rowSpan, colSpan, alignment) &
                 bind(C, name='qtf_qgridlayout_addLayout')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: l
             type(c_ptr), value :: child
             integer(c_int), value :: row
@@ -803,253 +1045,333 @@ module qt_c_widgets
             integer(c_int), value :: alignment
         end subroutine qtf_qgridlayout_addLayout
 
+        !> C: `void qtf_qgridlayout_setRowStretch(void *l, int row, int stretch)`
         subroutine qtf_qgridlayout_setRowStretch(l, row, stretch) bind(C, name='qtf_qgridlayout_setRowStretch')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: l
             integer(c_int), value :: row
             integer(c_int), value :: stretch
         end subroutine qtf_qgridlayout_setRowStretch
 
+        !> C: `void qtf_qgridlayout_setColumnStretch(void *l, int col, int stretch)`
         subroutine qtf_qgridlayout_setColumnStretch(l, col, stretch) bind(C, name='qtf_qgridlayout_setColumnStretch')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: l
             integer(c_int), value :: col
             integer(c_int), value :: stretch
         end subroutine qtf_qgridlayout_setColumnStretch
 
+        !> C: `int qtf_qgridlayout_rowCount(void *l)`
         function qtf_qgridlayout_rowCount(l) result(res) bind(C, name='qtf_qgridlayout_rowCount')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: l
             integer(c_int) :: res
         end function qtf_qgridlayout_rowCount
 
+        !> C: `int qtf_qgridlayout_columnCount(void *l)`
         function qtf_qgridlayout_columnCount(l) result(res) bind(C, name='qtf_qgridlayout_columnCount')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: l
             integer(c_int) :: res
         end function qtf_qgridlayout_columnCount
 
+        !> C: `void *qtf_qmainwindow_new(void *parent)`
         function qtf_qmainwindow_new(parent) result(res) bind(C, name='qtf_qmainwindow_new')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qmainwindow_new
 
+        !> C: `void qtf_qmainwindow_setCentralWidget(void *m, void *w)`
         subroutine qtf_qmainwindow_setCentralWidget(m, w) bind(C, name='qtf_qmainwindow_setCentralWidget')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: m
             type(c_ptr), value :: w
         end subroutine qtf_qmainwindow_setCentralWidget
 
+        !> C: `void *qtf_qmainwindow_centralWidget(void *m)`
         function qtf_qmainwindow_centralWidget(m) result(res) bind(C, name='qtf_qmainwindow_centralWidget')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: m
             type(c_ptr) :: res
         end function qtf_qmainwindow_centralWidget
 
+        !> C: `void *qtf_qmainwindow_statusBar(void *m)`
         function qtf_qmainwindow_statusBar(m) result(res) bind(C, name='qtf_qmainwindow_statusBar')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: m
             type(c_ptr) :: res
         end function qtf_qmainwindow_statusBar
 
+        !> C: `void *qtf_qmainwindow_menuBar(void *m)`
         function qtf_qmainwindow_menuBar(m) result(res) bind(C, name='qtf_qmainwindow_menuBar')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: m
             type(c_ptr) :: res
         end function qtf_qmainwindow_menuBar
 
+        !> C: `void *qtf_qmainwindow_addToolBar(void *m, const char *s, int len)`
         function qtf_qmainwindow_addToolBar(m, s, len) result(res) bind(C, name='qtf_qmainwindow_addToolBar')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: m
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
             type(c_ptr) :: res
         end function qtf_qmainwindow_addToolBar
 
+        !> C: `void *qtf_qmenubar_addMenu(void *b, const char *s, int len)`
         function qtf_qmenubar_addMenu(b, s, len) result(res) bind(C, name='qtf_qmenubar_addMenu')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: b
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
             type(c_ptr) :: res
         end function qtf_qmenubar_addMenu
 
+        !> C: `void *qtf_qmenu_new(const char *s, int len, void *parent)`
         function qtf_qmenu_new(s, len, parent) result(res) bind(C, name='qtf_qmenu_new')
             import :: c_char, c_int, c_ptr
+            implicit none
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qmenu_new
 
+        !> C: `void *qtf_qmenu_addMenu(void *m, const char *s, int len)`
         function qtf_qmenu_addMenu(m, s, len) result(res) bind(C, name='qtf_qmenu_addMenu')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: m
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
             type(c_ptr) :: res
         end function qtf_qmenu_addMenu
 
+        !> C: `void *qtf_qmenu_addSeparator(void *m)`
         function qtf_qmenu_addSeparator(m) result(res) bind(C, name='qtf_qmenu_addSeparator')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: m
             type(c_ptr) :: res
         end function qtf_qmenu_addSeparator
 
+        !> C: `char *qtf_qmenu_title(void *m, int *len)`
         function qtf_qmenu_title(m, len) result(res) bind(C, name='qtf_qmenu_title')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: m
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qmenu_title
 
+        !> C: `void *qtf_qmenu_menuAction(void *m)`
         function qtf_qmenu_menuAction(m) result(res) bind(C, name='qtf_qmenu_menuAction')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: m
             type(c_ptr) :: res
         end function qtf_qmenu_menuAction
 
+        !> C: `void *qtf_qtoolbar_addSeparator(void *t)`
         function qtf_qtoolbar_addSeparator(t) result(res) bind(C, name='qtf_qtoolbar_addSeparator')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: t
             type(c_ptr) :: res
         end function qtf_qtoolbar_addSeparator
 
+        !> C: `void *qtf_qtoolbar_addWidget(void *t, void *w)`
         function qtf_qtoolbar_addWidget(t, w) result(res) bind(C, name='qtf_qtoolbar_addWidget')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: t
             type(c_ptr), value :: w
             type(c_ptr) :: res
         end function qtf_qtoolbar_addWidget
 
+        !> C: `void qtf_qstatusbar_showMessage(void *b, const char *s, int len, int timeout)`
         subroutine qtf_qstatusbar_showMessage(b, s, len, timeout) bind(C, name='qtf_qstatusbar_showMessage')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: b
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
             integer(c_int), value :: timeout
         end subroutine qtf_qstatusbar_showMessage
 
+        !> C: `void qtf_qstatusbar_clearMessage(void *b)`
         subroutine qtf_qstatusbar_clearMessage(b) bind(C, name='qtf_qstatusbar_clearMessage')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: b
         end subroutine qtf_qstatusbar_clearMessage
 
+        !> C: `char *qtf_qstatusbar_currentMessage(void *b, int *len)`
         function qtf_qstatusbar_currentMessage(b, len) result(res) bind(C, name='qtf_qstatusbar_currentMessage')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: b
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qstatusbar_currentMessage
 
+        !> C: `void *qtf_qdialog_new(void *parent)`
         function qtf_qdialog_new(parent) result(res) bind(C, name='qtf_qdialog_new')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qdialog_new
 
+        !> C: `int qtf_qdialog_exec(void *d)`
         function qtf_qdialog_exec(d) result(res) bind(C, name='qtf_qdialog_exec')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: d
             integer(c_int) :: res
         end function qtf_qdialog_exec
 
+        !> C: `void qtf_qdialog_open(void *d)`
         subroutine qtf_qdialog_open(d) bind(C, name='qtf_qdialog_open')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: d
         end subroutine qtf_qdialog_open
 
+        !> C: `void qtf_qdialog_accept(void *d)`
         subroutine qtf_qdialog_accept(d) bind(C, name='qtf_qdialog_accept')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: d
         end subroutine qtf_qdialog_accept
 
+        !> C: `void qtf_qdialog_reject(void *d)`
         subroutine qtf_qdialog_reject(d) bind(C, name='qtf_qdialog_reject')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: d
         end subroutine qtf_qdialog_reject
 
+        !> C: `void qtf_qdialog_done(void *d, int r)`
         subroutine qtf_qdialog_done(d, r) bind(C, name='qtf_qdialog_done')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: d
             integer(c_int), value :: r
         end subroutine qtf_qdialog_done
 
+        !> C: `int qtf_qdialog_result(void *d)`
         function qtf_qdialog_result(d) result(res) bind(C, name='qtf_qdialog_result')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: d
             integer(c_int) :: res
         end function qtf_qdialog_result
 
+        !> C: `void qtf_qdialog_setModal(void *d, int b)`
         subroutine qtf_qdialog_setModal(d, b) bind(C, name='qtf_qdialog_setModal')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: d
             integer(c_int), value :: b
         end subroutine qtf_qdialog_setModal
 
+        !> C: `void *qtf_qmessagebox_new(void *parent)`
         function qtf_qmessagebox_new(parent) result(res) bind(C, name='qtf_qmessagebox_new')
             import :: c_ptr
+            implicit none
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qmessagebox_new
 
+        !> C: `void qtf_qmessagebox_setText(void *m, const char *s, int len)`
         subroutine qtf_qmessagebox_setText(m, s, len) bind(C, name='qtf_qmessagebox_setText')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: m
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qmessagebox_setText
 
+        !> C: `char *qtf_qmessagebox_text(void *m, int *len)`
         function qtf_qmessagebox_text(m, len) result(res) bind(C, name='qtf_qmessagebox_text')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: m
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qmessagebox_text
 
+        !> C: `void qtf_qmessagebox_setInformativeText(void *m, const char *s, int len)`
         subroutine qtf_qmessagebox_setInformativeText(m, s, len) bind(C, name='qtf_qmessagebox_setInformativeText')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: m
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qmessagebox_setInformativeText
 
+        !> C: `char *qtf_qmessagebox_informativeText(void *m, int *len)`
         function qtf_qmessagebox_informativeText(m, len) result(res) bind(C, name='qtf_qmessagebox_informativeText')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: m
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qmessagebox_informativeText
 
+        !> C: `void qtf_qmessagebox_setIcon(void *m, int icon)`
         subroutine qtf_qmessagebox_setIcon(m, icon) bind(C, name='qtf_qmessagebox_setIcon')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: m
             integer(c_int), value :: icon
         end subroutine qtf_qmessagebox_setIcon
 
+        !> C: `void qtf_qmessagebox_setStandardButtons(void *m, int buttons)`
         subroutine qtf_qmessagebox_setStandardButtons(m, buttons) bind(C, name='qtf_qmessagebox_setStandardButtons')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: m
             integer(c_int), value :: buttons
         end subroutine qtf_qmessagebox_setStandardButtons
 
+        !> C: `void qtf_qmessagebox_setDefaultButton(void *m, int which)`
         subroutine qtf_qmessagebox_setDefaultButton(m, which) bind(C, name='qtf_qmessagebox_setDefaultButton')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: m
             integer(c_int), value :: which
         end subroutine qtf_qmessagebox_setDefaultButton
 
+        !> C: `void *qtf_qmessagebox_button(void *m, int which)`
         function qtf_qmessagebox_button(m, which) result(res) bind(C, name='qtf_qmessagebox_button')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: m
             integer(c_int), value :: which
             type(c_ptr) :: res
         end function qtf_qmessagebox_button
 
+        !> static convenience dialogs; `which`: 1 information, 2 warning, 3 critical, 4 question
+        !>
+        !> C: `int qtf_qmessagebox_static(int which, void *parent, const char *title, int tlen, const char *text, int len, int buttons, int defaultButton)`
         function qtf_qmessagebox_static(which, parent, title, tlen, text, len, buttons, defaultButton) &
                 result(res) bind(C, name='qtf_qmessagebox_static')
             import :: c_char, c_int, c_ptr
+            implicit none
             integer(c_int), value :: which
             type(c_ptr), value :: parent
             character(kind=c_char), dimension(*), intent(in) :: title
@@ -1061,9 +1383,11 @@ module qt_c_widgets
             integer(c_int) :: res
         end function qtf_qmessagebox_static
 
+        !> C: `void *qtf_qfiledialog_new(void *parent, const char *caption, int clen, const char *dir, int dlen, const char *filter, int flen)`
         function qtf_qfiledialog_new(parent, caption, clen, dir, dlen, filter, flen) &
                 result(res) bind(C, name='qtf_qfiledialog_new')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: parent
             character(kind=c_char), dimension(*), intent(in) :: caption
             integer(c_int), value :: clen
@@ -1074,63 +1398,83 @@ module qt_c_widgets
             type(c_ptr) :: res
         end function qtf_qfiledialog_new
 
+        !> C: `void qtf_qfiledialog_setFileMode(void *d, int mode)`
         subroutine qtf_qfiledialog_setFileMode(d, mode) bind(C, name='qtf_qfiledialog_setFileMode')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: d
             integer(c_int), value :: mode
         end subroutine qtf_qfiledialog_setFileMode
 
+        !> C: `void qtf_qfiledialog_setAcceptMode(void *d, int mode)`
         subroutine qtf_qfiledialog_setAcceptMode(d, mode) bind(C, name='qtf_qfiledialog_setAcceptMode')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: d
             integer(c_int), value :: mode
         end subroutine qtf_qfiledialog_setAcceptMode
 
+        !> C: `void qtf_qfiledialog_setOption(void *d, int option, int on)`
         subroutine qtf_qfiledialog_setOption(d, option, on) bind(C, name='qtf_qfiledialog_setOption')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: d
             integer(c_int), value :: option
             integer(c_int), value :: on
         end subroutine qtf_qfiledialog_setOption
 
+        !> C: `void qtf_qfiledialog_setNameFilter(void *d, const char *s, int len)`
         subroutine qtf_qfiledialog_setNameFilter(d, s, len) bind(C, name='qtf_qfiledialog_setNameFilter')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: d
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qfiledialog_setNameFilter
 
+        !> C: `void qtf_qfiledialog_setDirectory(void *d, const char *s, int len)`
         subroutine qtf_qfiledialog_setDirectory(d, s, len) bind(C, name='qtf_qfiledialog_setDirectory')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: d
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qfiledialog_setDirectory
 
+        !> C: `void qtf_qfiledialog_setDefaultSuffix(void *d, const char *s, int len)`
         subroutine qtf_qfiledialog_setDefaultSuffix(d, s, len) bind(C, name='qtf_qfiledialog_setDefaultSuffix')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: d
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qfiledialog_setDefaultSuffix
 
+        !> C: `void qtf_qfiledialog_selectFile(void *d, const char *s, int len)`
         subroutine qtf_qfiledialog_selectFile(d, s, len) bind(C, name='qtf_qfiledialog_selectFile')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: d
             character(kind=c_char), dimension(*), intent(in) :: s
             integer(c_int), value :: len
         end subroutine qtf_qfiledialog_selectFile
 
+        !> C: `char *qtf_qfiledialog_selectedFiles(void *d, int *len)`
         function qtf_qfiledialog_selectedFiles(d, len) result(res) bind(C, name='qtf_qfiledialog_selectedFiles')
             import :: c_int, c_ptr
+            implicit none
             type(c_ptr), value :: d
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qfiledialog_selectedFiles
 
+        !> static dialogs; `which`: 1 getOpenFileName, 2 getSaveFileName, 3 getExistingDirectory
+        !>
+        !> C: `char *qtf_qfiledialog_static(int which, void *parent, const char *caption, int clen, const char *dir, int dlen, const char *filter, int flen, int options, int *len)`
         function qtf_qfiledialog_static(which, parent, caption, clen, dir, dlen, filter, flen, options, len) &
                 result(res) bind(C, name='qtf_qfiledialog_static')
             import :: c_char, c_int, c_ptr
+            implicit none
             integer(c_int), value :: which
             type(c_ptr), value :: parent
             character(kind=c_char), dimension(*), intent(in) :: caption
@@ -1144,9 +1488,11 @@ module qt_c_widgets
             type(c_ptr) :: res
         end function qtf_qfiledialog_static
 
+        !> C: `char *qtf_qfiledialog_getOpenFileNames(void *parent, const char *caption, int clen, const char *dir, int dlen, const char *filter, int flen, int options, int *len)`
         function qtf_qfiledialog_getOpenFileNames(parent, caption, clen, dir, dlen, filter, flen, options, len) &
                 result(res) bind(C, name='qtf_qfiledialog_getOpenFileNames')
             import :: c_char, c_int, c_ptr
+            implicit none
             type(c_ptr), value :: parent
             character(kind=c_char), dimension(*), intent(in) :: caption
             integer(c_int), value :: clen

@@ -5,12 +5,14 @@ module test_core_slots
     use qt
     implicit none
 
+    !> State for the repeating-timer test.
     type :: tick_state
         type(QTimer) :: timer
         integer :: ticks = 0
         integer :: last = 3
     end type tick_state
 
+    !> Records objectNameChanged emissions.
     type :: name_log
         character(len=:), allocatable :: last
         integer :: calls = 0
@@ -20,6 +22,7 @@ module test_core_slots
 
 contains
 
+    !> Increment the integer passed as `data`.
     subroutine count_calls(data)
         class(*), intent(inout), optional :: data
         if (.not. present(data)) return
@@ -29,6 +32,7 @@ contains
         end select
     end subroutine count_calls
 
+    !> Record the new object name.
     subroutine record_name(value, data)
         character(len=*), intent(in) :: value
         class(*), intent(inout), optional :: data
@@ -39,6 +43,7 @@ contains
         end select
     end subroutine record_name
 
+    !> Count ticks; stop the timer and quit after `last` ticks.
     subroutine on_tick(data)
         class(*), intent(inout), optional :: data
         select type (data)
@@ -51,6 +56,7 @@ contains
         end select
     end subroutine on_tick
 
+    !> Quit the event loop.
     subroutine quit_now(data)
         class(*), intent(inout), optional :: data
         call QApplication_quit()
@@ -72,6 +78,7 @@ contains
 
 end module test_core_slots
 
+!> Tests QObject, signals and slots, slot lifetime and QTimer.
 program test_core
 
     use qt

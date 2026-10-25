@@ -135,9 +135,11 @@ module qt_gui
         module procedure :: qcolor_fromString
     end interface QColor
 
+    !> Compare two colors (all components and validity).
     interface operator(==)
         module procedure :: qcolor_eq
     end interface operator(==)
+    !> True if two colors differ.
     interface operator(/=)
         module procedure :: qcolor_ne
     end interface operator(/=)
@@ -188,6 +190,7 @@ module qt_gui
     ! ------------------------------------------------------------------
     ! images
 
+    !> An image in memory (a C++ QImage); release it with `delete`.
     type, public :: QImage
         type(c_ptr) :: ptr = c_null_ptr
     contains
@@ -205,6 +208,7 @@ module qt_gui
         module procedure :: qimage_new, qimage_fromFile
     end interface QImage
 
+    !> An image for on-screen display (e.g. from `QWidget%grab`); release it with `delete`.
     type, public :: QPixmap
         type(c_ptr) :: ptr = c_null_ptr
     contains
@@ -273,6 +277,7 @@ module qt_gui
     ! ------------------------------------------------------------------
     ! input events
 
+    !> A mouse press, release, move or double-click event.
     type, extends(QEvent), public :: QMouseEvent
     contains
         procedure :: x => qmouseevent_x
@@ -281,10 +286,12 @@ module qt_gui
         procedure :: buttons => qmouseevent_buttons
         procedure :: modifiers => qmouseevent_modifiers
     end type QMouseEvent
+    !> Synthetic event: `QMouseEvent(type, x, y, button [, buttons, modifiers])`.
     interface QMouseEvent
         module procedure :: qmouseevent_new
     end interface QMouseEvent
 
+    !> A key press or release event.
     type, extends(QEvent), public :: QKeyEvent
     contains
         procedure :: key => qkeyevent_key
@@ -292,6 +299,7 @@ module qt_gui
         procedure :: text => qkeyevent_text
         procedure :: isAutoRepeat => qkeyevent_isAutoRepeat
     end type QKeyEvent
+    !> Synthetic event: `QKeyEvent(type, key [, modifiers, text])`.
     interface QKeyEvent
         module procedure :: qkeyevent_new
     end interface QKeyEvent
@@ -306,10 +314,12 @@ module qt_gui
         procedure :: buttons => qwheelevent_buttons
         procedure :: modifiers => qwheelevent_modifiers
     end type QWheelEvent
+    !> Synthetic event: `QWheelEvent(x, y, angleDeltaX, angleDeltaY [, buttons, modifiers])`.
     interface QWheelEvent
         module procedure :: qwheelevent_new
     end interface QWheelEvent
 
+    !> Sent when a widget's size changes.
     type, extends(QEvent), public :: QResizeEvent
     contains
         procedure :: width => qresizeevent_width
@@ -317,6 +327,7 @@ module qt_gui
         procedure :: oldWidth => qresizeevent_oldWidth
         procedure :: oldHeight => qresizeevent_oldHeight
     end type QResizeEvent
+    !> Synthetic event: `QResizeEvent(width, height, oldWidth, oldHeight)`.
     interface QResizeEvent
         module procedure :: qresizeevent_new
     end interface QResizeEvent
@@ -325,28 +336,38 @@ module qt_gui
     ! event / painter signals (used by QtfWidget)
 
     abstract interface
+        !> Slot for paint requests: draw with `painter` (do not end it).
         subroutine qt_slot_painter(painter, data)
             import :: QPainter
+            implicit none
             type(QPainter), intent(inout) :: painter
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_painter
+        !> Slot for mouse events.
         subroutine qt_slot_mouse_event(event, data)
             import :: QMouseEvent
+            implicit none
             type(QMouseEvent), intent(in) :: event
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_mouse_event
+        !> Slot for key events.
         subroutine qt_slot_key_event(event, data)
             import :: QKeyEvent
+            implicit none
             type(QKeyEvent), intent(in) :: event
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_key_event
+        !> Slot for wheel events.
         subroutine qt_slot_wheel_event(event, data)
             import :: QWheelEvent
+            implicit none
             type(QWheelEvent), intent(in) :: event
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_wheel_event
+        !> Slot for resize events.
         subroutine qt_slot_resize_event(event, data)
             import :: QResizeEvent
+            implicit none
             type(QResizeEvent), intent(in) :: event
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_resize_event
@@ -362,6 +383,7 @@ module qt_gui
         procedure :: connect => qsignalpainter_connect
     end type QSignalPainter
 
+    !> A signal carrying a mouse event.
     type, public :: QSignalMouseEvent
         type(c_ptr) :: sender = c_null_ptr
         integer(c_int) :: id = 0
@@ -369,6 +391,7 @@ module qt_gui
         procedure :: connect => qsignalmouseevent_connect
     end type QSignalMouseEvent
 
+    !> A signal carrying a key event.
     type, public :: QSignalKeyEvent
         type(c_ptr) :: sender = c_null_ptr
         integer(c_int) :: id = 0
@@ -376,6 +399,7 @@ module qt_gui
         procedure :: connect => qsignalkeyevent_connect
     end type QSignalKeyEvent
 
+    !> A signal carrying a wheel event.
     type, public :: QSignalWheelEvent
         type(c_ptr) :: sender = c_null_ptr
         integer(c_int) :: id = 0
@@ -383,6 +407,7 @@ module qt_gui
         procedure :: connect => qsignalwheelevent_connect
     end type QSignalWheelEvent
 
+    !> A signal carrying a resize event.
     type, public :: QSignalResizeEvent
         type(c_ptr) :: sender = c_null_ptr
         integer(c_int) :: id = 0
@@ -390,30 +415,35 @@ module qt_gui
         procedure :: connect => qsignalresizeevent_connect
     end type QSignalResizeEvent
 
+    !> Slot handler for QSignalPainter.
     type, extends(qt_slot_handler) :: painter_handler
         procedure(qt_slot_painter), pointer, nopass :: f => null()
     contains
         procedure :: invoke => painter_handler_invoke
     end type painter_handler
 
+    !> Slot handler for QSignalMouseEvent.
     type, extends(qt_slot_handler) :: mouse_handler
         procedure(qt_slot_mouse_event), pointer, nopass :: f => null()
     contains
         procedure :: invoke => mouse_handler_invoke
     end type mouse_handler
 
+    !> Slot handler for QSignalKeyEvent.
     type, extends(qt_slot_handler) :: key_handler
         procedure(qt_slot_key_event), pointer, nopass :: f => null()
     contains
         procedure :: invoke => key_handler_invoke
     end type key_handler
 
+    !> Slot handler for QSignalWheelEvent.
     type, extends(qt_slot_handler) :: wheel_handler
         procedure(qt_slot_wheel_event), pointer, nopass :: f => null()
     contains
         procedure :: invoke => wheel_handler_invoke
     end type wheel_handler
 
+    !> Slot handler for QSignalResizeEvent.
     type, extends(qt_slot_handler) :: resize_handler
         procedure(qt_slot_resize_event), pointer, nopass :: f => null()
     contains
@@ -444,6 +474,7 @@ module qt_gui
         procedure :: setToolTip => qaction_setToolTip
         procedure :: trigger => qaction_trigger
     end type QAction
+    !> Constructor: `QAction(text [, parent])`.
     interface QAction
         module procedure :: qaction_new
     end interface QAction
@@ -453,6 +484,7 @@ contains
     ! ------------------------------------------------------------------
     ! QColor
 
+    !> Parse a color name (SVG names, `#rgb`, `#rrggbb`); check `isValid()`.
     function qcolor_fromString(name) result(c)
         character(len=*), intent(in) :: name
         type(QColor) :: c
@@ -464,26 +496,31 @@ contains
         c%a = a
     end function qcolor_fromString
 
+    !> The red component (0..255).
     integer function qcolor_red(self)
         class(QColor), intent(in) :: self
         qcolor_red = self%r
     end function qcolor_red
 
+    !> The green component (0..255).
     integer function qcolor_green(self)
         class(QColor), intent(in) :: self
         qcolor_green = self%g
     end function qcolor_green
 
+    !> The blue component (0..255).
     integer function qcolor_blue(self)
         class(QColor), intent(in) :: self
         qcolor_blue = self%b
     end function qcolor_blue
 
+    !> The alpha (opacity) component (0 transparent .. 255 opaque).
     integer function qcolor_alpha(self)
         class(QColor), intent(in) :: self
         qcolor_alpha = self%a
     end function qcolor_alpha
 
+    !> False if the color was built from an unknown name.
     logical function qcolor_isValid(self)
         class(QColor), intent(in) :: self
         qcolor_isValid = self%valid
@@ -497,6 +534,7 @@ contains
         name = lower(name)
     end function qcolor_name
 
+    !> ASCII lower-case copy of `s`.
     pure function lower(s) result(t)
         character(len=*), intent(in) :: s
         character(len=len(s)) :: t
@@ -507,12 +545,14 @@ contains
         end do
     end function lower
 
+    !> True if two colors are equal.
     elemental logical function qcolor_eq(c1, c2)
         type(QColor), intent(in) :: c1, c2
         qcolor_eq = c1%r == c2%r .and. c1%g == c2%g .and. c1%b == c2%b .and. c1%a == c2%a &
                     .and. (c1%valid .eqv. c2%valid)
     end function qcolor_eq
 
+    !> True if two colors differ.
     elemental logical function qcolor_ne(c1, c2)
         type(QColor), intent(in) :: c1, c2
         qcolor_ne = .not. qcolor_eq(c1, c2)
@@ -521,6 +561,7 @@ contains
     ! ------------------------------------------------------------------
     ! QImage, QPixmap
 
+    !> A new, uninitialized ARGB32 image; `fill` it before use.
     function qimage_new(width, height) result(img)
         integer, intent(in) :: width, height
         type(QImage) :: img
@@ -534,28 +575,33 @@ contains
         img%ptr = qtf_qimage_fromFile(fileName, len(fileName, c_int))
     end function qimage_fromFile
 
+    !> Release the image.
     subroutine qimage_delete(self)
         class(QImage), intent(inout) :: self
         if (c_associated(self%ptr)) call qtf_qimage_delete(self%ptr)
         self%ptr = c_null_ptr
     end subroutine qimage_delete
 
+    !> True if there is no image data (e.g. after a failed load).
     logical function qimage_isNull(self)
         class(QImage), intent(in) :: self
         qimage_isNull = .true.
         if (c_associated(self%ptr)) qimage_isNull = qtf_logical(qtf_qimage_isNull(self%ptr))
     end function qimage_isNull
 
+    !> Width in pixels.
     integer function qimage_width(self)
         class(QImage), intent(in) :: self
         qimage_width = qtf_qimage_width(self%ptr)
     end function qimage_width
 
+    !> Height in pixels.
     integer function qimage_height(self)
         class(QImage), intent(in) :: self
         qimage_height = qtf_qimage_height(self%ptr)
     end function qimage_height
 
+    !> Fill the whole image with `color`.
     subroutine qimage_fill(self, color)
         class(QImage), intent(in) :: self
         type(QColor), intent(in) :: color
@@ -563,6 +609,7 @@ contains
                              int(color%b, c_int), int(color%a, c_int))
     end subroutine qimage_fill
 
+    !> The color of pixel (x, y), 0-based.
     function qimage_pixelColor(self, x, y) result(c)
         class(QImage), intent(in) :: self
         integer, intent(in) :: x, y
@@ -572,6 +619,7 @@ contains
         c = QColor(r, g, b, a)
     end function qimage_pixelColor
 
+    !> Set pixel (x, y), 0-based, to `color`.
     subroutine qimage_setPixelColor(self, x, y, color)
         class(QImage), intent(in) :: self
         integer, intent(in) :: x, y
@@ -587,23 +635,27 @@ contains
         qimage_save = qtf_logical(qtf_qimage_save(self%ptr, fileName, len(fileName, c_int)))
     end function qimage_save
 
+    !> Release the pixmap.
     subroutine qpixmap_delete(self)
         class(QPixmap), intent(inout) :: self
         if (c_associated(self%ptr)) call qtf_qpixmap_delete(self%ptr)
         self%ptr = c_null_ptr
     end subroutine qpixmap_delete
 
+    !> True if there is no pixmap data.
     logical function qpixmap_isNull(self)
         class(QPixmap), intent(in) :: self
         qpixmap_isNull = .true.
         if (c_associated(self%ptr)) qpixmap_isNull = qtf_logical(qtf_qpixmap_isNull(self%ptr))
     end function qpixmap_isNull
 
+    !> Width in pixels.
     integer function qpixmap_width(self)
         class(QPixmap), intent(in) :: self
         qpixmap_width = qtf_qpixmap_width(self%ptr)
     end function qpixmap_width
 
+    !> Height in pixels.
     integer function qpixmap_height(self)
         class(QPixmap), intent(in) :: self
         qpixmap_height = qtf_qpixmap_height(self%ptr)
@@ -616,6 +668,7 @@ contains
         img%ptr = qtf_qpixmap_toImage(self%ptr)
     end function qpixmap_toImage
 
+    !> Save to a file; the format follows the extension (.png, .jpg, ...).
     logical function qpixmap_save(self, fileName)
         class(QPixmap), intent(in) :: self
         character(len=*), intent(in) :: fileName
@@ -625,6 +678,7 @@ contains
     ! ------------------------------------------------------------------
     ! QPainter
 
+    !> Begin painting on `image`.
     function qpainter_new_image(image) result(p)
         class(QImage), intent(in) :: image
         type(QPainter) :: p
@@ -641,6 +695,7 @@ contains
         self%owned = .false.
     end subroutine qpainter_end
 
+    !> True while the painter is painting (between begin and end).
     logical function qpainter_isActive(self)
         class(QPainter), intent(in) :: self
         qpainter_isActive = .false.
@@ -653,11 +708,13 @@ contains
         qpainter_deviceWidth = qtf_qpainter_deviceWidth(self%ptr)
     end function qpainter_deviceWidth
 
+    !> Height of the device being painted (widget or image).
     integer function qpainter_deviceHeight(self)
         class(QPainter), intent(in) :: self
         qpainter_deviceHeight = qtf_qpainter_deviceHeight(self%ptr)
     end function qpainter_deviceHeight
 
+    !> Set the pen used for lines, outlines and text.
     subroutine setPen_pen(self, pen)
         class(QPainter), intent(in) :: self
         type(QPen), intent(in) :: pen
@@ -666,12 +723,14 @@ contains
                                  int(pen%style, c_int))
     end subroutine setPen_pen
 
+    !> Use a solid 1-pixel pen of `color`.
     subroutine setPen_color(self, color)
         class(QPainter), intent(in) :: self
         type(QColor), intent(in) :: color
         call self%setPen(QPen(color))
     end subroutine setPen_color
 
+    !> Set the brush used to fill shapes.
     subroutine setBrush_brush(self, brush)
         class(QPainter), intent(in) :: self
         type(QBrush), intent(in) :: brush
@@ -679,12 +738,14 @@ contains
                                    int(brush%color%b, c_int), int(brush%color%a, c_int), int(brush%style, c_int))
     end subroutine setBrush_brush
 
+    !> Fill shapes with a solid `color`.
     subroutine setBrush_color(self, color)
         class(QPainter), intent(in) :: self
         type(QColor), intent(in) :: color
         call self%setBrush(QBrush(color))
     end subroutine setBrush_color
 
+    !> Set the font used for text.
     subroutine qpainter_setFont(self, font)
         class(QPainter), intent(in) :: self
         type(QFont), intent(in) :: font
@@ -697,6 +758,7 @@ contains
         end if
     end subroutine qpainter_setFont
 
+    !> Enable (default) or disable a QPainter_* render hint.
     subroutine qpainter_setRenderHint(self, hint, on)
         class(QPainter), intent(in) :: self
         integer, intent(in) :: hint
@@ -707,69 +769,81 @@ contains
         call qtf_qpainter_setRenderHint(self%ptr, int(hint, c_int), qtf_int(o))
     end subroutine qpainter_setRenderHint
 
+    !> Set the opacity (0 transparent .. 1 opaque).
     subroutine qpainter_setOpacity(self, opacity)
         class(QPainter), intent(in) :: self
         real(c_double), intent(in) :: opacity
         call qtf_qpainter_setOpacity(self%ptr, opacity)
     end subroutine qpainter_setOpacity
 
+    !> Push the painter state (pen, brush, font, transform) on a stack.
     subroutine qpainter_save(self)
         class(QPainter), intent(in) :: self
         call qtf_qpainter_save(self%ptr)
     end subroutine qpainter_save
 
+    !> Pop the painter state saved by `save`.
     subroutine qpainter_restore(self)
         class(QPainter), intent(in) :: self
         call qtf_qpainter_restore(self%ptr)
     end subroutine qpainter_restore
 
+    !> Move the coordinate origin by (dx, dy).
     subroutine translate_d(self, dx, dy)
         class(QPainter), intent(in) :: self
         real(c_double), intent(in) :: dx, dy
         call qtf_qpainter_translate(self%ptr, dx, dy)
     end subroutine translate_d
 
+    !> Move the coordinate origin by (dx, dy).
     subroutine translate_i(self, dx, dy)
         class(QPainter), intent(in) :: self
         integer, intent(in) :: dx, dy
         call qtf_qpainter_translate(self%ptr, real(dx, c_double), real(dy, c_double))
     end subroutine translate_i
 
+    !> Scale the coordinate system by (sx, sy).
     subroutine qpainter_scale(self, sx, sy)
         class(QPainter), intent(in) :: self
         real(c_double), intent(in) :: sx, sy
         call qtf_qpainter_scale(self%ptr, sx, sy)
     end subroutine qpainter_scale
 
+    !> Rotate the coordinate system clockwise by `degrees`.
     subroutine qpainter_rotate(self, degrees)
         class(QPainter), intent(in) :: self
         real(c_double), intent(in) :: degrees
         call qtf_qpainter_rotate(self%ptr, degrees)
     end subroutine qpainter_rotate
 
+    !> Reset the coordinate transform to the identity.
     subroutine qpainter_resetTransform(self)
         class(QPainter), intent(in) :: self
         call qtf_qpainter_resetTransform(self%ptr)
     end subroutine qpainter_resetTransform
 
+    !> Draw a point with the pen.
     subroutine drawPoint_d(self, x, y)
         class(QPainter), intent(in) :: self
         real(c_double), intent(in) :: x, y
         call qtf_qpainter_drawPoint(self%ptr, x, y)
     end subroutine drawPoint_d
 
+    !> Draw a point with the pen.
     subroutine drawPoint_i(self, x, y)
         class(QPainter), intent(in) :: self
         integer, intent(in) :: x, y
         call qtf_qpainter_drawPoint(self%ptr, real(x, c_double), real(y, c_double))
     end subroutine drawPoint_i
 
+    !> Draw a line from (x1, y1) to (x2, y2).
     subroutine drawLine_d(self, x1, y1, x2, y2)
         class(QPainter), intent(in) :: self
         real(c_double), intent(in) :: x1, y1, x2, y2
         call qtf_qpainter_drawLine(self%ptr, x1, y1, x2, y2)
     end subroutine drawLine_d
 
+    !> Draw a line from (x1, y1) to (x2, y2).
     subroutine drawLine_i(self, x1, y1, x2, y2)
         class(QPainter), intent(in) :: self
         integer, intent(in) :: x1, y1, x2, y2
@@ -777,12 +851,14 @@ contains
                                    real(x2, c_double), real(y2, c_double))
     end subroutine drawLine_i
 
+    !> Draw a rectangle: outlined with the pen, filled with the brush.
     subroutine drawRect_d(self, x, y, w, h)
         class(QPainter), intent(in) :: self
         real(c_double), intent(in) :: x, y, w, h
         call qtf_qpainter_drawRect(self%ptr, x, y, w, h)
     end subroutine drawRect_d
 
+    !> Draw a rectangle: outlined with the pen, filled with the brush.
     subroutine drawRect_i(self, x, y, w, h)
         class(QPainter), intent(in) :: self
         integer, intent(in) :: x, y, w, h
@@ -790,12 +866,14 @@ contains
                                    real(w, c_double), real(h, c_double))
     end subroutine drawRect_i
 
+    !> Draw a rectangle with corners rounded by radii (rx, ry).
     subroutine drawRoundedRect_d(self, x, y, w, h, rx, ry)
         class(QPainter), intent(in) :: self
         real(c_double), intent(in) :: x, y, w, h, rx, ry
         call qtf_qpainter_drawRoundedRect(self%ptr, x, y, w, h, rx, ry)
     end subroutine drawRoundedRect_d
 
+    !> Draw a rectangle with corners rounded by radii (rx, ry).
     subroutine drawRoundedRect_i(self, x, y, w, h, rx, ry)
         class(QPainter), intent(in) :: self
         integer, intent(in) :: x, y, w, h, rx, ry
@@ -804,12 +882,14 @@ contains
                                           real(rx, c_double), real(ry, c_double))
     end subroutine drawRoundedRect_i
 
+    !> Draw the ellipse inscribed in the rectangle (x, y, w, h).
     subroutine drawEllipse_d(self, x, y, w, h)
         class(QPainter), intent(in) :: self
         real(c_double), intent(in) :: x, y, w, h
         call qtf_qpainter_drawEllipse(self%ptr, x, y, w, h)
     end subroutine drawEllipse_d
 
+    !> Draw the ellipse inscribed in the rectangle (x, y, w, h).
     subroutine drawEllipse_i(self, x, y, w, h)
         class(QPainter), intent(in) :: self
         integer, intent(in) :: x, y, w, h
@@ -817,6 +897,7 @@ contains
                                       real(w, c_double), real(h, c_double))
     end subroutine drawEllipse_i
 
+    !> Fill a rectangle with `color` (ignores pen and brush).
     subroutine fillRect_d(self, x, y, w, h, color)
         class(QPainter), intent(in) :: self
         real(c_double), intent(in) :: x, y, w, h
@@ -825,6 +906,7 @@ contains
                                    int(color%b, c_int), int(color%a, c_int))
     end subroutine fillRect_d
 
+    !> Fill a rectangle with `color` (ignores pen and brush).
     subroutine fillRect_i(self, x, y, w, h, color)
         class(QPainter), intent(in) :: self
         integer, intent(in) :: x, y, w, h
@@ -832,24 +914,28 @@ contains
         call self%fillRect(real(x, c_double), real(y, c_double), real(w, c_double), real(h, c_double), color)
     end subroutine fillRect_i
 
+    !> Draw connected line segments through the points (x(i), y(i)).
     subroutine drawPolyline_d(self, x, y)
         class(QPainter), intent(in) :: self
         real(c_double), intent(in) :: x(:), y(:)
         call qtf_qpainter_drawPolyline(self%ptr, x, y, int(min(size(x), size(y)), c_int))
     end subroutine drawPolyline_d
 
+    !> Draw connected line segments through the points (x(i), y(i)).
     subroutine drawPolyline_i(self, x, y)
         class(QPainter), intent(in) :: self
         integer, intent(in) :: x(:), y(:)
         call self%drawPolyline(real(x, c_double), real(y, c_double))
     end subroutine drawPolyline_i
 
+    !> Draw a closed polygon through the points (x(i), y(i)), filled with the brush.
     subroutine drawPolygon_d(self, x, y)
         class(QPainter), intent(in) :: self
         real(c_double), intent(in) :: x(:), y(:)
         call qtf_qpainter_drawPolygon(self%ptr, x, y, int(min(size(x), size(y)), c_int))
     end subroutine drawPolygon_d
 
+    !> Draw a closed polygon through the points (x(i), y(i)), filled with the brush.
     subroutine drawPolygon_i(self, x, y)
         class(QPainter), intent(in) :: self
         integer, intent(in) :: x(:), y(:)
@@ -864,6 +950,7 @@ contains
         call qtf_qpainter_drawText(self%ptr, x, y, text, len(text, c_int))
     end subroutine drawText_d
 
+    !> Draw text with its baseline starting at (x, y).
     subroutine drawText_i(self, x, y, text)
         class(QPainter), intent(in) :: self
         integer, intent(in) :: x, y
@@ -880,6 +967,7 @@ contains
         call qtf_qpainter_drawTextRect(self%ptr, x, y, w, h, int(flags, c_int), text, len(text, c_int))
     end subroutine drawTextRect_d
 
+    !> Draw text inside a rectangle, aligned by `flags` (e.g. Qt_AlignCenter).
     subroutine drawTextRect_i(self, x, y, w, h, flags, text)
         class(QPainter), intent(in) :: self
         integer, intent(in) :: x, y, w, h, flags
@@ -888,6 +976,7 @@ contains
                                        real(h, c_double), int(flags, c_int), text, len(text, c_int))
     end subroutine drawTextRect_i
 
+    !> Draw `image` with its top-left corner at (x, y).
     subroutine qpainter_drawImage(self, x, y, image)
         class(QPainter), intent(in) :: self
         integer, intent(in) :: x, y
@@ -926,11 +1015,13 @@ contains
         e%ptr = qtf_qmouseevent_new(int(type, c_int), x, y, int(button, c_int), bs, m)
     end function qmouseevent_new
 
+    !> Horizontal position in widget coordinates.
     real(c_double) function qmouseevent_x(self)
         class(QMouseEvent), intent(in) :: self
         qmouseevent_x = qtf_qmouseevent_x(self%ptr)
     end function qmouseevent_x
 
+    !> Vertical position in widget coordinates.
     real(c_double) function qmouseevent_y(self)
         class(QMouseEvent), intent(in) :: self
         qmouseevent_y = qtf_qmouseevent_y(self%ptr)
@@ -948,6 +1039,7 @@ contains
         qmouseevent_buttons = qtf_qmouseevent_buttons(self%ptr)
     end function qmouseevent_buttons
 
+    !> Keyboard modifiers held (a combination of Qt_*Modifier).
     integer function qmouseevent_modifiers(self)
         class(QMouseEvent), intent(in) :: self
         qmouseevent_modifiers = qtf_qmouseevent_modifiers(self%ptr)
@@ -969,11 +1061,13 @@ contains
         end if
     end function qkeyevent_new
 
+    !> The key code (a Qt_Key_* constant).
     integer function qkeyevent_key(self)
         class(QKeyEvent), intent(in) :: self
         qkeyevent_key = qtf_qkeyevent_key(self%ptr)
     end function qkeyevent_key
 
+    !> Keyboard modifiers held (a combination of Qt_*Modifier).
     integer function qkeyevent_modifiers(self)
         class(QKeyEvent), intent(in) :: self
         qkeyevent_modifiers = qtf_qkeyevent_modifiers(self%ptr)
@@ -989,6 +1083,7 @@ contains
         text = qtf_take_string(p, n)
     end function qkeyevent_text
 
+    !> True if the event was generated by holding the key down.
     logical function qkeyevent_isAutoRepeat(self)
         class(QKeyEvent), intent(in) :: self
         qkeyevent_isAutoRepeat = qtf_logical(qtf_qkeyevent_isAutoRepeat(self%ptr))
@@ -1008,31 +1103,37 @@ contains
         e%ptr = qtf_qwheelevent_new(x, y, int(angleDeltaX, c_int), int(angleDeltaY, c_int), bs, m)
     end function qwheelevent_new
 
+    !> Horizontal cursor position in widget coordinates.
     real(c_double) function qwheelevent_x(self)
         class(QWheelEvent), intent(in) :: self
         qwheelevent_x = qtf_qwheelevent_x(self%ptr)
     end function qwheelevent_x
 
+    !> Vertical cursor position in widget coordinates.
     real(c_double) function qwheelevent_y(self)
         class(QWheelEvent), intent(in) :: self
         qwheelevent_y = qtf_qwheelevent_y(self%ptr)
     end function qwheelevent_y
 
+    !> Horizontal wheel rotation in eighths of a degree.
     integer function qwheelevent_angleDeltaX(self)
         class(QWheelEvent), intent(in) :: self
         qwheelevent_angleDeltaX = qtf_qwheelevent_angleDeltaX(self%ptr)
     end function qwheelevent_angleDeltaX
 
+    !> Vertical wheel rotation in eighths of a degree (+120 per notch away from the user).
     integer function qwheelevent_angleDeltaY(self)
         class(QWheelEvent), intent(in) :: self
         qwheelevent_angleDeltaY = qtf_qwheelevent_angleDeltaY(self%ptr)
     end function qwheelevent_angleDeltaY
 
+    !> Mouse buttons held during the event.
     integer function qwheelevent_buttons(self)
         class(QWheelEvent), intent(in) :: self
         qwheelevent_buttons = qtf_qwheelevent_buttons(self%ptr)
     end function qwheelevent_buttons
 
+    !> Keyboard modifiers held (a combination of Qt_*Modifier).
     integer function qwheelevent_modifiers(self)
         class(QWheelEvent), intent(in) :: self
         qwheelevent_modifiers = qtf_qwheelevent_modifiers(self%ptr)
@@ -1046,21 +1147,25 @@ contains
                                      int(oldWidth, c_int), int(oldHeight, c_int))
     end function qresizeevent_new
 
+    !> The new width.
     integer function qresizeevent_width(self)
         class(QResizeEvent), intent(in) :: self
         qresizeevent_width = qtf_qresizeevent_width(self%ptr)
     end function qresizeevent_width
 
+    !> The new height.
     integer function qresizeevent_height(self)
         class(QResizeEvent), intent(in) :: self
         qresizeevent_height = qtf_qresizeevent_height(self%ptr)
     end function qresizeevent_height
 
+    !> The previous width.
     integer function qresizeevent_oldWidth(self)
         class(QResizeEvent), intent(in) :: self
         qresizeevent_oldWidth = qtf_qresizeevent_oldWidth(self%ptr)
     end function qresizeevent_oldWidth
 
+    !> The previous height.
     integer function qresizeevent_oldHeight(self)
         class(QResizeEvent), intent(in) :: self
         qresizeevent_oldHeight = qtf_qresizeevent_oldHeight(self%ptr)
@@ -1069,6 +1174,7 @@ contains
     ! ------------------------------------------------------------------
     ! event / painter signals
 
+    !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalpainter_connect(self, slot, data)
         class(QSignalPainter), intent(in) :: self
         procedure(qt_slot_painter) :: slot
@@ -1078,6 +1184,7 @@ contains
         call qt_connect_handler(self%sender, self%id, h, data)
     end subroutine qsignalpainter_connect
 
+    !> Call the slot with the raw pointer wrapped as a QPainter (borrowed: not ended by Fortran).
     subroutine painter_handler_invoke(self, args, data)
         class(painter_handler), intent(in) :: self
         type(qtf_args), intent(in) :: args
@@ -1091,6 +1198,7 @@ contains
         end if
     end subroutine painter_handler_invoke
 
+    !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalmouseevent_connect(self, slot, data)
         class(QSignalMouseEvent), intent(in) :: self
         procedure(qt_slot_mouse_event) :: slot
@@ -1100,6 +1208,7 @@ contains
         call qt_connect_handler(self%sender, self%id, h, data)
     end subroutine qsignalmouseevent_connect
 
+    !> Call the slot with the raw pointer wrapped as a QMouseEvent.
     subroutine mouse_handler_invoke(self, args, data)
         class(mouse_handler), intent(in) :: self
         type(qtf_args), intent(in) :: args
@@ -1113,6 +1222,7 @@ contains
         end if
     end subroutine mouse_handler_invoke
 
+    !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalkeyevent_connect(self, slot, data)
         class(QSignalKeyEvent), intent(in) :: self
         procedure(qt_slot_key_event) :: slot
@@ -1122,6 +1232,7 @@ contains
         call qt_connect_handler(self%sender, self%id, h, data)
     end subroutine qsignalkeyevent_connect
 
+    !> Call the slot with the raw pointer wrapped as a QKeyEvent.
     subroutine key_handler_invoke(self, args, data)
         class(key_handler), intent(in) :: self
         type(qtf_args), intent(in) :: args
@@ -1135,6 +1246,7 @@ contains
         end if
     end subroutine key_handler_invoke
 
+    !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalwheelevent_connect(self, slot, data)
         class(QSignalWheelEvent), intent(in) :: self
         procedure(qt_slot_wheel_event) :: slot
@@ -1144,6 +1256,7 @@ contains
         call qt_connect_handler(self%sender, self%id, h, data)
     end subroutine qsignalwheelevent_connect
 
+    !> Call the slot with the raw pointer wrapped as a QWheelEvent.
     subroutine wheel_handler_invoke(self, args, data)
         class(wheel_handler), intent(in) :: self
         type(qtf_args), intent(in) :: args
@@ -1157,6 +1270,7 @@ contains
         end if
     end subroutine wheel_handler_invoke
 
+    !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalresizeevent_connect(self, slot, data)
         class(QSignalResizeEvent), intent(in) :: self
         procedure(qt_slot_resize_event) :: slot
@@ -1166,6 +1280,7 @@ contains
         call qt_connect_handler(self%sender, self%id, h, data)
     end subroutine qsignalresizeevent_connect
 
+    !> Call the slot with the raw pointer wrapped as a QResizeEvent.
     subroutine resize_handler_invoke(self, args, data)
         class(resize_handler), intent(in) :: self
         type(qtf_args), intent(in) :: args
@@ -1182,6 +1297,7 @@ contains
     ! ------------------------------------------------------------------
     ! QAction
 
+    !> Create an action with `text`, owned by `parent` if given.
     function qaction_new(text, parent) result(a)
         character(len=*), intent(in) :: text
         class(QObject), intent(in), optional :: parent
@@ -1189,6 +1305,7 @@ contains
         call a%attach(qtf_qaction_new(text, len(text, c_int), qtf_ptr(parent)))
     end function qaction_new
 
+    !> Bind to a C++ QAction and its signals.
     subroutine qaction_attach(self, ptr)
         class(QAction), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
@@ -1197,12 +1314,14 @@ contains
         self%toggled = QSignalBool(ptr, QTF_SIG_QACTION_TOGGLED)
     end subroutine qaction_attach
 
+    !> Set the text shown in menus (`&` marks the mnemonic).
     subroutine qaction_setText(self, text)
         class(QAction), intent(in) :: self
         character(len=*), intent(in) :: text
         call qtf_qaction_setText(self%ptr, text, len(text, c_int))
     end subroutine qaction_setText
 
+    !> The action's text.
     function qaction_text(self) result(text)
         class(QAction), intent(in) :: self
         character(len=:), allocatable :: text
@@ -1229,45 +1348,53 @@ contains
         shortcut = qtf_take_string(p, n)
     end function qaction_shortcut
 
+    !> Make the action a toggle (or a plain command).
     subroutine qaction_setCheckable(self, checkable)
         class(QAction), intent(in) :: self
         logical, intent(in) :: checkable
         call qtf_qaction_setCheckable(self%ptr, qtf_int(checkable))
     end subroutine qaction_setCheckable
 
+    !> True if the action is a toggle.
     logical function qaction_isCheckable(self)
         class(QAction), intent(in) :: self
         qaction_isCheckable = qtf_logical(qtf_qaction_isCheckable(self%ptr))
     end function qaction_isCheckable
 
+    !> Check or uncheck the action (emits toggled).
     subroutine qaction_setChecked(self, checked)
         class(QAction), intent(in) :: self
         logical, intent(in) :: checked
         call qtf_qaction_setChecked(self%ptr, qtf_int(checked))
     end subroutine qaction_setChecked
 
+    !> True if the action is checked.
     logical function qaction_isChecked(self)
         class(QAction), intent(in) :: self
         qaction_isChecked = qtf_logical(qtf_qaction_isChecked(self%ptr))
     end function qaction_isChecked
 
+    !> Enable or disable the action (disabled actions do not trigger).
     subroutine qaction_setEnabled(self, enabled)
         class(QAction), intent(in) :: self
         logical, intent(in) :: enabled
         call qtf_qaction_setEnabled(self%ptr, qtf_int(enabled))
     end subroutine qaction_setEnabled
 
+    !> True if the action is enabled.
     logical function qaction_isEnabled(self)
         class(QAction), intent(in) :: self
         qaction_isEnabled = qtf_logical(qtf_qaction_isEnabled(self%ptr))
     end function qaction_isEnabled
 
+    !> Text shown in the status bar while the action is hovered.
     subroutine qaction_setStatusTip(self, tip)
         class(QAction), intent(in) :: self
         character(len=*), intent(in) :: tip
         call qtf_qaction_setStatusTip(self%ptr, tip, len(tip, c_int))
     end subroutine qaction_setStatusTip
 
+    !> Tool tip shown for the action (e.g. on tool bar buttons).
     subroutine qaction_setToolTip(self, tip)
         class(QAction), intent(in) :: self
         character(len=*), intent(in) :: tip

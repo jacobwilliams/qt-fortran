@@ -4,6 +4,7 @@ module form_slots
     use qt
     implicit none
 
+    !> The form's widgets.
     type :: form
         type(QMainWindow) :: window
         type(QLineEdit) :: name
@@ -27,6 +28,7 @@ contains
         end select
     end subroutine on_name_changed
 
+    !> Show a summary of the form in a message box.
     subroutine on_submit(data)
         class(*), intent(inout), optional :: data
         character(len=16) :: age
@@ -45,6 +47,7 @@ contains
 
 end module form_slots
 
+!> A form with input validation, a status bar and a summary dialog.
 program form_example
 
     use qt

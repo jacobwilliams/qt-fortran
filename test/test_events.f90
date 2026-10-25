@@ -7,6 +7,7 @@ module test_events_slots
     use iso_c_binding, only: c_double
     implicit none
 
+    !> Records which events arrived and their properties.
     type :: event_log
         integer :: paints = 0
         integer :: presses = 0, releases = 0, moves = 0, doubles = 0
@@ -20,6 +21,7 @@ module test_events_slots
 
 contains
 
+    !> Paint the widget red with a blue square at the top left.
     subroutine on_paint(painter, data)
         type(QPainter), intent(inout) :: painter
         class(*), intent(inout), optional :: data
@@ -32,6 +34,7 @@ contains
         call painter%end()    ! no-op for a painter received in a slot
     end subroutine on_paint
 
+    !> Copy a mouse event's properties into the log.
     subroutine record_mouse(e, log)
         type(QMouseEvent), intent(in) :: e
         type(event_log), intent(inout) :: log
@@ -42,6 +45,7 @@ contains
         log%modifiers = e%modifiers()
     end subroutine record_mouse
 
+    !> Record a mouse press.
     subroutine on_press(event, data)
         type(QMouseEvent), intent(in) :: event
         class(*), intent(inout), optional :: data
@@ -52,6 +56,7 @@ contains
         end select
     end subroutine on_press
 
+    !> Record a mouse release.
     subroutine on_release(event, data)
         type(QMouseEvent), intent(in) :: event
         class(*), intent(inout), optional :: data
@@ -62,6 +67,7 @@ contains
         end select
     end subroutine on_release
 
+    !> Record a mouse move.
     subroutine on_move(event, data)
         type(QMouseEvent), intent(in) :: event
         class(*), intent(inout), optional :: data
@@ -72,6 +78,7 @@ contains
         end select
     end subroutine on_move
 
+    !> Count double clicks.
     subroutine on_double(event, data)
         type(QMouseEvent), intent(in) :: event
         class(*), intent(inout), optional :: data
@@ -81,6 +88,7 @@ contains
         end select
     end subroutine on_double
 
+    !> Record a wheel event.
     subroutine on_wheel(event, data)
         type(QWheelEvent), intent(in) :: event
         class(*), intent(inout), optional :: data
@@ -93,6 +101,7 @@ contains
         end select
     end subroutine on_wheel
 
+    !> Record a key press.
     subroutine on_key(event, data)
         type(QKeyEvent), intent(in) :: event
         class(*), intent(inout), optional :: data
@@ -105,6 +114,7 @@ contains
         end select
     end subroutine on_key
 
+    !> Record a resize.
     subroutine on_resize(event, data)
         type(QResizeEvent), intent(in) :: event
         class(*), intent(inout), optional :: data
@@ -120,6 +130,7 @@ contains
 
 end module test_events_slots
 
+!> Tests QtfWidget painting and input events.
 program test_events
 
     use qt

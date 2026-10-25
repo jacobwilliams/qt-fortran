@@ -3,6 +3,7 @@ module test_menus_slots
 
     implicit none
 
+    !> Records action signals.
     type :: action_log
         integer :: triggered = 0
         integer :: toggles = 0
@@ -11,6 +12,7 @@ module test_menus_slots
 
 contains
 
+    !> Count triggered emissions.
     subroutine on_triggered(data)
         class(*), intent(inout), optional :: data
         select type (data)
@@ -19,6 +21,7 @@ contains
         end select
     end subroutine on_triggered
 
+    !> Record the state passed by toggled.
     subroutine on_toggled(checked, data)
         logical, intent(in) :: checked
         class(*), intent(inout), optional :: data
@@ -31,6 +34,7 @@ contains
 
 end module test_menus_slots
 
+!> Tests menus, tool bars and actions.
 program test_menus
 
     use qt

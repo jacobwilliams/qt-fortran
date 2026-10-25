@@ -24,6 +24,10 @@ jobs:
         if: runner.os == 'Linux'
         run: pixi run gen-check
 
+      - name: Docstrings and implicit none
+        if: runner.os == 'Linux'
+        run: pixi run lint
+
       - name: Build library and examples
         run: pixi run build
 
