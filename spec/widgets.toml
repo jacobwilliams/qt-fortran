@@ -26,6 +26,7 @@ cpp_includes = [
     "QInputDialog", "QLCDNumber", "QListWidget", "QPlainTextEdit", "QProgressBar", "QProgressDialog",
     "QScrollArea", "QSplitter", "QStackedWidget", "QTabWidget", "QTableView", "QTableWidget", "QTextEdit",
     "QTime", "QTimeEdit", "QToolButton", "QTreeWidget", "QVariant", "QIcon", "QMetaEnum", "QStyle", "string",
+    "QCloseEvent", "QContextMenuEvent", "QByteArray",
 ]
 
 cpp_prelude = """
@@ -56,6 +57,47 @@ static QIcon *qtf_standard_icon(const QString &name) {
     bool ok = false;
     const int v = e.keyToValue(name.toLatin1().constData(), &ok);
     return new QIcon(ok ? QApplication::style()->standardIcon(QStyle::StandardPixmap(v)) : QIcon());
+}
+
+// Forwards a widget's close and context-menu events to Fortran slots. One is
+// created per widget when the first such slot is connected; as a child of the
+// widget it (and the slots it holds) is destroyed with the widget.
+class QtfEventFilter : public QObject {
+  public:
+    explicit QtfEventFilter(QWidget *w) : QObject(w) { w->installEventFilter(this); }
+
+    std::vector<qtf_slot> close_handlers, context_menu_handlers;
+
+    // The widget's filter, created on first use.
+    static QtfEventFilter *of(QWidget *w) {
+        for (QObject *c : w->children())
+            if (auto *f = dynamic_cast<QtfEventFilter *>(c)) return f;
+        return new QtfEventFilter(w);
+    }
+
+  protected:
+    bool eventFilter(QObject *o, QEvent *e) override {
+        if (e->type() == QEvent::Close && !close_handlers.empty()) {
+            const std::vector<qtf_slot> targets = close_handlers;   // a slot may connect more
+            for (const qtf_slot &s : targets) qtf_emit_ptr(s, e);
+            // Vetoed: stop here, since the widget's own closeEvent would accept it again.
+            return !e->isAccepted();
+        }
+        if (e->type() == QEvent::ContextMenu && !context_menu_handlers.empty()) {
+            const std::vector<qtf_slot> targets = context_menu_handlers;
+            e->accept();
+            for (const qtf_slot &s : targets) qtf_emit_ptr(s, e);
+            return e->isAccepted();   // ignored: let it propagate to the parent
+        }
+        return QObject::eventFilter(o, e);
+    }
+};
+
+// Attach a slot to a widget's close (CLOSE = true) or context-menu events.
+template <bool CLOSE> static bool connect_filter(void *s, const qtf_slot &ref) {
+    QtfEventFilter *f = QtfEventFilter::of(static_cast<QWidget *>(s));
+    (CLOSE ? f->close_handlers : f->context_menu_handlers).push_back(ref);
+    return true;
 }
 
 // QtfWidget: a QWidget whose event handlers (virtual functions) are forwarded
@@ -638,12 +680,21 @@ methods = [
     { sig = "static quit()", doc = "Ask the event loop to exit (`exec` then returns 0).", nopass = true },
     { sig = "static processEvents()", doc = "Process pending events, then return.", nopass = true },
     "static activeModalWidget() -> QWidget -- The active modal dialog (null if none).",
+    "static setOrganizationName(name: string) -- Set the organization name (used by QSettings to find the settings).",
+    "static organizationName() -> string -- The organization name.",
+    "static setOrganizationDomain(domain: string) -- Set the organization's Internet domain (used by QSettings on macOS).",
+    "static setApplicationName(name: string) -- Set the application name (used by QSettings and in dialogs).",
+    "static applicationName() -> string -- The application name.",
 ]
 
 [[class]]
 name = "QWidget"
 doc = "Base of all user interface objects; a widget without a parent is a window."
 ctor = "(parent: QWidget?) -- Create a widget; without a parent it is a top-level window."
+signals = [
+    { sig = "closeEvent: custom", fortran_type = "QSignalCloseEvent", connector = "connect_filter<true>", doc = "The window is about to close; a slot can keep it open with `event%ignore()`." },
+    { sig = "contextMenuEvent: custom", fortran_type = "QSignalContextMenuEvent", connector = "connect_filter<false>", doc = "A context menu was requested (right click); show one with `menu%popup(event%globalX(), event%globalY())`." },
+]
 methods = [
     "show() -- Show the widget and its children.",
     "hide() -- Hide the widget.",
@@ -683,6 +734,12 @@ methods = [
     "setSizePolicy(horizontal: QSizePolicy::Policy, vertical: QSizePolicy::Policy) -- How the widget grows and shrinks in layouts (QSizePolicy_* constants).",
     "setContentsMargins(left: int, top: int, right: int, bottom: int) -- Set the margins around the widget's contents, in pixels.",
     { sig = "setWindowIcon(icon: QIcon)", cpp = "{self}->setWindowIcon(*{icon})", doc = "Set the icon of the window (copied)." },
+    { sig = "saveGeometry() -> string", cpp = "QString::fromLatin1({self}->saveGeometry().toBase64())", doc = "The window's position and size as text (base64), e.g. to store with QSettings." },
+    { sig = "restoreGeometry(geometry: string) -> bool", cpp = "{self}->restoreGeometry(QByteArray::fromBase64({geometry}.toLatin1()))", doc = "Restore a geometry from `saveGeometry`; false (and no change) if it is invalid." },
+    "isWindow() -> bool -- True if the widget is a top-level window.",
+    "x() -> int -- Horizontal position (relative to the parent, or on the screen for a window).",
+    "y() -> int -- Vertical position (relative to the parent, or on the screen for a window).",
+    "move(x: int, y: int) -- Move the widget (a window: on the screen).",
 ]
 
 [[class]]
@@ -995,6 +1052,8 @@ methods = [
     "addDockWidget(area: Qt::DockWidgetArea, dock: QDockWidget) -- Dock `dock` in `area` (Qt_LeftDockWidgetArea, ...).",
     "removeDockWidget(dock: QDockWidget) -- Remove a dock widget from the window.",
     "tabifyDockWidget(first: QDockWidget, second: QDockWidget) -- Stack `second` on `first` as tabs.",
+    { sig = "saveState() -> string", cpp = "QString::fromLatin1({self}->saveState().toBase64())", doc = "The layout of tool bars and dock widgets as text (base64), e.g. to store with QSettings. Give each tool bar and dock widget a unique objectName first." },
+    { sig = "restoreState(state: string) -> bool", cpp = "{self}->restoreState(QByteArray::fromBase64({state}.toLatin1()))", doc = "Restore a layout from `saveState`; false if it is invalid." },
 ]
 
 [[class]]
@@ -1007,6 +1066,10 @@ methods = [
     "addSeparator() -- Append a separator line.",
     "title() -> string -- The menu title.",
     "menuAction() -> QAction -- The action that represents this menu in its parent menu or menu bar.",
+    { sig = "popup(globalX: int, globalY: int)", cpp = "{self}->popup(QPoint({globalX}, {globalY}))", doc = "Show the menu at a screen position and return at once (the chosen action triggers)." },
+    { sig = "exec(globalX: int, globalY: int) -> QAction", cpp = "{self}->exec(QPoint({globalX}, {globalY}))", doc = "Show the menu at a screen position and wait; returns the chosen action (a null handle if none)." },
+    "clear() -- Remove all actions (actions owned by the menu are deleted).",
+    "isEmpty() -> bool -- True if the menu has no actions.",
 ]
 
 [[class]]

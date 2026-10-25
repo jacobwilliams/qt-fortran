@@ -37,6 +37,7 @@ module qt_core
     integer(c_int), parameter, public :: QEvent_Resize              = 14
     integer(c_int), parameter, public :: QEvent_Close               = 19
     integer(c_int), parameter, public :: QEvent_Wheel               = 31
+    integer(c_int), parameter, public :: QEvent_ContextMenu         = 82
 
     ! Qt::FocusPolicy
     integer(c_int), parameter, public :: Qt_NoFocus     = 0

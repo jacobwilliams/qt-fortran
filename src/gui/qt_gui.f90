@@ -20,6 +20,11 @@ module qt_gui
     integer(c_int), parameter, public :: QPainter_TextAntialiasing = 2
     integer(c_int), parameter, public :: QPainter_SmoothPixmapTransform = 4
 
+    ! QContextMenuEvent::Reason
+    integer(c_int), parameter, public :: QContextMenuEvent_Mouse = 0
+    integer(c_int), parameter, public :: QContextMenuEvent_Keyboard = 1
+    integer(c_int), parameter, public :: QContextMenuEvent_Other = 2
+
     ! Qt::MouseButton
     integer(c_int), parameter, public :: Qt_NoButton = 0
     integer(c_int), parameter, public :: Qt_LeftButton = 1
@@ -253,6 +258,31 @@ module qt_gui
         module procedure :: qresizeevent_new
     end interface QResizeEvent
 
+    !> Sent when a window is about to close. It arrives accepted; a slot that calls
+    !> `ignore()` keeps the window open (e.g. after asking "save changes?").
+    type, extends(QEvent), public :: QCloseEvent
+    end type QCloseEvent
+    !> Constructor: `QCloseEvent()`.
+    interface QCloseEvent
+        module procedure :: qcloseevent_new
+    end interface QCloseEvent
+
+    !> A request for a context menu (right click, or the menu key). Show a menu at
+    !> the cursor with `menu%popup(event%globalX(), event%globalY())`.
+    type, extends(QEvent), public :: QContextMenuEvent
+    contains
+        procedure :: x => qcontextmenuevent_x
+        procedure :: y => qcontextmenuevent_y
+        procedure :: globalX => qcontextmenuevent_globalX
+        procedure :: globalY => qcontextmenuevent_globalY
+        procedure :: reason => qcontextmenuevent_reason
+        procedure :: modifiers => qcontextmenuevent_modifiers
+    end type QContextMenuEvent
+    !> Constructor: `QContextMenuEvent(reason, x, y, globalX, globalY)`.
+    interface QContextMenuEvent
+        module procedure :: qcontextmenuevent_new
+    end interface QContextMenuEvent
+
     !> A menu/toolbar command. `triggered` carries no argument; use `toggled`
     !> for checkable actions.
     type, extends(QObject), public :: QAction
@@ -316,9 +346,24 @@ module qt_gui
             type(QResizeEvent), intent(in) :: event
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_resize_event
+        !> Slot for close events: call `event%ignore()` to keep the window open.
+        subroutine qt_slot_close_event(event, data)
+            import :: QCloseEvent
+            implicit none
+            type(QCloseEvent), intent(in) :: event
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_close_event
+        !> Slot for context-menu requests.
+        subroutine qt_slot_context_menu_event(event, data)
+            import :: QContextMenuEvent
+            implicit none
+            type(QContextMenuEvent), intent(in) :: event
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_context_menu_event
     end interface
     public :: qt_slot_painter, qt_slot_mouse_event, qt_slot_key_event
     public :: qt_slot_wheel_event, qt_slot_resize_event
+    public :: qt_slot_close_event, qt_slot_context_menu_event
 
     !> Paint request: slots receive an active painter (do not `end` it).
     type, public :: QSignalPainter
@@ -360,6 +405,22 @@ module qt_gui
         procedure :: connect => qsignalresizeevent_connect
     end type QSignalResizeEvent
 
+    !> A signal carrying a close event (the slot may veto the close).
+    type, public :: QSignalCloseEvent
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignalcloseevent_connect
+    end type QSignalCloseEvent
+
+    !> A signal carrying a context-menu event.
+    type, public :: QSignalContextMenuEvent
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignalcontextmenuevent_connect
+    end type QSignalContextMenuEvent
+
     !> Slot handler for QSignalPainter.
     type, extends(qt_slot_handler) :: painter_handler
         procedure(qt_slot_painter), pointer, nopass :: f => null()
@@ -394,6 +455,20 @@ module qt_gui
     contains
         procedure :: invoke => resize_handler_invoke
     end type resize_handler
+
+    !> Slot handler for QSignalCloseEvent.
+    type, extends(qt_slot_handler) :: close_handler
+        procedure(qt_slot_close_event), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => close_handler_invoke
+    end type close_handler
+
+    !> Slot handler for QSignalContextMenuEvent.
+    type, extends(qt_slot_handler) :: context_menu_handler
+        procedure(qt_slot_context_menu_event), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => context_menu_handler_invoke
+    end type context_menu_handler
 
     public :: QPixmap_fromImage
 
@@ -1201,6 +1276,66 @@ contains
         res = qtf_qresizeevent_oldHeight(self%ptr)
     end function qresizeevent_oldHeight
 
+    !> A synthetic close event (e.g. for QCoreApplication_sendEvent); delete it after use.
+    function qcloseevent_new() result(res)
+        type(QCloseEvent) :: res
+        res%ptr = qtf_qcloseevent_new()
+    end function qcloseevent_new
+
+    !> A synthetic context-menu event; delete it after use.
+    function qcontextmenuevent_new(reason, x, y, globalX, globalY) result(res)
+        integer, intent(in) :: reason
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        integer, intent(in) :: globalX
+        integer, intent(in) :: globalY
+        type(QContextMenuEvent) :: res
+        res%ptr = qtf_qcontextmenuevent_new(int(reason, c_int), int(x, c_int), int(y, c_int), int(globalX, c_int), &
+                int(globalY, c_int))
+    end function qcontextmenuevent_new
+
+    !> Horizontal position in widget coordinates.
+    function qcontextmenuevent_x(self) result(res)
+        class(QContextMenuEvent), intent(in) :: self
+        integer :: res
+        res = qtf_qcontextmenuevent_x(self%ptr)
+    end function qcontextmenuevent_x
+
+    !> Vertical position in widget coordinates.
+    function qcontextmenuevent_y(self) result(res)
+        class(QContextMenuEvent), intent(in) :: self
+        integer :: res
+        res = qtf_qcontextmenuevent_y(self%ptr)
+    end function qcontextmenuevent_y
+
+    !> Horizontal position in screen coordinates.
+    function qcontextmenuevent_globalX(self) result(res)
+        class(QContextMenuEvent), intent(in) :: self
+        integer :: res
+        res = qtf_qcontextmenuevent_globalX(self%ptr)
+    end function qcontextmenuevent_globalX
+
+    !> Vertical position in screen coordinates.
+    function qcontextmenuevent_globalY(self) result(res)
+        class(QContextMenuEvent), intent(in) :: self
+        integer :: res
+        res = qtf_qcontextmenuevent_globalY(self%ptr)
+    end function qcontextmenuevent_globalY
+
+    !> What caused the request (QContextMenuEvent_Mouse, _Keyboard or _Other).
+    function qcontextmenuevent_reason(self) result(res)
+        class(QContextMenuEvent), intent(in) :: self
+        integer :: res
+        res = qtf_qcontextmenuevent_reason(self%ptr)
+    end function qcontextmenuevent_reason
+
+    !> Keyboard modifiers held (a combination of Qt_*Modifier).
+    function qcontextmenuevent_modifiers(self) result(res)
+        class(QContextMenuEvent), intent(in) :: self
+        integer :: res
+        res = qtf_qcontextmenuevent_modifiers(self%ptr)
+    end function qcontextmenuevent_modifiers
+
     !> Bind to a C++ QAction and its signals.
     subroutine qaction_attach(self, ptr)
         class(QAction), intent(inout) :: self
@@ -1440,5 +1575,53 @@ contains
             call self%f(e)
         end if
     end subroutine resize_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalcloseevent_connect(self, slot, data)
+        class(QSignalCloseEvent), intent(in) :: self
+        procedure(qt_slot_close_event) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(close_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self%sender, self%id, h, data)
+    end subroutine qsignalcloseevent_connect
+
+    !> Call the slot with the raw pointer wrapped as a QCloseEvent.
+    subroutine close_handler_invoke(self, args, data)
+        class(close_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QCloseEvent) :: e
+        e%ptr = args%p
+        if (associated(data)) then
+            call self%f(e, data)
+        else
+            call self%f(e)
+        end if
+    end subroutine close_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalcontextmenuevent_connect(self, slot, data)
+        class(QSignalContextMenuEvent), intent(in) :: self
+        procedure(qt_slot_context_menu_event) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(context_menu_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self%sender, self%id, h, data)
+    end subroutine qsignalcontextmenuevent_connect
+
+    !> Call the slot with the raw pointer wrapped as a QContextMenuEvent.
+    subroutine context_menu_handler_invoke(self, args, data)
+        class(context_menu_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QContextMenuEvent) :: e
+        e%ptr = args%p
+        if (associated(data)) then
+            call self%f(e, data)
+        else
+            call self%f(e)
+        end if
+    end subroutine context_menu_handler_invoke
 
 end module qt_gui

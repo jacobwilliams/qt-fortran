@@ -927,6 +927,90 @@ module qt_c_gui
             integer(c_int) :: res
         end function qtf_qresizeevent_oldHeight
 
+        !> A synthetic close event (e.g. for QCoreApplication_sendEvent); delete it after use.
+        !>
+        !> C: `void *qtf_qcloseevent_new(void)`
+        function qtf_qcloseevent_new() result(res) bind(C, name='qtf_qcloseevent_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr) :: res
+        end function qtf_qcloseevent_new
+
+        !> A synthetic context-menu event; delete it after use.
+        !>
+        !> C: `void *qtf_qcontextmenuevent_new(int reason, int x, int y, int globalX, int globalY)`
+        function qtf_qcontextmenuevent_new(reason, x, y, globalX, globalY) &
+                result(res) bind(C, name='qtf_qcontextmenuevent_new')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), value :: reason
+            integer(c_int), value :: x
+            integer(c_int), value :: y
+            integer(c_int), value :: globalX
+            integer(c_int), value :: globalY
+            type(c_ptr) :: res
+        end function qtf_qcontextmenuevent_new
+
+        !> Horizontal position in widget coordinates.
+        !>
+        !> C: `int qtf_qcontextmenuevent_x(void *self)`
+        function qtf_qcontextmenuevent_x(self) result(res) bind(C, name='qtf_qcontextmenuevent_x')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qcontextmenuevent_x
+
+        !> Vertical position in widget coordinates.
+        !>
+        !> C: `int qtf_qcontextmenuevent_y(void *self)`
+        function qtf_qcontextmenuevent_y(self) result(res) bind(C, name='qtf_qcontextmenuevent_y')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qcontextmenuevent_y
+
+        !> Horizontal position in screen coordinates.
+        !>
+        !> C: `int qtf_qcontextmenuevent_globalX(void *self)`
+        function qtf_qcontextmenuevent_globalX(self) result(res) bind(C, name='qtf_qcontextmenuevent_globalX')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qcontextmenuevent_globalX
+
+        !> Vertical position in screen coordinates.
+        !>
+        !> C: `int qtf_qcontextmenuevent_globalY(void *self)`
+        function qtf_qcontextmenuevent_globalY(self) result(res) bind(C, name='qtf_qcontextmenuevent_globalY')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qcontextmenuevent_globalY
+
+        !> What caused the request (QContextMenuEvent_Mouse, _Keyboard or _Other).
+        !>
+        !> C: `int qtf_qcontextmenuevent_reason(void *self)`
+        function qtf_qcontextmenuevent_reason(self) result(res) bind(C, name='qtf_qcontextmenuevent_reason')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qcontextmenuevent_reason
+
+        !> Keyboard modifiers held (a combination of Qt_*Modifier).
+        !>
+        !> C: `int qtf_qcontextmenuevent_modifiers(void *self)`
+        function qtf_qcontextmenuevent_modifiers(self) result(res) bind(C, name='qtf_qcontextmenuevent_modifiers')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qcontextmenuevent_modifiers
+
         !> Create an action with `text`, owned by `parent` if given.
         !>
         !> C: `void *qtf_qaction_new(const char *text, int text_len, void *parent)`
@@ -1107,10 +1191,12 @@ module qt_c_gui
     public :: qtf_qwheelevent_x, qtf_qwheelevent_y, qtf_qwheelevent_angleDeltaX, qtf_qwheelevent_angleDeltaY
     public :: qtf_qwheelevent_buttons, qtf_qwheelevent_modifiers, qtf_qresizeevent_new
     public :: qtf_qresizeevent_width, qtf_qresizeevent_height, qtf_qresizeevent_oldWidth
-    public :: qtf_qresizeevent_oldHeight, qtf_qaction_new, qtf_qaction_setText, qtf_qaction_text
-    public :: qtf_qaction_setShortcut, qtf_qaction_shortcut, qtf_qaction_setCheckable
-    public :: qtf_qaction_isCheckable, qtf_qaction_setChecked, qtf_qaction_isChecked, qtf_qaction_setEnabled
-    public :: qtf_qaction_isEnabled, qtf_qaction_setStatusTip, qtf_qaction_setToolTip, qtf_qaction_trigger
-    public :: qtf_qaction_setIcon
+    public :: qtf_qresizeevent_oldHeight, qtf_qcloseevent_new, qtf_qcontextmenuevent_new
+    public :: qtf_qcontextmenuevent_x, qtf_qcontextmenuevent_y, qtf_qcontextmenuevent_globalX
+    public :: qtf_qcontextmenuevent_globalY, qtf_qcontextmenuevent_reason, qtf_qcontextmenuevent_modifiers
+    public :: qtf_qaction_new, qtf_qaction_setText, qtf_qaction_text, qtf_qaction_setShortcut
+    public :: qtf_qaction_shortcut, qtf_qaction_setCheckable, qtf_qaction_isCheckable, qtf_qaction_setChecked
+    public :: qtf_qaction_isChecked, qtf_qaction_setEnabled, qtf_qaction_isEnabled, qtf_qaction_setStatusTip
+    public :: qtf_qaction_setToolTip, qtf_qaction_trigger, qtf_qaction_setIcon
 
 end module qt_c_gui

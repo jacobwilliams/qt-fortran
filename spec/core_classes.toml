@@ -1,0 +1,66 @@
+# Bindings for QtCore classes beyond the hand-written src/core/qt_core.f90.
+# `pixi run gen` turns this into shim/qtf_core_classes.cpp and
+# src/core/qt_core_classes.f90 (see tools/gen_bindings.py for the format).
+
+module = "core_classes"
+src_dir = "core"
+signal_base = 4000
+doc = """
+QtCore classes: persistent application settings (QSettings).
+"""
+uses = [
+    "use qt_c_util",
+    "use qt_c_core_classes",
+    "use qt_core",
+]
+cpp_includes = ["QSettings", "QStringList", "QVariant"]
+
+[[enum]]
+doc = "QSettings::Status"
+values = ["QSettings_NoError = 0", "QSettings_AccessError = 1", "QSettings_FormatError = 2"]
+
+[[class]]
+name = "QSettings"
+doc = """
+Persistent application settings: key/value pairs that survive between runs,
+such as window geometry, recent files or user choices.
+
+`QSettings()` uses the platform's native store (the registry on Windows,
+a plist on macOS, an INI file under ~/.config on Linux) for the organization
+and application names set with QApplication_setOrganizationName and
+QApplication_setApplicationName; `QSettings(fileName)` uses an INI file.
+Keys may contain `/` to form sections (`"window/geometry"`), or use
+`beginGroup`/`endGroup`.
+
+Values are written with the generic `setValue` and read with the typed
+getters (`stringValue`, `intValue`, `doubleValue`, `boolValue`), which return
+a default when the key is missing. Changes are saved automatically (and by
+`sync`); a QSettings without a parent should be deleted when done."""
+ctors = [
+    { sig = "(parent: QObject?)", name = "new", doc = "Settings in the native store, for the application's organization and application names." },
+    { sig = "(fileName: string, parent: QObject?)", name = "fromFile", cpp = "new QSettings({fileName}, QSettings::IniFormat, {parent})", doc = "Settings in an INI file (created when first written)." },
+    { sig = "(organization: string, application: string, parent: QObject?)", name = "forApplication", cpp = "new QSettings({organization}, {application}, {parent})", doc = "Settings in the native store for the given organization and application." },
+]
+methods = [
+    { sig = "setString(key: string, value: string)", fortran_name = "setValue", cpp = "{self}->setValue({key}, {value})", doc = "Store a string." },
+    { sig = "setInt(key: string, value: int)", fortran_name = "setValue", cpp = "{self}->setValue({key}, {value})", doc = "Store an integer." },
+    { sig = "setDouble(key: string, value: double)", fortran_name = "setValue", cpp = "{self}->setValue({key}, {value})", doc = "Store a real number." },
+    { sig = "setBool(key: string, value: bool)", fortran_name = "setValue", cpp = "{self}->setValue({key}, {value})", doc = "Store a logical." },
+    { sig = "stringValue(key: string, defaultValue: string = '') -> string", cpp = "{self}->value({key}, {defaultValue}).toString()", doc = "The string stored under `key` (`defaultValue` if missing)." },
+    { sig = "intValue(key: string, defaultValue: int = 0) -> int", cpp = "{self}->contains({key}) ? {self}->value({key}).toInt() : {defaultValue}", doc = "The integer stored under `key` (`defaultValue` if missing)." },
+    { sig = "doubleValue(key: string, defaultValue: double = 0.0_c_double) -> double", cpp = "{self}->contains({key}) ? {self}->value({key}).toDouble() : {defaultValue}", doc = "The real number stored under `key` (`defaultValue` if missing)." },
+    { sig = "boolValue(key: string, defaultValue: bool = .false.) -> bool", cpp = "{self}->contains({key}) ? {self}->value({key}).toBool() : {defaultValue}", doc = "The logical stored under `key` (`defaultValue` if missing)." },
+    "contains(key: string) -> bool -- True if `key` has a value.",
+    "remove(key: string) -- Remove `key` (and, for a group name, everything under it).",
+    "clear() -- Remove all keys (of the current group).",
+    "allKeys() -> strings -- All keys, including those in subgroups (relative to the current group).",
+    "childKeys() -> strings -- The keys directly in the current group.",
+    "childGroups() -> strings -- The groups directly in the current group.",
+    "beginGroup(prefix: string) -- Prefix the following keys with `prefix/` (until `endGroup`).",
+    "endGroup() -- End the group begun last.",
+    "group() -> string -- The current group prefix.",
+    "sync() -- Write unsaved changes and re-read changes made elsewhere.",
+    "fileName() -> string -- Where the settings are stored (a path, or a registry key on Windows).",
+    "status() -> QSettings::Status -- QSettings_NoError, or the first error of the last `sync`.",
+    "isWritable() -> bool -- True if the settings can be saved.",
+]

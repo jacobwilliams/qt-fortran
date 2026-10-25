@@ -9,6 +9,8 @@
 #include "qtf_common.h"
 
 #include <QAction>
+#include <QCloseEvent>
+#include <QContextMenuEvent>
 #include <QFontMetrics>
 #include <QIcon>
 #include <QImage>
@@ -448,6 +450,40 @@ QTF_API int qtf_qresizeevent_oldWidth(void *self) { return as<QResizeEvent>(self
 
 // The previous height.
 QTF_API int qtf_qresizeevent_oldHeight(void *self) { return as<QResizeEvent>(self)->oldSize().height(); }
+
+// ---------------------------------------------------------------------------
+// QCloseEvent
+
+// A synthetic close event (e.g. for QCoreApplication_sendEvent); delete it after use.
+QTF_API void *qtf_qcloseevent_new(void) { return new QCloseEvent(); }
+
+// ---------------------------------------------------------------------------
+// QContextMenuEvent
+
+// A synthetic context-menu event; delete it after use.
+QTF_API void *qtf_qcontextmenuevent_new(int reason, int x, int y, int globalX, int globalY) {
+    return new QContextMenuEvent(QContextMenuEvent::Reason(reason), QPoint(x, y), QPoint(globalX, globalY));
+}
+
+// Horizontal position in widget coordinates.
+QTF_API int qtf_qcontextmenuevent_x(void *self) { return as<QContextMenuEvent>(self)->x(); }
+
+// Vertical position in widget coordinates.
+QTF_API int qtf_qcontextmenuevent_y(void *self) { return as<QContextMenuEvent>(self)->y(); }
+
+// Horizontal position in screen coordinates.
+QTF_API int qtf_qcontextmenuevent_globalX(void *self) { return as<QContextMenuEvent>(self)->globalX(); }
+
+// Vertical position in screen coordinates.
+QTF_API int qtf_qcontextmenuevent_globalY(void *self) { return as<QContextMenuEvent>(self)->globalY(); }
+
+// What caused the request (QContextMenuEvent_Mouse, _Keyboard or _Other).
+QTF_API int qtf_qcontextmenuevent_reason(void *self) { return int(as<QContextMenuEvent>(self)->reason()); }
+
+// Keyboard modifiers held (a combination of Qt_*Modifier).
+QTF_API int qtf_qcontextmenuevent_modifiers(void *self) {
+    return int(as<QContextMenuEvent>(self)->modifiers());
+}
 
 // ---------------------------------------------------------------------------
 // QAction

@@ -3,6 +3,7 @@ module qt
 
     use qt_c_util, only: qt_string
     use qt_core
+    use qt_core_classes
     use qt_gui_types
     use qt_gui
     use qt_widgets

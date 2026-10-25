@@ -12,6 +12,10 @@
 !>   LCD outlier count) and Log.
 !> * The value column of the table is editable: edits recompute the statistics.
 !>   Runs can be renamed (double-click, or Run > Rename run).
+!> * Right-click the plot for a context menu (style, color, save as image).
+!> * The window layout and the parameters are remembered between runs
+!>   (QSettings); closing asks first while a run is in progress or edited
+!>   values have not been exported (a vetoable close event).
 !>
 !> `timeseries --screenshot out.png [--tab N]` runs once with tab N (default 1,
 !> the plot) shown, saves the window and exits.
@@ -56,12 +60,15 @@ module timeseries_app
         type(QTreeWidget) :: stats
         type(QLCDNumber) :: outlier_count
         type(QPlainTextEdit) :: log
+        type(QMenu) :: plot_menu
+        type(QAction) :: points_action
         type(QColor) :: color = QColor(30, 100, 200)
         ! data of the current run
         real(dp), allocatable :: v(:), mean(:), z(:)
         logical, allocatable :: outlier(:)
         integer :: n = 0, noutliers = 0, nruns = 0
         logical :: running = .false., cancel = .false.
+        logical :: edited = .false.                      !! table edits not yet exported
         ! --screenshot
         character(len=:), allocatable :: screenshot
     end type lab_t
@@ -293,6 +300,7 @@ contains
                 return
             end if
             s%v(row + 1) = x
+            s%edited = .true.
             call compute_statistics(s)
             call show_data(s)
             call log_line(s, 'Edited sample ' // itoa(row + 1) // ' = ' // rtoa(x, 4) // &
@@ -416,6 +424,7 @@ contains
                 call s%runs%addItem(name // ' (' // itoa(s%n) // ', ' // itoa(s%noutliers) // ' outliers)')
                 call s%runs%setCurrentRow(s%runs%count() - 1)
                 call add_stats(s, name)
+                s%edited = .false.
                 call show_data(s)
                 call log_line(s, 'Done in ' // rtoa(real(t1 - t0, dp) / rate, 3) // ' s: ' // &
                               itoa(s%noutliers) // ' outliers')
@@ -536,6 +545,7 @@ contains
                 write(u, '(I0,3(",",ES16.8),",",I0)') i, s%v(i), s%mean(i), s%z(i), merge(1, 0, s%outlier(i))
             end do
             close(u)
+            s%edited = .false.
             call log_line(s, 'Exported ' // itoa(s%n) // ' rows to ' // path)
             call s%status%showMessage('Exported ' // path, 4000)
         end select
@@ -589,9 +599,54 @@ contains
         class(*), intent(inout), optional :: data
         select type (s => data)
         type is (lab_t)
+            call s%points_action%setChecked(id == 1)
             call s%plot%update()
         end select
     end subroutine on_style
+
+    !> Plot context menu: switch between lines and points.
+    subroutine on_points_toggled(checked, data)
+        logical, intent(in) :: checked
+        class(*), intent(inout), optional :: data
+        type(QAbstractButton) :: button
+        select type (s => data)
+        type is (lab_t)
+            button = s%style%button(merge(1, 0, checked))
+            call button%setChecked(.true.)
+            call s%plot%update()
+        end select
+    end subroutine on_points_toggled
+
+    !> Right click on the plot: show its context menu at the cursor.
+    subroutine on_plot_menu(event, data)
+        type(QContextMenuEvent), intent(in) :: event
+        class(*), intent(inout), optional :: data
+        select type (s => data)
+        type is (lab_t)
+            call s%plot_menu%popup(event%globalX(), event%globalY())
+        end select
+    end subroutine on_plot_menu
+
+    !> Save the plot as an image file.
+    subroutine on_save_plot(data)
+        class(*), intent(inout), optional :: data
+        character(len=:), allocatable :: path
+        type(QPixmap) :: pix
+        integer :: button
+        select type (s => data)
+        type is (lab_t)
+            path = QFileDialog_getSaveFileName('Save plot', 'plot.png', 'Images (*.png *.jpg *.bmp)', &
+                                               parent=s%window)
+            if (path == '') return
+            pix = s%plot%grab()
+            if (pix%save(path)) then
+                call log_line(s, 'Saved the plot to ' // path)
+            else
+                button = QMessageBox_warning('Save plot', 'Could not write ' // path, parent=s%window)
+            end if
+            call pix%delete()
+        end select
+    end subroutine on_save_plot
 
     !> Report the selected tab.
     subroutine on_tab(index, data)
@@ -661,11 +716,99 @@ contains
         end select
     end subroutine on_about
 
-    !> Quit the application.
+    !> Quit: close the main window (which asks first if needed, see on_close).
     subroutine on_quit(data)
         class(*), intent(inout), optional :: data
-        call QApplication_quit()
+        select type (s => data)
+        type is (lab_t)
+            call s%window%close()
+        end select
     end subroutine on_quit
+
+    !> The main window is closing: confirm if work would be lost (`event%ignore()`
+    !> keeps the window open), stop a running simulation and save the settings.
+    subroutine on_close(event, data)
+        type(QCloseEvent), intent(in) :: event
+        class(*), intent(inout), optional :: data
+        character(len=:), allocatable :: question
+        select type (s => data)
+        type is (lab_t)
+            if (allocated(s%screenshot)) return
+            if (s%running) then
+                question = 'A simulation is running. Stop it and quit?'
+            else if (s%edited) then
+                question = 'The edited values have not been exported. Quit anyway?'
+            end if
+            if (allocated(question)) then
+                if (QMessageBox_question('Quit Time Series Lab', question, parent=s%window) /= QMessageBox_Yes) then
+                    call event%ignore()
+                    return
+                end if
+            end if
+            s%cancel = .true.
+            call save_settings(s)
+        end select
+    end subroutine on_close
+
+    ! ==================================================================
+    ! settings (QSettings; the store is chosen by the organization and
+    ! application names set in the main program)
+
+    !> Restore the window layout and the parameters of the last session.
+    subroutine load_settings(s)
+        type(lab_t), intent(inout) :: s
+        type(QSettings) :: settings
+        type(QAbstractButton) :: button
+        logical :: ok
+        settings = QSettings()
+        ! (both return .false., leaving the window as it is, on the first run)
+        ok = s%window%restoreGeometry(settings%stringValue('window/geometry'))
+        ok = s%window%restoreState(settings%stringValue('window/state'))
+        call settings%beginGroup('parameters')
+        call s%model%setCurrentIndex(settings%intValue('model', s%model%currentIndex()))
+        call s%samples%setValue(settings%intValue('samples', s%samples%value()))
+        call s%noise%setValue(settings%doubleValue('noise', s%noise%value()))
+        call s%spikes%setValue(settings%doubleValue('spikes', s%spikes%value()))
+        call s%detection%setChecked(settings%boolValue('detection', s%detection%isChecked()))
+        call s%window_size%setValue(settings%intValue('window', s%window_size%value()))
+        call s%threshold%setValue(settings%doubleValue('threshold', s%threshold%value()))
+        call s%seed%setValue(settings%intValue('seed', s%seed%value()))
+        call settings%endGroup()
+        call settings%beginGroup('plot')
+        button = s%style%button(settings%intValue('style', 0))
+        if (.not. button%isNull()) call button%setChecked(.true.)
+        call s%points_action%setChecked(s%style%checkedId() == 1)
+        s%color = QColor(settings%intValue('red', s%color%r), settings%intValue('green', s%color%g), &
+                         settings%intValue('blue', s%color%b))
+        call settings%endGroup()
+        call settings%delete()
+    end subroutine load_settings
+
+    !> Remember the window layout and the parameters for the next session.
+    subroutine save_settings(s)
+        type(lab_t), intent(inout) :: s
+        type(QSettings) :: settings
+        settings = QSettings()
+        call settings%setValue('window/geometry', s%window%saveGeometry())
+        call settings%setValue('window/state', s%window%saveState())
+        call settings%beginGroup('parameters')
+        call settings%setValue('model', s%model%currentIndex())
+        call settings%setValue('samples', s%samples%value())
+        call settings%setValue('noise', s%noise%value())
+        call settings%setValue('spikes', s%spikes%value())
+        call settings%setValue('detection', s%detection%isChecked())
+        call settings%setValue('window', s%window_size%value())
+        call settings%setValue('threshold', s%threshold%value())
+        call settings%setValue('seed', s%seed%value())
+        call settings%endGroup()
+        call settings%beginGroup('plot')
+        call settings%setValue('style', s%style%checkedId())
+        call settings%setValue('red', s%color%r)
+        call settings%setValue('green', s%color%g)
+        call settings%setValue('blue', s%color%b)
+        call settings%endGroup()
+        call settings%delete()    ! writes the changes
+    end subroutine save_settings
 
     !> --screenshot: show the plot tab, save the window and quit.
     subroutine on_screenshot(data)
@@ -875,7 +1018,7 @@ contains
         type(QMenu) :: file_menu, run_menu, view_menu, help_menu, presets
         type(QToolBar) :: tools
         type(QToolButton) :: preset_button
-        type(QAction) :: export, quit, rename, color, clear_log, about, walk, ou, sine
+        type(QAction) :: export, quit, rename, color, clear_log, about, walk, ou, sine, save_plot
 
         s%window = QMainWindow()
         call s%window%setWindowTitle('Time Series Lab - qt-fortran')
@@ -886,6 +1029,7 @@ contains
 
         s%dock = QDockWidget('Parameters', s%window)
         call s%dock%setWidget(build_panel(s))
+        call s%dock%setObjectName('parameters')    ! saveState identifies docks and tool bars by name
         call s%dock%setFeatures(ior(QDockWidget_DockWidgetMovable, QDockWidget_DockWidgetFloatable))
         call s%window%addDockWidget(Qt_LeftDockWidgetArea, s%dock)
 
@@ -902,6 +1046,7 @@ contains
         walk = new_action(s, 'Long random walk', '', on_preset_walk)
         ou = new_action(s, 'Mean-reverting (OU)', '', on_preset_ou)
         sine = new_action(s, 'Noisy sine', '', on_preset_sine)
+        save_plot = new_action(s, '&Save plot as image...', '', on_save_plot)
 
         ! menus
         bar = s%window%menuBar()
@@ -931,6 +1076,7 @@ contains
         call preset_button%setMenu(presets)
         call preset_button%setPopupMode(QToolButton_InstantPopup)
         tools = s%window%addToolBar('Main')
+        call tools%setObjectName('main')
         call tools%addAction(s%run_action)
         call tools%addAction(s%cancel_action)
         call tools%addSeparator()
@@ -938,6 +1084,19 @@ contains
         call tools%addSeparator()
         call tools%addAction(export)
         call tools%addAction(color)
+
+        ! plot context menu (right click)
+        s%points_action = QAction('Draw &points', s%window)
+        call s%points_action%setCheckable(.true.)
+        call s%points_action%toggled%connect(on_points_toggled, s)
+        s%plot_menu = QMenu('Plot', s%window)
+        call s%plot_menu%addAction(s%points_action)
+        call s%plot_menu%addAction(color)
+        call s%plot_menu%addSeparator()
+        call s%plot_menu%addAction(save_plot)
+        call s%plot%contextMenuEvent%connect(on_plot_menu, s)
+
+        call s%window%closeEvent%connect(on_close, s)
     end subroutine build
 
 end module timeseries_app
@@ -955,7 +1114,10 @@ program timeseries
     integer :: ierr, tab
 
     app = QApplication()
+    call QApplication_setOrganizationName('qt-fortran')
+    call QApplication_setApplicationName('Time Series Lab')
     call build(s)
+    call s%window%resize(1200, 760)
     call log_line(s, 'Ready. Set the parameters and press Run.')
 
     call get_command_argument(1, arg)
@@ -970,9 +1132,10 @@ program timeseries
         end if
         call s%tabs%setCurrentIndex(tab)
         call QTimer_singleShot(100, on_run, s)
+    else
+        call load_settings(s)    ! (not for screenshots, which use the defaults)
     end if
 
-    call s%window%resize(1200, 760)
     call s%window%show()
     ierr = app%exec()
 

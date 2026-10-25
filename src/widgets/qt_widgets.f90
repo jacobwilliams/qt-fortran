@@ -213,7 +213,10 @@ module qt_widgets
 
     !> Base of all user interface objects; a widget without a parent is a window.
     type, extends(QObject), public :: QWidget
+        type(QSignalCloseEvent) :: closeEvent   !! The window is about to close; a slot can keep it open with `event%ignore()`.
+        type(QSignalContextMenuEvent) :: contextMenuEvent   !! A context menu was requested (right click); show one with `menu%popup(event%globalX(), event%globalY())`.
     contains
+        procedure :: attach => qwidget_attach
         procedure :: show => qwidget_show
         procedure :: hide => qwidget_hide
         procedure :: close => qwidget_close
@@ -252,6 +255,12 @@ module qt_widgets
         procedure :: setSizePolicy => qwidget_setSizePolicy
         procedure :: setContentsMargins => qwidget_setContentsMargins
         procedure :: setWindowIcon => qwidget_setWindowIcon
+        procedure :: saveGeometry => qwidget_saveGeometry
+        procedure :: restoreGeometry => qwidget_restoreGeometry
+        procedure :: isWindow => qwidget_isWindow
+        procedure :: x => qwidget_x
+        procedure :: y => qwidget_y
+        procedure :: move => qwidget_move
     end type QWidget
     !> Constructor: `QWidget([parent])`.
     interface QWidget
@@ -548,6 +557,8 @@ module qt_widgets
         procedure :: addDockWidget => qmainwindow_addDockWidget
         procedure :: removeDockWidget => qmainwindow_removeDockWidget
         procedure :: tabifyDockWidget => qmainwindow_tabifyDockWidget
+        procedure :: saveState => qmainwindow_saveState
+        procedure :: restoreState => qmainwindow_restoreState
     end type QMainWindow
     !> Constructor: `QMainWindow([parent])`.
     interface QMainWindow
@@ -561,6 +572,10 @@ module qt_widgets
         procedure :: addSeparator => qmenu_addSeparator
         procedure :: title => qmenu_title
         procedure :: menuAction => qmenu_menuAction
+        procedure :: popup => qmenu_popup
+        procedure :: exec => qmenu_exec
+        procedure :: clear => qmenu_clear
+        procedure :: isEmpty => qmenu_isEmpty
     end type QMenu
     !> Constructor: `QMenu(title [, parent])`.
     interface QMenu
@@ -1295,6 +1310,11 @@ module qt_widgets
     public :: QApplication_quit
     public :: QApplication_processEvents
     public :: QApplication_activeModalWidget
+    public :: QApplication_setOrganizationName
+    public :: QApplication_organizationName
+    public :: QApplication_setOrganizationDomain
+    public :: QApplication_setApplicationName
+    public :: QApplication_applicationName
     public :: QMessageBox_information
     public :: QMessageBox_warning
     public :: QMessageBox_critical
@@ -1343,6 +1363,51 @@ contains
         type(QWidget) :: res
         call res%attach(qtf_qapplication_activeModalWidget())
     end function QApplication_activeModalWidget
+
+    !> Set the organization name (used by QSettings to find the settings).
+    subroutine QApplication_setOrganizationName(name)
+        character(len=*), intent(in) :: name
+        call qtf_qapplication_setOrganizationName(name, len(name, c_int))
+    end subroutine QApplication_setOrganizationName
+
+    !> The organization name.
+    function QApplication_organizationName() result(res)
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qapplication_organizationName(n_)
+        res = qtf_take_string(p_, n_)
+    end function QApplication_organizationName
+
+    !> Set the organization's Internet domain (used by QSettings on macOS).
+    subroutine QApplication_setOrganizationDomain(domain)
+        character(len=*), intent(in) :: domain
+        call qtf_qapplication_setOrganizationDomain(domain, len(domain, c_int))
+    end subroutine QApplication_setOrganizationDomain
+
+    !> Set the application name (used by QSettings and in dialogs).
+    subroutine QApplication_setApplicationName(name)
+        character(len=*), intent(in) :: name
+        call qtf_qapplication_setApplicationName(name, len(name, c_int))
+    end subroutine QApplication_setApplicationName
+
+    !> The application name.
+    function QApplication_applicationName() result(res)
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qapplication_applicationName(n_)
+        res = qtf_take_string(p_, n_)
+    end function QApplication_applicationName
+
+    !> Bind to a C++ QWidget and its signals.
+    subroutine qwidget_attach(self, ptr)
+        class(QWidget), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QObject%attach(ptr)
+        self%closeEvent = QSignalCloseEvent(ptr, QTF_SIG_QWIDGET_CLOSEEVENT)
+        self%contextMenuEvent = QSignalContextMenuEvent(ptr, QTF_SIG_QWIDGET_CONTEXTMENUEVENT)
+    end subroutine qwidget_attach
 
     !> Create a widget; without a parent it is a top-level window.
     function qwidget_new(parent) result(res)
@@ -1625,6 +1690,53 @@ contains
         type(QIcon), intent(in) :: icon
         call qtf_qwidget_setWindowIcon(self%ptr, icon%ptr)
     end subroutine qwidget_setWindowIcon
+
+    !> The window's position and size as text (base64), e.g. to store with QSettings.
+    function qwidget_saveGeometry(self) result(res)
+        class(QWidget), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qwidget_saveGeometry(self%ptr, n_)
+        res = qtf_take_string(p_, n_)
+    end function qwidget_saveGeometry
+
+    !> Restore a geometry from `saveGeometry`; false (and no change) if it is invalid.
+    function qwidget_restoreGeometry(self, geometry) result(res)
+        class(QWidget), intent(in) :: self
+        character(len=*), intent(in) :: geometry
+        logical :: res
+        res = qtf_logical(qtf_qwidget_restoreGeometry(self%ptr, geometry, len(geometry, c_int)))
+    end function qwidget_restoreGeometry
+
+    !> True if the widget is a top-level window.
+    function qwidget_isWindow(self) result(res)
+        class(QWidget), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qwidget_isWindow(self%ptr))
+    end function qwidget_isWindow
+
+    !> Horizontal position (relative to the parent, or on the screen for a window).
+    function qwidget_x(self) result(res)
+        class(QWidget), intent(in) :: self
+        integer :: res
+        res = qtf_qwidget_x(self%ptr)
+    end function qwidget_x
+
+    !> Vertical position (relative to the parent, or on the screen for a window).
+    function qwidget_y(self) result(res)
+        class(QWidget), intent(in) :: self
+        integer :: res
+        res = qtf_qwidget_y(self%ptr)
+    end function qwidget_y
+
+    !> Move the widget (a window: on the screen).
+    subroutine qwidget_move(self, x, y)
+        class(QWidget), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        call qtf_qwidget_move(self%ptr, int(x, c_int), int(y, c_int))
+    end subroutine qwidget_move
 
     !> Bind to a C++ QtfWidget and its signals.
     subroutine qtfwidget_attach(self, ptr)
@@ -2609,6 +2721,24 @@ contains
         call qtf_qmainwindow_tabifyDockWidget(self%ptr, first%ptr, second%ptr)
     end subroutine qmainwindow_tabifyDockWidget
 
+    !> The layout of tool bars and dock widgets as text (base64), e.g. to store with QSettings. Give each tool bar and dock widget a unique objectName first.
+    function qmainwindow_saveState(self) result(res)
+        class(QMainWindow), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qmainwindow_saveState(self%ptr, n_)
+        res = qtf_take_string(p_, n_)
+    end function qmainwindow_saveState
+
+    !> Restore a layout from `saveState`; false if it is invalid.
+    function qmainwindow_restoreState(self, state) result(res)
+        class(QMainWindow), intent(in) :: self
+        character(len=*), intent(in) :: state
+        logical :: res
+        res = qtf_logical(qtf_qmainwindow_restoreState(self%ptr, state, len(state, c_int)))
+    end function qmainwindow_restoreState
+
     !> A stand-alone menu (e.g. a context menu).
     function qmenu_new(title, parent) result(res)
         character(len=*), intent(in) :: title
@@ -2647,6 +2777,36 @@ contains
         type(QAction) :: res
         call res%attach(qtf_qmenu_menuAction(self%ptr))
     end function qmenu_menuAction
+
+    !> Show the menu at a screen position and return at once (the chosen action triggers).
+    subroutine qmenu_popup(self, globalX, globalY)
+        class(QMenu), intent(in) :: self
+        integer, intent(in) :: globalX
+        integer, intent(in) :: globalY
+        call qtf_qmenu_popup(self%ptr, int(globalX, c_int), int(globalY, c_int))
+    end subroutine qmenu_popup
+
+    !> Show the menu at a screen position and wait; returns the chosen action (a null handle if none).
+    function qmenu_exec(self, globalX, globalY) result(res)
+        class(QMenu), intent(in) :: self
+        integer, intent(in) :: globalX
+        integer, intent(in) :: globalY
+        type(QAction) :: res
+        call res%attach(qtf_qmenu_exec(self%ptr, int(globalX, c_int), int(globalY, c_int)))
+    end function qmenu_exec
+
+    !> Remove all actions (actions owned by the menu are deleted).
+    subroutine qmenu_clear(self)
+        class(QMenu), intent(in) :: self
+        call qtf_qmenu_clear(self%ptr)
+    end subroutine qmenu_clear
+
+    !> True if the menu has no actions.
+    function qmenu_isEmpty(self) result(res)
+        class(QMenu), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qmenu_isEmpty(self%ptr))
+    end function qmenu_isEmpty
 
     !> Create a menu with the given title (e.g. '&File') and append it.
     function qmenubar_addMenu(self, title) result(res)

@@ -8,73 +8,75 @@ module qt_c_widgets
     private
 
     ! Signal ids: must match `enum qtf_signal` in src/shim/qtf_common.h.
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_PAINTEVENT = 1000
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEPRESSEVENT = 1001
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSERELEASEEVENT = 1002
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEMOVEEVENT = 1003
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEDOUBLECLICKEVENT = 1004
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_WHEELEVENT = 1005
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_KEYPRESSEVENT = 1006
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_KEYRELEASEEVENT = 1007
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_RESIZEEVENT = 1008
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_CLICKED = 1009
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_TOGGLED = 1010
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_PRESSED = 1011
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_RELEASED = 1012
-    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_TEXTCHANGED = 1013
-    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_TEXTEDITED = 1014
-    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_RETURNPRESSED = 1015
-    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1016
-    integer(c_int), parameter, public :: QTF_SIG_QSPINBOX_VALUECHANGED = 1017
-    integer(c_int), parameter, public :: QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1018
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1019
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1020
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1021
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1022
-    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1023
-    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1024
-    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_ACTIVATED = 1025
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_ACCEPTED = 1026
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_REJECTED = 1027
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_FINISHED = 1028
-    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1029
-    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1030
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1031
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1032
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1033
-    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1034
-    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1035
-    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1036
-    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1037
-    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1038
-    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1039
-    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1040
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1041
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1042
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1043
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1044
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1045
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1046
-    integer(c_int), parameter, public :: QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1047
-    integer(c_int), parameter, public :: QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1048
-    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1049
-    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1050
-    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABBARCLICKED = 1051
-    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1052
-    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1053
-    integer(c_int), parameter, public :: QTF_SIG_QSPLITTER_SPLITTERMOVED = 1054
-    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_TOGGLED = 1055
-    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_CLICKED = 1056
-    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1057
-    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1058
-    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1059
-    integer(c_int), parameter, public :: QTF_SIG_QBUTTONGROUP_IDCLICKED = 1060
-    integer(c_int), parameter, public :: QTF_SIG_QDATEEDIT_DATECHANGED = 1061
-    integer(c_int), parameter, public :: QTF_SIG_QTIMEEDIT_TIMECHANGED = 1062
-    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1063
-    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_CLICKED = 1064
-    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1065
-    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSDIALOG_CANCELED = 1066
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_CLOSEEVENT = 1000
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_CONTEXTMENUEVENT = 1001
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_PAINTEVENT = 1002
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEPRESSEVENT = 1003
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSERELEASEEVENT = 1004
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEMOVEEVENT = 1005
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEDOUBLECLICKEVENT = 1006
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_WHEELEVENT = 1007
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_KEYPRESSEVENT = 1008
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_KEYRELEASEEVENT = 1009
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_RESIZEEVENT = 1010
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_CLICKED = 1011
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_TOGGLED = 1012
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_PRESSED = 1013
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_RELEASED = 1014
+    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_TEXTCHANGED = 1015
+    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_TEXTEDITED = 1016
+    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_RETURNPRESSED = 1017
+    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1018
+    integer(c_int), parameter, public :: QTF_SIG_QSPINBOX_VALUECHANGED = 1019
+    integer(c_int), parameter, public :: QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1020
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1021
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1022
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1023
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1024
+    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1025
+    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1026
+    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_ACTIVATED = 1027
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_ACCEPTED = 1028
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_REJECTED = 1029
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_FINISHED = 1030
+    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1031
+    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1032
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1033
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1034
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1035
+    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1036
+    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1037
+    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1038
+    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1039
+    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1040
+    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1041
+    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1042
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1043
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1044
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1045
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1046
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1047
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1048
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1049
+    integer(c_int), parameter, public :: QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1050
+    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1051
+    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1052
+    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABBARCLICKED = 1053
+    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1054
+    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1055
+    integer(c_int), parameter, public :: QTF_SIG_QSPLITTER_SPLITTERMOVED = 1056
+    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_TOGGLED = 1057
+    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_CLICKED = 1058
+    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1059
+    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1060
+    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1061
+    integer(c_int), parameter, public :: QTF_SIG_QBUTTONGROUP_IDCLICKED = 1062
+    integer(c_int), parameter, public :: QTF_SIG_QDATEEDIT_DATECHANGED = 1063
+    integer(c_int), parameter, public :: QTF_SIG_QTIMEEDIT_TIMECHANGED = 1064
+    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1065
+    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_CLICKED = 1066
+    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1067
+    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSDIALOG_CANCELED = 1068
 
     interface
 
@@ -133,6 +135,59 @@ module qt_c_widgets
             implicit none
             type(c_ptr) :: res
         end function qtf_qapplication_activeModalWidget
+
+        !> Set the organization name (used by QSettings to find the settings).
+        !>
+        !> C: `void qtf_qapplication_setOrganizationName(const char *name, int name_len)`
+        subroutine qtf_qapplication_setOrganizationName(name, name_len) &
+                bind(C, name='qtf_qapplication_setOrganizationName')
+            import :: c_char, c_int
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+        end subroutine qtf_qapplication_setOrganizationName
+
+        !> The organization name.
+        !>
+        !> C: `char *qtf_qapplication_organizationName(int *len)`
+        function qtf_qapplication_organizationName(len) result(res) bind(C, name='qtf_qapplication_organizationName')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qapplication_organizationName
+
+        !> Set the organization's Internet domain (used by QSettings on macOS).
+        !>
+        !> C: `void qtf_qapplication_setOrganizationDomain(const char *domain, int domain_len)`
+        subroutine qtf_qapplication_setOrganizationDomain(domain, domain_len) &
+                bind(C, name='qtf_qapplication_setOrganizationDomain')
+            import :: c_char, c_int
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: domain
+            integer(c_int), value :: domain_len
+        end subroutine qtf_qapplication_setOrganizationDomain
+
+        !> Set the application name (used by QSettings and in dialogs).
+        !>
+        !> C: `void qtf_qapplication_setApplicationName(const char *name, int name_len)`
+        subroutine qtf_qapplication_setApplicationName(name, name_len) &
+                bind(C, name='qtf_qapplication_setApplicationName')
+            import :: c_char, c_int
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+        end subroutine qtf_qapplication_setApplicationName
+
+        !> The application name.
+        !>
+        !> C: `char *qtf_qapplication_applicationName(int *len)`
+        function qtf_qapplication_applicationName(len) result(res) bind(C, name='qtf_qapplication_applicationName')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qapplication_applicationName
 
         !> Create a widget; without a parent it is a top-level window.
         !>
@@ -531,6 +586,71 @@ module qt_c_widgets
             type(c_ptr), value :: self
             type(c_ptr), value :: icon
         end subroutine qtf_qwidget_setWindowIcon
+
+        !> The window's position and size as text (base64), e.g. to store with QSettings.
+        !>
+        !> C: `char *qtf_qwidget_saveGeometry(void *self, int *len)`
+        function qtf_qwidget_saveGeometry(self, len) result(res) bind(C, name='qtf_qwidget_saveGeometry')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qwidget_saveGeometry
+
+        !> Restore a geometry from `saveGeometry`; false (and no change) if it is invalid.
+        !>
+        !> C: `int qtf_qwidget_restoreGeometry(void *self, const char *geometry, int geometry_len)`
+        function qtf_qwidget_restoreGeometry(self, geometry, geometry_len) &
+                result(res) bind(C, name='qtf_qwidget_restoreGeometry')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: geometry
+            integer(c_int), value :: geometry_len
+            integer(c_int) :: res
+        end function qtf_qwidget_restoreGeometry
+
+        !> True if the widget is a top-level window.
+        !>
+        !> C: `int qtf_qwidget_isWindow(void *self)`
+        function qtf_qwidget_isWindow(self) result(res) bind(C, name='qtf_qwidget_isWindow')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwidget_isWindow
+
+        !> Horizontal position (relative to the parent, or on the screen for a window).
+        !>
+        !> C: `int qtf_qwidget_x(void *self)`
+        function qtf_qwidget_x(self) result(res) bind(C, name='qtf_qwidget_x')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwidget_x
+
+        !> Vertical position (relative to the parent, or on the screen for a window).
+        !>
+        !> C: `int qtf_qwidget_y(void *self)`
+        function qtf_qwidget_y(self) result(res) bind(C, name='qtf_qwidget_y')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwidget_y
+
+        !> Move the widget (a window: on the screen).
+        !>
+        !> C: `void qtf_qwidget_move(void *self, int x, int y)`
+        subroutine qtf_qwidget_move(self, x, y) bind(C, name='qtf_qwidget_move')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: x
+            integer(c_int), value :: y
+        end subroutine qtf_qwidget_move
 
         !> Create a QtfWidget; without a parent it is a top-level window.
         !>
@@ -1730,6 +1850,30 @@ module qt_c_widgets
             type(c_ptr), value :: second
         end subroutine qtf_qmainwindow_tabifyDockWidget
 
+        !> The layout of tool bars and dock widgets as text (base64), e.g. to store with QSettings. Give each tool bar and dock widget a unique objectName first.
+        !>
+        !> C: `char *qtf_qmainwindow_saveState(void *self, int *len)`
+        function qtf_qmainwindow_saveState(self, len) result(res) bind(C, name='qtf_qmainwindow_saveState')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qmainwindow_saveState
+
+        !> Restore a layout from `saveState`; false if it is invalid.
+        !>
+        !> C: `int qtf_qmainwindow_restoreState(void *self, const char *state, int state_len)`
+        function qtf_qmainwindow_restoreState(self, state, state_len) &
+                result(res) bind(C, name='qtf_qmainwindow_restoreState')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: state
+            integer(c_int), value :: state_len
+            integer(c_int) :: res
+        end function qtf_qmainwindow_restoreState
+
         !> A stand-alone menu (e.g. a context menu).
         !>
         !> C: `void *qtf_qmenu_new(const char *title, int title_len, void *parent)`
@@ -1783,6 +1927,48 @@ module qt_c_widgets
             type(c_ptr), value :: self
             type(c_ptr) :: res
         end function qtf_qmenu_menuAction
+
+        !> Show the menu at a screen position and return at once (the chosen action triggers).
+        !>
+        !> C: `void qtf_qmenu_popup(void *self, int globalX, int globalY)`
+        subroutine qtf_qmenu_popup(self, globalX, globalY) bind(C, name='qtf_qmenu_popup')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: globalX
+            integer(c_int), value :: globalY
+        end subroutine qtf_qmenu_popup
+
+        !> Show the menu at a screen position and wait; returns the chosen action (a null handle if none).
+        !>
+        !> C: `void *qtf_qmenu_exec(void *self, int globalX, int globalY)`
+        function qtf_qmenu_exec(self, globalX, globalY) result(res) bind(C, name='qtf_qmenu_exec')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: globalX
+            integer(c_int), value :: globalY
+            type(c_ptr) :: res
+        end function qtf_qmenu_exec
+
+        !> Remove all actions (actions owned by the menu are deleted).
+        !>
+        !> C: `void qtf_qmenu_clear(void *self)`
+        subroutine qtf_qmenu_clear(self) bind(C, name='qtf_qmenu_clear')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qmenu_clear
+
+        !> True if the menu has no actions.
+        !>
+        !> C: `int qtf_qmenu_isEmpty(void *self)`
+        function qtf_qmenu_isEmpty(self) result(res) bind(C, name='qtf_qmenu_isEmpty')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qmenu_isEmpty
 
         !> Create a menu with the given title (e.g. '&File') and append it.
         !>
@@ -5546,20 +5732,24 @@ module qt_c_widgets
 
     public :: qtf_qapplication_new_args, qtf_qapplication_arguments, qtf_qapplication_exec
     public :: qtf_qapplication_quit, qtf_qapplication_processEvents, qtf_qapplication_activeModalWidget
-    public :: qtf_qwidget_new, qtf_qwidget_show, qtf_qwidget_hide, qtf_qwidget_close, qtf_qwidget_setVisible
-    public :: qtf_qwidget_isVisible, qtf_qwidget_setEnabled, qtf_qwidget_isEnabled, qtf_qwidget_resize
-    public :: qtf_qwidget_width, qtf_qwidget_height, qtf_qwidget_setMinimumSize, qtf_qwidget_setFixedSize
-    public :: qtf_qwidget_setWindowTitle, qtf_qwidget_windowTitle, qtf_qwidget_setToolTip
-    public :: qtf_qwidget_toolTip, qtf_qwidget_setStyleSheet, qtf_qwidget_setFocus, qtf_qwidget_setLayout
-    public :: qtf_qwidget_layout, qtf_qwidget_update, qtf_qwidget_repaint, qtf_qwidget_setMouseTracking
-    public :: qtf_qwidget_hasMouseTracking, qtf_qwidget_setFocusPolicy, qtf_qwidget_hasFocus
-    public :: qtf_qwidget_grab, qtf_qwidget_addAction, qtf_qwidget_setMaximumSize
-    public :: qtf_qwidget_setMinimumWidth, qtf_qwidget_setMinimumHeight, qtf_qwidget_setMaximumWidth
-    public :: qtf_qwidget_setMaximumHeight, qtf_qwidget_setFixedWidth, qtf_qwidget_setFixedHeight
-    public :: qtf_qwidget_setSizePolicy, qtf_qwidget_setContentsMargins, qtf_qwidget_setWindowIcon
-    public :: qtf_qtfwidget_new, qtf_qframe_new, qtf_qframe_setFrameShape, qtf_qframe_frameShape
-    public :: qtf_qframe_setFrameShadow, qtf_qframe_setLineWidth, qtf_qlabel_new, qtf_qlabel_setText
-    public :: qtf_qlabel_text, qtf_qlabel_setAlignment, qtf_qlabel_setWordWrap, qtf_qlabel_setPixmap
+    public :: qtf_qapplication_setOrganizationName, qtf_qapplication_organizationName
+    public :: qtf_qapplication_setOrganizationDomain, qtf_qapplication_setApplicationName
+    public :: qtf_qapplication_applicationName, qtf_qwidget_new, qtf_qwidget_show, qtf_qwidget_hide
+    public :: qtf_qwidget_close, qtf_qwidget_setVisible, qtf_qwidget_isVisible, qtf_qwidget_setEnabled
+    public :: qtf_qwidget_isEnabled, qtf_qwidget_resize, qtf_qwidget_width, qtf_qwidget_height
+    public :: qtf_qwidget_setMinimumSize, qtf_qwidget_setFixedSize, qtf_qwidget_setWindowTitle
+    public :: qtf_qwidget_windowTitle, qtf_qwidget_setToolTip, qtf_qwidget_toolTip, qtf_qwidget_setStyleSheet
+    public :: qtf_qwidget_setFocus, qtf_qwidget_setLayout, qtf_qwidget_layout, qtf_qwidget_update
+    public :: qtf_qwidget_repaint, qtf_qwidget_setMouseTracking, qtf_qwidget_hasMouseTracking
+    public :: qtf_qwidget_setFocusPolicy, qtf_qwidget_hasFocus, qtf_qwidget_grab, qtf_qwidget_addAction
+    public :: qtf_qwidget_setMaximumSize, qtf_qwidget_setMinimumWidth, qtf_qwidget_setMinimumHeight
+    public :: qtf_qwidget_setMaximumWidth, qtf_qwidget_setMaximumHeight, qtf_qwidget_setFixedWidth
+    public :: qtf_qwidget_setFixedHeight, qtf_qwidget_setSizePolicy, qtf_qwidget_setContentsMargins
+    public :: qtf_qwidget_setWindowIcon, qtf_qwidget_saveGeometry, qtf_qwidget_restoreGeometry
+    public :: qtf_qwidget_isWindow, qtf_qwidget_x, qtf_qwidget_y, qtf_qwidget_move, qtf_qtfwidget_new
+    public :: qtf_qframe_new, qtf_qframe_setFrameShape, qtf_qframe_frameShape, qtf_qframe_setFrameShadow
+    public :: qtf_qframe_setLineWidth, qtf_qlabel_new, qtf_qlabel_setText, qtf_qlabel_text
+    public :: qtf_qlabel_setAlignment, qtf_qlabel_setWordWrap, qtf_qlabel_setPixmap
     public :: qtf_qlabel_setScaledContents, qtf_qabstractbutton_setText, qtf_qabstractbutton_text
     public :: qtf_qabstractbutton_setCheckable, qtf_qabstractbutton_isCheckable
     public :: qtf_qabstractbutton_setChecked, qtf_qabstractbutton_isChecked, qtf_qabstractbutton_click
@@ -5591,9 +5781,10 @@ module qt_c_widgets
     public :: qtf_qstatusbar_clearMessage, qtf_qstatusbar_currentMessage, qtf_qmainwindow_new
     public :: qtf_qmainwindow_setCentralWidget, qtf_qmainwindow_centralWidget, qtf_qmainwindow_statusBar
     public :: qtf_qmainwindow_menuBar, qtf_qmainwindow_addToolBar, qtf_qmainwindow_addDockWidget
-    public :: qtf_qmainwindow_removeDockWidget, qtf_qmainwindow_tabifyDockWidget, qtf_qmenu_new
-    public :: qtf_qmenu_addMenu, qtf_qmenu_addSeparator, qtf_qmenu_title, qtf_qmenu_menuAction
-    public :: qtf_qmenubar_addMenu, qtf_qtoolbar_addSeparator, qtf_qtoolbar_addWidget
+    public :: qtf_qmainwindow_removeDockWidget, qtf_qmainwindow_tabifyDockWidget, qtf_qmainwindow_saveState
+    public :: qtf_qmainwindow_restoreState, qtf_qmenu_new, qtf_qmenu_addMenu, qtf_qmenu_addSeparator
+    public :: qtf_qmenu_title, qtf_qmenu_menuAction, qtf_qmenu_popup, qtf_qmenu_exec, qtf_qmenu_clear
+    public :: qtf_qmenu_isEmpty, qtf_qmenubar_addMenu, qtf_qtoolbar_addSeparator, qtf_qtoolbar_addWidget
     public :: qtf_qtoolbar_setIconSize, qtf_qtoolbar_setToolButtonStyle, qtf_qdialog_new, qtf_qdialog_exec
     public :: qtf_qdialog_open, qtf_qdialog_accept, qtf_qdialog_reject, qtf_qdialog_done, qtf_qdialog_result
     public :: qtf_qdialog_setModal, qtf_qmessagebox_new, qtf_qmessagebox_setText, qtf_qmessagebox_text

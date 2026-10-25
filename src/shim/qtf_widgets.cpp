@@ -14,10 +14,13 @@
 #include <QApplication>
 #include <QBoxLayout>
 #include <QButtonGroup>
+#include <QByteArray>
 #include <QCalendarWidget>
 #include <QCheckBox>
+#include <QCloseEvent>
 #include <QColorDialog>
 #include <QComboBox>
+#include <QContextMenuEvent>
 #include <QDate>
 #include <QDateEdit>
 #include <QDial>
@@ -75,73 +78,75 @@ template <typename T> static T *as(void *p) { return static_cast<T *>(p); }
 
 // Signal ids (shared with Fortran through the generated raw module).
 enum : int {
-    QTF_SIG_QTFWIDGET_PAINTEVENT = 1000,
-    QTF_SIG_QTFWIDGET_MOUSEPRESSEVENT = 1001,
-    QTF_SIG_QTFWIDGET_MOUSERELEASEEVENT = 1002,
-    QTF_SIG_QTFWIDGET_MOUSEMOVEEVENT = 1003,
-    QTF_SIG_QTFWIDGET_MOUSEDOUBLECLICKEVENT = 1004,
-    QTF_SIG_QTFWIDGET_WHEELEVENT = 1005,
-    QTF_SIG_QTFWIDGET_KEYPRESSEVENT = 1006,
-    QTF_SIG_QTFWIDGET_KEYRELEASEEVENT = 1007,
-    QTF_SIG_QTFWIDGET_RESIZEEVENT = 1008,
-    QTF_SIG_QABSTRACTBUTTON_CLICKED = 1009,
-    QTF_SIG_QABSTRACTBUTTON_TOGGLED = 1010,
-    QTF_SIG_QABSTRACTBUTTON_PRESSED = 1011,
-    QTF_SIG_QABSTRACTBUTTON_RELEASED = 1012,
-    QTF_SIG_QLINEEDIT_TEXTCHANGED = 1013,
-    QTF_SIG_QLINEEDIT_TEXTEDITED = 1014,
-    QTF_SIG_QLINEEDIT_RETURNPRESSED = 1015,
-    QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1016,
-    QTF_SIG_QSPINBOX_VALUECHANGED = 1017,
-    QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1018,
-    QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1019,
-    QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1020,
-    QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1021,
-    QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1022,
-    QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1023,
-    QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1024,
-    QTF_SIG_QCOMBOBOX_ACTIVATED = 1025,
-    QTF_SIG_QDIALOG_ACCEPTED = 1026,
-    QTF_SIG_QDIALOG_REJECTED = 1027,
-    QTF_SIG_QDIALOG_FINISHED = 1028,
-    QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1029,
-    QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1030,
-    QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1031,
-    QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1032,
-    QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1033,
-    QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1034,
-    QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1035,
-    QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1036,
-    QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1037,
-    QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1038,
-    QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1039,
-    QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1040,
-    QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1041,
-    QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1042,
-    QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1043,
-    QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1044,
-    QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1045,
-    QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1046,
-    QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1047,
-    QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1048,
-    QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1049,
-    QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1050,
-    QTF_SIG_QTABWIDGET_TABBARCLICKED = 1051,
-    QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1052,
-    QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1053,
-    QTF_SIG_QSPLITTER_SPLITTERMOVED = 1054,
-    QTF_SIG_QGROUPBOX_TOGGLED = 1055,
-    QTF_SIG_QGROUPBOX_CLICKED = 1056,
-    QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1057,
-    QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1058,
-    QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1059,
-    QTF_SIG_QBUTTONGROUP_IDCLICKED = 1060,
-    QTF_SIG_QDATEEDIT_DATECHANGED = 1061,
-    QTF_SIG_QTIMEEDIT_TIMECHANGED = 1062,
-    QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1063,
-    QTF_SIG_QCALENDARWIDGET_CLICKED = 1064,
-    QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1065,
-    QTF_SIG_QPROGRESSDIALOG_CANCELED = 1066,
+    QTF_SIG_QWIDGET_CLOSEEVENT = 1000,
+    QTF_SIG_QWIDGET_CONTEXTMENUEVENT = 1001,
+    QTF_SIG_QTFWIDGET_PAINTEVENT = 1002,
+    QTF_SIG_QTFWIDGET_MOUSEPRESSEVENT = 1003,
+    QTF_SIG_QTFWIDGET_MOUSERELEASEEVENT = 1004,
+    QTF_SIG_QTFWIDGET_MOUSEMOVEEVENT = 1005,
+    QTF_SIG_QTFWIDGET_MOUSEDOUBLECLICKEVENT = 1006,
+    QTF_SIG_QTFWIDGET_WHEELEVENT = 1007,
+    QTF_SIG_QTFWIDGET_KEYPRESSEVENT = 1008,
+    QTF_SIG_QTFWIDGET_KEYRELEASEEVENT = 1009,
+    QTF_SIG_QTFWIDGET_RESIZEEVENT = 1010,
+    QTF_SIG_QABSTRACTBUTTON_CLICKED = 1011,
+    QTF_SIG_QABSTRACTBUTTON_TOGGLED = 1012,
+    QTF_SIG_QABSTRACTBUTTON_PRESSED = 1013,
+    QTF_SIG_QABSTRACTBUTTON_RELEASED = 1014,
+    QTF_SIG_QLINEEDIT_TEXTCHANGED = 1015,
+    QTF_SIG_QLINEEDIT_TEXTEDITED = 1016,
+    QTF_SIG_QLINEEDIT_RETURNPRESSED = 1017,
+    QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1018,
+    QTF_SIG_QSPINBOX_VALUECHANGED = 1019,
+    QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1020,
+    QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1021,
+    QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1022,
+    QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1023,
+    QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1024,
+    QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1025,
+    QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1026,
+    QTF_SIG_QCOMBOBOX_ACTIVATED = 1027,
+    QTF_SIG_QDIALOG_ACCEPTED = 1028,
+    QTF_SIG_QDIALOG_REJECTED = 1029,
+    QTF_SIG_QDIALOG_FINISHED = 1030,
+    QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1031,
+    QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1032,
+    QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1033,
+    QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1034,
+    QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1035,
+    QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1036,
+    QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1037,
+    QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1038,
+    QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1039,
+    QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1040,
+    QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1041,
+    QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1042,
+    QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1043,
+    QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1044,
+    QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1045,
+    QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1046,
+    QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1047,
+    QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1048,
+    QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1049,
+    QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1050,
+    QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1051,
+    QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1052,
+    QTF_SIG_QTABWIDGET_TABBARCLICKED = 1053,
+    QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1054,
+    QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1055,
+    QTF_SIG_QSPLITTER_SPLITTERMOVED = 1056,
+    QTF_SIG_QGROUPBOX_TOGGLED = 1057,
+    QTF_SIG_QGROUPBOX_CLICKED = 1058,
+    QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1059,
+    QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1060,
+    QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1061,
+    QTF_SIG_QBUTTONGROUP_IDCLICKED = 1062,
+    QTF_SIG_QDATEEDIT_DATECHANGED = 1063,
+    QTF_SIG_QTIMEEDIT_TIMECHANGED = 1064,
+    QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1065,
+    QTF_SIG_QCALENDARWIDGET_CLICKED = 1066,
+    QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1067,
+    QTF_SIG_QPROGRESSDIALOG_CANCELED = 1068,
 };
 
 // QApplication keeps references to argc/argv, so they must outlive it.
@@ -171,6 +176,47 @@ static QIcon *qtf_standard_icon(const QString &name) {
     bool ok = false;
     const int v = e.keyToValue(name.toLatin1().constData(), &ok);
     return new QIcon(ok ? QApplication::style()->standardIcon(QStyle::StandardPixmap(v)) : QIcon());
+}
+
+// Forwards a widget's close and context-menu events to Fortran slots. One is
+// created per widget when the first such slot is connected; as a child of the
+// widget it (and the slots it holds) is destroyed with the widget.
+class QtfEventFilter : public QObject {
+  public:
+    explicit QtfEventFilter(QWidget *w) : QObject(w) { w->installEventFilter(this); }
+
+    std::vector<qtf_slot> close_handlers, context_menu_handlers;
+
+    // The widget's filter, created on first use.
+    static QtfEventFilter *of(QWidget *w) {
+        for (QObject *c : w->children())
+            if (auto *f = dynamic_cast<QtfEventFilter *>(c)) return f;
+        return new QtfEventFilter(w);
+    }
+
+  protected:
+    bool eventFilter(QObject *o, QEvent *e) override {
+        if (e->type() == QEvent::Close && !close_handlers.empty()) {
+            const std::vector<qtf_slot> targets = close_handlers;   // a slot may connect more
+            for (const qtf_slot &s : targets) qtf_emit_ptr(s, e);
+            // Vetoed: stop here, since the widget's own closeEvent would accept it again.
+            return !e->isAccepted();
+        }
+        if (e->type() == QEvent::ContextMenu && !context_menu_handlers.empty()) {
+            const std::vector<qtf_slot> targets = context_menu_handlers;
+            e->accept();
+            for (const qtf_slot &s : targets) qtf_emit_ptr(s, e);
+            return e->isAccepted();   // ignored: let it propagate to the parent
+        }
+        return QObject::eventFilter(o, e);
+    }
+};
+
+// Attach a slot to a widget's close (CLOSE = true) or context-menu events.
+template <bool CLOSE> static bool connect_filter(void *s, const qtf_slot &ref) {
+    QtfEventFilter *f = QtfEventFilter::of(static_cast<QWidget *>(s));
+    (CLOSE ? f->close_handlers : f->context_menu_handlers).push_back(ref);
+    return true;
 }
 
 // QtfWidget: a QWidget whose event handlers (virtual functions) are forwarded
@@ -339,6 +385,31 @@ QTF_API void qtf_qapplication_processEvents(void) { QApplication::processEvents(
 // The active modal dialog (null if none).
 QTF_API void *qtf_qapplication_activeModalWidget(void) { return QApplication::activeModalWidget(); }
 
+// Set the organization name (used by QSettings to find the settings).
+QTF_API void qtf_qapplication_setOrganizationName(const char *name, int name_len) {
+    QApplication::setOrganizationName(qtf_qstring(name, name_len));
+}
+
+// The organization name.
+QTF_API char *qtf_qapplication_organizationName(int *len) {
+    return qtf_to_c(QApplication::organizationName(), len);
+}
+
+// Set the organization's Internet domain (used by QSettings on macOS).
+QTF_API void qtf_qapplication_setOrganizationDomain(const char *domain, int domain_len) {
+    QApplication::setOrganizationDomain(qtf_qstring(domain, domain_len));
+}
+
+// Set the application name (used by QSettings and in dialogs).
+QTF_API void qtf_qapplication_setApplicationName(const char *name, int name_len) {
+    QApplication::setApplicationName(qtf_qstring(name, name_len));
+}
+
+// The application name.
+QTF_API char *qtf_qapplication_applicationName(int *len) {
+    return qtf_to_c(QApplication::applicationName(), len);
+}
+
 // ---------------------------------------------------------------------------
 // QWidget
 
@@ -500,6 +571,28 @@ QTF_API void qtf_qwidget_setContentsMargins(void *self, int left, int top, int r
 QTF_API void qtf_qwidget_setWindowIcon(void *self, void *icon) {
     as<QWidget>(self)->setWindowIcon(*as<QIcon>(icon));
 }
+
+// The window's position and size as text (base64), e.g. to store with QSettings.
+QTF_API char *qtf_qwidget_saveGeometry(void *self, int *len) {
+    return qtf_to_c(QString::fromLatin1(as<QWidget>(self)->saveGeometry().toBase64()), len);
+}
+
+// Restore a geometry from `saveGeometry`; false (and no change) if it is invalid.
+QTF_API int qtf_qwidget_restoreGeometry(void *self, const char *geometry, int geometry_len) {
+    return qtf_bool(as<QWidget>(self)->restoreGeometry(QByteArray::fromBase64(qtf_qstring(geometry, geometry_len).toLatin1())));
+}
+
+// True if the widget is a top-level window.
+QTF_API int qtf_qwidget_isWindow(void *self) { return qtf_bool(as<QWidget>(self)->isWindow()); }
+
+// Horizontal position (relative to the parent, or on the screen for a window).
+QTF_API int qtf_qwidget_x(void *self) { return as<QWidget>(self)->x(); }
+
+// Vertical position (relative to the parent, or on the screen for a window).
+QTF_API int qtf_qwidget_y(void *self) { return as<QWidget>(self)->y(); }
+
+// Move the widget (a window: on the screen).
+QTF_API void qtf_qwidget_move(void *self, int x, int y) { as<QWidget>(self)->move(x, y); }
 
 // ---------------------------------------------------------------------------
 // QtfWidget
@@ -1028,6 +1121,16 @@ QTF_API void qtf_qmainwindow_tabifyDockWidget(void *self, void *first, void *sec
     as<QMainWindow>(self)->tabifyDockWidget(as<QDockWidget>(first), as<QDockWidget>(second));
 }
 
+// The layout of tool bars and dock widgets as text (base64), e.g. to store with QSettings. Give each tool bar and dock widget a unique objectName first.
+QTF_API char *qtf_qmainwindow_saveState(void *self, int *len) {
+    return qtf_to_c(QString::fromLatin1(as<QMainWindow>(self)->saveState().toBase64()), len);
+}
+
+// Restore a layout from `saveState`; false if it is invalid.
+QTF_API int qtf_qmainwindow_restoreState(void *self, const char *state, int state_len) {
+    return qtf_bool(as<QMainWindow>(self)->restoreState(QByteArray::fromBase64(qtf_qstring(state, state_len).toLatin1())));
+}
+
 // ---------------------------------------------------------------------------
 // QMenu
 
@@ -1049,6 +1152,22 @@ QTF_API char *qtf_qmenu_title(void *self, int *len) { return qtf_to_c(as<QMenu>(
 
 // The action that represents this menu in its parent menu or menu bar.
 QTF_API void *qtf_qmenu_menuAction(void *self) { return as<QMenu>(self)->menuAction(); }
+
+// Show the menu at a screen position and return at once (the chosen action triggers).
+QTF_API void qtf_qmenu_popup(void *self, int globalX, int globalY) {
+    as<QMenu>(self)->popup(QPoint(globalX, globalY));
+}
+
+// Show the menu at a screen position and wait; returns the chosen action (a null handle if none).
+QTF_API void *qtf_qmenu_exec(void *self, int globalX, int globalY) {
+    return as<QMenu>(self)->exec(QPoint(globalX, globalY));
+}
+
+// Remove all actions (actions owned by the menu are deleted).
+QTF_API void qtf_qmenu_clear(void *self) { as<QMenu>(self)->clear(); }
+
+// True if the menu has no actions.
+QTF_API int qtf_qmenu_isEmpty(void *self) { return qtf_bool(as<QMenu>(self)->isEmpty()); }
 
 // ---------------------------------------------------------------------------
 // QMenuBar
@@ -2699,6 +2818,8 @@ QTF_API void *qtf_qstyle_standardIcon(const char *name, int name_len) {
 // signal connectors
 
 static const bool qtf_widgets_registered = [] {
+    qtf_register_connector(QTF_SIG_QWIDGET_CLOSEEVENT, connect_filter<true>);
+    qtf_register_connector(QTF_SIG_QWIDGET_CONTEXTMENUEVENT, connect_filter<false>);
     qtf_register_connector(QTF_SIG_QTFWIDGET_PAINTEVENT, connect_event<QTF_EV_PAINT>);
     qtf_register_connector(QTF_SIG_QTFWIDGET_MOUSEPRESSEVENT, connect_event<QTF_EV_MOUSEPRESS>);
     qtf_register_connector(QTF_SIG_QTFWIDGET_MOUSERELEASEEVENT, connect_event<QTF_EV_MOUSERELEASE>);

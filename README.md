@@ -91,8 +91,8 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 
 | Area | Classes |
 |------|---------|
-| Core | `QObject`, `QTimer`, `QEvent` |
-| Application | `QApplication` |
+| Core | `QObject`, `QTimer`, `QEvent`, `QSettings` (persistent preferences, window geometry and layout) |
+| Application | `QApplication` (command-line arguments, organization/application names) |
 | Widgets | `QWidget`, `QFrame`, `QLabel`, `QPushButton`, `QToolButton`, `QCheckBox`, `QRadioButton`, `QButtonGroup`, `QLineEdit`, `QSpinBox`, `QDoubleSpinBox`, `QSlider`, `QDial`, `QComboBox`, `QProgressBar`, `QLCDNumber`, `QDateEdit`, `QTimeEdit`, `QCalendarWidget`, `QtfWidget` (custom painting/events) |
 | Text | `QTextEdit`, `QPlainTextEdit` |
 | Item views | `QTableWidget`, `QListWidget`, `QTreeWidget`, and `QTableView` with `QtfTableModel` (cells come from Fortran on demand, so large arrays aren't copied) |
@@ -103,7 +103,7 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 | Painting | `QPainter`, `QImage`, `QPixmap`, `QColor`, `QPen`, `QBrush`, `QFont` |
 | Arrays as images | `QImage_fromArray` (a 2D Fortran array through a colormap: viridis, magma, inferno, plasma, coolwarm, gray; NaN transparent), `QImage_colorbar` |
 | Icons | `QIcon` (files or generated images), `QStyle_standardIcon`, icons on actions, buttons, tabs, items and windows |
-| Input events | `QMouseEvent`, `QKeyEvent`, `QWheelEvent`, `QResizeEvent` |
+| Events | `QMouseEvent`, `QKeyEvent`, `QWheelEvent`, `QResizeEvent`; `QCloseEvent` (veto closing) and `QContextMenuEvent` on any widget |
 | OpenGL | `QtfOpenGLWidget`, `QOpenGLShaderProgram`, `QOpenGLBuffer`, `QOpenGLVertexArrayObject`, `QSurfaceFormat`, `QMatrix4x4`, and `glClear`, `glDrawArrays`, `glDrawElements`, ... |
 
 ## Getting started
@@ -142,7 +142,7 @@ Examples:
 | [form](example/form.f90) | input widgets, layouts, validation, a message box |
 | [plot](example/plot.f90) | a live scrolling plot with `QtfWidget` and `QPainter` |
 | [explorer](example/explorer.f90) | a tour of nearly everything: menus, toolbar, all control types, custom painting, mouse/keyboard/wheel input, animation, file and message dialogs |
-| [timeseries](example/timeseries.f90) | a simulation workbench: a dock of parameters (group boxes, form layouts, dial + LCD, radio group), cancellable chunked runs with a progress bar, tabs with a splitter, a million-row table served from Fortran arrays (`QtfTableModel`), a statistics tree, a log console, a tool-button preset menu, input and color dialogs |
+| [timeseries](example/timeseries.f90) | a simulation workbench: a dock of parameters (group boxes, form layouts, dial + LCD, radio group), cancellable chunked runs with a progress bar, tabs with a splitter, a million-row table served from Fortran arrays (`QtfTableModel`), a statistics tree, a log console, a tool-button preset menu, input and color dialogs, a plot context menu, settings remembered between sessions, confirmation before quitting |
 | [fieldviewer](example/fieldviewer.f90) | 2D fields computed in Fortran shown with `QImage_fromArray`: interference, masked peaks (NaN), Mandelbrot, and an interactive heat-diffusion solver; colormaps, colorbar, hover readout, standard icons |
 | [surface3d](example/surface3d.f90) | an interactive 3D surface plot with modern OpenGL: GLSL shaders, an indexed mesh with lighting, orbit/zoom with the mouse, auto-rotation, PNG export |
 | [orbit3d](example/orbit3d.f90) | a spacecraft orbit viewer: Kepler propagation, orbital elements and presets in a side panel, a rotating lit planet, time warp, live readouts, OpenGL 3D view |
@@ -276,6 +276,35 @@ A few conventions to know (the full list is in [plan.md](plan.md)):
     constructor, as in `[character(len=40) :: 'n', itoa(n)]`. gfortran 15
     miscompiles it and corrupts the heap. Assign the elements to a fixed-length
     array first.
+- **Closing and settings**: every widget has `closeEvent` and `contextMenuEvent`
+  signals. A close slot can keep the window open:
+
+  ```fortran
+  subroutine on_close(event, data)
+      type(QCloseEvent), intent(in) :: event
+      class(*), intent(inout), optional :: data
+      if (QMessageBox_question('Quit', 'Discard changes?') /= QMessageBox_Yes) then
+          call event%ignore()      ! stay open
+      else
+          call save_settings()
+      end if
+  end subroutine on_close
+  ```
+
+  Connect it with `call window%closeEvent%connect(on_close, state)`. Route a
+  Quit action through `window%close()` rather than `QApplication_quit()`, so
+  the slot runs.
+
+  For `QSettings`, set `QApplication_setOrganizationName` and
+  `QApplication_setApplicationName` first. Then use `QSettings()` for the
+  platform's native store, or `QSettings('file.ini')` for an INI file.
+  - Write values with the generic `setValue(key, value)`.
+  - Read them with `stringValue`, `intValue`, `doubleValue` or `boolValue`,
+    which take a default for missing keys.
+  - Remember window layout with `setValue('geometry', window%saveGeometry())`
+    and `window%restoreGeometry(...)`.
+  - For docks and tool bars, use `saveState` / `restoreState`. Give each dock
+    and tool bar an `objectName` first.
 
 ## How it works
 
@@ -305,10 +334,10 @@ block-beta
 ### Repository layout
 
 ```
-spec/       binding specs (TOML): widgets.toml, gui.toml, opengl.toml
-src/        Fortran sources: core/ (hand-written), gui/, widgets/, opengl/ (mostly generated), qt.f90
-src/shim/   C++ shim: qtf_common.h, qtf_core.cpp (hand-written); qtf_gui.cpp, qtf_widgets.cpp,
-            qtf_opengl.cpp (generated)
+spec/       binding specs (TOML): core_classes.toml, gui.toml, widgets.toml, opengl.toml
+src/        Fortran sources: core/ (mostly hand-written), gui/, widgets/, opengl/ (mostly generated), qt.f90
+src/shim/   C++ shim: qtf_common.h, qtf_core.cpp (hand-written); qtf_core_classes.cpp, qtf_gui.cpp,
+            qtf_widgets.cpp, qtf_opengl.cpp (generated)
 ci/consumer a separate fpm project that depends on qt-fortran (CI check and template)
 tools/      fpm_qt.py, gen_bindings.py, gen_c_interfaces.py, check_fortran.py
 test/       headless test programs (one per area)
@@ -373,8 +402,8 @@ on macOS (the only runner with a window server).
 ## Roadmap
 
 - Smoother packaging: a conda-forge package, and Homebrew (framework) Qt support.
-- More of Qt: background computation, close events and `QSettings`, and Qt
-  Charts / Qt Graphs. See the roadmap in [plan.md](plan.md).
+- More of Qt: background computation, Fortran-defined signals and
+  `disconnect`, and Qt Charts / Qt Graphs. See the roadmap in [plan.md](plan.md).
 - Seeding specs from PySide6's type-system XML files to cover more of the API
   faster.
 
