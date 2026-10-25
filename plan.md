@@ -65,11 +65,18 @@ OS, including MinGW gfortran against an MSVC-built DLL on Windows.
 | Windows | gfortran 15 (MinGW/UCRT) | clang++ `--target=x86_64-pc-windows-msvc`, `-fms-runtime-lib=dll` | `build/qtf/qtf.dll` | built from `%CONDA_PREFIX%\Library` (Qt ships no .pc files) | `PATH` |
 
 `tools/fpm_qt.py` does both steps. It rebuilds the shim when a `shim/*` file
-changes, then runs fpm with `--link-flag "-L build/qtf -lqtf ..."`. fpm sees
-only Fortran sources. The shim lives in `shim/`, outside fpm's `src/`.
+changes, then runs fpm with `--link-flag "-L build/qtf ..."` (search path and rpath only).
+The library itself is declared in `fpm.toml` as `link = ["qtf"]`. fpm places it
+*after* the objects. This matters: fpm puts `--link-flag` contents before the
+objects, so ld would skip the Windows import library (and `--as-needed` on Linux
+would drop it). fpm sees only Fortran sources. The shim lives in `shim/`,
+outside fpm's `src/`.
 
 Consequences:
 - Every shim function is exported with `QTF_API` (`shim/qtf_common.h`).
+- The Windows shim links only the dynamic CRT (`/NODEFAULTLIB` for libcmt,
+  libucrt, libvcruntime, libcpmt). Otherwise malloc/free bind into a second,
+  static runtime (`LNK4098`/`LNK4217`).
 - Memory allocated by the shim must be freed by the shim (`qtf_free`), never by
   Fortran. On Windows the two sides use different C runtimes.
 - On Windows, the MSVC linker/SDK come from `cxx-compiler` (vs2022

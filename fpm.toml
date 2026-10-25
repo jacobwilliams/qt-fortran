@@ -11,6 +11,8 @@ auto-executables = true
 auto-tests = true
 auto-examples = true
 module-naming = false
+# C ABI shim over Qt (shim/), built by tools/fpm_qt.py into build/qtf
+link = ["qtf"]
 
 [fortran]
 implicit-typing = false

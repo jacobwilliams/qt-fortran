@@ -61,6 +61,10 @@ def shim_command(prefix, sources, lib):
         return [cxx, "--target=x86_64-pc-windows-msvc", CXX_STD,
                 # Qt DLLs use the dynamic CRT (/MD); the shim must match.
                 "-fms-runtime-lib=dll", "-shared", "-o", lib,
+                # keep the static CRT out of the link, otherwise malloc/free resolve
+                # into a second (static) runtime (LNK4098/LNK4217)
+                *(f"-Wl,/NODEFAULTLIB:{crt}" for crt in
+                  ("libcmt", "libucrt", "libvcruntime", "libcpmt")),
                 *(f"-DQT_{m.upper()}_LIB" for m in QT_MODULES),
                 f"-I{inc}", *(f"-I{os.path.join(inc, 'Qt' + m)}" for m in QT_MODULES),
                 *sources,
@@ -97,8 +101,10 @@ def main():
 
     build_shim(prefix)
 
+    # -lqtf itself comes from `link = ["qtf"]` in fpm.toml, which fpm places after
+    # the objects (required for the Windows import library and --as-needed on linux).
     # fpm splits flag strings on spaces, so the project path must not contain any.
-    link = f"-L{SHIM_OUT} -lqtf"
+    link = f"-L{SHIM_OUT}"
     env = dict(os.environ)
     if WINDOWS:
         # qtf.dll and the Qt DLLs are located through PATH at run time.
