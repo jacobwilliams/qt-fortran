@@ -193,7 +193,7 @@ Portability rules for sources:
 ```sh
 pixi run build             # fpm build with Qt flags
 pixi run test              # headless (QT_QPA_PLATFORM=offscreen)
-pixi run example hello     # run an example (hello, timer, form, plot, explorer, surface3d)
+pixi run example hello     # run an example (hello, timer, form, plot, explorer, surface3d, orbit3d)
 pixi run gen               # specs -> shims + high-level modules -> raw bind(C) modules
 pixi run gen-check         # fail if any generated file is stale (CI)
 pixi run lint              # docstrings + implicit none in interface bodies (CI)

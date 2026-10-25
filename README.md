@@ -125,7 +125,7 @@ mode. Fortran is still gfortran.
 ```sh
 pixi run build                  # build the library and examples
 pixi run test                   # run the test suite (headless)
-pixi run example hello          # run an example: hello, timer, form, plot, explorer, surface3d
+pixi run example hello          # run an example: hello, timer, form, plot, explorer, surface3d, orbit3d
 ```
 
 Examples:
@@ -138,6 +138,7 @@ Examples:
 | [plot](example/plot.f90) | a live scrolling plot with `QtfWidget` and `QPainter` |
 | [explorer](example/explorer.f90) | a tour of nearly everything: menus, toolbar, all control types, custom painting, mouse/keyboard/wheel input, animation, file and message dialogs |
 | [surface3d](example/surface3d.f90) | an interactive 3D surface plot with modern OpenGL: GLSL shaders, an indexed mesh with lighting, orbit/zoom with the mouse, auto-rotation, PNG export |
+| [orbit3d](example/orbit3d.f90) | a spacecraft orbit viewer: Kepler propagation, orbital elements and presets in a side panel, a rotating lit planet, time warp, live readouts, OpenGL 3D view |
 
 The `plot` and `explorer` examples can render themselves to an image without
 opening a window, which is handy on servers and in CI:
@@ -156,6 +157,8 @@ pixi run example surface3d -- --screenshot surface.png
 ```
 
 ![3D surface example](media/surface3d.png)
+
+![Orbit viewer example](media/orbit3d.png)
 
 ### Using qt-fortran in your own project
 
