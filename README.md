@@ -198,13 +198,13 @@ A few conventions to know (the full list is in [plan.md](plan.md)):
 ## How it works
 
 ```mermaid
-%%{init: {"flowchart": {"htmlLabels": false}}}%%
+%%{init: {"themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif"}}}%%
 flowchart TD
-    app["Your program<br/>(use qt)"]
-    api["qt_core / qt_gui / qt_widgets<br/>Fortran API: derived types,<br/>type-bound procedures"]
-    raw["qt_c_* modules<br/>raw bind(C) interfaces"]
-    shim["libqtf (shim/)<br/>thin C++ layer over Qt<br/>with a C interface"]
-    qt["Qt 6<br/>Core, Gui, Widgets"]
+    app["&nbsp;&nbsp;&nbsp;Your program&nbsp;&nbsp;&nbsp;<br/>(use qt)"]
+    api["&nbsp;&nbsp;&nbsp;qt_core / qt_gui / qt_widgets&nbsp;&nbsp;&nbsp;<br/>Fortran API: derived types,<br/>type-bound procedures"]
+    raw["qt_c_* modules<br/>&nbsp;&nbsp;&nbsp;raw bind(C) interfaces&nbsp;&nbsp;&nbsp;"]
+    shim["libqtf (shim/)<br/>&nbsp;&nbsp;&nbsp;thin C++ layer over Qt&nbsp;&nbsp;&nbsp;<br/>with a C interface"]
+    qt["Qt 6<br/>&nbsp;&nbsp;&nbsp;Core, Gui, Widgets&nbsp;&nbsp;&nbsp;"]
 
     app --> api --> raw
     raw -- C ABI --> shim
