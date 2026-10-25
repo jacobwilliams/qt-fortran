@@ -28,293 +28,42 @@ module qt_c_gui
             integer(c_int) :: res
         end function qtf_qcolor_fromString
 
-        !> C: `void *qtf_qpainter_new_image(void *image)`
-        function qtf_qpainter_new_image(image) result(res) bind(C, name='qtf_qpainter_new_image')
-            import :: c_ptr
-            implicit none
-            type(c_ptr), value :: image
-            type(c_ptr) :: res
-        end function qtf_qpainter_new_image
-
-        !> End and delete a painter created by qtf_qpainter_new_*.
+        !> Release an image.
         !>
-        !> C: `void qtf_qpainter_delete(void *p)`
-        subroutine qtf_qpainter_delete(p) bind(C, name='qtf_qpainter_delete')
+        !> C: `void qtf_qimage_delete(void *self)`
+        subroutine qtf_qimage_delete(self) bind(C, name='qtf_qimage_delete')
             import :: c_ptr
             implicit none
-            type(c_ptr), value :: p
-        end subroutine qtf_qpainter_delete
+            type(c_ptr), value :: self
+        end subroutine qtf_qimage_delete
 
-        !> C: `int qtf_qpainter_isActive(void *p)`
-        function qtf_qpainter_isActive(p) result(res) bind(C, name='qtf_qpainter_isActive')
-            import :: c_int, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            integer(c_int) :: res
-        end function qtf_qpainter_isActive
-
-        !> C: `int qtf_qpainter_deviceWidth(void *p)`
-        function qtf_qpainter_deviceWidth(p) result(res) bind(C, name='qtf_qpainter_deviceWidth')
-            import :: c_int, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            integer(c_int) :: res
-        end function qtf_qpainter_deviceWidth
-
-        !> C: `int qtf_qpainter_deviceHeight(void *p)`
-        function qtf_qpainter_deviceHeight(p) result(res) bind(C, name='qtf_qpainter_deviceHeight')
-            import :: c_int, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            integer(c_int) :: res
-        end function qtf_qpainter_deviceHeight
-
-        !> C: `void qtf_qpainter_setPen(void *p, int r, int g, int b, int a, double width, int style)`
-        subroutine qtf_qpainter_setPen(p, r, g, b, a, width, style) bind(C, name='qtf_qpainter_setPen')
-            import :: c_double, c_int, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            integer(c_int), value :: r
-            integer(c_int), value :: g
-            integer(c_int), value :: b
-            integer(c_int), value :: a
-            real(c_double), value :: width
-            integer(c_int), value :: style
-        end subroutine qtf_qpainter_setPen
-
-        !> C: `void qtf_qpainter_setBrush(void *p, int r, int g, int b, int a, int style)`
-        subroutine qtf_qpainter_setBrush(p, r, g, b, a, style) bind(C, name='qtf_qpainter_setBrush')
-            import :: c_int, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            integer(c_int), value :: r
-            integer(c_int), value :: g
-            integer(c_int), value :: b
-            integer(c_int), value :: a
-            integer(c_int), value :: style
-        end subroutine qtf_qpainter_setBrush
-
-        !> pointSize <= 0 and an empty family keep the current values
+        !> True if the image has no data.
         !>
-        !> C: `void qtf_qpainter_setFont(void *p, const char *family, int len, double pointSize, int bold, int italic)`
-        subroutine qtf_qpainter_setFont(p, family, len, pointSize, bold, italic) bind(C, name='qtf_qpainter_setFont')
-            import :: c_char, c_double, c_int, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            character(kind=c_char), dimension(*), intent(in) :: family
-            integer(c_int), value :: len
-            real(c_double), value :: pointSize
-            integer(c_int), value :: bold
-            integer(c_int), value :: italic
-        end subroutine qtf_qpainter_setFont
-
-        !> C: `void qtf_qpainter_setRenderHint(void *p, int hint, int on)`
-        subroutine qtf_qpainter_setRenderHint(p, hint, on) bind(C, name='qtf_qpainter_setRenderHint')
+        !> C: `int qtf_qimage_isNull(void *self)`
+        function qtf_qimage_isNull(self) result(res) bind(C, name='qtf_qimage_isNull')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: p
-            integer(c_int), value :: hint
-            integer(c_int), value :: on
-        end subroutine qtf_qpainter_setRenderHint
-
-        !> C: `void qtf_qpainter_setOpacity(void *p, double opacity)`
-        subroutine qtf_qpainter_setOpacity(p, opacity) bind(C, name='qtf_qpainter_setOpacity')
-            import :: c_double, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            real(c_double), value :: opacity
-        end subroutine qtf_qpainter_setOpacity
-
-        !> C: `void qtf_qpainter_save(void *p)`
-        subroutine qtf_qpainter_save(p) bind(C, name='qtf_qpainter_save')
-            import :: c_ptr
-            implicit none
-            type(c_ptr), value :: p
-        end subroutine qtf_qpainter_save
-
-        !> C: `void qtf_qpainter_restore(void *p)`
-        subroutine qtf_qpainter_restore(p) bind(C, name='qtf_qpainter_restore')
-            import :: c_ptr
-            implicit none
-            type(c_ptr), value :: p
-        end subroutine qtf_qpainter_restore
-
-        !> C: `void qtf_qpainter_translate(void *p, double dx, double dy)`
-        subroutine qtf_qpainter_translate(p, dx, dy) bind(C, name='qtf_qpainter_translate')
-            import :: c_double, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            real(c_double), value :: dx
-            real(c_double), value :: dy
-        end subroutine qtf_qpainter_translate
-
-        !> C: `void qtf_qpainter_scale(void *p, double sx, double sy)`
-        subroutine qtf_qpainter_scale(p, sx, sy) bind(C, name='qtf_qpainter_scale')
-            import :: c_double, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            real(c_double), value :: sx
-            real(c_double), value :: sy
-        end subroutine qtf_qpainter_scale
-
-        !> C: `void qtf_qpainter_rotate(void *p, double degrees)`
-        subroutine qtf_qpainter_rotate(p, degrees) bind(C, name='qtf_qpainter_rotate')
-            import :: c_double, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            real(c_double), value :: degrees
-        end subroutine qtf_qpainter_rotate
-
-        !> C: `void qtf_qpainter_resetTransform(void *p)`
-        subroutine qtf_qpainter_resetTransform(p) bind(C, name='qtf_qpainter_resetTransform')
-            import :: c_ptr
-            implicit none
-            type(c_ptr), value :: p
-        end subroutine qtf_qpainter_resetTransform
-
-        !> C: `void qtf_qpainter_drawPoint(void *p, double x, double y)`
-        subroutine qtf_qpainter_drawPoint(p, x, y) bind(C, name='qtf_qpainter_drawPoint')
-            import :: c_double, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            real(c_double), value :: x
-            real(c_double), value :: y
-        end subroutine qtf_qpainter_drawPoint
-
-        !> C: `void qtf_qpainter_drawLine(void *p, double x1, double y1, double x2, double y2)`
-        subroutine qtf_qpainter_drawLine(p, x1, y1, x2, y2) bind(C, name='qtf_qpainter_drawLine')
-            import :: c_double, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            real(c_double), value :: x1
-            real(c_double), value :: y1
-            real(c_double), value :: x2
-            real(c_double), value :: y2
-        end subroutine qtf_qpainter_drawLine
-
-        !> C: `void qtf_qpainter_drawRect(void *p, double x, double y, double w, double h)`
-        subroutine qtf_qpainter_drawRect(p, x, y, w, h) bind(C, name='qtf_qpainter_drawRect')
-            import :: c_double, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            real(c_double), value :: x
-            real(c_double), value :: y
-            real(c_double), value :: w
-            real(c_double), value :: h
-        end subroutine qtf_qpainter_drawRect
-
-        !> C: `void qtf_qpainter_drawRoundedRect(void *p, double x, double y, double w, double h, double rx, double ry)`
-        subroutine qtf_qpainter_drawRoundedRect(p, x, y, w, h, rx, ry) bind(C, name='qtf_qpainter_drawRoundedRect')
-            import :: c_double, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            real(c_double), value :: x
-            real(c_double), value :: y
-            real(c_double), value :: w
-            real(c_double), value :: h
-            real(c_double), value :: rx
-            real(c_double), value :: ry
-        end subroutine qtf_qpainter_drawRoundedRect
-
-        !> C: `void qtf_qpainter_drawEllipse(void *p, double x, double y, double w, double h)`
-        subroutine qtf_qpainter_drawEllipse(p, x, y, w, h) bind(C, name='qtf_qpainter_drawEllipse')
-            import :: c_double, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            real(c_double), value :: x
-            real(c_double), value :: y
-            real(c_double), value :: w
-            real(c_double), value :: h
-        end subroutine qtf_qpainter_drawEllipse
-
-        !> C: `void qtf_qpainter_fillRect(void *p, double x, double y, double w, double h, int r, int g, int b, int a)`
-        subroutine qtf_qpainter_fillRect(p, x, y, w, h, r, g, b, a) bind(C, name='qtf_qpainter_fillRect')
-            import :: c_double, c_int, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            real(c_double), value :: x
-            real(c_double), value :: y
-            real(c_double), value :: w
-            real(c_double), value :: h
-            integer(c_int), value :: r
-            integer(c_int), value :: g
-            integer(c_int), value :: b
-            integer(c_int), value :: a
-        end subroutine qtf_qpainter_fillRect
-
-        !> C: `void qtf_qpainter_drawPolyline(void *p, const double *xs, const double *ys, int n)`
-        subroutine qtf_qpainter_drawPolyline(p, xs, ys, n) bind(C, name='qtf_qpainter_drawPolyline')
-            import :: c_double, c_int, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            real(c_double), dimension(*), intent(in) :: xs
-            real(c_double), dimension(*), intent(in) :: ys
-            integer(c_int), value :: n
-        end subroutine qtf_qpainter_drawPolyline
-
-        !> C: `void qtf_qpainter_drawPolygon(void *p, const double *xs, const double *ys, int n)`
-        subroutine qtf_qpainter_drawPolygon(p, xs, ys, n) bind(C, name='qtf_qpainter_drawPolygon')
-            import :: c_double, c_int, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            real(c_double), dimension(*), intent(in) :: xs
-            real(c_double), dimension(*), intent(in) :: ys
-            integer(c_int), value :: n
-        end subroutine qtf_qpainter_drawPolygon
-
-        !> C: `void qtf_qpainter_drawText(void *p, double x, double y, const char *s, int len)`
-        subroutine qtf_qpainter_drawText(p, x, y, s, len) bind(C, name='qtf_qpainter_drawText')
-            import :: c_char, c_double, c_int, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            real(c_double), value :: x
-            real(c_double), value :: y
-            character(kind=c_char), dimension(*), intent(in) :: s
-            integer(c_int), value :: len
-        end subroutine qtf_qpainter_drawText
-
-        !> C: `void qtf_qpainter_drawTextRect(void *p, double x, double y, double w, double h, int flags, const char *s, int len)`
-        subroutine qtf_qpainter_drawTextRect(p, x, y, w, h, flags, s, len) bind(C, name='qtf_qpainter_drawTextRect')
-            import :: c_char, c_double, c_int, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            real(c_double), value :: x
-            real(c_double), value :: y
-            real(c_double), value :: w
-            real(c_double), value :: h
-            integer(c_int), value :: flags
-            character(kind=c_char), dimension(*), intent(in) :: s
-            integer(c_int), value :: len
-        end subroutine qtf_qpainter_drawTextRect
-
-        !> C: `void qtf_qpainter_drawImage(void *p, double x, double y, void *image)`
-        subroutine qtf_qpainter_drawImage(p, x, y, image) bind(C, name='qtf_qpainter_drawImage')
-            import :: c_double, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            real(c_double), value :: x
-            real(c_double), value :: y
-            type(c_ptr), value :: image
-        end subroutine qtf_qpainter_drawImage
-
-        !> C: `int qtf_qpainter_textWidth(void *p, const char *s, int len)`
-        function qtf_qpainter_textWidth(p, s, len) result(res) bind(C, name='qtf_qpainter_textWidth')
-            import :: c_char, c_int, c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            character(kind=c_char), dimension(*), intent(in) :: s
-            integer(c_int), value :: len
+            type(c_ptr), value :: self
             integer(c_int) :: res
-        end function qtf_qpainter_textWidth
+        end function qtf_qimage_isNull
 
-        !> C: `int qtf_qpainter_fontHeight(void *p)`
-        function qtf_qpainter_fontHeight(p) result(res) bind(C, name='qtf_qpainter_fontHeight')
+        !> The color of pixel (x, y) as RGBA components.
+        !>
+        !> C: `void qtf_qimage_pixelColor(void *self, int x, int y, int *r, int *g, int *b, int *a)`
+        subroutine qtf_qimage_pixelColor(self, x, y, r, g, b, a) bind(C, name='qtf_qimage_pixelColor')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: p
-            integer(c_int) :: res
-        end function qtf_qpainter_fontHeight
+            type(c_ptr), value :: self
+            integer(c_int), value :: x
+            integer(c_int), value :: y
+            integer(c_int), intent(out) :: r
+            integer(c_int), intent(out) :: g
+            integer(c_int), intent(out) :: b
+            integer(c_int), intent(out) :: a
+        end subroutine qtf_qimage_pixelColor
 
+        !> A new, uninitialized ARGB32 image; `fill` it before use.
+        !>
         !> C: `void *qtf_qimage_new(int width, int height)`
         function qtf_qimage_new(width, height) result(res) bind(C, name='qtf_qimage_new')
             import :: c_int, c_ptr
@@ -324,142 +73,514 @@ module qt_c_gui
             type(c_ptr) :: res
         end function qtf_qimage_new
 
-        !> C: `void *qtf_qimage_fromFile(const char *s, int len)`
-        function qtf_qimage_fromFile(s, len) result(res) bind(C, name='qtf_qimage_fromFile')
+        !> Load an image file; check `isNull()` for failure.
+        !>
+        !> C: `void *qtf_qimage_fromFile(const char *fileName, int fileName_len)`
+        function qtf_qimage_fromFile(fileName, fileName_len) result(res) bind(C, name='qtf_qimage_fromFile')
             import :: c_char, c_int, c_ptr
             implicit none
-            character(kind=c_char), dimension(*), intent(in) :: s
-            integer(c_int), value :: len
+            character(kind=c_char), dimension(*), intent(in) :: fileName
+            integer(c_int), value :: fileName_len
             type(c_ptr) :: res
         end function qtf_qimage_fromFile
 
-        !> C: `void qtf_qimage_delete(void *i)`
-        subroutine qtf_qimage_delete(i) bind(C, name='qtf_qimage_delete')
-            import :: c_ptr
-            implicit none
-            type(c_ptr), value :: i
-        end subroutine qtf_qimage_delete
-
-        !> C: `int qtf_qimage_isNull(void *i)`
-        function qtf_qimage_isNull(i) result(res) bind(C, name='qtf_qimage_isNull')
+        !> Width in pixels.
+        !>
+        !> C: `int qtf_qimage_width(void *self)`
+        function qtf_qimage_width(self) result(res) bind(C, name='qtf_qimage_width')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: i
-            integer(c_int) :: res
-        end function qtf_qimage_isNull
-
-        !> C: `int qtf_qimage_width(void *i)`
-        function qtf_qimage_width(i) result(res) bind(C, name='qtf_qimage_width')
-            import :: c_int, c_ptr
-            implicit none
-            type(c_ptr), value :: i
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qimage_width
 
-        !> C: `int qtf_qimage_height(void *i)`
-        function qtf_qimage_height(i) result(res) bind(C, name='qtf_qimage_height')
+        !> Height in pixels.
+        !>
+        !> C: `int qtf_qimage_height(void *self)`
+        function qtf_qimage_height(self) result(res) bind(C, name='qtf_qimage_height')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: i
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qimage_height
 
-        !> C: `void qtf_qimage_fill(void *i, int r, int g, int b, int a)`
-        subroutine qtf_qimage_fill(i, r, g, b, a) bind(C, name='qtf_qimage_fill')
+        !> Fill the whole image with `color`.
+        !>
+        !> C: `void qtf_qimage_fill(void *self, int color_r, int color_g, int color_b, int color_a)`
+        subroutine qtf_qimage_fill(self, color_r, color_g, color_b, color_a) bind(C, name='qtf_qimage_fill')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: i
-            integer(c_int), value :: r
-            integer(c_int), value :: g
-            integer(c_int), value :: b
-            integer(c_int), value :: a
+            type(c_ptr), value :: self
+            integer(c_int), value :: color_r
+            integer(c_int), value :: color_g
+            integer(c_int), value :: color_b
+            integer(c_int), value :: color_a
         end subroutine qtf_qimage_fill
 
-        !> C: `void qtf_qimage_pixelColor(void *i, int x, int y, int *r, int *g, int *b, int *a)`
-        subroutine qtf_qimage_pixelColor(i, x, y, r, g, b, a) bind(C, name='qtf_qimage_pixelColor')
+        !> Set pixel (x, y), 0-based, to `color`.
+        !>
+        !> C: `void qtf_qimage_setPixelColor(void *self, int x, int y, int color_r, int color_g, int color_b, int color_a)`
+        subroutine qtf_qimage_setPixelColor(self, x, y, color_r, color_g, color_b, color_a) &
+                bind(C, name='qtf_qimage_setPixelColor')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: i
+            type(c_ptr), value :: self
             integer(c_int), value :: x
             integer(c_int), value :: y
-            integer(c_int), intent(out) :: r
-            integer(c_int), intent(out) :: g
-            integer(c_int), intent(out) :: b
-            integer(c_int), intent(out) :: a
-        end subroutine qtf_qimage_pixelColor
-
-        !> C: `void qtf_qimage_setPixelColor(void *i, int x, int y, int r, int g, int b, int a)`
-        subroutine qtf_qimage_setPixelColor(i, x, y, r, g, b, a) bind(C, name='qtf_qimage_setPixelColor')
-            import :: c_int, c_ptr
-            implicit none
-            type(c_ptr), value :: i
-            integer(c_int), value :: x
-            integer(c_int), value :: y
-            integer(c_int), value :: r
-            integer(c_int), value :: g
-            integer(c_int), value :: b
-            integer(c_int), value :: a
+            integer(c_int), value :: color_r
+            integer(c_int), value :: color_g
+            integer(c_int), value :: color_b
+            integer(c_int), value :: color_a
         end subroutine qtf_qimage_setPixelColor
 
-        !> C: `int qtf_qimage_save(void *i, const char *s, int len)`
-        function qtf_qimage_save(i, s, len) result(res) bind(C, name='qtf_qimage_save')
+        !> Save to a file; the format follows the extension (.png, .jpg, ...).
+        !>
+        !> C: `int qtf_qimage_save(void *self, const char *fileName, int fileName_len)`
+        function qtf_qimage_save(self, fileName, fileName_len) result(res) bind(C, name='qtf_qimage_save')
             import :: c_char, c_int, c_ptr
             implicit none
-            type(c_ptr), value :: i
-            character(kind=c_char), dimension(*), intent(in) :: s
-            integer(c_int), value :: len
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: fileName
+            integer(c_int), value :: fileName_len
             integer(c_int) :: res
         end function qtf_qimage_save
 
-        !> C: `void qtf_qpixmap_delete(void *p)`
-        subroutine qtf_qpixmap_delete(p) bind(C, name='qtf_qpixmap_delete')
+        !> Release a pixmap.
+        !>
+        !> C: `void qtf_qpixmap_delete(void *self)`
+        subroutine qtf_qpixmap_delete(self) bind(C, name='qtf_qpixmap_delete')
             import :: c_ptr
             implicit none
-            type(c_ptr), value :: p
+            type(c_ptr), value :: self
         end subroutine qtf_qpixmap_delete
 
-        !> C: `int qtf_qpixmap_isNull(void *p)`
-        function qtf_qpixmap_isNull(p) result(res) bind(C, name='qtf_qpixmap_isNull')
+        !> True if the pixmap has no data.
+        !>
+        !> C: `int qtf_qpixmap_isNull(void *self)`
+        function qtf_qpixmap_isNull(self) result(res) bind(C, name='qtf_qpixmap_isNull')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: p
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qpixmap_isNull
 
-        !> C: `int qtf_qpixmap_width(void *p)`
-        function qtf_qpixmap_width(p) result(res) bind(C, name='qtf_qpixmap_width')
+        !> Width in pixels.
+        !>
+        !> C: `int qtf_qpixmap_width(void *self)`
+        function qtf_qpixmap_width(self) result(res) bind(C, name='qtf_qpixmap_width')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: p
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qpixmap_width
 
-        !> C: `int qtf_qpixmap_height(void *p)`
-        function qtf_qpixmap_height(p) result(res) bind(C, name='qtf_qpixmap_height')
+        !> Height in pixels.
+        !>
+        !> C: `int qtf_qpixmap_height(void *self)`
+        function qtf_qpixmap_height(self) result(res) bind(C, name='qtf_qpixmap_height')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: p
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qpixmap_height
 
-        !> C: `void *qtf_qpixmap_toImage(void *p)`
-        function qtf_qpixmap_toImage(p) result(res) bind(C, name='qtf_qpixmap_toImage')
+        !> A new image with the pixmap's contents (delete it when done).
+        !>
+        !> C: `void *qtf_qpixmap_toImage(void *self)`
+        function qtf_qpixmap_toImage(self) result(res) bind(C, name='qtf_qpixmap_toImage')
             import :: c_ptr
             implicit none
-            type(c_ptr), value :: p
+            type(c_ptr), value :: self
             type(c_ptr) :: res
         end function qtf_qpixmap_toImage
 
-        !> C: `int qtf_qpixmap_save(void *p, const char *s, int len)`
-        function qtf_qpixmap_save(p, s, len) result(res) bind(C, name='qtf_qpixmap_save')
+        !> Save to a file; the format follows the extension (.png, .jpg, ...).
+        !>
+        !> C: `int qtf_qpixmap_save(void *self, const char *fileName, int fileName_len)`
+        function qtf_qpixmap_save(self, fileName, fileName_len) result(res) bind(C, name='qtf_qpixmap_save')
             import :: c_char, c_int, c_ptr
             implicit none
-            type(c_ptr), value :: p
-            character(kind=c_char), dimension(*), intent(in) :: s
-            integer(c_int), value :: len
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: fileName
+            integer(c_int), value :: fileName_len
             integer(c_int) :: res
         end function qtf_qpixmap_save
 
+        !> End and delete a painter created by a qtf_qpainter constructor.
+        !>
+        !> C: `void qtf_qpainter_delete(void *self)`
+        subroutine qtf_qpainter_delete(self) bind(C, name='qtf_qpainter_delete')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qpainter_delete
+
+        !> True while the painter is active.
+        !>
+        !> C: `int qtf_qpainter_isActive(void *self)`
+        function qtf_qpainter_isActive(self) result(res) bind(C, name='qtf_qpainter_isActive')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qpainter_isActive
+
+        !> Set the font; pointSize <= 0 and an empty family keep the current values.
+        !>
+        !> C: `void qtf_qpainter_setFont(void *self, const char *family, int len, double pointSize, int bold, int italic)`
+        subroutine qtf_qpainter_setFont(self, family, len, pointSize, bold, italic) bind(C, name='qtf_qpainter_setFont')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: family
+            integer(c_int), value :: len
+            real(c_double), value :: pointSize
+            integer(c_int), value :: bold
+            integer(c_int), value :: italic
+        end subroutine qtf_qpainter_setFont
+
+        !> Begin painting on `image`; call `end` when done.
+        !>
+        !> C: `void *qtf_qpainter_new(void *image)`
+        function qtf_qpainter_new(image) result(res) bind(C, name='qtf_qpainter_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: image
+            type(c_ptr) :: res
+        end function qtf_qpainter_new
+
+        !> Width of the device being painted (widget or image).
+        !>
+        !> C: `int qtf_qpainter_deviceWidth(void *self)`
+        function qtf_qpainter_deviceWidth(self) result(res) bind(C, name='qtf_qpainter_deviceWidth')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qpainter_deviceWidth
+
+        !> Height of the device being painted (widget or image).
+        !>
+        !> C: `int qtf_qpainter_deviceHeight(void *self)`
+        function qtf_qpainter_deviceHeight(self) result(res) bind(C, name='qtf_qpainter_deviceHeight')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qpainter_deviceHeight
+
+        !> Set the pen used for lines, outlines and text.
+        !>
+        !> C: `void qtf_qpainter_setPen(void *self, int pen_color_r, int pen_color_g, int pen_color_b, int pen_color_a, double pen_width, int pen_style)`
+        subroutine qtf_qpainter_setPen(self, pen_color_r, pen_color_g, pen_color_b, pen_color_a, pen_width, pen_style) &
+                bind(C, name='qtf_qpainter_setPen')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: pen_color_r
+            integer(c_int), value :: pen_color_g
+            integer(c_int), value :: pen_color_b
+            integer(c_int), value :: pen_color_a
+            real(c_double), value :: pen_width
+            integer(c_int), value :: pen_style
+        end subroutine qtf_qpainter_setPen
+
+        !> Use a solid 1-pixel pen of `color`.
+        !>
+        !> C: `void qtf_qpainter_setPenColor(void *self, int color_r, int color_g, int color_b, int color_a)`
+        subroutine qtf_qpainter_setPenColor(self, color_r, color_g, color_b, color_a) &
+                bind(C, name='qtf_qpainter_setPenColor')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: color_r
+            integer(c_int), value :: color_g
+            integer(c_int), value :: color_b
+            integer(c_int), value :: color_a
+        end subroutine qtf_qpainter_setPenColor
+
+        !> Set the brush used to fill shapes.
+        !>
+        !> C: `void qtf_qpainter_setBrush(void *self, int brush_color_r, int brush_color_g, int brush_color_b, int brush_color_a, int brush_style)`
+        subroutine qtf_qpainter_setBrush(self, brush_color_r, brush_color_g, brush_color_b, brush_color_a, brush_style) &
+                bind(C, name='qtf_qpainter_setBrush')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: brush_color_r
+            integer(c_int), value :: brush_color_g
+            integer(c_int), value :: brush_color_b
+            integer(c_int), value :: brush_color_a
+            integer(c_int), value :: brush_style
+        end subroutine qtf_qpainter_setBrush
+
+        !> Fill shapes with a solid `color`.
+        !>
+        !> C: `void qtf_qpainter_setBrushColor(void *self, int color_r, int color_g, int color_b, int color_a)`
+        subroutine qtf_qpainter_setBrushColor(self, color_r, color_g, color_b, color_a) &
+                bind(C, name='qtf_qpainter_setBrushColor')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: color_r
+            integer(c_int), value :: color_g
+            integer(c_int), value :: color_b
+            integer(c_int), value :: color_a
+        end subroutine qtf_qpainter_setBrushColor
+
+        !> Enable (default) or disable a QPainter_* render hint.
+        !>
+        !> C: `void qtf_qpainter_setRenderHint(void *self, int hint, int on)`
+        subroutine qtf_qpainter_setRenderHint(self, hint, on) bind(C, name='qtf_qpainter_setRenderHint')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: hint
+            integer(c_int), value :: on
+        end subroutine qtf_qpainter_setRenderHint
+
+        !> Set the opacity (0 transparent .. 1 opaque).
+        !>
+        !> C: `void qtf_qpainter_setOpacity(void *self, double opacity)`
+        subroutine qtf_qpainter_setOpacity(self, opacity) bind(C, name='qtf_qpainter_setOpacity')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: opacity
+        end subroutine qtf_qpainter_setOpacity
+
+        !> Push the painter state (pen, brush, font, transform) on a stack.
+        !>
+        !> C: `void qtf_qpainter_save(void *self)`
+        subroutine qtf_qpainter_save(self) bind(C, name='qtf_qpainter_save')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qpainter_save
+
+        !> Pop the painter state saved by `save`.
+        !>
+        !> C: `void qtf_qpainter_restore(void *self)`
+        subroutine qtf_qpainter_restore(self) bind(C, name='qtf_qpainter_restore')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qpainter_restore
+
+        !> Move the coordinate origin by (dx, dy).
+        !>
+        !> C: `void qtf_qpainter_translate(void *self, double dx, double dy)`
+        subroutine qtf_qpainter_translate(self, dx, dy) bind(C, name='qtf_qpainter_translate')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: dx
+            real(c_double), value :: dy
+        end subroutine qtf_qpainter_translate
+
+        !> Scale the coordinate system by (sx, sy).
+        !>
+        !> C: `void qtf_qpainter_scale(void *self, double sx, double sy)`
+        subroutine qtf_qpainter_scale(self, sx, sy) bind(C, name='qtf_qpainter_scale')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: sx
+            real(c_double), value :: sy
+        end subroutine qtf_qpainter_scale
+
+        !> Rotate the coordinate system clockwise by `degrees`.
+        !>
+        !> C: `void qtf_qpainter_rotate(void *self, double degrees)`
+        subroutine qtf_qpainter_rotate(self, degrees) bind(C, name='qtf_qpainter_rotate')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: degrees
+        end subroutine qtf_qpainter_rotate
+
+        !> Reset the coordinate transform to the identity.
+        !>
+        !> C: `void qtf_qpainter_resetTransform(void *self)`
+        subroutine qtf_qpainter_resetTransform(self) bind(C, name='qtf_qpainter_resetTransform')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qpainter_resetTransform
+
+        !> Draw a point with the pen.
+        !>
+        !> C: `void qtf_qpainter_drawPoint(void *self, double x, double y)`
+        subroutine qtf_qpainter_drawPoint(self, x, y) bind(C, name='qtf_qpainter_drawPoint')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+        end subroutine qtf_qpainter_drawPoint
+
+        !> Draw a line from (x1, y1) to (x2, y2).
+        !>
+        !> C: `void qtf_qpainter_drawLine(void *self, double x1, double y1, double x2, double y2)`
+        subroutine qtf_qpainter_drawLine(self, x1, y1, x2, y2) bind(C, name='qtf_qpainter_drawLine')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x1
+            real(c_double), value :: y1
+            real(c_double), value :: x2
+            real(c_double), value :: y2
+        end subroutine qtf_qpainter_drawLine
+
+        !> Draw a rectangle: outlined with the pen, filled with the brush.
+        !>
+        !> C: `void qtf_qpainter_drawRect(void *self, double x, double y, double w, double h)`
+        subroutine qtf_qpainter_drawRect(self, x, y, w, h) bind(C, name='qtf_qpainter_drawRect')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double), value :: w
+            real(c_double), value :: h
+        end subroutine qtf_qpainter_drawRect
+
+        !> Draw a rectangle with corners rounded by radii (rx, ry).
+        !>
+        !> C: `void qtf_qpainter_drawRoundedRect(void *self, double x, double y, double w, double h, double rx, double ry)`
+        subroutine qtf_qpainter_drawRoundedRect(self, x, y, w, h, rx, ry) bind(C, name='qtf_qpainter_drawRoundedRect')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double), value :: w
+            real(c_double), value :: h
+            real(c_double), value :: rx
+            real(c_double), value :: ry
+        end subroutine qtf_qpainter_drawRoundedRect
+
+        !> Draw the ellipse inscribed in the rectangle (x, y, w, h).
+        !>
+        !> C: `void qtf_qpainter_drawEllipse(void *self, double x, double y, double w, double h)`
+        subroutine qtf_qpainter_drawEllipse(self, x, y, w, h) bind(C, name='qtf_qpainter_drawEllipse')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double), value :: w
+            real(c_double), value :: h
+        end subroutine qtf_qpainter_drawEllipse
+
+        !> Fill a rectangle with `color` (ignores pen and brush).
+        !>
+        !> C: `void qtf_qpainter_fillRect(void *self, double x, double y, double w, double h, int color_r, int color_g, int color_b, int color_a)`
+        subroutine qtf_qpainter_fillRect(self, x, y, w, h, color_r, color_g, color_b, color_a) &
+                bind(C, name='qtf_qpainter_fillRect')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double), value :: w
+            real(c_double), value :: h
+            integer(c_int), value :: color_r
+            integer(c_int), value :: color_g
+            integer(c_int), value :: color_b
+            integer(c_int), value :: color_a
+        end subroutine qtf_qpainter_fillRect
+
+        !> Draw connected line segments through the points (x(i), y(i)).
+        !>
+        !> C: `void qtf_qpainter_drawPolyline(void *self, const double *x, const double *y, int n)`
+        subroutine qtf_qpainter_drawPolyline(self, x, y, n) bind(C, name='qtf_qpainter_drawPolyline')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), dimension(*), intent(in) :: x
+            real(c_double), dimension(*), intent(in) :: y
+            integer(c_int), value :: n
+        end subroutine qtf_qpainter_drawPolyline
+
+        !> Draw a closed polygon through the points (x(i), y(i)), filled with the brush.
+        !>
+        !> C: `void qtf_qpainter_drawPolygon(void *self, const double *x, const double *y, int n)`
+        subroutine qtf_qpainter_drawPolygon(self, x, y, n) bind(C, name='qtf_qpainter_drawPolygon')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), dimension(*), intent(in) :: x
+            real(c_double), dimension(*), intent(in) :: y
+            integer(c_int), value :: n
+        end subroutine qtf_qpainter_drawPolygon
+
+        !> Draw text with its baseline starting at (x, y).
+        !>
+        !> C: `void qtf_qpainter_drawText(void *self, double x, double y, const char *text, int text_len)`
+        subroutine qtf_qpainter_drawText(self, x, y, text, text_len) bind(C, name='qtf_qpainter_drawText')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+        end subroutine qtf_qpainter_drawText
+
+        !> Draw text inside a rectangle, aligned by `flags` (e.g. Qt_AlignCenter).
+        !>
+        !> C: `void qtf_qpainter_drawTextRect(void *self, double x, double y, double w, double h, int flags, const char *text, int text_len)`
+        subroutine qtf_qpainter_drawTextRect(self, x, y, w, h, flags, text, text_len) &
+                bind(C, name='qtf_qpainter_drawTextRect')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double), value :: w
+            real(c_double), value :: h
+            integer(c_int), value :: flags
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+        end subroutine qtf_qpainter_drawTextRect
+
+        !> Draw `image` with its top-left corner at (x, y).
+        !>
+        !> C: `void qtf_qpainter_drawImage(void *self, int x, int y, void *image)`
+        subroutine qtf_qpainter_drawImage(self, x, y, image) bind(C, name='qtf_qpainter_drawImage')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: x
+            integer(c_int), value :: y
+            type(c_ptr), value :: image
+        end subroutine qtf_qpainter_drawImage
+
+        !> Width in pixels of `text` in the current font.
+        !>
+        !> C: `int qtf_qpainter_textWidth(void *self, const char *text, int text_len)`
+        function qtf_qpainter_textWidth(self, text, text_len) result(res) bind(C, name='qtf_qpainter_textWidth')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+            integer(c_int) :: res
+        end function qtf_qpainter_textWidth
+
+        !> Line height in pixels of the current font.
+        !>
+        !> C: `int qtf_qpainter_fontHeight(void *self)`
+        function qtf_qpainter_fontHeight(self) result(res) bind(C, name='qtf_qpainter_fontHeight')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qpainter_fontHeight
+
+        !> A synthetic mouse event (e.g. for QCoreApplication_sendEvent); delete it after use.
+        !>
         !> C: `void *qtf_qmouseevent_new(int type, double x, double y, int button, int buttons, int modifiers)`
         function qtf_qmouseevent_new(type, x, y, button, buttons, modifiers) &
                 result(res) bind(C, name='qtf_qmouseevent_new')
@@ -474,91 +595,113 @@ module qt_c_gui
             type(c_ptr) :: res
         end function qtf_qmouseevent_new
 
-        !> C: `double qtf_qmouseevent_x(void *e)`
-        function qtf_qmouseevent_x(e) result(res) bind(C, name='qtf_qmouseevent_x')
+        !> Horizontal position in widget coordinates.
+        !>
+        !> C: `double qtf_qmouseevent_x(void *self)`
+        function qtf_qmouseevent_x(self) result(res) bind(C, name='qtf_qmouseevent_x')
             import :: c_double, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             real(c_double) :: res
         end function qtf_qmouseevent_x
 
-        !> C: `double qtf_qmouseevent_y(void *e)`
-        function qtf_qmouseevent_y(e) result(res) bind(C, name='qtf_qmouseevent_y')
+        !> Vertical position in widget coordinates.
+        !>
+        !> C: `double qtf_qmouseevent_y(void *self)`
+        function qtf_qmouseevent_y(self) result(res) bind(C, name='qtf_qmouseevent_y')
             import :: c_double, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             real(c_double) :: res
         end function qtf_qmouseevent_y
 
-        !> C: `int qtf_qmouseevent_button(void *e)`
-        function qtf_qmouseevent_button(e) result(res) bind(C, name='qtf_qmouseevent_button')
+        !> The button that caused the event (Qt_NoButton for moves).
+        !>
+        !> C: `int qtf_qmouseevent_button(void *self)`
+        function qtf_qmouseevent_button(self) result(res) bind(C, name='qtf_qmouseevent_button')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qmouseevent_button
 
-        !> C: `int qtf_qmouseevent_buttons(void *e)`
-        function qtf_qmouseevent_buttons(e) result(res) bind(C, name='qtf_qmouseevent_buttons')
+        !> All buttons held during the event (a combination of Qt_*Button).
+        !>
+        !> C: `int qtf_qmouseevent_buttons(void *self)`
+        function qtf_qmouseevent_buttons(self) result(res) bind(C, name='qtf_qmouseevent_buttons')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qmouseevent_buttons
 
-        !> C: `int qtf_qmouseevent_modifiers(void *e)`
-        function qtf_qmouseevent_modifiers(e) result(res) bind(C, name='qtf_qmouseevent_modifiers')
+        !> Keyboard modifiers held (a combination of Qt_*Modifier).
+        !>
+        !> C: `int qtf_qmouseevent_modifiers(void *self)`
+        function qtf_qmouseevent_modifiers(self) result(res) bind(C, name='qtf_qmouseevent_modifiers')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qmouseevent_modifiers
 
-        !> C: `void *qtf_qkeyevent_new(int type, int k, int modifiers, const char *s, int len)`
-        function qtf_qkeyevent_new(type, k, modifiers, s, len) result(res) bind(C, name='qtf_qkeyevent_new')
+        !> A synthetic key event; delete it after use.
+        !>
+        !> C: `void *qtf_qkeyevent_new(int type, int key, int modifiers, const char *text, int text_len)`
+        function qtf_qkeyevent_new(type, key, modifiers, text, text_len) result(res) bind(C, name='qtf_qkeyevent_new')
             import :: c_char, c_int, c_ptr
             implicit none
             integer(c_int), value :: type
-            integer(c_int), value :: k
+            integer(c_int), value :: key
             integer(c_int), value :: modifiers
-            character(kind=c_char), dimension(*), intent(in) :: s
-            integer(c_int), value :: len
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
             type(c_ptr) :: res
         end function qtf_qkeyevent_new
 
-        !> C: `int qtf_qkeyevent_key(void *e)`
-        function qtf_qkeyevent_key(e) result(res) bind(C, name='qtf_qkeyevent_key')
+        !> The key code (a Qt_Key_* constant).
+        !>
+        !> C: `int qtf_qkeyevent_key(void *self)`
+        function qtf_qkeyevent_key(self) result(res) bind(C, name='qtf_qkeyevent_key')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qkeyevent_key
 
-        !> C: `int qtf_qkeyevent_modifiers(void *e)`
-        function qtf_qkeyevent_modifiers(e) result(res) bind(C, name='qtf_qkeyevent_modifiers')
+        !> Keyboard modifiers held (a combination of Qt_*Modifier).
+        !>
+        !> C: `int qtf_qkeyevent_modifiers(void *self)`
+        function qtf_qkeyevent_modifiers(self) result(res) bind(C, name='qtf_qkeyevent_modifiers')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qkeyevent_modifiers
 
-        !> C: `char *qtf_qkeyevent_text(void *e, int *len)`
-        function qtf_qkeyevent_text(e, len) result(res) bind(C, name='qtf_qkeyevent_text')
+        !> The text the key produced (may be empty, e.g. for arrow keys).
+        !>
+        !> C: `char *qtf_qkeyevent_text(void *self, int *len)`
+        function qtf_qkeyevent_text(self, len) result(res) bind(C, name='qtf_qkeyevent_text')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qkeyevent_text
 
-        !> C: `int qtf_qkeyevent_isAutoRepeat(void *e)`
-        function qtf_qkeyevent_isAutoRepeat(e) result(res) bind(C, name='qtf_qkeyevent_isAutoRepeat')
+        !> True if the event was generated by holding the key down.
+        !>
+        !> C: `int qtf_qkeyevent_isAutoRepeat(void *self)`
+        function qtf_qkeyevent_isAutoRepeat(self) result(res) bind(C, name='qtf_qkeyevent_isAutoRepeat')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qkeyevent_isAutoRepeat
 
+        !> A synthetic wheel event; delete it after use.
+        !>
         !> C: `void *qtf_qwheelevent_new(double x, double y, int angleDeltaX, int angleDeltaY, int buttons, int modifiers)`
         function qtf_qwheelevent_new(x, y, angleDeltaX, angleDeltaY, buttons, modifiers) &
                 result(res) bind(C, name='qtf_qwheelevent_new')
@@ -573,54 +716,68 @@ module qt_c_gui
             type(c_ptr) :: res
         end function qtf_qwheelevent_new
 
-        !> C: `double qtf_qwheelevent_x(void *e)`
-        function qtf_qwheelevent_x(e) result(res) bind(C, name='qtf_qwheelevent_x')
+        !> Horizontal cursor position in widget coordinates.
+        !>
+        !> C: `double qtf_qwheelevent_x(void *self)`
+        function qtf_qwheelevent_x(self) result(res) bind(C, name='qtf_qwheelevent_x')
             import :: c_double, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             real(c_double) :: res
         end function qtf_qwheelevent_x
 
-        !> C: `double qtf_qwheelevent_y(void *e)`
-        function qtf_qwheelevent_y(e) result(res) bind(C, name='qtf_qwheelevent_y')
+        !> Vertical cursor position in widget coordinates.
+        !>
+        !> C: `double qtf_qwheelevent_y(void *self)`
+        function qtf_qwheelevent_y(self) result(res) bind(C, name='qtf_qwheelevent_y')
             import :: c_double, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             real(c_double) :: res
         end function qtf_qwheelevent_y
 
-        !> C: `int qtf_qwheelevent_angleDeltaX(void *e)`
-        function qtf_qwheelevent_angleDeltaX(e) result(res) bind(C, name='qtf_qwheelevent_angleDeltaX')
+        !> Horizontal wheel rotation in eighths of a degree.
+        !>
+        !> C: `int qtf_qwheelevent_angleDeltaX(void *self)`
+        function qtf_qwheelevent_angleDeltaX(self) result(res) bind(C, name='qtf_qwheelevent_angleDeltaX')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qwheelevent_angleDeltaX
 
-        !> C: `int qtf_qwheelevent_angleDeltaY(void *e)`
-        function qtf_qwheelevent_angleDeltaY(e) result(res) bind(C, name='qtf_qwheelevent_angleDeltaY')
+        !> Vertical wheel rotation in eighths of a degree (+120 per notch away from the user).
+        !>
+        !> C: `int qtf_qwheelevent_angleDeltaY(void *self)`
+        function qtf_qwheelevent_angleDeltaY(self) result(res) bind(C, name='qtf_qwheelevent_angleDeltaY')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qwheelevent_angleDeltaY
 
-        !> C: `int qtf_qwheelevent_buttons(void *e)`
-        function qtf_qwheelevent_buttons(e) result(res) bind(C, name='qtf_qwheelevent_buttons')
+        !> Mouse buttons held during the event.
+        !>
+        !> C: `int qtf_qwheelevent_buttons(void *self)`
+        function qtf_qwheelevent_buttons(self) result(res) bind(C, name='qtf_qwheelevent_buttons')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qwheelevent_buttons
 
-        !> C: `int qtf_qwheelevent_modifiers(void *e)`
-        function qtf_qwheelevent_modifiers(e) result(res) bind(C, name='qtf_qwheelevent_modifiers')
+        !> Keyboard modifiers held (a combination of Qt_*Modifier).
+        !>
+        !> C: `int qtf_qwheelevent_modifiers(void *self)`
+        function qtf_qwheelevent_modifiers(self) result(res) bind(C, name='qtf_qwheelevent_modifiers')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qwheelevent_modifiers
 
+        !> A synthetic resize event; delete it after use.
+        !>
         !> C: `void *qtf_qresizeevent_new(int width, int height, int oldWidth, int oldHeight)`
         function qtf_qresizeevent_new(width, height, oldWidth, oldHeight) &
                 result(res) bind(C, name='qtf_qresizeevent_new')
@@ -633,172 +790,209 @@ module qt_c_gui
             type(c_ptr) :: res
         end function qtf_qresizeevent_new
 
-        !> C: `int qtf_qresizeevent_width(void *e)`
-        function qtf_qresizeevent_width(e) result(res) bind(C, name='qtf_qresizeevent_width')
+        !> The new width.
+        !>
+        !> C: `int qtf_qresizeevent_width(void *self)`
+        function qtf_qresizeevent_width(self) result(res) bind(C, name='qtf_qresizeevent_width')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qresizeevent_width
 
-        !> C: `int qtf_qresizeevent_height(void *e)`
-        function qtf_qresizeevent_height(e) result(res) bind(C, name='qtf_qresizeevent_height')
+        !> The new height.
+        !>
+        !> C: `int qtf_qresizeevent_height(void *self)`
+        function qtf_qresizeevent_height(self) result(res) bind(C, name='qtf_qresizeevent_height')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qresizeevent_height
 
-        !> C: `int qtf_qresizeevent_oldWidth(void *e)`
-        function qtf_qresizeevent_oldWidth(e) result(res) bind(C, name='qtf_qresizeevent_oldWidth')
+        !> The previous width.
+        !>
+        !> C: `int qtf_qresizeevent_oldWidth(void *self)`
+        function qtf_qresizeevent_oldWidth(self) result(res) bind(C, name='qtf_qresizeevent_oldWidth')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qresizeevent_oldWidth
 
-        !> C: `int qtf_qresizeevent_oldHeight(void *e)`
-        function qtf_qresizeevent_oldHeight(e) result(res) bind(C, name='qtf_qresizeevent_oldHeight')
+        !> The previous height.
+        !>
+        !> C: `int qtf_qresizeevent_oldHeight(void *self)`
+        function qtf_qresizeevent_oldHeight(self) result(res) bind(C, name='qtf_qresizeevent_oldHeight')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: e
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qresizeevent_oldHeight
 
-        !> C: `void *qtf_qaction_new(const char *s, int len, void *parent)`
-        function qtf_qaction_new(s, len, parent) result(res) bind(C, name='qtf_qaction_new')
+        !> Create an action with `text`, owned by `parent` if given.
+        !>
+        !> C: `void *qtf_qaction_new(const char *text, int text_len, void *parent)`
+        function qtf_qaction_new(text, text_len, parent) result(res) bind(C, name='qtf_qaction_new')
             import :: c_char, c_int, c_ptr
             implicit none
-            character(kind=c_char), dimension(*), intent(in) :: s
-            integer(c_int), value :: len
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
             type(c_ptr), value :: parent
             type(c_ptr) :: res
         end function qtf_qaction_new
 
-        !> C: `void qtf_qaction_setText(void *a, const char *s, int len)`
-        subroutine qtf_qaction_setText(a, s, len) bind(C, name='qtf_qaction_setText')
+        !> Set the text shown in menus (`&` marks the mnemonic).
+        !>
+        !> C: `void qtf_qaction_setText(void *self, const char *text, int text_len)`
+        subroutine qtf_qaction_setText(self, text, text_len) bind(C, name='qtf_qaction_setText')
             import :: c_char, c_int, c_ptr
             implicit none
-            type(c_ptr), value :: a
-            character(kind=c_char), dimension(*), intent(in) :: s
-            integer(c_int), value :: len
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
         end subroutine qtf_qaction_setText
 
-        !> C: `char *qtf_qaction_text(void *a, int *len)`
-        function qtf_qaction_text(a, len) result(res) bind(C, name='qtf_qaction_text')
+        !> The action's text.
+        !>
+        !> C: `char *qtf_qaction_text(void *self, int *len)`
+        function qtf_qaction_text(self, len) result(res) bind(C, name='qtf_qaction_text')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: a
+            type(c_ptr), value :: self
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qaction_text
 
-        !> C: `void qtf_qaction_setShortcut(void *a, const char *s, int len)`
-        subroutine qtf_qaction_setShortcut(a, s, len) bind(C, name='qtf_qaction_setShortcut')
+        !> Set the keyboard shortcut, e.g. 'Ctrl+O' (Ctrl is Cmd on macOS).
+        !>
+        !> C: `void qtf_qaction_setShortcut(void *self, const char *shortcut, int shortcut_len)`
+        subroutine qtf_qaction_setShortcut(self, shortcut, shortcut_len) bind(C, name='qtf_qaction_setShortcut')
             import :: c_char, c_int, c_ptr
             implicit none
-            type(c_ptr), value :: a
-            character(kind=c_char), dimension(*), intent(in) :: s
-            integer(c_int), value :: len
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: shortcut
+            integer(c_int), value :: shortcut_len
         end subroutine qtf_qaction_setShortcut
 
-        !> C: `char *qtf_qaction_shortcut(void *a, int *len)`
-        function qtf_qaction_shortcut(a, len) result(res) bind(C, name='qtf_qaction_shortcut')
+        !> The shortcut in portable text form, e.g. 'Ctrl+O'.
+        !>
+        !> C: `char *qtf_qaction_shortcut(void *self, int *len)`
+        function qtf_qaction_shortcut(self, len) result(res) bind(C, name='qtf_qaction_shortcut')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: a
+            type(c_ptr), value :: self
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qaction_shortcut
 
-        !> C: `void qtf_qaction_setCheckable(void *a, int b)`
-        subroutine qtf_qaction_setCheckable(a, b) bind(C, name='qtf_qaction_setCheckable')
+        !> Make the action a toggle (or a plain command).
+        !>
+        !> C: `void qtf_qaction_setCheckable(void *self, int checkable)`
+        subroutine qtf_qaction_setCheckable(self, checkable) bind(C, name='qtf_qaction_setCheckable')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: a
-            integer(c_int), value :: b
+            type(c_ptr), value :: self
+            integer(c_int), value :: checkable
         end subroutine qtf_qaction_setCheckable
 
-        !> C: `int qtf_qaction_isCheckable(void *a)`
-        function qtf_qaction_isCheckable(a) result(res) bind(C, name='qtf_qaction_isCheckable')
+        !> True if the action is a toggle.
+        !>
+        !> C: `int qtf_qaction_isCheckable(void *self)`
+        function qtf_qaction_isCheckable(self) result(res) bind(C, name='qtf_qaction_isCheckable')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: a
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qaction_isCheckable
 
-        !> C: `void qtf_qaction_setChecked(void *a, int b)`
-        subroutine qtf_qaction_setChecked(a, b) bind(C, name='qtf_qaction_setChecked')
+        !> Check or uncheck the action (emits toggled).
+        !>
+        !> C: `void qtf_qaction_setChecked(void *self, int checked)`
+        subroutine qtf_qaction_setChecked(self, checked) bind(C, name='qtf_qaction_setChecked')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: a
-            integer(c_int), value :: b
+            type(c_ptr), value :: self
+            integer(c_int), value :: checked
         end subroutine qtf_qaction_setChecked
 
-        !> C: `int qtf_qaction_isChecked(void *a)`
-        function qtf_qaction_isChecked(a) result(res) bind(C, name='qtf_qaction_isChecked')
+        !> True if the action is checked.
+        !>
+        !> C: `int qtf_qaction_isChecked(void *self)`
+        function qtf_qaction_isChecked(self) result(res) bind(C, name='qtf_qaction_isChecked')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: a
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qaction_isChecked
 
-        !> C: `void qtf_qaction_setEnabled(void *a, int b)`
-        subroutine qtf_qaction_setEnabled(a, b) bind(C, name='qtf_qaction_setEnabled')
+        !> Enable or disable the action (disabled actions do not trigger).
+        !>
+        !> C: `void qtf_qaction_setEnabled(void *self, int enabled)`
+        subroutine qtf_qaction_setEnabled(self, enabled) bind(C, name='qtf_qaction_setEnabled')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: a
-            integer(c_int), value :: b
+            type(c_ptr), value :: self
+            integer(c_int), value :: enabled
         end subroutine qtf_qaction_setEnabled
 
-        !> C: `int qtf_qaction_isEnabled(void *a)`
-        function qtf_qaction_isEnabled(a) result(res) bind(C, name='qtf_qaction_isEnabled')
+        !> True if the action is enabled.
+        !>
+        !> C: `int qtf_qaction_isEnabled(void *self)`
+        function qtf_qaction_isEnabled(self) result(res) bind(C, name='qtf_qaction_isEnabled')
             import :: c_int, c_ptr
             implicit none
-            type(c_ptr), value :: a
+            type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qaction_isEnabled
 
-        !> C: `void qtf_qaction_setStatusTip(void *a, const char *s, int len)`
-        subroutine qtf_qaction_setStatusTip(a, s, len) bind(C, name='qtf_qaction_setStatusTip')
+        !> Text shown in the status bar while the action is hovered.
+        !>
+        !> C: `void qtf_qaction_setStatusTip(void *self, const char *tip, int tip_len)`
+        subroutine qtf_qaction_setStatusTip(self, tip, tip_len) bind(C, name='qtf_qaction_setStatusTip')
             import :: c_char, c_int, c_ptr
             implicit none
-            type(c_ptr), value :: a
-            character(kind=c_char), dimension(*), intent(in) :: s
-            integer(c_int), value :: len
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: tip
+            integer(c_int), value :: tip_len
         end subroutine qtf_qaction_setStatusTip
 
-        !> C: `void qtf_qaction_setToolTip(void *a, const char *s, int len)`
-        subroutine qtf_qaction_setToolTip(a, s, len) bind(C, name='qtf_qaction_setToolTip')
+        !> Tool tip shown for the action (e.g. on tool bar buttons).
+        !>
+        !> C: `void qtf_qaction_setToolTip(void *self, const char *tip, int tip_len)`
+        subroutine qtf_qaction_setToolTip(self, tip, tip_len) bind(C, name='qtf_qaction_setToolTip')
             import :: c_char, c_int, c_ptr
             implicit none
-            type(c_ptr), value :: a
-            character(kind=c_char), dimension(*), intent(in) :: s
-            integer(c_int), value :: len
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: tip
+            integer(c_int), value :: tip_len
         end subroutine qtf_qaction_setToolTip
 
-        !> C: `void qtf_qaction_trigger(void *a)`
-        subroutine qtf_qaction_trigger(a) bind(C, name='qtf_qaction_trigger')
+        !> Activate the action (emits triggered, and toggled if checkable).
+        !>
+        !> C: `void qtf_qaction_trigger(void *self)`
+        subroutine qtf_qaction_trigger(self) bind(C, name='qtf_qaction_trigger')
             import :: c_ptr
             implicit none
-            type(c_ptr), value :: a
+            type(c_ptr), value :: self
         end subroutine qtf_qaction_trigger
 
     end interface
 
-    public :: qtf_qcolor_fromString, qtf_qpainter_new_image, qtf_qpainter_delete, qtf_qpainter_isActive
-    public :: qtf_qpainter_deviceWidth, qtf_qpainter_deviceHeight, qtf_qpainter_setPen, qtf_qpainter_setBrush
-    public :: qtf_qpainter_setFont, qtf_qpainter_setRenderHint, qtf_qpainter_setOpacity, qtf_qpainter_save
-    public :: qtf_qpainter_restore, qtf_qpainter_translate, qtf_qpainter_scale, qtf_qpainter_rotate
-    public :: qtf_qpainter_resetTransform, qtf_qpainter_drawPoint, qtf_qpainter_drawLine
-    public :: qtf_qpainter_drawRect, qtf_qpainter_drawRoundedRect, qtf_qpainter_drawEllipse
-    public :: qtf_qpainter_fillRect, qtf_qpainter_drawPolyline, qtf_qpainter_drawPolygon
-    public :: qtf_qpainter_drawText, qtf_qpainter_drawTextRect, qtf_qpainter_drawImage
-    public :: qtf_qpainter_textWidth, qtf_qpainter_fontHeight, qtf_qimage_new, qtf_qimage_fromFile
-    public :: qtf_qimage_delete, qtf_qimage_isNull, qtf_qimage_width, qtf_qimage_height, qtf_qimage_fill
-    public :: qtf_qimage_pixelColor, qtf_qimage_setPixelColor, qtf_qimage_save, qtf_qpixmap_delete
-    public :: qtf_qpixmap_isNull, qtf_qpixmap_width, qtf_qpixmap_height, qtf_qpixmap_toImage
-    public :: qtf_qpixmap_save, qtf_qmouseevent_new, qtf_qmouseevent_x, qtf_qmouseevent_y
+    public :: qtf_qcolor_fromString, qtf_qimage_delete, qtf_qimage_isNull, qtf_qimage_pixelColor
+    public :: qtf_qimage_new, qtf_qimage_fromFile, qtf_qimage_width, qtf_qimage_height, qtf_qimage_fill
+    public :: qtf_qimage_setPixelColor, qtf_qimage_save, qtf_qpixmap_delete, qtf_qpixmap_isNull
+    public :: qtf_qpixmap_width, qtf_qpixmap_height, qtf_qpixmap_toImage, qtf_qpixmap_save
+    public :: qtf_qpainter_delete, qtf_qpainter_isActive, qtf_qpainter_setFont, qtf_qpainter_new
+    public :: qtf_qpainter_deviceWidth, qtf_qpainter_deviceHeight, qtf_qpainter_setPen
+    public :: qtf_qpainter_setPenColor, qtf_qpainter_setBrush, qtf_qpainter_setBrushColor
+    public :: qtf_qpainter_setRenderHint, qtf_qpainter_setOpacity, qtf_qpainter_save, qtf_qpainter_restore
+    public :: qtf_qpainter_translate, qtf_qpainter_scale, qtf_qpainter_rotate, qtf_qpainter_resetTransform
+    public :: qtf_qpainter_drawPoint, qtf_qpainter_drawLine, qtf_qpainter_drawRect
+    public :: qtf_qpainter_drawRoundedRect, qtf_qpainter_drawEllipse, qtf_qpainter_fillRect
+    public :: qtf_qpainter_drawPolyline, qtf_qpainter_drawPolygon, qtf_qpainter_drawText
+    public :: qtf_qpainter_drawTextRect, qtf_qpainter_drawImage, qtf_qpainter_textWidth
+    public :: qtf_qpainter_fontHeight, qtf_qmouseevent_new, qtf_qmouseevent_x, qtf_qmouseevent_y
     public :: qtf_qmouseevent_button, qtf_qmouseevent_buttons, qtf_qmouseevent_modifiers, qtf_qkeyevent_new
     public :: qtf_qkeyevent_key, qtf_qkeyevent_modifiers, qtf_qkeyevent_text, qtf_qkeyevent_isAutoRepeat
     public :: qtf_qwheelevent_new, qtf_qwheelevent_x, qtf_qwheelevent_y, qtf_qwheelevent_angleDeltaX

@@ -2,6 +2,7 @@
 #pragma once
 
 #include <QString>
+#include <QStringList>
 
 #include <cstdint>
 #include <memory>
@@ -19,40 +20,8 @@ enum qtf_signal : int {
     QTF_SIG_QOBJECT_DESTROYED = 1,
     QTF_SIG_QOBJECT_OBJECTNAMECHANGED = 2,
     QTF_SIG_QTIMER_TIMEOUT = 3,
-    // widgets (1000..1999)
-    QTF_SIG_QABSTRACTBUTTON_CLICKED = 1000,
-    QTF_SIG_QABSTRACTBUTTON_TOGGLED = 1001,
-    QTF_SIG_QABSTRACTBUTTON_PRESSED = 1002,
-    QTF_SIG_QABSTRACTBUTTON_RELEASED = 1003,
-    QTF_SIG_QLINEEDIT_TEXTCHANGED = 1010,
-    QTF_SIG_QLINEEDIT_TEXTEDITED = 1011,
-    QTF_SIG_QLINEEDIT_RETURNPRESSED = 1012,
-    QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1013,
-    QTF_SIG_QSPINBOX_VALUECHANGED = 1020,
-    QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1021,
-    QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1030,
-    QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1031,
-    QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1032,
-    QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1033,
-    QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1040,
-    QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1041,
-    QTF_SIG_QCOMBOBOX_ACTIVATED = 1042,
-    QTF_SIG_QDIALOG_ACCEPTED = 1050,
-    QTF_SIG_QDIALOG_REJECTED = 1051,
-    QTF_SIG_QDIALOG_FINISHED = 1052,
-    // QtfWidget virtual-function overrides, delivered like signals
-    QTF_SIG_QTFWIDGET_PAINT = 1100,
-    QTF_SIG_QTFWIDGET_MOUSEPRESS = 1101,
-    QTF_SIG_QTFWIDGET_MOUSERELEASE = 1102,
-    QTF_SIG_QTFWIDGET_MOUSEMOVE = 1103,
-    QTF_SIG_QTFWIDGET_MOUSEDOUBLECLICK = 1104,
-    QTF_SIG_QTFWIDGET_WHEEL = 1105,
-    QTF_SIG_QTFWIDGET_KEYPRESS = 1106,
-    QTF_SIG_QTFWIDGET_KEYRELEASE = 1107,
-    QTF_SIG_QTFWIDGET_RESIZE = 1108,
-    // gui (2000..2999)
-    QTF_SIG_QACTION_TRIGGERED = 2000,
-    QTF_SIG_QACTION_TOGGLED = 2001,
+    // widgets (1000..1999): generated in shim/qtf_widgets.cpp from spec/widgets.toml
+    // gui (2000..2999): generated in shim/qtf_gui.cpp from spec/gui.toml
 };
 
 // Signal arguments passed to the Fortran dispatcher (mirrors type(qtf_args) in
@@ -97,6 +66,9 @@ bool qtf_register_connector(int signal, qtf_connector_fn fn);
 
 // Strings returned to Fortran are malloc'd UTF-8 buffers, released by qtf_free.
 char *qtf_to_c(const QString &s, int *len);
+
+// String lists are returned as one malloc'd buffer of NUL-terminated strings.
+char *qtf_list_to_c(const QStringList &list, int *len);
 
 inline QString qtf_qstring(const char *s, int len) { return QString::fromUtf8(s, len); }
 

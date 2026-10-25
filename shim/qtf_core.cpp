@@ -22,6 +22,18 @@ char *qtf_to_c(const QString &s, int *len) {
     return p;
 }
 
+char *qtf_list_to_c(const QStringList &list, int *len) {
+    QByteArray b;
+    for (const QString &s : list) {
+        b += s.toUtf8();
+        b += '\0';
+    }
+    *len = static_cast<int>(b.size());
+    char *p = static_cast<char *>(std::malloc(b.size() + 1));
+    std::memcpy(p, b.constData(), b.size() + 1);
+    return p;
+}
+
 QTF_API void qtf_free(void *p) { std::free(p); }
 
 // ---------------------------------------------------------------------------

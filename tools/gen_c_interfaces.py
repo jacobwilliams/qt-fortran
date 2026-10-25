@@ -123,8 +123,9 @@ def interface(rtype, name, params):
     return "\n".join(out)
 
 
-def signal_ids(lo, hi):
-    text = open(COMMON).read()
+def signal_ids(lo, hi, shim_src):
+    """QTF_SIG_* ids in range, from qtf_common.h and the shim (generated shims define their own)."""
+    text = open(COMMON).read() + shim_src
     ids = [(n, int(v)) for n, v in re.findall(r"\b(QTF_SIG_\w+)\s*=\s*(\d+)", text)]
     return [(n, v) for n, v in ids if lo <= v <= hi]
 
@@ -142,7 +143,7 @@ def generate(shim, module, signal_range):
         if text and not set(text[0]) <= set("-"):
             comments[name] = text
     ifaces = "\n\n".join(docstring(d[1], d[0], d[2], comments) + "\n" + interface(*d) for d in decls)
-    sigs = signal_ids(*signal_range)
+    sigs = signal_ids(*signal_range, src)
     sig_block = ""
     if sigs:
         sig_block = "    ! Signal ids: must match `enum qtf_signal` in shim/qtf_common.h.\n" + "".join(

@@ -90,6 +90,10 @@ def build_shim(prefix):
     os.makedirs(SHIM_OUT, exist_ok=True)
     if run(shim_command(prefix, sources, lib)) != 0:
         sys.exit("fpm_qt: shim build failed")
+    # The shim's C interface may have changed. fpm does not relink executables
+    # when only the library changed, so start its build from scratch.
+    for d in glob.glob(os.path.join(ROOT, "build", "gfortran_*")):
+        shutil.rmtree(d)
 
 
 def main():

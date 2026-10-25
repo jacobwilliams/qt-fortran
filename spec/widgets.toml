@@ -1,0 +1,601 @@
+# Bindings for Qt Widgets. `pixi run gen` turns this into shim/qtf_widgets.cpp
+# and src/widgets/qt_widgets.f90 (see tools/gen_bindings.py for the format).
+
+module = "widgets"
+signal_base = 1000
+doc = """
+Qt Widgets: application, basic widgets, layouts, main window, menus and dialogs.
+
+Indices (e.g. combo box items) are 0-based, as in Qt.
+"""
+uses = [
+    "use qt_c_util, only: qtf_take_string, qtf_take_string_list, qtf_logical, qtf_int, qt_string",
+    "use qt_c_widgets",
+    "use qt_core",
+    "use qt_gui",
+]
+handle_types = ["QPixmap"]
+cpp_includes = [
+    "QAction", "QApplication", "QBoxLayout", "QCheckBox", "QComboBox", "QDialog", "QDoubleSpinBox",
+    "QFileDialog", "QGridLayout", "QLabel", "QLineEdit", "QMainWindow", "QMenu", "QMenuBar",
+    "QMessageBox", "QPainter", "QPixmap", "QPushButton", "QRadioButton", "QSlider", "QSpinBox",
+    "QStatusBar", "QToolBar", "QWidget", "array", "vector",
+]
+
+cpp_prelude = """
+// QApplication keeps references to argc/argv, so they must outlive it.
+static int qtf_argc = 1;
+static char qtf_argv0[] = "qt-fortran";
+static char *qtf_argv[] = {qtf_argv0, nullptr};
+
+// QtfWidget: a QWidget whose event handlers (virtual functions) are forwarded
+// to Fortran slots. An event with no connected slot gets Qt's default handling.
+
+enum qtf_widget_event {
+    QTF_EV_PAINT,
+    QTF_EV_MOUSEPRESS,
+    QTF_EV_MOUSERELEASE,
+    QTF_EV_MOUSEMOVE,
+    QTF_EV_MOUSEDOUBLECLICK,
+    QTF_EV_WHEEL,
+    QTF_EV_KEYPRESS,
+    QTF_EV_KEYRELEASE,
+    QTF_EV_RESIZE,
+    QTF_EV_COUNT
+};
+
+class QtfWidget : public QWidget {
+  public:
+    explicit QtfWidget(QWidget *parent) : QWidget(parent) { setFocusPolicy(Qt::StrongFocus); }
+
+    // (not named `slots`: that is a Qt macro)
+    std::array<std::vector<qtf_slot>, QTF_EV_COUNT> handlers;
+
+  protected:
+    // Emit to a copy: a slot may connect more slots while we iterate.
+    bool forward(qtf_widget_event ev, void *p) {
+        const std::vector<qtf_slot> targets = handlers[ev];
+        for (const qtf_slot &s : targets) qtf_emit_ptr(s, p);
+        return !targets.empty();
+    }
+
+    void paintEvent(QPaintEvent *e) override {
+        if (handlers[QTF_EV_PAINT].empty()) return QWidget::paintEvent(e);
+        QPainter painter(this);
+        forward(QTF_EV_PAINT, &painter);
+    }
+    void mousePressEvent(QMouseEvent *e) override {
+        if (!forward(QTF_EV_MOUSEPRESS, e)) QWidget::mousePressEvent(e);
+    }
+    void mouseReleaseEvent(QMouseEvent *e) override {
+        if (!forward(QTF_EV_MOUSERELEASE, e)) QWidget::mouseReleaseEvent(e);
+    }
+    void mouseMoveEvent(QMouseEvent *e) override {
+        if (!forward(QTF_EV_MOUSEMOVE, e)) QWidget::mouseMoveEvent(e);
+    }
+    void mouseDoubleClickEvent(QMouseEvent *e) override {
+        if (!forward(QTF_EV_MOUSEDOUBLECLICK, e)) QWidget::mouseDoubleClickEvent(e);
+    }
+    void wheelEvent(QWheelEvent *e) override {
+        if (!forward(QTF_EV_WHEEL, e)) QWidget::wheelEvent(e);
+    }
+    void keyPressEvent(QKeyEvent *e) override {
+        if (!forward(QTF_EV_KEYPRESS, e)) QWidget::keyPressEvent(e);
+    }
+    void keyReleaseEvent(QKeyEvent *e) override {
+        if (!forward(QTF_EV_KEYRELEASE, e)) QWidget::keyReleaseEvent(e);
+    }
+    void resizeEvent(QResizeEvent *e) override {
+        QWidget::resizeEvent(e);
+        forward(QTF_EV_RESIZE, e);
+    }
+};
+
+// Attach a slot to one of the QtfWidget's event handlers. The slots are owned
+// by the widget, so they are released when it is destroyed.
+template <qtf_widget_event EV> static bool connect_event(void *s, const qtf_slot &ref) {
+    auto *w = dynamic_cast<QtfWidget *>(static_cast<QWidget *>(s));
+    if (!w) return false;
+    w->handlers[EV].push_back(ref);
+    return true;
+}
+"""
+
+# ---------------------------------------------------------------------------
+# enums
+
+[[enum]]
+doc = "QDialog::DialogCode"
+values = ["QDialog_Rejected = 0", "QDialog_Accepted = 1"]
+
+[[enum]]
+doc = "QMessageBox::StandardButton"
+values = [
+    "QMessageBox_NoButton = 0",
+    "QMessageBox_Ok = 0x400",
+    "QMessageBox_Save = 0x800",
+    "QMessageBox_SaveAll = 0x1000",
+    "QMessageBox_Open = 0x2000",
+    "QMessageBox_Yes = 0x4000",
+    "QMessageBox_YesToAll = 0x8000",
+    "QMessageBox_No = 0x10000",
+    "QMessageBox_NoToAll = 0x20000",
+    "QMessageBox_Abort = 0x40000",
+    "QMessageBox_Retry = 0x80000",
+    "QMessageBox_Ignore = 0x100000",
+    "QMessageBox_Close = 0x200000",
+    "QMessageBox_Cancel = 0x400000",
+    "QMessageBox_Discard = 0x800000",
+    "QMessageBox_Help = 0x1000000",
+    "QMessageBox_Apply = 0x2000000",
+    "QMessageBox_Reset = 0x4000000",
+    "QMessageBox_RestoreDefaults = 0x8000000",
+]
+
+[[enum]]
+doc = "QMessageBox::Icon (qualified with the enum name: Fortran is case-insensitive, so QMessageBox_Information would clash with the QMessageBox_information function)"
+values = [
+    "QMessageBox_Icon_NoIcon = 0",
+    "QMessageBox_Icon_Information = 1",
+    "QMessageBox_Icon_Warning = 2",
+    "QMessageBox_Icon_Critical = 3",
+    "QMessageBox_Icon_Question = 4",
+]
+
+[[enum]]
+doc = "QFileDialog::FileMode"
+values = [
+    "QFileDialog_AnyFile = 0",
+    "QFileDialog_ExistingFile = 1",
+    "QFileDialog_Directory = 2",
+    "QFileDialog_ExistingFiles = 3",
+]
+
+[[enum]]
+doc = "QFileDialog::AcceptMode"
+values = ["QFileDialog_AcceptOpen = 0", "QFileDialog_AcceptSave = 1"]
+
+[[enum]]
+doc = "QFileDialog::Option"
+values = [
+    "QFileDialog_ShowDirsOnly = 0x01",
+    "QFileDialog_DontResolveSymlinks = 0x02",
+    "QFileDialog_DontConfirmOverwrite = 0x04",
+    "QFileDialog_DontUseNativeDialog = 0x10",
+    "QFileDialog_ReadOnly = 0x20",
+    "QFileDialog_HideNameFilterDetails = 0x40",
+]
+
+# ---------------------------------------------------------------------------
+# application and base widget
+
+[[class]]
+name = "QApplication"
+doc = "The application object. Create exactly one, before any widget."
+ctor = "() -- Create the application object (or return the existing one)."
+cpp_ctor = "QApplication::instance() ? QApplication::instance() : new QApplication(qtf_argc, qtf_argv)"
+methods = [
+    { sig = "static exec() -> int", doc = "Run the event loop until quit; returns the exit code.", nopass = true },
+    { sig = "static quit()", doc = "Ask the event loop to exit (`exec` then returns 0).", nopass = true },
+    { sig = "static processEvents()", doc = "Process pending events, then return.", nopass = true },
+    "static activeModalWidget() -> QWidget -- The active modal dialog (null if none).",
+]
+
+[[class]]
+name = "QWidget"
+doc = "Base of all user interface objects; a widget without a parent is a window."
+ctor = "(parent: QWidget?) -- Create a widget; without a parent it is a top-level window."
+methods = [
+    "show() -- Show the widget and its children.",
+    "hide() -- Hide the widget.",
+    "close() -- Close the widget (a window is hidden).",
+    "setVisible(visible: bool) -- Show or hide the widget.",
+    "isVisible() -> bool -- True if the widget is shown.",
+    "setEnabled(enabled: bool) -- Enable or disable user input.",
+    "isEnabled() -> bool -- True if the widget accepts user input.",
+    "resize(width: int, height: int) -- Resize to `width` x `height` pixels.",
+    "width() -> int -- Width in pixels.",
+    "height() -> int -- Height in pixels.",
+    "setMinimumSize(width: int, height: int) -- Set the smallest allowed size.",
+    "setFixedSize(width: int, height: int) -- Fix the size (the user cannot resize it).",
+    "setWindowTitle(title: string) -- Set the title shown in the window's title bar.",
+    "windowTitle() -> string -- The window title.",
+    "setToolTip(text: string) -- Set the tool tip shown on hover.",
+    "toolTip() -> string -- The tool tip.",
+    "setStyleSheet(styleSheet: string) -- Set a Qt style sheet (CSS-like) for the widget and its children.",
+    "setFocus() -- Give the widget keyboard focus.",
+    "setLayout(layout: QLayout) -- Install `layout` on this widget (the widget takes ownership).",
+    "layout() -> QLayout -- The widget's layout (a null handle if there is none).",
+    "update() -- Schedule a repaint (coalesced; happens when control returns to the event loop).",
+    "repaint() -- Repaint immediately.",
+    "setMouseTracking(enable: bool) -- Receive mouse moves even when no button is pressed.",
+    "hasMouseTracking() -> bool -- True if mouse tracking is enabled.",
+    "setFocusPolicy(policy: Qt::FocusPolicy) -- How the widget accepts keyboard focus (a Qt_*Focus constant).",
+    "hasFocus() -> bool -- True if the widget has keyboard focus.",
+    { sig = "grab() -> QPixmap", cpp = "new QPixmap({self}->grab())", doc = "Render the widget (and children) into a new pixmap; delete it when done." },
+    "addAction(action: QAction) -- Add an action (to a menu or toolbar, or to a widget for its shortcut).",
+]
+
+[[class]]
+name = "QtfWidget"
+base = "QWidget"
+doc = """
+A widget whose event handlers are delivered to Fortran slots, the
+qt-fortran counterpart of subclassing QWidget and overriding paintEvent,
+mousePressEvent, ... (`Qtf` marks it as a qt-fortran class, not a Qt one).
+
+Paint slots receive a painter already active on the widget; do not `end`
+it. Events with no connected slot get Qt's default handling. The widget
+accepts keyboard focus (Qt_StrongFocus); mouse moves without a pressed
+button arrive only after `setMouseTracking(.true.)`."""
+ctor = "(parent: QWidget?) -- Create a QtfWidget; without a parent it is a top-level window."
+signals = [
+    { sig = "paintEvent: painter", doc = "Paint request.", connector = "connect_event<QTF_EV_PAINT>" },
+    { sig = "mousePressEvent: mouse", doc = "Mouse button pressed.", connector = "connect_event<QTF_EV_MOUSEPRESS>" },
+    { sig = "mouseReleaseEvent: mouse", doc = "Mouse button released.", connector = "connect_event<QTF_EV_MOUSERELEASE>" },
+    { sig = "mouseMoveEvent: mouse", doc = "Mouse moved.", connector = "connect_event<QTF_EV_MOUSEMOVE>" },
+    { sig = "mouseDoubleClickEvent: mouse", doc = "Mouse button double-clicked.", connector = "connect_event<QTF_EV_MOUSEDOUBLECLICK>" },
+    { sig = "wheelEvent: wheel", doc = "Wheel turned.", connector = "connect_event<QTF_EV_WHEEL>" },
+    { sig = "keyPressEvent: key", doc = "Key pressed.", connector = "connect_event<QTF_EV_KEYPRESS>" },
+    { sig = "keyReleaseEvent: key", doc = "Key released.", connector = "connect_event<QTF_EV_KEYRELEASE>" },
+    { sig = "resizeEvent: resize", doc = "Widget resized.", connector = "connect_event<QTF_EV_RESIZE>" },
+]
+
+[[class]]
+name = "QLabel"
+base = "QWidget"
+doc = "Displays text."
+ctor = "(text: string = '', parent: QWidget?) -- Create a label showing `text`."
+methods = [
+    "setText(text: string) -- Set the label text (plain or rich text).",
+    "text() -> string -- The label text.",
+    "setAlignment(alignment: Qt::Alignment) -- Align the text (a combination of Qt_Align* flags).",
+    "setWordWrap(on: bool) -- Wrap long text across lines.",
+]
+
+# ---------------------------------------------------------------------------
+# buttons
+
+[[class]]
+name = "QAbstractButton"
+base = "QWidget"
+doc = """
+Base of push buttons, check boxes and radio buttons.
+`clicked` carries no argument; use `toggled` for the checked state."""
+signals = [
+    "clicked: void -- The button was clicked.",
+    "toggled: bool -- The checked state changed.",
+    "pressed: void -- The button was pressed down.",
+    "released: void -- The button was released.",
+]
+methods = [
+    "setText(text: string) -- Set the button text (`&` marks the mnemonic).",
+    "text() -> string -- The button text.",
+    "setCheckable(checkable: bool) -- Make the button a toggle (or a plain push button).",
+    "isCheckable() -> bool -- True if the button is a toggle.",
+    "setChecked(checked: bool) -- Check or uncheck the button (emits toggled).",
+    "isChecked() -> bool -- True if the button is checked.",
+    "click() -- Simulate a click (emits pressed, released, clicked, and toggled if checkable).",
+    "toggle() -- Toggle the checked state (emits toggled).",
+]
+
+[[class]]
+name = "QPushButton"
+base = "QAbstractButton"
+doc = "A command button."
+ctor = "(text: string = '', parent: QWidget?) -- Create a push button with `text`."
+methods = [
+    "setDefault(default: bool) -- Make this the default button of its dialog (activated by Enter).",
+]
+
+[[class]]
+name = "QCheckBox"
+base = "QAbstractButton"
+doc = "A check box with a text label."
+ctor = "(text: string = '', parent: QWidget?) -- Create a check box with `text`."
+
+[[class]]
+name = "QRadioButton"
+base = "QAbstractButton"
+doc = "A radio button; radio buttons with the same parent are mutually exclusive."
+ctor = "(text: string = '', parent: QWidget?) -- Create a radio button with `text`."
+
+# ---------------------------------------------------------------------------
+# input widgets
+
+[[class]]
+name = "QLineEdit"
+base = "QWidget"
+doc = "A one-line text editor."
+ctor = "(text: string = '', parent: QWidget?) -- Create a line edit, optionally with initial `text`."
+signals = [
+    "textChanged: string -- The text changed (by the user or by `setText`).",
+    "textEdited: string -- The user edited the text (not emitted by `setText`).",
+    "returnPressed: void -- Return or Enter was pressed.",
+    "editingFinished: void -- Return was pressed or the line edit lost focus.",
+]
+methods = [
+    "setText(text: string) -- Set the text (emits textChanged, not textEdited).",
+    "text() -> string -- The current text.",
+    "setPlaceholderText(text: string) -- Set the grey hint shown while the line edit is empty.",
+    "placeholderText() -> string -- The placeholder text.",
+    "setReadOnly(readOnly: bool) -- Make the text read-only (or editable).",
+    "isReadOnly() -> bool -- True if the text is read-only.",
+    "setMaxLength(n: int) -- Limit the text to `n` characters (longer text is truncated).",
+    "maxLength() -> int -- The maximum text length.",
+    "clear() -- Clear the text.",
+]
+
+[[class]]
+name = "QSpinBox"
+base = "QWidget"
+doc = "An integer spin box."
+ctor = "(parent: QWidget?) -- Create a spin box (range 0..99)."
+signals = ["valueChanged: int -- The value changed."]
+methods = [
+    "setRange(minimum: int, maximum: int) -- Set the allowed range.",
+    "minimum() -> int -- The smallest allowed value.",
+    "maximum() -> int -- The largest allowed value.",
+    "setValue(value: int) -- Set the value (clamped to the range; emits valueChanged if it changes).",
+    "value() -> int -- The current value.",
+    "setSingleStep(step: int) -- Step used by the arrows and arrow keys.",
+    "singleStep() -> int -- Step used by the arrows and arrow keys.",
+    "setPrefix(prefix: string) -- Text shown before the value.",
+    "setSuffix(suffix: string) -- Text shown after the value, e.g. ' px'.",
+]
+
+[[class]]
+name = "QDoubleSpinBox"
+base = "QWidget"
+doc = "Spin box for real values (`real(c_double)`, i.e. real64)."
+ctor = "(parent: QWidget?) -- Create a spin box for real values (range 0..99.99)."
+signals = ["valueChanged: double -- The value changed."]
+methods = [
+    "setRange(minimum: double, maximum: double) -- Set the allowed range.",
+    "minimum() -> double -- The smallest allowed value.",
+    "maximum() -> double -- The largest allowed value.",
+    "setValue(value: double) -- Set the value (clamped to the range and rounded to `decimals`).",
+    "value() -> double -- The current value.",
+    "setSingleStep(step: double) -- Step used by the arrows and arrow keys.",
+    "singleStep() -> double -- Step used by the arrows and arrow keys.",
+    "setDecimals(decimals: int) -- Number of decimals shown (values are rounded to it).",
+    "decimals() -> int -- Number of decimals shown.",
+    "setPrefix(prefix: string) -- Text shown before the value.",
+    "setSuffix(suffix: string) -- Text shown after the value.",
+]
+
+[[class]]
+name = "QAbstractSlider"
+base = "QWidget"
+doc = "Base of sliders: an integer value within a range."
+signals = [
+    "valueChanged: int -- The value changed.",
+    "sliderMoved: int -- The user dragged the slider.",
+    "sliderPressed: void -- The user pressed the slider handle.",
+    "sliderReleased: void -- The user released the slider handle.",
+]
+methods = [
+    "setRange(minimum: int, maximum: int) -- Set the allowed range.",
+    "minimum() -> int -- The smallest allowed value.",
+    "maximum() -> int -- The largest allowed value.",
+    "setValue(value: int) -- Set the value (clamped to the range; emits valueChanged if it changes).",
+    "value() -> int -- The current value.",
+    "setSingleStep(step: int) -- Step used by the arrow keys.",
+    "setPageStep(step: int) -- Step used by Page Up/Down and clicks on the groove.",
+    "setOrientation(orientation: Qt::Orientation) -- Set the orientation (Qt_Horizontal or Qt_Vertical).",
+    "orientation() -> Qt::Orientation -- The orientation (Qt_Horizontal or Qt_Vertical).",
+]
+
+[[class]]
+name = "QSlider"
+base = "QAbstractSlider"
+doc = "A horizontal or vertical slider."
+ctor = "(orientation: Qt::Orientation = Qt_Vertical, parent: QWidget?) -- A slider; `orientation` is Qt_Horizontal or Qt_Vertical (default, as in Qt)."
+
+[[class]]
+name = "QComboBox"
+base = "QWidget"
+doc = "A drop-down list of items."
+ctor = "(parent: QWidget?) -- Create an empty combo box."
+signals = [
+    "currentIndexChanged: int -- The current item changed (0-based index; -1 if none).",
+    "currentTextChanged: string -- The current text changed.",
+    "activated: int -- The user chose an item (0-based index).",
+]
+methods = [
+    "addItem(text: string) -- Append an item.",
+    "insertItem(index: int, text: string) -- Insert an item before position `index` (0-based).",
+    "removeItem(index: int) -- Remove the item at `index` (0-based).",
+    "clear() -- Remove all items.",
+    "count() -> int -- Number of items.",
+    "currentIndex() -> int -- Index of the current item (0-based; -1 if none).",
+    "setCurrentIndex(index: int) -- Select the item at `index` (0-based).",
+    "currentText() -> string -- Text of the current item.",
+    "setCurrentText(text: string) -- Select the item with this text (or set the text, if editable).",
+    "itemText(index: int) -> string -- Text of the item at `index` (0-based).",
+    "findText(text: string) -> int -- Index of the item with this text (0-based; -1 if not found).",
+    "setEditable(editable: bool) -- Allow typing a value that is not in the list.",
+]
+fortran_bindings = "procedure :: addItems => qcombobox_addItems"
+fortran_procedures = """
+    !> Add several items; trailing blanks of each element are trimmed.
+    subroutine qcombobox_addItems(self, texts)
+        class(QComboBox), intent(in) :: self
+        character(len=*), intent(in) :: texts(:)
+        integer :: i
+        do i = 1, size(texts)
+            call self%addItem(trim(texts(i)))
+        end do
+    end subroutine qcombobox_addItems
+"""
+
+# ---------------------------------------------------------------------------
+# layouts
+
+[[class]]
+name = "QLayout"
+doc = """
+Base of all layouts. `addWidget` is defined per layout type, since box
+and grid layouts take different arguments."""
+methods = [
+    "setContentsMargins(left: int, top: int, right: int, bottom: int) -- Set the margins around the layout, in pixels.",
+    "setSpacing(spacing: int) -- Set the space between items, in pixels.",
+    "spacing() -> int -- The space between items, in pixels.",
+    "count() -> int -- Number of items (widgets, layouts, stretches) in the layout.",
+]
+
+[[class]]
+name = "QBoxLayout"
+base = "QLayout"
+doc = "Lines up widgets horizontally or vertically."
+methods = [
+    "addWidget(widget: QWidget, stretch: int = 0, alignment: Qt::Alignment = 0) -- Append a widget, with optional stretch factor and alignment.",
+    "addLayout(layout: QLayout, stretch: int = 0) -- Append a nested layout, with an optional stretch factor.",
+    "addStretch(stretch: int = 0) -- Append stretchable empty space.",
+    "addSpacing(size: int) -- Append fixed empty space of `size` pixels.",
+]
+
+[[class]]
+name = "QVBoxLayout"
+base = "QBoxLayout"
+doc = "Lines up widgets vertically."
+ctor = "(parent: QWidget?) -- A vertical box layout, installed on `parent` if given."
+
+[[class]]
+name = "QHBoxLayout"
+base = "QBoxLayout"
+doc = "Lines up widgets horizontally."
+ctor = "(parent: QWidget?) -- A horizontal box layout, installed on `parent` if given."
+
+[[class]]
+name = "QGridLayout"
+base = "QLayout"
+doc = "Lays out widgets in a grid."
+ctor = "(parent: QWidget?) -- A grid layout, installed on `parent` if given."
+methods = [
+    "addWidget(widget: QWidget, row: int, column: int, rowSpan: int = 1, columnSpan: int = 1, alignment: Qt::Alignment = 0) -- Add a widget at (row, column), both 0-based, optionally spanning cells.",
+    "addLayout(layout: QLayout, row: int, column: int, rowSpan: int = 1, columnSpan: int = 1, alignment: Qt::Alignment = 0) -- Add a nested layout at (row, column), both 0-based, optionally spanning cells.",
+    "setRowStretch(row: int, stretch: int) -- Set the stretch factor of `row` (0-based).",
+    "setColumnStretch(column: int, stretch: int) -- Set the stretch factor of `column` (0-based).",
+    "rowCount() -> int -- Number of rows.",
+    "columnCount() -> int -- Number of columns.",
+]
+
+# ---------------------------------------------------------------------------
+# main window, menus, tool bars
+
+[[class]]
+name = "QStatusBar"
+base = "QWidget"
+doc = "The status bar at the bottom of a main window."
+methods = [
+    "showMessage(message: string, timeout: int = 0) -- Show a message; it is cleared after `timeout` ms (default 0: stays).",
+    "clearMessage() -- Remove the current message.",
+    "currentMessage() -> string -- The message currently shown.",
+]
+
+[[class]]
+name = "QMainWindow"
+base = "QWidget"
+doc = "An application main window: menu bar, tool bars, central widget and status bar."
+ctor = "(parent: QWidget?) -- Create a main window."
+methods = [
+    "setCentralWidget(widget: QWidget) -- Set the central widget (the window takes ownership).",
+    "centralWidget() -> QWidget -- The central widget (a null handle if there is none).",
+    "statusBar() -> QStatusBar -- The window's status bar (created on first use).",
+    "menuBar() -> QMenuBar -- The window's menu bar (created on first use).",
+    "addToolBar(title: string) -> QToolBar -- Create a tool bar with the given title and add it to the window.",
+]
+
+[[class]]
+name = "QMenu"
+base = "QWidget"
+doc = "A menu. Add actions with the inherited `addAction`."
+ctor = "(title: string, parent: QWidget?) -- A stand-alone menu (e.g. a context menu)."
+methods = [
+    "addMenu(title: string) -> QMenu -- Create a submenu with the given title and append it.",
+    "addSeparator() -- Append a separator line.",
+    "title() -> string -- The menu title.",
+    "menuAction() -> QAction -- The action that represents this menu in its parent menu or menu bar.",
+]
+
+[[class]]
+name = "QMenuBar"
+base = "QWidget"
+doc = "A horizontal menu bar."
+methods = [
+    "addMenu(title: string) -> QMenu -- Create a menu with the given title (e.g. '&File') and append it.",
+]
+
+[[class]]
+name = "QToolBar"
+base = "QWidget"
+doc = "A tool bar. Add actions with the inherited `addAction`."
+methods = [
+    "addSeparator() -- Append a separator.",
+    "addWidget(widget: QWidget) -- Append a widget (e.g. a combo box) to the tool bar.",
+]
+
+# ---------------------------------------------------------------------------
+# dialogs
+
+[[class]]
+name = "QDialog"
+base = "QWidget"
+doc = "Base of dialog windows."
+ctor = "(parent: QWidget?) -- Create a dialog."
+signals = [
+    "accepted: void -- The dialog was accepted.",
+    "rejected: void -- The dialog was rejected.",
+    "finished: int -- The dialog closed with this result code.",
+]
+methods = [
+    "exec() -> int -- Show as a modal dialog and block until closed; returns the result code.",
+    "open() -- Show as a window-modal dialog and return immediately.",
+    "accept() -- Close with result QDialog_Accepted (emits accepted and finished).",
+    "reject() -- Close with result QDialog_Rejected (emits rejected and finished).",
+    "done(r: int) -- Close with result code `r` (emits finished).",
+    "result() -> int -- The result code set by `accept`, `reject` or `done`.",
+    "setModal(modal: bool) -- Make the dialog modal when shown with `show`.",
+]
+
+[[class]]
+name = "QMessageBox"
+base = "QDialog"
+doc = "A modal dialog showing a message and standard buttons."
+ctor = "(parent: QWidget?) -- Create a message box."
+methods = [
+    "setText(text: string) -- Set the main message.",
+    "text() -> string -- The main message.",
+    "setInformativeText(text: string) -- Set secondary text shown below the message.",
+    "informativeText() -> string -- The secondary text.",
+    "setIcon(icon: QMessageBox::Icon) -- Set the icon (a QMessageBox_Icon_* constant).",
+    "setStandardButtons(buttons: QMessageBox::StandardButtons) -- Set the buttons, e.g. ior(QMessageBox_Yes, QMessageBox_No).",
+    "setDefaultButton(button: QMessageBox::StandardButton) -- Set the button activated by Enter (a QMessageBox_* standard button).",
+    "button(which: QMessageBox::StandardButton) -> QAbstractButton -- The button widget for a standard button (null if not present).",
+    { sig = "static information(title: string, text: string, buttons: QMessageBox::StandardButtons = QMessageBox_Ok, defaultButton: QMessageBox::StandardButton = QMessageBox_NoButton, parent: QWidget?) -> int", cpp = "QMessageBox::information({parent}, {title}, {text}, {buttons}, {defaultButton})", doc = "Modal information box; returns the standard button clicked." },
+    { sig = "static warning(title: string, text: string, buttons: QMessageBox::StandardButtons = QMessageBox_Ok, defaultButton: QMessageBox::StandardButton = QMessageBox_NoButton, parent: QWidget?) -> int", cpp = "QMessageBox::warning({parent}, {title}, {text}, {buttons}, {defaultButton})", doc = "Modal warning box; returns the standard button clicked." },
+    { sig = "static critical(title: string, text: string, buttons: QMessageBox::StandardButtons = QMessageBox_Ok, defaultButton: QMessageBox::StandardButton = QMessageBox_NoButton, parent: QWidget?) -> int", cpp = "QMessageBox::critical({parent}, {title}, {text}, {buttons}, {defaultButton})", doc = "Modal critical-error box; returns the standard button clicked." },
+    { sig = "static question(title: string, text: string, buttons: QMessageBox::StandardButtons = ior(QMessageBox_Yes, QMessageBox_No), defaultButton: QMessageBox::StandardButton = QMessageBox_NoButton, parent: QWidget?) -> int", cpp = "QMessageBox::question({parent}, {title}, {text}, {buttons}, {defaultButton})", doc = "Modal question box (default buttons Yes|No); returns the standard button clicked." },
+]
+
+[[class]]
+name = "QFileDialog"
+base = "QDialog"
+doc = "A dialog to choose files or directories."
+ctor = "(caption: string = '', directory: string = '', filter: string = '', parent: QWidget?) -- A file dialog (configure, then `exec`)."
+cpp_ctor = "new QFileDialog({parent}, {caption}, {directory}, {filter})"
+methods = [
+    "setFileMode(mode: QFileDialog::FileMode) -- What may be selected (QFileDialog_AnyFile, _ExistingFile, _Directory, _ExistingFiles).",
+    "setAcceptMode(mode: QFileDialog::AcceptMode) -- Open (QFileDialog_AcceptOpen) or save (QFileDialog_AcceptSave) mode.",
+    "setOption(option: QFileDialog::Option, on: bool = .true.) -- Enable (default) or disable a QFileDialog_* option.",
+    "setNameFilter(filter: string) -- Set the file name filter, e.g. 'Images (*.png *.jpg)'.",
+    "setDirectory(directory: string) -- Set the directory shown.",
+    "setDefaultSuffix(suffix: string) -- Suffix added to file names typed without one (e.g. 'png').",
+    "selectFile(filename: string) -- Preselect a file name (relative to the directory, or absolute).",
+    "selectedFiles() -> strings -- The selected files (absolute paths); `files(i)%s` is the i-th name.",
+    { sig = "static getOpenFileName(caption: string = '', dir: string = '', filter: string = '', parent: QWidget?, options: QFileDialog::Options = 0) -> string", cpp = "QFileDialog::getOpenFileName({parent}, {caption}, {dir}, {filter}, nullptr, {options})", doc = "Modal \"open file\" dialog; returns the chosen path, or '' if cancelled." },
+    { sig = "static getOpenFileNames(caption: string = '', dir: string = '', filter: string = '', parent: QWidget?, options: QFileDialog::Options = 0) -> strings", cpp = "QFileDialog::getOpenFileNames({parent}, {caption}, {dir}, {filter}, nullptr, {options})", doc = "Modal \"open files\" dialog; returns the chosen paths (empty if cancelled)." },
+    { sig = "static getSaveFileName(caption: string = '', dir: string = '', filter: string = '', parent: QWidget?, options: QFileDialog::Options = 0) -> string", cpp = "QFileDialog::getSaveFileName({parent}, {caption}, {dir}, {filter}, nullptr, {options})", doc = "Modal \"save file\" dialog; returns the chosen path, or '' if cancelled." },
+    { sig = "static getExistingDirectory(caption: string = '', dir: string = '', parent: QWidget?, options: QFileDialog::Options = QFileDialog_ShowDirsOnly) -> string", cpp = "QFileDialog::getExistingDirectory({parent}, {caption}, {dir}, {options})", doc = "Modal directory chooser; returns the chosen directory, or '' if cancelled." },
+]

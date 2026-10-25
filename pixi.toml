@@ -26,6 +26,6 @@ clangxx = "*"
 build = "python tools/fpm_qt.py build"
 test = { cmd = "python tools/fpm_qt.py test", env = { QT_QPA_PLATFORM = "offscreen" } }
 example = "python tools/fpm_qt.py run --example"
-gen = "python tools/gen_c_interfaces.py"
-gen-check = "python tools/gen_c_interfaces.py --check"
+gen = "python tools/gen_bindings.py && python tools/gen_c_interfaces.py"
+gen-check = "python tools/gen_bindings.py --check && python tools/gen_c_interfaces.py --check"
 lint = "python tools/check_fortran.py"

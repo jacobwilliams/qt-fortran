@@ -1,0 +1,682 @@
+# Bindings for Qt Gui. `pixi run gen` turns this into shim/qtf_gui.cpp and
+# src/gui/qt_gui.f90 (see tools/gen_bindings.py for the format). The value
+# types (QColor, QPen, QBrush, QFont) are hand-written in src/gui/qt_gui_types.f90.
+
+module = "gui"
+signal_base = 2000
+doc = """
+Qt Gui: painting, images, input events and actions.
+
+The value types QColor, QPen, QBrush and QFont live in qt_gui_types.
+Images, pixmaps and painters created from Fortran hold C++ objects and must be
+released with `delete` / `end`.
+"""
+uses = [
+    "use qt_c_util",
+    "use qt_c_gui",
+    "use qt_core",
+    "use qt_gui_types",
+]
+cpp_includes = [
+    "QAction", "QFontMetrics", "QImage", "QKeyEvent", "QKeySequence", "QMouseEvent", "QPainter",
+    "QPixmap", "QPolygonF", "QResizeEvent", "QWheelEvent",
+]
+
+cpp_prelude = """
+// Parse a color name ("red", "#ff8000", ...); returns 0 if invalid.
+QTF_API int qtf_qcolor_fromString(const char *s, int len, int *r, int *g, int *b, int *a) {
+    const QColor c = QColor::fromString(qtf_qstring(s, len));
+    c.getRgb(r, g, b, a);
+    return qtf_bool(c.isValid());
+}
+
+static QPen qtf_pen(const QColor &color, double width, int style) {
+    QPen pen(color);
+    pen.setWidthF(width);
+    pen.setStyle(Qt::PenStyle(style));
+    return pen;
+}
+
+static QPolygonF qtf_polygon(const double *xs, const double *ys, int n) {
+    QPolygonF poly;
+    poly.reserve(n);
+    for (int i = 0; i < n; ++i) poly << QPointF(xs[i], ys[i]);
+    return poly;
+}
+"""
+
+# ---------------------------------------------------------------------------
+# event / painter signals (used by QtfWidget): verbatim
+
+fortran_decls_after = '''
+    abstract interface
+        !> Slot for paint requests: draw with `painter` (do not end it).
+        subroutine qt_slot_painter(painter, data)
+            import :: QPainter
+            implicit none
+            type(QPainter), intent(inout) :: painter
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_painter
+        !> Slot for mouse events.
+        subroutine qt_slot_mouse_event(event, data)
+            import :: QMouseEvent
+            implicit none
+            type(QMouseEvent), intent(in) :: event
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_mouse_event
+        !> Slot for key events.
+        subroutine qt_slot_key_event(event, data)
+            import :: QKeyEvent
+            implicit none
+            type(QKeyEvent), intent(in) :: event
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_key_event
+        !> Slot for wheel events.
+        subroutine qt_slot_wheel_event(event, data)
+            import :: QWheelEvent
+            implicit none
+            type(QWheelEvent), intent(in) :: event
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_wheel_event
+        !> Slot for resize events.
+        subroutine qt_slot_resize_event(event, data)
+            import :: QResizeEvent
+            implicit none
+            type(QResizeEvent), intent(in) :: event
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_resize_event
+    end interface
+    public :: qt_slot_painter, qt_slot_mouse_event, qt_slot_key_event
+    public :: qt_slot_wheel_event, qt_slot_resize_event
+
+    !> Paint request: slots receive an active painter (do not `end` it).
+    type, public :: QSignalPainter
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignalpainter_connect
+    end type QSignalPainter
+
+    !> A signal carrying a mouse event.
+    type, public :: QSignalMouseEvent
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignalmouseevent_connect
+    end type QSignalMouseEvent
+
+    !> A signal carrying a key event.
+    type, public :: QSignalKeyEvent
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignalkeyevent_connect
+    end type QSignalKeyEvent
+
+    !> A signal carrying a wheel event.
+    type, public :: QSignalWheelEvent
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignalwheelevent_connect
+    end type QSignalWheelEvent
+
+    !> A signal carrying a resize event.
+    type, public :: QSignalResizeEvent
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignalresizeevent_connect
+    end type QSignalResizeEvent
+
+    !> Slot handler for QSignalPainter.
+    type, extends(qt_slot_handler) :: painter_handler
+        procedure(qt_slot_painter), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => painter_handler_invoke
+    end type painter_handler
+
+    !> Slot handler for QSignalMouseEvent.
+    type, extends(qt_slot_handler) :: mouse_handler
+        procedure(qt_slot_mouse_event), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => mouse_handler_invoke
+    end type mouse_handler
+
+    !> Slot handler for QSignalKeyEvent.
+    type, extends(qt_slot_handler) :: key_handler
+        procedure(qt_slot_key_event), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => key_handler_invoke
+    end type key_handler
+
+    !> Slot handler for QSignalWheelEvent.
+    type, extends(qt_slot_handler) :: wheel_handler
+        procedure(qt_slot_wheel_event), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => wheel_handler_invoke
+    end type wheel_handler
+
+    !> Slot handler for QSignalResizeEvent.
+    type, extends(qt_slot_handler) :: resize_handler
+        procedure(qt_slot_resize_event), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => resize_handler_invoke
+    end type resize_handler
+'''
+
+fortran_procedures = '''
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalpainter_connect(self, slot, data)
+        class(QSignalPainter), intent(in) :: self
+        procedure(qt_slot_painter) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(painter_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self%sender, self%id, h, data)
+    end subroutine qsignalpainter_connect
+
+    !> Call the slot with the raw pointer wrapped as a QPainter (borrowed: not ended by Fortran).
+    subroutine painter_handler_invoke(self, args, data)
+        class(painter_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QPainter) :: p
+        p%ptr = args%p    ! borrowed: not owned, so `end` will not delete it
+        if (associated(data)) then
+            call self%f(p, data)
+        else
+            call self%f(p)
+        end if
+    end subroutine painter_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalmouseevent_connect(self, slot, data)
+        class(QSignalMouseEvent), intent(in) :: self
+        procedure(qt_slot_mouse_event) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(mouse_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self%sender, self%id, h, data)
+    end subroutine qsignalmouseevent_connect
+
+    !> Call the slot with the raw pointer wrapped as a QMouseEvent.
+    subroutine mouse_handler_invoke(self, args, data)
+        class(mouse_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QMouseEvent) :: e
+        e%ptr = args%p
+        if (associated(data)) then
+            call self%f(e, data)
+        else
+            call self%f(e)
+        end if
+    end subroutine mouse_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalkeyevent_connect(self, slot, data)
+        class(QSignalKeyEvent), intent(in) :: self
+        procedure(qt_slot_key_event) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(key_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self%sender, self%id, h, data)
+    end subroutine qsignalkeyevent_connect
+
+    !> Call the slot with the raw pointer wrapped as a QKeyEvent.
+    subroutine key_handler_invoke(self, args, data)
+        class(key_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QKeyEvent) :: e
+        e%ptr = args%p
+        if (associated(data)) then
+            call self%f(e, data)
+        else
+            call self%f(e)
+        end if
+    end subroutine key_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalwheelevent_connect(self, slot, data)
+        class(QSignalWheelEvent), intent(in) :: self
+        procedure(qt_slot_wheel_event) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(wheel_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self%sender, self%id, h, data)
+    end subroutine qsignalwheelevent_connect
+
+    !> Call the slot with the raw pointer wrapped as a QWheelEvent.
+    subroutine wheel_handler_invoke(self, args, data)
+        class(wheel_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QWheelEvent) :: e
+        e%ptr = args%p
+        if (associated(data)) then
+            call self%f(e, data)
+        else
+            call self%f(e)
+        end if
+    end subroutine wheel_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalresizeevent_connect(self, slot, data)
+        class(QSignalResizeEvent), intent(in) :: self
+        procedure(qt_slot_resize_event) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(resize_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self%sender, self%id, h, data)
+    end subroutine qsignalresizeevent_connect
+
+    !> Call the slot with the raw pointer wrapped as a QResizeEvent.
+    subroutine resize_handler_invoke(self, args, data)
+        class(resize_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QResizeEvent) :: e
+        e%ptr = args%p
+        if (associated(data)) then
+            call self%f(e, data)
+        else
+            call self%f(e)
+        end if
+    end subroutine resize_handler_invoke
+'''
+
+# Fortran value types (qt_gui_types) passed to C++ field by field
+[value_types.QColor]
+fields = ["r: int", "g: int", "b: int", "a: int"]
+cpp = "QColor({r}, {g}, {b}, {a})"
+
+[value_types.QPen]
+fields = ["color: QColor", "width: double", "style: int"]
+cpp = "qtf_pen({color}, {width}, {style})"
+
+[value_types.QBrush]
+fields = ["color: QColor", "style: int"]
+cpp = "QBrush({color}, Qt::BrushStyle({style}))"
+
+# ---------------------------------------------------------------------------
+# enums
+
+[[enum]]
+doc = "QPainter::RenderHint"
+values = [
+    "QPainter_Antialiasing = 1",
+    "QPainter_TextAntialiasing = 2",
+    "QPainter_SmoothPixmapTransform = 4",
+]
+
+[[enum]]
+doc = "Qt::MouseButton"
+values = ["Qt_NoButton = 0", "Qt_LeftButton = 1", "Qt_RightButton = 2", "Qt_MiddleButton = 4"]
+
+[[enum]]
+doc = "Qt::KeyboardModifier"
+values = [
+    "Qt_NoModifier = 0",
+    "Qt_ShiftModifier = 0x02000000",
+    "Qt_ControlModifier = 0x04000000",
+    "Qt_AltModifier = 0x08000000",
+    "Qt_MetaModifier = 0x10000000",
+    "Qt_KeypadModifier = 0x20000000",
+]
+
+[[enum]]
+doc = "Qt::Key (subset)"
+values = [
+    "Qt_Key_Escape = 0x01000000",
+    "Qt_Key_Tab = 0x01000001",
+    "Qt_Key_Backspace = 0x01000003",
+    "Qt_Key_Return = 0x01000004",
+    "Qt_Key_Enter = 0x01000005",
+    "Qt_Key_Delete = 0x01000007",
+    "Qt_Key_Home = 0x01000010",
+    "Qt_Key_End = 0x01000011",
+    "Qt_Key_Left = 0x01000012",
+    "Qt_Key_Up = 0x01000013",
+    "Qt_Key_Right = 0x01000014",
+    "Qt_Key_Down = 0x01000015",
+    "Qt_Key_PageUp = 0x01000016",
+    "Qt_Key_PageDown = 0x01000017",
+    "Qt_Key_Space = 32",
+    "Qt_Key_Plus = 43",
+    "Qt_Key_Minus = 45",
+    "Qt_Key_A = 65",
+    "Qt_Key_B = 66",
+    "Qt_Key_C = 67",
+    "Qt_Key_D = 68",
+    "Qt_Key_E = 69",
+    "Qt_Key_F = 70",
+    "Qt_Key_G = 71",
+    "Qt_Key_H = 72",
+    "Qt_Key_I = 73",
+    "Qt_Key_J = 74",
+    "Qt_Key_K = 75",
+    "Qt_Key_L = 76",
+    "Qt_Key_M = 77",
+    "Qt_Key_N = 78",
+    "Qt_Key_O = 79",
+    "Qt_Key_P = 80",
+    "Qt_Key_Q = 81",
+    "Qt_Key_R = 82",
+    "Qt_Key_S = 83",
+    "Qt_Key_T = 84",
+    "Qt_Key_U = 85",
+    "Qt_Key_V = 86",
+    "Qt_Key_W = 87",
+    "Qt_Key_X = 88",
+    "Qt_Key_Y = 89",
+    "Qt_Key_Z = 90",
+    "Qt_Key_0 = 48",
+    "Qt_Key_1 = 49",
+    "Qt_Key_2 = 50",
+    "Qt_Key_3 = 51",
+    "Qt_Key_4 = 52",
+    "Qt_Key_5 = 53",
+    "Qt_Key_6 = 54",
+    "Qt_Key_7 = 55",
+    "Qt_Key_8 = 56",
+    "Qt_Key_9 = 57",
+    "Qt_Key_F1 = 0x01000030",
+    "Qt_Key_F2 = 0x01000031",
+    "Qt_Key_F3 = 0x01000032",
+    "Qt_Key_F4 = 0x01000033",
+    "Qt_Key_F5 = 0x01000034",
+    "Qt_Key_F6 = 0x01000035",
+    "Qt_Key_F7 = 0x01000036",
+    "Qt_Key_F8 = 0x01000037",
+    "Qt_Key_F9 = 0x01000038",
+    "Qt_Key_F10 = 0x01000039",
+    "Qt_Key_F11 = 0x0100003A",
+    "Qt_Key_F12 = 0x0100003B",
+]
+
+# ---------------------------------------------------------------------------
+# images
+
+[[class]]
+name = "QImage"
+handle = true
+doc = "An image in memory (a C++ QImage); release it with `delete`."
+ctors = [
+    { sig = "(width: int, height: int)", name = "new", cpp = "new QImage({width}, {height}, QImage::Format_ARGB32_Premultiplied)", doc = "A new, uninitialized ARGB32 image; `fill` it before use." },
+    { sig = "(fileName: string)", name = "fromFile", doc = "Load an image file; check `isNull()` for failure." },
+]
+methods = [
+    "width() -> int -- Width in pixels.",
+    "height() -> int -- Height in pixels.",
+    "fill(color: QColor) -- Fill the whole image with `color`.",
+    "setPixelColor(x: int, y: int, color: QColor) -- Set pixel (x, y), 0-based, to `color`.",
+    "save(fileName: string) -> bool -- Save to a file; the format follows the extension (.png, .jpg, ...).",
+]
+cpp = '''
+// Release an image.
+QTF_API void qtf_qimage_delete(void *self) { delete as<QImage>(self); }
+
+// True if the image has no data.
+QTF_API int qtf_qimage_isNull(void *self) { return qtf_bool(as<QImage>(self)->isNull()); }
+
+// The color of pixel (x, y) as RGBA components.
+QTF_API void qtf_qimage_pixelColor(void *self, int x, int y, int *r, int *g, int *b, int *a) {
+    as<QImage>(self)->pixelColor(x, y).getRgb(r, g, b, a);
+}
+'''
+fortran_bindings = '''
+procedure :: delete => qimage_delete
+procedure :: isNull => qimage_isNull
+procedure :: pixelColor => qimage_pixelColor
+'''
+fortran_procedures = '''
+    !> Release the image.
+    subroutine qimage_delete(self)
+        class(QImage), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qimage_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qimage_delete
+
+    !> True if there is no image data (e.g. after a failed load).
+    logical function qimage_isNull(self)
+        class(QImage), intent(in) :: self
+        qimage_isNull = .true.
+        if (c_associated(self%ptr)) qimage_isNull = qtf_logical(qtf_qimage_isNull(self%ptr))
+    end function qimage_isNull
+
+    !> The color of pixel (x, y), 0-based.
+    function qimage_pixelColor(self, x, y) result(c)
+        class(QImage), intent(in) :: self
+        integer, intent(in) :: x, y
+        type(QColor) :: c
+        integer(c_int) :: r, g, b, a
+        call qtf_qimage_pixelColor(self%ptr, int(x, c_int), int(y, c_int), r, g, b, a)
+        c = QColor(r, g, b, a)
+    end function qimage_pixelColor
+'''
+
+[[class]]
+name = "QPixmap"
+handle = true
+doc = "An image for on-screen display (e.g. from `QWidget%grab`); release it with `delete`."
+methods = [
+    "width() -> int -- Width in pixels.",
+    "height() -> int -- Height in pixels.",
+    { sig = "toImage() -> QImage", cpp = "new QImage({self}->toImage())", doc = "A new image with the pixmap's contents (delete it when done)." },
+    "save(fileName: string) -> bool -- Save to a file; the format follows the extension (.png, .jpg, ...).",
+]
+cpp = '''
+// Release a pixmap.
+QTF_API void qtf_qpixmap_delete(void *self) { delete as<QPixmap>(self); }
+
+// True if the pixmap has no data.
+QTF_API int qtf_qpixmap_isNull(void *self) { return qtf_bool(as<QPixmap>(self)->isNull()); }
+'''
+fortran_bindings = '''
+procedure :: delete => qpixmap_delete
+procedure :: isNull => qpixmap_isNull
+'''
+fortran_procedures = '''
+    !> Release the pixmap.
+    subroutine qpixmap_delete(self)
+        class(QPixmap), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qpixmap_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qpixmap_delete
+
+    !> True if there is no pixmap data.
+    logical function qpixmap_isNull(self)
+        class(QPixmap), intent(in) :: self
+        qpixmap_isNull = .true.
+        if (c_associated(self%ptr)) qpixmap_isNull = qtf_logical(qtf_qpixmap_isNull(self%ptr))
+    end function qpixmap_isNull
+'''
+
+# ---------------------------------------------------------------------------
+# QPainter
+
+[[class]]
+name = "QPainter"
+handle = true
+doc = """
+Draws on an image, or on a QtfWidget inside its paintEvent slot.
+Coordinates may be integers or `real(c_double)`."""
+fortran_components = "logical :: owned = .false.   !! created from Fortran: `end` deletes it"
+ctor = "(image: QImage) -- Begin painting on `image`; call `end` when done."
+ctor_post = "res%owned = .true."
+methods = [
+    { sig = "deviceWidth() -> int", cpp = "{self}->device()->width()", doc = "Width of the device being painted (widget or image)." },
+    { sig = "deviceHeight() -> int", cpp = "{self}->device()->height()", doc = "Height of the device being painted (widget or image)." },
+    "setPen(pen: QPen) -- Set the pen used for lines, outlines and text.",
+    { sig = "setPenColor(color: QColor)", fortran_name = "setPen", cpp = "{self}->setPen({color})", doc = "Use a solid 1-pixel pen of `color`." },
+    "setBrush(brush: QBrush) -- Set the brush used to fill shapes.",
+    { sig = "setBrushColor(color: QColor)", fortran_name = "setBrush", cpp = "{self}->setBrush({color})", doc = "Fill shapes with a solid `color`." },
+    "setRenderHint(hint: QPainter::RenderHint, on: bool = .true.) -- Enable (default) or disable a QPainter_* render hint.",
+    "setOpacity(opacity: double) -- Set the opacity (0 transparent .. 1 opaque).",
+    "save() -- Push the painter state (pen, brush, font, transform) on a stack.",
+    "restore() -- Pop the painter state saved by `save`.",
+    "translate(dx: num, dy: num) -- Move the coordinate origin by (dx, dy).",
+    "scale(sx: double, sy: double) -- Scale the coordinate system by (sx, sy).",
+    "rotate(degrees: double) -- Rotate the coordinate system clockwise by `degrees`.",
+    "resetTransform() -- Reset the coordinate transform to the identity.",
+    { sig = "drawPoint(x: num, y: num)", cpp = "{self}->drawPoint(QPointF({x}, {y}))", doc = "Draw a point with the pen." },
+    { sig = "drawLine(x1: num, y1: num, x2: num, y2: num)", cpp = "{self}->drawLine(QPointF({x1}, {y1}), QPointF({x2}, {y2}))", doc = "Draw a line from (x1, y1) to (x2, y2)." },
+    { sig = "drawRect(x: num, y: num, w: num, h: num)", cpp = "{self}->drawRect(QRectF({x}, {y}, {w}, {h}))", doc = "Draw a rectangle: outlined with the pen, filled with the brush." },
+    { sig = "drawRoundedRect(x: num, y: num, w: num, h: num, rx: num, ry: num)", cpp = "{self}->drawRoundedRect(QRectF({x}, {y}, {w}, {h}), {rx}, {ry})", doc = "Draw a rectangle with corners rounded by radii (rx, ry)." },
+    { sig = "drawEllipse(x: num, y: num, w: num, h: num)", cpp = "{self}->drawEllipse(QRectF({x}, {y}, {w}, {h}))", doc = "Draw the ellipse inscribed in the rectangle (x, y, w, h)." },
+    { sig = "fillRect(x: num, y: num, w: num, h: num, color: QColor)", cpp = "{self}->fillRect(QRectF({x}, {y}, {w}, {h}), {color})", doc = "Fill a rectangle with `color` (ignores pen and brush)." },
+    { sig = "drawPolyline(x: num[], y: num[])", cpp = "{self}->drawPolyline(qtf_polygon({x}, {y}, {n}))", doc = "Draw connected line segments through the points (x(i), y(i))." },
+    { sig = "drawPolygon(x: num[], y: num[])", cpp = "{self}->drawPolygon(qtf_polygon({x}, {y}, {n}))", doc = "Draw a closed polygon through the points (x(i), y(i)), filled with the brush." },
+    { sig = "drawText(x: num, y: num, text: string)", cpp = "{self}->drawText(QPointF({x}, {y}), {text})", doc = "Draw text with its baseline starting at (x, y)." },
+    { sig = "drawTextRect(x: num, y: num, w: num, h: num, flags: int, text: string)", fortran_name = "drawText", cpp = "{self}->drawText(QRectF({x}, {y}, {w}, {h}), {flags}, {text})", doc = "Draw text inside a rectangle, aligned by `flags` (e.g. Qt_AlignCenter)." },
+    { sig = "drawImage(x: int, y: int, image: QImage)", cpp = "{self}->drawImage(QPointF({x}, {y}), *{image})", doc = "Draw `image` with its top-left corner at (x, y)." },
+    { sig = "textWidth(text: string) -> int", cpp = "{self}->fontMetrics().horizontalAdvance({text})", doc = "Width in pixels of `text` in the current font." },
+    { sig = "fontHeight() -> int", cpp = "{self}->fontMetrics().height()", doc = "Line height in pixels of the current font." },
+]
+cpp = '''
+// End and delete a painter created by a qtf_qpainter constructor.
+QTF_API void qtf_qpainter_delete(void *self) {
+    as<QPainter>(self)->end();
+    delete as<QPainter>(self);
+}
+
+// True while the painter is active.
+QTF_API int qtf_qpainter_isActive(void *self) { return qtf_bool(as<QPainter>(self)->isActive()); }
+
+// Set the font; pointSize <= 0 and an empty family keep the current values.
+QTF_API void qtf_qpainter_setFont(void *self, const char *family, int len, double pointSize, int bold, int italic) {
+    QFont f = as<QPainter>(self)->font();
+    if (len > 0) f.setFamily(qtf_qstring(family, len));
+    if (pointSize > 0) f.setPointSizeF(pointSize);
+    f.setBold(bold != 0);
+    f.setItalic(italic != 0);
+    as<QPainter>(self)->setFont(f);
+}
+'''
+fortran_bindings = '''
+procedure :: end => qpainter_end
+procedure :: isActive => qpainter_isActive
+procedure :: setFont => qpainter_setFont
+'''
+fortran_procedures = '''
+    !> Finish painting. Only painters created from Fortran are ended; a painter
+    !> received in a paint slot is ended by Qt after the slot returns.
+    subroutine qpainter_end(self)
+        class(QPainter), intent(inout) :: self
+        if (self%owned .and. c_associated(self%ptr)) call qtf_qpainter_delete(self%ptr)
+        self%ptr = c_null_ptr
+        self%owned = .false.
+    end subroutine qpainter_end
+
+    !> True while the painter is painting (between begin and end).
+    logical function qpainter_isActive(self)
+        class(QPainter), intent(in) :: self
+        qpainter_isActive = .false.
+        if (c_associated(self%ptr)) qpainter_isActive = qtf_logical(qtf_qpainter_isActive(self%ptr))
+    end function qpainter_isActive
+
+    !> Set the font used for text.
+    subroutine qpainter_setFont(self, font)
+        class(QPainter), intent(in) :: self
+        type(QFont), intent(in) :: font
+        if (allocated(font%family)) then
+            call qtf_qpainter_setFont(self%ptr, font%family, len(font%family, c_int), font%pointSize, &
+                                      qtf_int(font%bold), qtf_int(font%italic))
+        else
+            call qtf_qpainter_setFont(self%ptr, '', 0_c_int, font%pointSize, qtf_int(font%bold), &
+                                      qtf_int(font%italic))
+        end if
+    end subroutine qpainter_setFont
+'''
+
+# ---------------------------------------------------------------------------
+# input events (construction is for sending synthetic events, e.g. in tests)
+
+[[class]]
+name = "QMouseEvent"
+base = "QEvent"
+handle = true
+doc = "A mouse press, release, move or double-click event."
+ctor = "(type: QEvent::Type, x: double, y: double, button: Qt::MouseButton, buttons: Qt::MouseButtons = button, modifiers: Qt::KeyboardModifiers = Qt_NoModifier) -- A synthetic mouse event (e.g. for QCoreApplication_sendEvent); delete it after use."
+cpp_ctor = "new QMouseEvent({type}, QPointF({x}, {y}), QPointF({x}, {y}), {button}, {buttons}, {modifiers})"
+methods = [
+    { sig = "x() -> double", cpp = "{self}->position().x()", doc = "Horizontal position in widget coordinates." },
+    { sig = "y() -> double", cpp = "{self}->position().y()", doc = "Vertical position in widget coordinates." },
+    "button() -> Qt::MouseButton -- The button that caused the event (Qt_NoButton for moves).",
+    "buttons() -> Qt::MouseButtons -- All buttons held during the event (a combination of Qt_*Button).",
+    "modifiers() -> Qt::KeyboardModifiers -- Keyboard modifiers held (a combination of Qt_*Modifier).",
+]
+
+[[class]]
+name = "QKeyEvent"
+base = "QEvent"
+handle = true
+doc = "A key press or release event."
+ctor = "(type: QEvent::Type, key: int, modifiers: Qt::KeyboardModifiers = Qt_NoModifier, text: string = '') -- A synthetic key event; delete it after use."
+methods = [
+    "key() -> int -- The key code (a Qt_Key_* constant).",
+    "modifiers() -> Qt::KeyboardModifiers -- Keyboard modifiers held (a combination of Qt_*Modifier).",
+    "text() -> string -- The text the key produced (may be empty, e.g. for arrow keys).",
+    "isAutoRepeat() -> bool -- True if the event was generated by holding the key down.",
+]
+
+[[class]]
+name = "QWheelEvent"
+base = "QEvent"
+handle = true
+doc = "Wheel event; `angleDeltaY()` is +/-120 per standard wheel notch."
+ctor = "(x: double, y: double, angleDeltaX: int, angleDeltaY: int, buttons: Qt::MouseButtons = Qt_NoButton, modifiers: Qt::KeyboardModifiers = Qt_NoModifier) -- A synthetic wheel event; delete it after use."
+cpp_ctor = "new QWheelEvent(QPointF({x}, {y}), QPointF({x}, {y}), QPoint(), QPoint({angleDeltaX}, {angleDeltaY}), {buttons}, {modifiers}, Qt::NoScrollPhase, false)"
+methods = [
+    { sig = "x() -> double", cpp = "{self}->position().x()", doc = "Horizontal cursor position in widget coordinates." },
+    { sig = "y() -> double", cpp = "{self}->position().y()", doc = "Vertical cursor position in widget coordinates." },
+    { sig = "angleDeltaX() -> int", cpp = "{self}->angleDelta().x()", doc = "Horizontal wheel rotation in eighths of a degree." },
+    { sig = "angleDeltaY() -> int", cpp = "{self}->angleDelta().y()", doc = "Vertical wheel rotation in eighths of a degree (+120 per notch away from the user)." },
+    "buttons() -> Qt::MouseButtons -- Mouse buttons held during the event.",
+    "modifiers() -> Qt::KeyboardModifiers -- Keyboard modifiers held (a combination of Qt_*Modifier).",
+]
+
+[[class]]
+name = "QResizeEvent"
+base = "QEvent"
+handle = true
+doc = "Sent when a widget's size changes."
+ctor = "(width: int, height: int, oldWidth: int, oldHeight: int) -- A synthetic resize event; delete it after use."
+cpp_ctor = "new QResizeEvent(QSize({width}, {height}), QSize({oldWidth}, {oldHeight}))"
+methods = [
+    { sig = "width() -> int", cpp = "{self}->size().width()", doc = "The new width." },
+    { sig = "height() -> int", cpp = "{self}->size().height()", doc = "The new height." },
+    { sig = "oldWidth() -> int", cpp = "{self}->oldSize().width()", doc = "The previous width." },
+    { sig = "oldHeight() -> int", cpp = "{self}->oldSize().height()", doc = "The previous height." },
+]
+
+# ---------------------------------------------------------------------------
+# QAction
+
+[[class]]
+name = "QAction"
+doc = """
+A menu/toolbar command. `triggered` carries no argument; use `toggled`
+for checkable actions."""
+ctor = "(text: string, parent: QObject?) -- Create an action with `text`, owned by `parent` if given."
+signals = [
+    "triggered: void -- The action was activated (menu click, shortcut or `trigger`).",
+    "toggled: bool -- The checked state changed.",
+]
+methods = [
+    "setText(text: string) -- Set the text shown in menus (`&` marks the mnemonic).",
+    "text() -> string -- The action's text.",
+    { sig = "setShortcut(shortcut: string)", cpp = "{self}->setShortcut(QKeySequence({shortcut}))", doc = "Set the keyboard shortcut, e.g. 'Ctrl+O' (Ctrl is Cmd on macOS)." },
+    { sig = "shortcut() -> string", cpp = "{self}->shortcut().toString(QKeySequence::PortableText)", doc = "The shortcut in portable text form, e.g. 'Ctrl+O'." },
+    "setCheckable(checkable: bool) -- Make the action a toggle (or a plain command).",
+    "isCheckable() -> bool -- True if the action is a toggle.",
+    "setChecked(checked: bool) -- Check or uncheck the action (emits toggled).",
+    "isChecked() -> bool -- True if the action is checked.",
+    "setEnabled(enabled: bool) -- Enable or disable the action (disabled actions do not trigger).",
+    "isEnabled() -> bool -- True if the action is enabled.",
+    "setStatusTip(tip: string) -- Text shown in the status bar while the action is hovered.",
+    "setToolTip(tip: string) -- Tool tip shown for the action (e.g. on tool bar buttons).",
+    "trigger() -- Activate the action (emits triggered, and toggled if checkable).",
+]
