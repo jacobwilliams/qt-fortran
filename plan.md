@@ -193,7 +193,7 @@ Portability rules for sources:
 ```sh
 pixi run build             # fpm build with Qt flags
 pixi run test              # headless (QT_QPA_PLATFORM=offscreen)
-pixi run example hello     # run an example (hello, timer, form, plot)
+pixi run example hello     # run an example (hello, timer, form, plot, explorer)
 pixi run gen               # specs -> shims + high-level modules -> raw bind(C) modules
 pixi run gen-check         # fail if any generated file is stale (CI)
 pixi run lint              # docstrings + implicit none in interface bodies (CI)
@@ -226,7 +226,7 @@ tools/     fpm_qt.py           builds the shim, drives fpm
            gen_bindings.py     specs -> shim + high-level module
            gen_c_interfaces.py shim -> raw bind(C) module
            check_fortran.py    docstring / implicit-none checker
-example/   hello, timer, form, plot
+example/   hello, timer, form, plot, explorer (a tour of most features)
 test/      testing.f90 (check helper), test_core, test_widgets, test_controls, test_layouts,
            test_dialogs, test_gui, test_events, test_menus, test_filedialog
 ```
