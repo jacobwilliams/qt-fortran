@@ -12,7 +12,7 @@ environment.
 | API naming | Qt style: `QPushButton`, `btn%setText(...)`, `clicked`. The Qt/PySide docs carry over directly. |
 | Qt modules | QtCore, QtGui, QtWidgets, plus QtOpenGL / QtOpenGLWidgets for 3D. |
 | Platforms | Cross-platform: Linux, macOS, Windows. |
-| Build | `tools/fpm_qt.py` builds the C++ shim as a shared library (`qtf`), then fpm builds the Fortran code (gfortran everywhere) and links `-lqtf`. |
+| Build | fpm builds everything, including the C++ shim in `src/shim` (Linux, macOS, MinGW). `tools/fpm_qt.py` supplies the C++ compiler and Qt flags. Only Windows with conda's MSVC Qt uses a separate shim DLL. |
 | Toolchain | gfortran on all OSes. See the table below. |
 | moc | Not used. Signals connect through C++ lambdas, and virtual overrides use small C++ subclasses without `Q_OBJECT`. |
 
@@ -23,14 +23,14 @@ user code   ->  use qt                      Modern Fortran OO API
                 qt.f90 -> qt_core, qt_gui_types, qt_gui, qt_widgets
             ->  qt_c_*.f90                  raw bind(C) interfaces (GENERATED from the shim)
                 qt_c_util.f90               hand-written: qtf_args, string/bool conversion
-            ->  shim/qtf_*.cpp  (libqtf)    extern "C" shim over Qt C++
+            ->  src/shim/qtf_*.cpp          extern "C" shim over Qt C++ (compiled by fpm)
             ->  libQt6Core / Gui / Widgets
 ```
 
 - **Bindings are generated from specs.** `spec/<module>.toml` describes each
   class: its base, docs, constructors, methods and signals, in a compact
   signature syntax such as `"setRange(minimum: int, maximum: int) -- doc"`.
-  `tools/gen_bindings.py` turns it into the C++ shim (`shim/qtf_<module>.cpp`)
+  `tools/gen_bindings.py` turns it into the C++ shim (`src/shim/qtf_<module>.cpp`)
   and the high-level module (`src/<module>/qt_<module>.f90`). Irregular code
   stays in the spec as verbatim C++/Fortran blocks (e.g. the QtfWidget class,
   `QPainter%end`). The docstring at the top of gen_bindings.py documents the format.
@@ -74,7 +74,7 @@ user code   ->  use qt                      Modern Fortran OO API
   - **Lifetime**: each connection holds a `shared_ptr` slot handle. When Qt
     destroys the connection (sender deleted, single-shot fired), the
     registry entry is released (`qt_slot_count()`).
-  - **Connectors**: signal ids (`QTF_SIG_*`) live in `shim/qtf_common.h` (core)
+  - **Connectors**: signal ids (`QTF_SIG_*`) live in `src/shim/qtf_common.h` (core)
     or in the generated shims (assigned from each spec's `signal_base`).
     gen_c_interfaces copies them into the raw modules. Each shim file
     registers its connectors at load time.
@@ -139,47 +139,74 @@ user code   ->  use qt                      Modern Fortran OO API
 - **C++ pitfall**: `slots`, `signals` and `emit` are Qt macros; don't use them as
   identifiers in the shim.
 
-## Platforms & toolchains
+## Platforms & toolchains (and fpm packaging)
 
-gfortran 15 is the Fortran compiler on every platform. The C++ shim is built
-**separately as a shared library** (`qtf`) by a C++ compiler that matches the
-ABI of the conda-forge Qt binaries. The shim's interface is pure C (opaque
-pointers, ints, `char*`, function pointers), so gfortran can link it on every
-OS, including MinGW gfortran against an MSVC-built DLL on Windows.
+gfortran 15 is the Fortran compiler on every platform. The C++ shim
+(`src/shim/*.cpp`) has a pure C interface (opaque pointers, ints, `char*`,
+function pointers). It must be compiled by a C++ compiler that matches the ABI
+of the Qt binaries.
 
-| OS | Fortran | Shim compiler | Shim library | Qt flags | Runtime lookup |
-|----|---------|---------------|--------------|----------|----------------|
-| Linux | gfortran 15 | g++ | `build/qtf/libqtf.so` | `pkg-config` | rpath |
-| macOS | gfortran 15 | clang++ (libc++) | `build/qtf/libqtf.dylib` | `pkg-config` | rpath (`@rpath` install name) |
-| Windows | gfortran 15 (MinGW/UCRT) | clang++ `--target=x86_64-pc-windows-msvc`, `-fms-runtime-lib=dll` | `build/qtf/qtf.dll` | built from `%CONDA_PREFIX%\Library` (Qt ships no .pc files) | `PATH` |
+**Linux, macOS, and Windows with a MinGW Qt (MSYS2): fpm builds the shim** as
+part of the `qt-fortran` library, like any C++ source in `src/`. This holds for
+qt-fortran itself and for every project that depends on it.
+- **`fpm.toml` declares the Qt libraries** in `[build] link`. They propagate to
+  dependent projects and are placed *after* the objects on the link line.
+- **The C++ runtime** comes from a `default` feature, which fpm always applies:
+  `default.macos.link-time-flags = "-lc++"` and
+  `default.linux.link-time-flags = "-lstdc++"`. These are also placed after the
+  objects.
+- **Machine-specific settings** come from fpm's standard environment variables:
+  - `FPM_CXX`: `clang++` on macOS (libc++, like Qt), `g++` elsewhere.
+  - `FPM_CXXFLAGS`: `-std=c++17 -fPIC` plus the Qt include paths from pkg-config.
+    Qt requires position-independent code.
+  - `FPM_LDFLAGS`: the Qt library directory and rpath.
+- **`tools/fpm_qt.py`** computes these settings. `--env` prints them as exports;
+  otherwise it runs fpm with them. It works from any project root.
 
-`tools/fpm_qt.py` does both steps. It rebuilds the shim when a `shim/*` file
-changes, then runs fpm with `--link-flag "-L build/qtf ..."` (search path and rpath only).
-The library itself is declared in `fpm.toml` as `link = ["qtf"]`. fpm places it
-*after* the objects. This matters: fpm puts `--link-flag` contents before the
-objects, so ld would skip the Windows import library (and `--as-needed` on Linux
-would drop it). fpm sees only Fortran sources. The shim lives in `shim/`,
-outside fpm's `src/`.
+**Windows with conda-forge Qt (MSVC-built): separate shim DLL.** gfortran there
+is MinGW, which can't link MSVC C++ objects.
+- `fpm_qt.py` builds `build/qtf/qtf.dll` with clang++ in MSVC mode.
+- fpm compiles the shim sources as empty files (`-DQTF_EXTERNAL_SHIM` guards
+  every shim file).
+- The DLL is passed to the linker as an *input file*, not `-lqtf`. ld resolves
+  symbols from a DLL regardless of its position on the command line, whereas an
+  import library before the objects would be skipped.
+- Qt and the DLL are found through `PATH` at run time.
+
+| Setup | Shim built by | C++ compiler | C++ runtime | Qt flags | Runtime lookup |
+|-------|---------------|--------------|-------------|----------|----------------|
+| Linux | fpm | g++ | `-lstdc++` (fpm feature) | pkg-config | rpath |
+| macOS | fpm | clang++ (libc++) | `-lc++` (fpm feature) | pkg-config | rpath |
+| Windows, MinGW Qt (MSYS2) | fpm | g++ | `-lstdc++` (fpm_qt.py) | pkg-config | `PATH` |
+| Windows, conda-forge Qt | fpm_qt.py → `qtf.dll` | clang++ `--target=x86_64-pc-windows-msvc`, `-fms-runtime-lib=dll` | inside the DLL | from `%CONDA_PREFIX%\Library` (no .pc files) | `PATH` |
 
 Consequences:
-- Every shim function is exported with `QTF_API` (`shim/qtf_common.h`).
-- The Windows shim links only the dynamic CRT (`/NODEFAULTLIB` for libcmt,
+- Every shim function is declared with `QTF_API` (`src/shim/qtf_common.h`).
+- The Windows DLL links only the dynamic CRT (`/NODEFAULTLIB` for libcmt,
   libucrt, libvcruntime, libcpmt). Otherwise malloc/free bind into a second,
   static runtime (`LNK4098`/`LNK4217`).
 - Memory allocated by the shim must be freed by the shim (`qtf_free`), never by
-  Fortran. On Windows the two sides use different C runtimes.
-- On Windows, the MSVC linker/SDK come from `cxx-compiler` (vs2022
+  Fortran. With the Windows DLL, the two sides use different C runtimes.
+- On Windows with conda, the MSVC linker/SDK come from `cxx-compiler` (vs2022
   activation), so Visual Studio Build Tools must be installed on the host.
   GitHub's Windows runners have them.
-- The project path must not contain spaces, because fpm splits `--link-flag` on spaces.
-- fpm does not relink executables when only a library dependency changed. So
-  whenever `tools/fpm_qt.py` rebuilds the shim, it also clears fpm's object
-  cache (`build/gfortran_*`), forcing a full Fortran rebuild against the new C
-  interface.
+- The project path must not contain spaces, because fpm splits flag strings on spaces.
+- fpm does not relink executables when only an external library changed. So
+  when `fpm_qt.py` rebuilds the Windows DLL, it clears fpm's object cache.
+- Qt is linked as plain `-lQt6Xxx` libraries. Distributions that ship Qt only
+  as macOS frameworks (Homebrew) are not supported; conda-forge Qt is.
+- CI builds and runs `ci/consumer`, a separate fpm project that depends on
+  qt-fortran (`path = "../.."`).
 
-History: we first tried fpm compiling the shim directly, with flang + clang++ on
-Windows. flang on Windows proved unusable in CI (`iso_c_binding` was unavailable),
-so we switched to this shared-library design.
+History:
+- **First attempt:** fpm compiled the shim, with flang + clang++ on Windows.
+  flang on Windows proved unusable in CI (`iso_c_binding` was unavailable).
+- **Second design:** the shim became a separate shared library on every platform.
+  That made qt-fortran awkward to use as an fpm dependency.
+- **Current design:** fpm 0.13 can compile C++ in a dependency's `src/`,
+  propagates `[build] link`, and supports per-OS `link-time-flags` through a
+  `default` feature. So the shim went back into fpm on Linux/macOS (and MinGW).
+  The DLL is kept only for conda's MSVC Qt on Windows.
 
 Portability rules for sources:
 - Keep Fortran sources ASCII. Build non-ASCII test strings from explicit
@@ -222,8 +249,9 @@ src/
                                                          dialogs, QFileDialog
            (* generated by gen_c_interfaces.py, ** generated by gen_bindings.py)
 spec/      gui.toml widgets.toml                         binding specs
-shim/      qtf_common.h qtf_core.cpp  qtf_gui.cpp** qtf_widgets.cpp**   (built into libqtf)
-tools/     fpm_qt.py           builds the shim, drives fpm
+  shim/    qtf_common.h qtf_core.cpp  qtf_gui.cpp** qtf_widgets.cpp** qtf_opengl.cpp**  (C++ shim, compiled by fpm)
+ci/consumer/                 a separate fpm project depending on qt-fortran (CI check and template)
+tools/     fpm_qt.py           C++/Qt settings for fpm (or the Windows shim DLL), drives fpm
            gen_bindings.py     specs -> shim + high-level module
            gen_c_interfaces.py shim -> raw bind(C) module
            check_fortran.py    docstring / implicit-none checker
@@ -301,3 +329,62 @@ Legacy fixed-function GL and a high-level scene API were the alternatives consid
   `initializeGL` and `paintGL` but not `resizeGL`, which follows real resize events.
 - **Generator additions:** module-level free functions (`functions`),
   `double[]` / `int[]` array arguments, and `double[N]` fields in value types.
+
+## Roadmap: what Qt coverage is still missing
+
+Current coverage is about 50 classes across QtCore, QtGui, QtWidgets and QtOpenGL.
+The gaps below are grouped by area. The **priorities** list at the end orders
+them by value to Fortran (scientific) users. Most widget and dialog items are
+spec-only work now; items marked *(design)* need new machinery.
+
+### Inside the bound modules
+- **Widgets**
+  - Item-based views: `QTableWidget`, `QListWidget`, `QTreeWidget`.
+  - Model/view: `QTableView` with a Fortran-implemented model. *(design)* The
+    model's virtuals must be forwarded, like `QtfWidget`.
+  - Text: `QTextEdit`, `QPlainTextEdit` (log console, editor).
+  - Containers: `QTabWidget`, `QSplitter`, `QScrollArea`, `QGroupBox`,
+    `QStackedWidget`, `QDockWidget`, `QFrame`.
+  - Controls: `QProgressBar`, `QToolButton`, `QButtonGroup`, `QDial`,
+    `QDateEdit`/`QTimeEdit`, `QCalendarWidget`, `QLCDNumber`.
+  - Dialogs: `QInputDialog`, `QColorDialog`, `QFontDialog`, `QProgressDialog`.
+  - Layout: `QFormLayout`, size policies, `setMaximumSize`, widget stretch.
+  - `QGraphicsView`/`QGraphicsScene` (2D scene graph).
+- **Gui**
+  - `QIcon` (icons on actions and buttons).
+  - **`QImage` from Fortran arrays** (bulk pixel data) plus colormaps, for
+    heatmaps and field plots. Today only per-pixel `setPixelColor` exists.
+  - Painting: `QPainterPath` (curves), gradients, `QTransform`, standalone font metrics.
+  - System: clipboard, cursors, drag and drop, screens/DPI.
+- **Core**
+  - **`QThread` / QtConcurrent**: long computations without freezing the UI. *(design)*
+  - `QSettings`: persist preferences and window state.
+  - Pass the real command-line arguments to `QApplication`. A fixed argv is used
+    today, so Qt options such as `-platform` and `-style` are ignored.
+  - `QDateTime`, `QObject` properties, `findChild`.
+- **Events**: close (confirm on quit), enter/leave, focus, context menu,
+  show/hide, drag/drop.
+
+### Binding machinery *(design)*
+- Signals defined in Fortran (custom signals).
+- `disconnect` (connections currently live until the sender is destroyed).
+- Signals with several arguments, e.g. `cellChanged(row, column)`.
+- Use-after-delete detection for handles (`QPointer`-backed).
+
+### Other Qt modules
+- **Available in the env, not bound:** QtSvg (SVG export and icons),
+  QtPrintSupport (printing, PDF), QtNetwork, QtSql, QtConcurrent, and QtQuick/QML
+  (a declarative UI; probably a poor fit for Fortran).
+- **Not installed** (need extra conda packages): Qt Charts / Qt Graphs (2D and 3D
+  charts, a big win for plotting), Qt3D, Multimedia, WebEngine.
+
+### Priorities (for Fortran users)
+1. `QImage` from Fortran arrays, plus colormaps.
+2. Background computation (`QThread`-style worker, or a documented
+   `processEvents` pattern with `QProgressBar`).
+3. `QTableWidget`, then model/view.
+4. Layout and polish widgets: `QTabWidget`, `QSplitter`, `QGroupBox`,
+   `QDockWidget`, `QPlainTextEdit`, `QProgressBar`, `QIcon` on actions.
+5. Close event and `QSettings`.
+6. Fortran-defined signals and `disconnect`.
+7. Qt Charts / Qt Graphs.

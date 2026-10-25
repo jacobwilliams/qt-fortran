@@ -34,6 +34,12 @@ jobs:
       - name: Test (headless)
         run: pixi run test
 
+      - name: Use qt-fortran from another fpm project
+        working-directory: ci/consumer
+        run: pixi run --manifest-path ../../pixi.toml python ../../tools/fpm_qt.py run
+        env:
+          QT_QPA_PLATFORM: offscreen
+
       # OpenGL needs a real display; only the macOS runners have a window server.
       # The test prints SKIP if no OpenGL 3.3 context is available.
       - name: Test OpenGL

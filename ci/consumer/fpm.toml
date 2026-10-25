@@ -1,0 +1,13 @@
+# A minimal project that uses qt-fortran as an fpm dependency (used by CI, and a
+# template for your own project). In your project, depend on the git repository:
+#
+#   [dependencies]
+#   qt-fortran = { git = "https://github.com/jacobwilliams/qt-fortran" }
+name = "consumer"
+version = "0.1.0"
+
+[build]
+auto-executables = true
+
+[dependencies]
+qt-fortran = { path = "../.." }

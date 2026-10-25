@@ -2,7 +2,7 @@
 
 Every function declared `QTF_API` in a shim source becomes one interface in the
 matching `qt_c_*` module, together with the `QTF_SIG_*` signal ids (from
-shim/qtf_common.h) that fall in that module's range.
+src/shim/qtf_common.h) that fall in that module's range.
 
 Usage:
     python tools/gen_c_interfaces.py           # regenerate all modules
@@ -30,14 +30,14 @@ import sys
 import textwrap
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-COMMON = os.path.join(ROOT, "shim", "qtf_common.h")
+COMMON = os.path.join(ROOT, "src", "shim", "qtf_common.h")
 
 # shim source, generated module, module name, signal-id range
 MODULES = [
-    ("shim/qtf_core.cpp", "src/core/qt_c_core.f90", "qt_c_core", (1, 999)),
-    ("shim/qtf_gui.cpp", "src/gui/qt_c_gui.f90", "qt_c_gui", (2000, 2999)),
-    ("shim/qtf_widgets.cpp", "src/widgets/qt_c_widgets.f90", "qt_c_widgets", (1000, 1999)),
-    ("shim/qtf_opengl.cpp", "src/opengl/qt_c_opengl.f90", "qt_c_opengl", (3000, 3999)),
+    ("src/shim/qtf_core.cpp", "src/core/qt_c_core.f90", "qt_c_core", (1, 999)),
+    ("src/shim/qtf_gui.cpp", "src/gui/qt_c_gui.f90", "qt_c_gui", (2000, 2999)),
+    ("src/shim/qtf_widgets.cpp", "src/widgets/qt_c_widgets.f90", "qt_c_widgets", (1000, 1999)),
+    ("src/shim/qtf_opengl.cpp", "src/opengl/qt_c_opengl.f90", "qt_c_opengl", (3000, 3999)),
 ]
 
 PARAMS = [
@@ -147,7 +147,7 @@ def generate(shim, module, signal_range):
     sigs = signal_ids(*signal_range, src)
     sig_block = ""
     if sigs:
-        sig_block = "    ! Signal ids: must match `enum qtf_signal` in shim/qtf_common.h.\n" + "".join(
+        sig_block = "    ! Signal ids: must match `enum qtf_signal` in src/shim/qtf_common.h.\n" + "".join(
             f"    integer(c_int), parameter, public :: {n} = {v}\n" for n, v in sigs) + "\n"
     pubs = "".join(f"    public :: {line.rstrip(',')}\n"
                    for line in textwrap.wrap(", ".join(names), 96))

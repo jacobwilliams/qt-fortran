@@ -11,10 +11,19 @@ auto-executables = true
 auto-tests = true
 auto-examples = true
 module-naming = false
-# C ABI shim over Qt (shim/), built by tools/fpm_qt.py into build/qtf
-link = ["qtf"]
+# The C++ shim in src/shim is compiled by fpm (C++ compiler and Qt include
+# flags come from FPM_CXX / FPM_CXXFLAGS; see tools/fpm_qt.py and the README).
+# These Qt libraries are linked into every program that uses qt-fortran.
+link = ["Qt6OpenGLWidgets", "Qt6OpenGL", "Qt6Widgets", "Qt6Gui", "Qt6Core"]
 
 [fortran]
 implicit-typing = false
 implicit-external = false
 source-form = "free"
+
+# The C++ runtime the shim needs (the "default" feature is always enabled).
+[features]
+default.macos.link-time-flags = "-lc++"
+default.linux.link-time-flags = "-lstdc++"
+# (Windows: the MinGW runtime is added by tools/fpm_qt.py; with conda's MSVC Qt
+# the shim is a separate DLL that carries its own C++ runtime.)

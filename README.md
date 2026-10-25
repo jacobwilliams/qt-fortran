@@ -162,18 +162,59 @@ pixi run example surface3d -- --screenshot surface.png
 
 ### Using qt-fortran in your own project
 
-qt-fortran is an [fpm](https://fpm.fortran-lang.org/) package with one twist.
-Qt is C++, so a small C++ library (`libqtf`, the "shim") must be compiled before
-the Fortran code. [`tools/fpm_qt.py`](tools/fpm_qt.py) builds it and then runs
-fpm with the right flags:
+qt-fortran is an ordinary [fpm](https://fpm.fortran-lang.org/) dependency. Add
+it to your project's `fpm.toml`:
 
-```sh
-pixi run python tools/fpm_qt.py build      # any fpm command works: build, test, run ...
+```toml
+[dependencies]
+qt-fortran = { git = "https://github.com/jacobwilliams/qt-fortran" }
 ```
 
-The easiest way to experiment today is to add programs to `example/` or
-`app/` in this repository. Using qt-fortran as an fpm dependency of another
-project isn't streamlined yet (see the [roadmap](#roadmap)).
+fpm builds everything, including qt-fortran's small C++ part (the "shim" that
+talks to Qt), and links Qt into your programs. Qt is C++, so fpm needs to know
+three machine-specific settings, through its standard environment variables:
+
+| Variable | Contents |
+|----------|----------|
+| `FPM_CXX` | the C++ compiler: `clang++` on macOS, `g++` on Linux |
+| `FPM_CXXFLAGS` | `-std=c++17 -fPIC` plus Qt's include paths |
+| `FPM_LDFLAGS` | Qt's library directory, and an rpath to it |
+
+qt-fortran's helper script computes them from `pkg-config`. After fpm has
+fetched the dependency (`fpm update`), run this in your project root:
+
+```sh
+eval "$(python build/dependencies/qt-fortran/tools/fpm_qt.py --env)"
+fpm run
+```
+
+Instead of exporting the variables, you can let the script run fpm with them
+(`python build/dependencies/qt-fortran/tools/fpm_qt.py run`). Or set the
+variables yourself, e.g. on Linux:
+
+```sh
+QT="Qt6Core Qt6Gui Qt6Widgets Qt6OpenGL Qt6OpenGLWidgets"
+export FPM_CXX=g++
+export FPM_CXXFLAGS="-std=c++17 -fPIC $(pkg-config --cflags $QT)"
+export FPM_LDFLAGS="$(pkg-config --libs-only-L $QT) -Wl,-rpath,$(pkg-config --variable=libdir Qt6Core)"
+```
+
+The Qt libraries and the C++ runtime are declared in qt-fortran's own `fpm.toml`,
+so you don't need to list them. [`ci/consumer`](ci/consumer) is a complete
+minimal project; CI builds and runs it on all three platforms.
+
+**Where Qt comes from:**
+- **pixi/conda-forge (recommended):** add `qt6-main`, `gfortran`, `fpm`,
+  `cxx-compiler` and `pkg-config` to your environment (see this repository's
+  [pixi.toml](pixi.toml)).
+- **Linux distribution packages** (Qt 6 development files and pkg-config) should
+  also work.
+- **Not yet supported:**
+  - Homebrew's Qt on macOS, which ships only as frameworks.
+  - MSYS2's MinGW Qt on Windows. It is supported by design but untested.
+- **Windows with conda-forge:** Qt there is built with MSVC, which gfortran can't
+  link directly. Use the helper script, which builds the C++ part as a small DLL
+  (`build/qtf/qtf.dll`) and links it for you.
 
 ## Programming guide
 
@@ -220,17 +261,17 @@ A few conventions to know (the full list is in [plan.md](plan.md)):
 block-beta
     columns 1
     app["Your program"]
-    api["Fortran API: qt_core, qt_gui, qt_widgets"]
+    api["Fortran API: qt_core, qt_gui, qt_widgets, qt_opengl"]
     raw["Raw bind(C) interfaces: qt_c_* modules"]
-    shim["C++ shim: libqtf"]
-    qt["Qt 6: Core, Gui, Widgets"]
+    shim["C++ shim: src/shim"]
+    qt["Qt 6: Core, Gui, Widgets, OpenGL"]
 ```
 
 - **The shim** exposes Qt as flat C functions (`qtf_qlabel_setText(void*,
-  const char*, int)`), with Qt objects passed as opaque pointers. It's a
-  separate shared library built with a C++ compiler that matches Qt's ABI. Since
-  its interface is pure C, gfortran can link it on every platform, including
-  MinGW gfortran with MSVC-built Qt on Windows.
+  const char*, int)`), with Qt objects passed as opaque pointers. fpm compiles
+  it into the qt-fortran library with a C++ compiler that matches Qt's ABI.
+  - On Windows with conda-forge's MSVC-built Qt, it's built as a separate DLL
+    instead. Its interface is pure C, so MinGW gfortran can link it.
 - **Signals** are connected in C++ with lambdas that call one Fortran
   `bind(C)` dispatcher. The dispatcher looks up the Fortran slot (a procedure
   pointer) and its user data in a registry. Qt's `moc` isn't needed.
@@ -244,8 +285,9 @@ block-beta
 ```
 spec/       binding specs (TOML): widgets.toml, gui.toml, opengl.toml
 src/        Fortran sources: core/ (hand-written), gui/, widgets/, opengl/ (mostly generated), qt.f90
-shim/       C++ shim: qtf_common.h, qtf_core.cpp (hand-written); qtf_gui.cpp, qtf_widgets.cpp,
+src/shim/   C++ shim: qtf_common.h, qtf_core.cpp (hand-written); qtf_gui.cpp, qtf_widgets.cpp,
             qtf_opengl.cpp (generated)
+ci/consumer a separate fpm project that depends on qt-fortran (CI check and template)
 tools/      fpm_qt.py, gen_bindings.py, gen_c_interfaces.py, check_fortran.py
 test/       headless test programs (one per area)
 example/    example applications
@@ -308,7 +350,7 @@ on macOS (the only runner with a window server).
 
 ## Roadmap
 
-- Packaging, so other fpm projects can depend on qt-fortran directly.
+- Smoother packaging: a conda-forge package, and Homebrew (framework) Qt support.
 - More of Qt: item views (`QListWidget`, `QTableWidget`), `QTextEdit`, `QSplitter`,
   `QTabWidget`, dialogs (`QColorDialog`, `QInputDialog`), and possibly Qt Charts.
 - Seeding specs from PySide6's type-system XML files to cover more of the API

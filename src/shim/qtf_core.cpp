@@ -1,5 +1,9 @@
 // C ABI shim over Qt Core: strings, signal dispatch, QObject, QTimer.
 
+// Compiled by fpm as part of the qt-fortran library, unless the shim is
+// built separately as a shared library (QTF_EXTERNAL_SHIM; see tools/fpm_qt.py).
+#ifndef QTF_EXTERNAL_SHIM
+
 #include "qtf_common.h"
 
 #include <QCoreApplication>
@@ -208,3 +212,5 @@ static const bool qtf_core_registered = [] {
     });
     return true;
 }();
+
+#endif // QTF_EXTERNAL_SHIM
