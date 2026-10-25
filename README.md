@@ -198,17 +198,13 @@ A few conventions to know (the full list is in [plan.md](plan.md)):
 ## How it works
 
 ```mermaid
-flowchart TD
+block-beta
+    columns 1
     app["Your program"]
     api["Fortran API: qt_core, qt_gui, qt_widgets"]
     raw["Raw bind(C) interfaces: qt_c_* modules"]
     shim["C++ shim: libqtf"]
     qt["Qt 6: Core, Gui, Widgets"]
-
-    app --> api --> raw
-    raw -- C ABI --> shim
-    shim --> qt
-    shim -. signals and events .-> api
 ```
 
 - **The shim** exposes Qt as flat C functions (`qtf_qlabel_setText(void*,
