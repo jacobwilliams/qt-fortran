@@ -31,6 +31,14 @@ program test_widgets
     type(QLabel) :: label
     type(QObject) :: p
     integer, target :: ndestroyed
+    type(QIcon) :: icon, unknown
+    type(QPushButton) :: button
+    type(QTabWidget) :: tabs
+    type(QAction) :: action
+    type(QLabel) :: pic
+    type(QImage) :: image
+    type(QPixmap) :: pixmap, shot
+    type(qt_string), allocatable :: args(:)
     ! 'héllo → Qt' as explicit UTF-8 bytes, so the source stays ASCII
     character(len=*), parameter :: msg = 'h'//achar(195)//achar(169)//'llo '// &
                                          achar(226)//achar(134)//achar(146)//' Qt'
@@ -64,6 +72,41 @@ program test_widgets
     call label%destroyed%connect(count_calls, ndestroyed)
     call win%delete()
     call check(ndestroyed == 1, 'deleting window deletes child label')
+
+    ! --- icons and pixmaps
+    icon = QStyle_standardIcon('SP_MediaPlay')
+    call check(.not. icon%isNull(), 'QStyle_standardIcon by name')
+    unknown = QStyle_standardIcon('SP_NoSuchIcon')
+    call check(unknown%isNull(), 'unknown standard icon is null')
+    button = QPushButton('Play')
+    call button%setIcon(icon)
+    call button%setIconSize(24, 24)
+    tabs = QTabWidget()
+    call tabs%addTab(QLabel('page'), 'Page')
+    call tabs%setTabIcon(0, icon)
+    action = QAction('Play', button)
+    call action%setIcon(icon)
+    call button%setWindowIcon(icon)
+    call icon%delete()                          ! the widgets keep their copies
+    pic = QLabel()
+    image = QImage(16, 8)
+    call image%fill(Qt_blue)
+    pixmap = QPixmap_fromImage(image)
+    call pic%setPixmap(pixmap)
+    call pic%setScaledContents(.true.)
+    shot = pic%grab()
+    call check(shot%width() > 0, 'QLabel with a pixmap')
+    call shot%delete()
+    call pixmap%delete()
+    call image%delete()
+    call button%delete()
+    call tabs%delete()
+    call pic%delete()
+
+    ! --- command-line arguments reach Qt; the first is the program
+    args = QApplication_arguments()
+    call check(size(args) >= 1, 'QApplication_arguments')
+    call check(index(args(1)%s, 'test_widgets') > 0, 'first argument is the program')
 
     write(*,'(A)') 'test_widgets: all checks passed'
 

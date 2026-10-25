@@ -28,6 +28,39 @@ module qt_c_gui
             integer(c_int) :: res
         end function qtf_qcolor_fromString
 
+        !> An nx x ny image of values v (v[i + j*nx], i.e. a Fortran array v(nx, ny))
+        !> through a colormap; NaN is transparent. flip: row 0 shows the last j.
+        !>
+        !> C: `void *qtf_qimage_fromArray(const double *v, int nx, int ny, double vmin, double vmax, const char *cmap, int len, int flip)`
+        function qtf_qimage_fromArray(v, nx, ny, vmin, vmax, cmap, len, flip) &
+                result(res) bind(C, name='qtf_qimage_fromArray')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            real(c_double), dimension(*), intent(in) :: v
+            integer(c_int), value :: nx
+            integer(c_int), value :: ny
+            real(c_double), value :: vmin
+            real(c_double), value :: vmax
+            character(kind=c_char), dimension(*), intent(in) :: cmap
+            integer(c_int), value :: len
+            integer(c_int), value :: flip
+            type(c_ptr) :: res
+        end function qtf_qimage_fromArray
+
+        !> A colormap gradient for legends (vertical: the maximum is at the top).
+        !>
+        !> C: `void *qtf_qimage_colorbar(const char *cmap, int len, int width, int height, int vertical)`
+        function qtf_qimage_colorbar(cmap, len, width, height, vertical) result(res) bind(C, name='qtf_qimage_colorbar')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: cmap
+            integer(c_int), value :: len
+            integer(c_int), value :: width
+            integer(c_int), value :: height
+            integer(c_int), value :: vertical
+            type(c_ptr) :: res
+        end function qtf_qimage_colorbar
+
         !> Release an image.
         !>
         !> C: `void qtf_qimage_delete(void *self)`
@@ -194,6 +227,16 @@ module qt_c_gui
             type(c_ptr) :: res
         end function qtf_qpixmap_toImage
 
+        !> A new pixmap with an image's contents, e.g. for QLabel%setPixmap (delete it when done).
+        !>
+        !> C: `void *qtf_qpixmap_fromImage(void *image)`
+        function qtf_qpixmap_fromImage(image) result(res) bind(C, name='qtf_qpixmap_fromImage')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: image
+            type(c_ptr) :: res
+        end function qtf_qpixmap_fromImage
+
         !> Save to a file; the format follows the extension (.png, .jpg, ...).
         !>
         !> C: `int qtf_qpixmap_save(void *self, const char *fileName, int fileName_len)`
@@ -205,6 +248,46 @@ module qt_c_gui
             integer(c_int), value :: fileName_len
             integer(c_int) :: res
         end function qtf_qpixmap_save
+
+        !> Release an icon.
+        !>
+        !> C: `void qtf_qicon_delete(void *self)`
+        subroutine qtf_qicon_delete(self) bind(C, name='qtf_qicon_delete')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qicon_delete
+
+        !> True if the icon has no image.
+        !>
+        !> C: `int qtf_qicon_isNull(void *self)`
+        function qtf_qicon_isNull(self) result(res) bind(C, name='qtf_qicon_isNull')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qicon_isNull
+
+        !> An icon from an image file (PNG, SVG, ...); check `isNull()`.
+        !>
+        !> C: `void *qtf_qicon_new(const char *fileName, int fileName_len)`
+        function qtf_qicon_new(fileName, fileName_len) result(res) bind(C, name='qtf_qicon_new')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: fileName
+            integer(c_int), value :: fileName_len
+            type(c_ptr) :: res
+        end function qtf_qicon_new
+
+        !> An icon from a pixmap (e.g. QPixmap_fromImage of a generated image).
+        !>
+        !> C: `void *qtf_qicon_fromPixmap(void *pixmap)`
+        function qtf_qicon_fromPixmap(pixmap) result(res) bind(C, name='qtf_qicon_fromPixmap')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: pixmap
+            type(c_ptr) :: res
+        end function qtf_qicon_fromPixmap
 
         !> End and delete a painter created by a qtf_qpainter constructor.
         !>
@@ -556,6 +639,20 @@ module qt_c_gui
             integer(c_int), value :: y
             type(c_ptr), value :: image
         end subroutine qtf_qpainter_drawImage
+
+        !> Draw `image` scaled into the rectangle (x, y, w, h); smooth with the QPainter_SmoothPixmapTransform hint.
+        !>
+        !> C: `void qtf_qpainter_drawImageRect(void *self, double x, double y, double w, double h, void *image)`
+        subroutine qtf_qpainter_drawImageRect(self, x, y, w, h, image) bind(C, name='qtf_qpainter_drawImageRect')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double), value :: w
+            real(c_double), value :: h
+            type(c_ptr), value :: image
+        end subroutine qtf_qpainter_drawImageRect
 
         !> Width in pixels of `text` in the current font.
         !>
@@ -977,30 +1074,43 @@ module qt_c_gui
             type(c_ptr), value :: self
         end subroutine qtf_qaction_trigger
 
+        !> Set the icon shown in menus and tool bars (the icon is copied).
+        !>
+        !> C: `void qtf_qaction_setIcon(void *self, void *icon)`
+        subroutine qtf_qaction_setIcon(self, icon) bind(C, name='qtf_qaction_setIcon')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: icon
+        end subroutine qtf_qaction_setIcon
+
     end interface
 
-    public :: qtf_qcolor_fromString, qtf_qimage_delete, qtf_qimage_isNull, qtf_qimage_pixelColor
-    public :: qtf_qimage_new, qtf_qimage_fromFile, qtf_qimage_width, qtf_qimage_height, qtf_qimage_fill
-    public :: qtf_qimage_setPixelColor, qtf_qimage_save, qtf_qpixmap_delete, qtf_qpixmap_isNull
-    public :: qtf_qpixmap_width, qtf_qpixmap_height, qtf_qpixmap_toImage, qtf_qpixmap_save
-    public :: qtf_qpainter_delete, qtf_qpainter_isActive, qtf_qpainter_setFont, qtf_qpainter_new
-    public :: qtf_qpainter_deviceWidth, qtf_qpainter_deviceHeight, qtf_qpainter_setPen
-    public :: qtf_qpainter_setPenColor, qtf_qpainter_setBrush, qtf_qpainter_setBrushColor
-    public :: qtf_qpainter_setRenderHint, qtf_qpainter_setOpacity, qtf_qpainter_save, qtf_qpainter_restore
-    public :: qtf_qpainter_translate, qtf_qpainter_scale, qtf_qpainter_rotate, qtf_qpainter_resetTransform
-    public :: qtf_qpainter_drawPoint, qtf_qpainter_drawLine, qtf_qpainter_drawRect
-    public :: qtf_qpainter_drawRoundedRect, qtf_qpainter_drawEllipse, qtf_qpainter_fillRect
-    public :: qtf_qpainter_drawPolyline, qtf_qpainter_drawPolygon, qtf_qpainter_drawText
-    public :: qtf_qpainter_drawTextRect, qtf_qpainter_drawImage, qtf_qpainter_textWidth
-    public :: qtf_qpainter_fontHeight, qtf_qmouseevent_new, qtf_qmouseevent_x, qtf_qmouseevent_y
-    public :: qtf_qmouseevent_button, qtf_qmouseevent_buttons, qtf_qmouseevent_modifiers, qtf_qkeyevent_new
-    public :: qtf_qkeyevent_key, qtf_qkeyevent_modifiers, qtf_qkeyevent_text, qtf_qkeyevent_isAutoRepeat
-    public :: qtf_qwheelevent_new, qtf_qwheelevent_x, qtf_qwheelevent_y, qtf_qwheelevent_angleDeltaX
-    public :: qtf_qwheelevent_angleDeltaY, qtf_qwheelevent_buttons, qtf_qwheelevent_modifiers
-    public :: qtf_qresizeevent_new, qtf_qresizeevent_width, qtf_qresizeevent_height
-    public :: qtf_qresizeevent_oldWidth, qtf_qresizeevent_oldHeight, qtf_qaction_new, qtf_qaction_setText
-    public :: qtf_qaction_text, qtf_qaction_setShortcut, qtf_qaction_shortcut, qtf_qaction_setCheckable
+    public :: qtf_qcolor_fromString, qtf_qimage_fromArray, qtf_qimage_colorbar, qtf_qimage_delete
+    public :: qtf_qimage_isNull, qtf_qimage_pixelColor, qtf_qimage_new, qtf_qimage_fromFile, qtf_qimage_width
+    public :: qtf_qimage_height, qtf_qimage_fill, qtf_qimage_setPixelColor, qtf_qimage_save
+    public :: qtf_qpixmap_delete, qtf_qpixmap_isNull, qtf_qpixmap_width, qtf_qpixmap_height
+    public :: qtf_qpixmap_toImage, qtf_qpixmap_fromImage, qtf_qpixmap_save, qtf_qicon_delete
+    public :: qtf_qicon_isNull, qtf_qicon_new, qtf_qicon_fromPixmap, qtf_qpainter_delete
+    public :: qtf_qpainter_isActive, qtf_qpainter_setFont, qtf_qpainter_new, qtf_qpainter_deviceWidth
+    public :: qtf_qpainter_deviceHeight, qtf_qpainter_setPen, qtf_qpainter_setPenColor, qtf_qpainter_setBrush
+    public :: qtf_qpainter_setBrushColor, qtf_qpainter_setRenderHint, qtf_qpainter_setOpacity
+    public :: qtf_qpainter_save, qtf_qpainter_restore, qtf_qpainter_translate, qtf_qpainter_scale
+    public :: qtf_qpainter_rotate, qtf_qpainter_resetTransform, qtf_qpainter_drawPoint, qtf_qpainter_drawLine
+    public :: qtf_qpainter_drawRect, qtf_qpainter_drawRoundedRect, qtf_qpainter_drawEllipse
+    public :: qtf_qpainter_fillRect, qtf_qpainter_drawPolyline, qtf_qpainter_drawPolygon
+    public :: qtf_qpainter_drawText, qtf_qpainter_drawTextRect, qtf_qpainter_drawImage
+    public :: qtf_qpainter_drawImageRect, qtf_qpainter_textWidth, qtf_qpainter_fontHeight
+    public :: qtf_qmouseevent_new, qtf_qmouseevent_x, qtf_qmouseevent_y, qtf_qmouseevent_button
+    public :: qtf_qmouseevent_buttons, qtf_qmouseevent_modifiers, qtf_qkeyevent_new, qtf_qkeyevent_key
+    public :: qtf_qkeyevent_modifiers, qtf_qkeyevent_text, qtf_qkeyevent_isAutoRepeat, qtf_qwheelevent_new
+    public :: qtf_qwheelevent_x, qtf_qwheelevent_y, qtf_qwheelevent_angleDeltaX, qtf_qwheelevent_angleDeltaY
+    public :: qtf_qwheelevent_buttons, qtf_qwheelevent_modifiers, qtf_qresizeevent_new
+    public :: qtf_qresizeevent_width, qtf_qresizeevent_height, qtf_qresizeevent_oldWidth
+    public :: qtf_qresizeevent_oldHeight, qtf_qaction_new, qtf_qaction_setText, qtf_qaction_text
+    public :: qtf_qaction_setShortcut, qtf_qaction_shortcut, qtf_qaction_setCheckable
     public :: qtf_qaction_isCheckable, qtf_qaction_setChecked, qtf_qaction_isChecked, qtf_qaction_setEnabled
     public :: qtf_qaction_isEnabled, qtf_qaction_setStatusTip, qtf_qaction_setToolTip, qtf_qaction_trigger
+    public :: qtf_qaction_setIcon
 
 end module qt_c_gui

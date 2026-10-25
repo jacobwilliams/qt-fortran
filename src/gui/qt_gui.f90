@@ -101,6 +101,8 @@ module qt_gui
     integer(c_int), parameter, public :: Qt_Key_F11 = int(z'0100003A', c_int)
     integer(c_int), parameter, public :: Qt_Key_F12 = int(z'0100003B', c_int)
 
+    public :: QImage_fromArray, QImage_colorbar
+
     !> An image in memory (a C++ QImage); release it with `delete`.
     type, public :: QImage
         type(c_ptr) :: ptr = c_null_ptr
@@ -130,6 +132,19 @@ module qt_gui
         procedure :: delete => qpixmap_delete
         procedure :: isNull => qpixmap_isNull
     end type QPixmap
+
+    !> An icon (for actions, buttons, tabs, items and windows). Setting an icon
+    !> copies it, so it can be deleted afterwards. See also QStyle_standardIcon.
+    type, public :: QIcon
+        type(c_ptr) :: ptr = c_null_ptr
+    contains
+        procedure :: delete => qicon_delete
+        procedure :: isNull => qicon_isNull
+    end type QIcon
+    !> Constructor: `QIcon(fileName)` or `QIcon(pixmap)`.
+    interface QIcon
+        module procedure :: qicon_new, qicon_fromPixmap
+    end interface QIcon
 
     !> Draws on an image, or on a QtfWidget inside its paintEvent slot.
     !> Coordinates may be integers or `real(c_double)`.
@@ -170,7 +185,8 @@ module qt_gui
         generic :: drawPolygon => qpainter_drawPolygon_d, qpainter_drawPolygon_i
         procedure, private :: qpainter_drawText_d, qpainter_drawText_i, qpainter_drawTextRect_d, qpainter_drawTextRect_i
         generic :: drawText => qpainter_drawText_d, qpainter_drawText_i, qpainter_drawTextRect_d, qpainter_drawTextRect_i
-        procedure :: drawImage => qpainter_drawImage
+        procedure, private :: qpainter_drawImage, qpainter_drawImageRect_d, qpainter_drawImageRect_i
+        generic :: drawImage => qpainter_drawImage, qpainter_drawImageRect_d, qpainter_drawImageRect_i
         procedure :: textWidth => qpainter_textWidth
         procedure :: fontHeight => qpainter_fontHeight
         procedure :: end => qpainter_end
@@ -257,6 +273,7 @@ module qt_gui
         procedure :: setStatusTip => qaction_setStatusTip
         procedure :: setToolTip => qaction_setToolTip
         procedure :: trigger => qaction_trigger
+        procedure :: setIcon => qaction_setIcon
     end type QAction
     !> Constructor: `QAction(text [, parent])`.
     interface QAction
@@ -378,6 +395,8 @@ module qt_gui
         procedure :: invoke => resize_handler_invoke
     end type resize_handler
 
+    public :: QPixmap_fromImage
+
 contains
 
     !> A new, uninitialized ARGB32 image; `fill` it before use.
@@ -435,6 +454,52 @@ contains
         res = qtf_logical(qtf_qimage_save(self%ptr, fileName, len(fileName, c_int)))
     end function qimage_save
 
+    !> An image of a 2D array through a colormap. Pixel (i-1, j-1) shows
+    !> values(i, j): the first index runs along x, the second along y (downward
+    !> as in an image; with `flipY` upward, as in a plot). Values from vmin to
+    !> vmax (default: the data range, ignoring NaN) are mapped onto the colormap:
+    !> 'viridis' (default), 'magma', 'inferno', 'plasma', 'gray' or 'coolwarm'.
+    !> NaN is transparent. Delete the image when done.
+    function QImage_fromArray(values, colormap, vmin, vmax, flipY) result(img)
+        use, intrinsic :: ieee_arithmetic, only: ieee_is_nan
+        real(c_double), intent(in) :: values(:, :)
+        character(len=*), intent(in), optional :: colormap
+        real(c_double), intent(in), optional :: vmin, vmax
+        logical, intent(in), optional :: flipY
+        type(QImage) :: img
+        real(c_double) :: lo, hi
+        character(len=:), allocatable :: cmap
+        logical :: flip
+        lo = 0.0_c_double
+        hi = 1.0_c_double
+        if (any(.not. ieee_is_nan(values))) then
+            lo = minval(values, mask=.not. ieee_is_nan(values))
+            hi = maxval(values, mask=.not. ieee_is_nan(values))
+        end if
+        if (present(vmin)) lo = vmin
+        if (present(vmax)) hi = vmax
+        cmap = 'viridis'
+        if (present(colormap)) cmap = colormap
+        flip = .false.
+        if (present(flipY)) flip = flipY
+        img%ptr = qtf_qimage_fromArray(values, int(size(values, 1), c_int), int(size(values, 2), c_int), &
+                                       lo, hi, cmap, len(cmap, c_int), qtf_int(flip))
+    end function QImage_fromArray
+
+    !> A colormap gradient image for legends: vertical (default; the maximum at
+    !> the top) or horizontal. Delete the image when done.
+    function QImage_colorbar(colormap, width, height, vertical) result(img)
+        character(len=*), intent(in) :: colormap
+        integer, intent(in) :: width, height
+        logical, intent(in), optional :: vertical
+        type(QImage) :: img
+        logical :: v
+        v = .true.
+        if (present(vertical)) v = vertical
+        img%ptr = qtf_qimage_colorbar(colormap, len(colormap, c_int), int(width, c_int), int(height, c_int), &
+                                      qtf_int(v))
+    end function QImage_colorbar
+
     !> Release the image.
     subroutine qimage_delete(self)
         class(QImage), intent(inout) :: self
@@ -480,6 +545,13 @@ contains
         res%ptr = qtf_qpixmap_toImage(self%ptr)
     end function qpixmap_toImage
 
+    !> A new pixmap with an image's contents, e.g. for QLabel%setPixmap (delete it when done).
+    function QPixmap_fromImage(image) result(res)
+        type(QImage), intent(in) :: image
+        type(QPixmap) :: res
+        res%ptr = qtf_qpixmap_fromImage(image%ptr)
+    end function QPixmap_fromImage
+
     !> Save to a file; the format follows the extension (.png, .jpg, ...).
     function qpixmap_save(self, fileName) result(res)
         class(QPixmap), intent(in) :: self
@@ -501,6 +573,34 @@ contains
         qpixmap_isNull = .true.
         if (c_associated(self%ptr)) qpixmap_isNull = qtf_logical(qtf_qpixmap_isNull(self%ptr))
     end function qpixmap_isNull
+
+    !> An icon from an image file (PNG, SVG, ...); check `isNull()`.
+    function qicon_new(fileName) result(res)
+        character(len=*), intent(in) :: fileName
+        type(QIcon) :: res
+        res%ptr = qtf_qicon_new(fileName, len(fileName, c_int))
+    end function qicon_new
+
+    !> An icon from a pixmap (e.g. QPixmap_fromImage of a generated image).
+    function qicon_fromPixmap(pixmap) result(res)
+        type(QPixmap), intent(in) :: pixmap
+        type(QIcon) :: res
+        res%ptr = qtf_qicon_fromPixmap(pixmap%ptr)
+    end function qicon_fromPixmap
+
+    !> Release the icon.
+    subroutine qicon_delete(self)
+        class(QIcon), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qicon_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qicon_delete
+
+    !> True if there is no icon image (e.g. a file that could not be read).
+    logical function qicon_isNull(self)
+        class(QIcon), intent(in) :: self
+        qicon_isNull = .true.
+        if (c_associated(self%ptr)) qicon_isNull = qtf_logical(qtf_qicon_isNull(self%ptr))
+    end function qicon_isNull
 
     !> Begin painting on `image`; call `end` when done.
     function qpainter_new(image) result(res)
@@ -834,6 +934,29 @@ contains
         type(QImage), intent(in) :: image
         call qtf_qpainter_drawImage(self%ptr, int(x, c_int), int(y, c_int), image%ptr)
     end subroutine qpainter_drawImage
+
+    !> Draw `image` scaled into the rectangle (x, y, w, h); smooth with the QPainter_SmoothPixmapTransform hint.
+    subroutine qpainter_drawImageRect_d(self, x, y, w, h, image)
+        class(QPainter), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        real(c_double), intent(in) :: w
+        real(c_double), intent(in) :: h
+        type(QImage), intent(in) :: image
+        call qtf_qpainter_drawImageRect(self%ptr, x, y, w, h, image%ptr)
+    end subroutine qpainter_drawImageRect_d
+
+    !> Draw `image` scaled into the rectangle (x, y, w, h); smooth with the QPainter_SmoothPixmapTransform hint.
+    subroutine qpainter_drawImageRect_i(self, x, y, w, h, image)
+        class(QPainter), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        integer, intent(in) :: w
+        integer, intent(in) :: h
+        type(QImage), intent(in) :: image
+        call qtf_qpainter_drawImageRect(self%ptr, real(x, c_double), real(y, c_double), real(w, c_double), real(h, &
+                c_double), image%ptr)
+    end subroutine qpainter_drawImageRect_i
 
     !> Width in pixels of `text` in the current font.
     function qpainter_textWidth(self, text) result(res)
@@ -1190,6 +1313,13 @@ contains
         class(QAction), intent(in) :: self
         call qtf_qaction_trigger(self%ptr)
     end subroutine qaction_trigger
+
+    !> Set the icon shown in menus and tool bars (the icon is copied).
+    subroutine qaction_setIcon(self, icon)
+        class(QAction), intent(in) :: self
+        type(QIcon), intent(in) :: icon
+        call qtf_qaction_setIcon(self%ptr, icon%ptr)
+    end subroutine qaction_setIcon
 
     !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalpainter_connect(self, slot, data)

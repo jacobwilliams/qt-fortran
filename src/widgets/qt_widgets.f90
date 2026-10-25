@@ -201,17 +201,15 @@ module qt_widgets
 
     public :: QFontDialog_getFont
 
-    !> The application object. Create exactly one, before any widget.
+    !> The application object. Create exactly one, before any widget, with
+    !> `QApplication()`: it receives the program's command-line arguments (Qt handles
+    !> its own options such as -style or -platform; see QApplication_arguments).
     type, extends(QObject), public :: QApplication
     contains
         procedure, nopass :: exec => QApplication_exec
         procedure, nopass :: quit => QApplication_quit
         procedure, nopass :: processEvents => QApplication_processEvents
     end type QApplication
-    !> Constructor: `QApplication()`.
-    interface QApplication
-        module procedure :: qapplication_new
-    end interface QApplication
 
     !> Base of all user interface objects; a widget without a parent is a window.
     type, extends(QObject), public :: QWidget
@@ -253,6 +251,7 @@ module qt_widgets
         procedure :: setFixedHeight => qwidget_setFixedHeight
         procedure :: setSizePolicy => qwidget_setSizePolicy
         procedure :: setContentsMargins => qwidget_setContentsMargins
+        procedure :: setWindowIcon => qwidget_setWindowIcon
     end type QWidget
     !> Constructor: `QWidget([parent])`.
     interface QWidget
@@ -305,6 +304,8 @@ module qt_widgets
         procedure :: text => qlabel_text
         procedure :: setAlignment => qlabel_setAlignment
         procedure :: setWordWrap => qlabel_setWordWrap
+        procedure :: setPixmap => qlabel_setPixmap
+        procedure :: setScaledContents => qlabel_setScaledContents
     end type QLabel
     !> Constructor: `QLabel([text, parent])`.
     interface QLabel
@@ -328,6 +329,8 @@ module qt_widgets
         procedure :: isChecked => qabstractbutton_isChecked
         procedure :: click => qabstractbutton_click
         procedure :: toggle => qabstractbutton_toggle
+        procedure :: setIcon => qabstractbutton_setIcon
+        procedure :: setIconSize => qabstractbutton_setIconSize
     end type QAbstractButton
 
     !> A command button.
@@ -575,6 +578,8 @@ module qt_widgets
     contains
         procedure :: addSeparator => qtoolbar_addSeparator
         procedure :: addWidget => qtoolbar_addWidget
+        procedure :: setIconSize => qtoolbar_setIconSize
+        procedure :: setToolButtonStyle => qtoolbar_setToolButtonStyle
     end type QToolBar
 
     !> Base of dialog windows.
@@ -716,6 +721,7 @@ module qt_widgets
         procedure :: setFlags => qtablewidgetitem_setFlags
         procedure :: flags => qtablewidgetitem_flags
         procedure :: setToolTip => qtablewidgetitem_setToolTip
+        procedure :: setIcon => qtablewidgetitem_setIcon
         procedure :: setBackground => qtablewidgetitem_setBackground
         procedure :: setForeground => qtablewidgetitem_setForeground
         procedure :: row => qtablewidgetitem_row
@@ -797,6 +803,7 @@ module qt_widgets
         procedure :: setExpanded => qtreewidgetitem_setExpanded
         procedure :: isExpanded => qtreewidgetitem_isExpanded
         procedure :: setToolTip => qtreewidgetitem_setToolTip
+        procedure :: setIcon => qtreewidgetitem_setIcon
         procedure :: setFlags => qtreewidgetitem_setFlags
         procedure :: isNull => qtreewidgetitem_isNull
     end type QTreeWidgetItem
@@ -908,6 +915,7 @@ module qt_widgets
         procedure :: setTabText => qtabwidget_setTabText
         procedure :: tabText => qtabwidget_tabText
         procedure :: setTabToolTip => qtabwidget_setTabToolTip
+        procedure :: setTabIcon => qtabwidget_setTabIcon
         procedure :: setTabEnabled => qtabwidget_setTabEnabled
         procedure :: setTabsClosable => qtabwidget_setTabsClosable
         procedure :: setTabPosition => qtabwidget_setTabPosition
@@ -1211,6 +1219,15 @@ module qt_widgets
         module procedure :: qformlayout_new
     end interface QFormLayout
 
+    !> The application's look and feel; provides the standard icons.
+    type, extends(QObject), public :: QStyle
+    end type QStyle
+
+    !> Constructor: `QApplication()`, with the program's command-line arguments.
+    interface QApplication
+        module procedure :: qapplication_new
+    end interface QApplication
+
     abstract interface
         !> Slot providing one table cell: set its value with `request%setText` etc.
         subroutine qt_slot_model_data(row, column, request, data)
@@ -1273,6 +1290,7 @@ module qt_widgets
         procedure :: invoke => tree_item_int_handler_invoke
     end type tree_item_int_handler
 
+    public :: QApplication_arguments
     public :: QApplication_exec
     public :: QApplication_quit
     public :: QApplication_processEvents
@@ -1291,14 +1309,18 @@ module qt_widgets
     public :: QInputDialog_getDouble
     public :: QInputDialog_getItem
     public :: QColorDialog_getColor
+    public :: QStyle_standardIcon
 
 contains
 
-    !> Create the application object (or return the existing one).
-    function qapplication_new() result(res)
-        type(QApplication) :: res
-        call res%attach(qtf_qapplication_new())
-    end function qapplication_new
+    !> The command-line arguments left after Qt removed its own options (the first is the program); `args(i)%s` is the i-th.
+    function QApplication_arguments() result(res)
+        type(qt_string), allocatable :: res(:)
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qapplication_arguments(n_)
+        res = qtf_take_string_list(p_, n_)
+    end function QApplication_arguments
 
     !> Run the event loop until quit; returns the exit code.
     function QApplication_exec() result(res)
@@ -1597,6 +1619,13 @@ contains
                 int(bottom, c_int))
     end subroutine qwidget_setContentsMargins
 
+    !> Set the icon of the window (copied).
+    subroutine qwidget_setWindowIcon(self, icon)
+        class(QWidget), intent(in) :: self
+        type(QIcon), intent(in) :: icon
+        call qtf_qwidget_setWindowIcon(self%ptr, icon%ptr)
+    end subroutine qwidget_setWindowIcon
+
     !> Bind to a C++ QtfWidget and its signals.
     subroutine qtfwidget_attach(self, ptr)
         class(QtfWidget), intent(inout) :: self
@@ -1697,6 +1726,20 @@ contains
         call qtf_qlabel_setWordWrap(self%ptr, qtf_int(on))
     end subroutine qlabel_setWordWrap
 
+    !> Show an image instead of text (copied; see QPixmap_fromImage).
+    subroutine qlabel_setPixmap(self, pixmap)
+        class(QLabel), intent(in) :: self
+        type(QPixmap), intent(in) :: pixmap
+        call qtf_qlabel_setPixmap(self%ptr, pixmap%ptr)
+    end subroutine qlabel_setPixmap
+
+    !> Scale the pixmap to fill the label.
+    subroutine qlabel_setScaledContents(self, scaled)
+        class(QLabel), intent(in) :: self
+        logical, intent(in) :: scaled
+        call qtf_qlabel_setScaledContents(self%ptr, qtf_int(scaled))
+    end subroutine qlabel_setScaledContents
+
     !> Bind to a C++ QAbstractButton and its signals.
     subroutine qabstractbutton_attach(self, ptr)
         class(QAbstractButton), intent(inout) :: self
@@ -1764,6 +1807,21 @@ contains
         class(QAbstractButton), intent(in) :: self
         call qtf_qabstractbutton_toggle(self%ptr)
     end subroutine qabstractbutton_toggle
+
+    !> Show an icon on the button (copied).
+    subroutine qabstractbutton_setIcon(self, icon)
+        class(QAbstractButton), intent(in) :: self
+        type(QIcon), intent(in) :: icon
+        call qtf_qabstractbutton_setIcon(self%ptr, icon%ptr)
+    end subroutine qabstractbutton_setIcon
+
+    !> Set the icon size in pixels.
+    subroutine qabstractbutton_setIconSize(self, width, height)
+        class(QAbstractButton), intent(in) :: self
+        integer, intent(in) :: width
+        integer, intent(in) :: height
+        call qtf_qabstractbutton_setIconSize(self%ptr, int(width, c_int), int(height, c_int))
+    end subroutine qabstractbutton_setIconSize
 
     !> Create a push button with `text`.
     function qpushbutton_new(text, parent) result(res)
@@ -2611,6 +2669,21 @@ contains
         call qtf_qtoolbar_addWidget(self%ptr, widget%ptr)
     end subroutine qtoolbar_addWidget
 
+    !> Set the size of the action icons in pixels.
+    subroutine qtoolbar_setIconSize(self, width, height)
+        class(QToolBar), intent(in) :: self
+        integer, intent(in) :: width
+        integer, intent(in) :: height
+        call qtf_qtoolbar_setIconSize(self%ptr, int(width, c_int), int(height, c_int))
+    end subroutine qtoolbar_setIconSize
+
+    !> Icons, text, or both (Qt_ToolButton* constants).
+    subroutine qtoolbar_setToolButtonStyle(self, style)
+        class(QToolBar), intent(in) :: self
+        integer, intent(in) :: style
+        call qtf_qtoolbar_setToolButtonStyle(self%ptr, int(style, c_int))
+    end subroutine qtoolbar_setToolButtonStyle
+
     !> Bind to a C++ QDialog and its signals.
     subroutine qdialog_attach(self, ptr)
         class(QDialog), intent(inout) :: self
@@ -3344,6 +3417,13 @@ contains
         call qtf_qtablewidgetitem_setToolTip(self%ptr, text, len(text, c_int))
     end subroutine qtablewidgetitem_setToolTip
 
+    !> Show an icon in the cell (copied).
+    subroutine qtablewidgetitem_setIcon(self, icon)
+        class(QTableWidgetItem), intent(in) :: self
+        type(QIcon), intent(in) :: icon
+        call qtf_qtablewidgetitem_setIcon(self%ptr, icon%ptr)
+    end subroutine qtablewidgetitem_setIcon
+
     !> Set the cell background color.
     subroutine qtablewidgetitem_setBackground(self, color)
         class(QTableWidgetItem), intent(in) :: self
@@ -3732,6 +3812,14 @@ contains
         character(len=*), intent(in) :: text
         call qtf_qtreewidgetitem_setToolTip(self%ptr, int(column, c_int), text, len(text, c_int))
     end subroutine qtreewidgetitem_setToolTip
+
+    !> Show an icon in a column (copied).
+    subroutine qtreewidgetitem_setIcon(self, column, icon)
+        class(QTreeWidgetItem), intent(in) :: self
+        integer, intent(in) :: column
+        type(QIcon), intent(in) :: icon
+        call qtf_qtreewidgetitem_setIcon(self%ptr, int(column, c_int), icon%ptr)
+    end subroutine qtreewidgetitem_setIcon
 
     !> Set the item flags (add Qt_ItemIsEditable to allow editing).
     subroutine qtreewidgetitem_setFlags(self, flags)
@@ -4235,6 +4323,14 @@ contains
         character(len=*), intent(in) :: tip
         call qtf_qtabwidget_setTabToolTip(self%ptr, int(index, c_int), tip, len(tip, c_int))
     end subroutine qtabwidget_setTabToolTip
+
+    !> Show an icon on a tab (copied).
+    subroutine qtabwidget_setTabIcon(self, index, icon)
+        class(QTabWidget), intent(in) :: self
+        integer, intent(in) :: index
+        type(QIcon), intent(in) :: icon
+        call qtf_qtabwidget_setTabIcon(self%ptr, int(index, c_int), icon%ptr)
+    end subroutine qtabwidget_setTabIcon
 
     !> Enable or disable a tab.
     subroutine qtabwidget_setTabEnabled(self, index, enabled)
@@ -5525,6 +5621,33 @@ contains
         integer, intent(in) :: spacing
         call qtf_qformlayout_setVerticalSpacing(self%ptr, int(spacing, c_int))
     end subroutine qformlayout_setVerticalSpacing
+
+    !> A standard icon of the application style by its QStyle::StandardPixmap name, e.g. 'SP_MediaPlay', 'SP_DialogSaveButton', 'SP_BrowserReload' (null if unknown). Delete it when done.
+    function QStyle_standardIcon(name) result(res)
+        character(len=*), intent(in) :: name
+        type(QIcon) :: res
+        res%ptr = qtf_qstyle_standardIcon(name, len(name, c_int))
+    end function QStyle_standardIcon
+
+    !> Create the application object, passing the program's command-line
+    !> arguments to Qt (trailing blanks of each argument are dropped), or return
+    !> the existing one.
+    function qapplication_new() result(app)
+        type(QApplication) :: app
+        character(len=:), allocatable :: args(:)
+        integer :: i, n, l, maxlen
+        n = command_argument_count()
+        maxlen = 1
+        do i = 0, n
+            call get_command_argument(i, length=l)
+            maxlen = max(maxlen, l)
+        end do
+        allocate(character(len=maxlen) :: args(0:n))
+        do i = 0, n
+            call get_command_argument(i, args(i))
+        end do
+        call app%attach(qtf_qapplication_new_args(args, len(args, c_int), int(n + 1, c_int)))
+    end function qapplication_new
 
     !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalmodeldata_connect(self, slot, data)

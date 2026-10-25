@@ -31,6 +31,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHeaderView>
+#include <QIcon>
 #include <QInputDialog>
 #include <QLCDNumber>
 #include <QLabel>
@@ -40,6 +41,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QMetaEnum>
 #include <QPainter>
 #include <QPixmap>
 #include <QPlainTextEdit>
@@ -53,6 +55,7 @@
 #include <QSplitter>
 #include <QStackedWidget>
 #include <QStatusBar>
+#include <QStyle>
 #include <QTabWidget>
 #include <QTableView>
 #include <QTableWidget>
@@ -65,6 +68,7 @@
 #include <QVariant>
 #include <QWidget>
 #include <array>
+#include <string>
 #include <vector>
 
 template <typename T> static T *as(void *p) { return static_cast<T *>(p); }
@@ -141,9 +145,33 @@ enum : int {
 };
 
 // QApplication keeps references to argc/argv, so they must outlive it.
-static int qtf_argc = 1;
-static char qtf_argv0[] = "qt-fortran";
-static char *qtf_argv[] = {qtf_argv0, nullptr};
+static int qtf_argc = 0;
+static std::vector<std::string> qtf_arg_strings;
+static std::vector<char *> qtf_argv;
+
+// Create the application with the program's command-line arguments (n items
+// of `itemlen` bytes, blank padded; the first is the program name), or return
+// the existing one.
+QTF_API void *qtf_qapplication_new_args(const char *s, int itemlen, int n) {
+    if (QApplication::instance()) return QApplication::instance();
+    qtf_arg_strings.clear();
+    for (const QString &a : qtf_qstringlist(s, itemlen, n)) qtf_arg_strings.push_back(a.toStdString());
+    if (qtf_arg_strings.empty()) qtf_arg_strings.push_back("qt-fortran");
+    qtf_argv.clear();
+    for (std::string &a : qtf_arg_strings) qtf_argv.push_back(a.data());
+    qtf_argv.push_back(nullptr);
+    qtf_argc = static_cast<int>(qtf_arg_strings.size());
+    return new QApplication(qtf_argc, qtf_argv.data());
+}
+
+// One of the style's standard icons by enum name (e.g. "SP_MediaPlay"); a null
+// icon if the name is unknown.
+static QIcon *qtf_standard_icon(const QString &name) {
+    const QMetaEnum e = QMetaEnum::fromType<QStyle::StandardPixmap>();
+    bool ok = false;
+    const int v = e.keyToValue(name.toLatin1().constData(), &ok);
+    return new QIcon(ok ? QApplication::style()->standardIcon(QStyle::StandardPixmap(v)) : QIcon());
+}
 
 // QtfWidget: a QWidget whose event handlers (virtual functions) are forwarded
 // to Fortran slots. An event with no connected slot gets Qt's default handling.
@@ -296,10 +324,8 @@ template <qtf_widget_event EV> static bool connect_event(void *s, const qtf_slot
 // ---------------------------------------------------------------------------
 // QApplication
 
-// Create the application object (or return the existing one).
-QTF_API void *qtf_qapplication_new(void) {
-    return QApplication::instance() ? QApplication::instance() : new QApplication(qtf_argc, qtf_argv);
-}
+// The command-line arguments left after Qt removed its own options (the first is the program); `args(i)%s` is the i-th.
+QTF_API char *qtf_qapplication_arguments(int *len) { return qtf_list_to_c(QApplication::arguments(), len); }
 
 // Run the event loop until quit; returns the exit code.
 QTF_API int qtf_qapplication_exec(void) { return QApplication::exec(); }
@@ -470,6 +496,11 @@ QTF_API void qtf_qwidget_setContentsMargins(void *self, int left, int top, int r
     as<QWidget>(self)->setContentsMargins(left, top, right, bottom);
 }
 
+// Set the icon of the window (copied).
+QTF_API void qtf_qwidget_setWindowIcon(void *self, void *icon) {
+    as<QWidget>(self)->setWindowIcon(*as<QIcon>(icon));
+}
+
 // ---------------------------------------------------------------------------
 // QtfWidget
 
@@ -522,6 +553,16 @@ QTF_API void qtf_qlabel_setAlignment(void *self, int alignment) {
 // Wrap long text across lines.
 QTF_API void qtf_qlabel_setWordWrap(void *self, int on) { as<QLabel>(self)->setWordWrap((on != 0)); }
 
+// Show an image instead of text (copied; see QPixmap_fromImage).
+QTF_API void qtf_qlabel_setPixmap(void *self, void *pixmap) {
+    as<QLabel>(self)->setPixmap(*as<QPixmap>(pixmap));
+}
+
+// Scale the pixmap to fill the label.
+QTF_API void qtf_qlabel_setScaledContents(void *self, int scaled) {
+    as<QLabel>(self)->setScaledContents((scaled != 0));
+}
+
 // ---------------------------------------------------------------------------
 // QAbstractButton
 
@@ -560,6 +601,16 @@ QTF_API void qtf_qabstractbutton_click(void *self) { as<QAbstractButton>(self)->
 
 // Toggle the checked state (emits toggled).
 QTF_API void qtf_qabstractbutton_toggle(void *self) { as<QAbstractButton>(self)->toggle(); }
+
+// Show an icon on the button (copied).
+QTF_API void qtf_qabstractbutton_setIcon(void *self, void *icon) {
+    as<QAbstractButton>(self)->setIcon(*as<QIcon>(icon));
+}
+
+// Set the icon size in pixels.
+QTF_API void qtf_qabstractbutton_setIconSize(void *self, int width, int height) {
+    as<QAbstractButton>(self)->setIconSize(QSize(width, height));
+}
 
 // ---------------------------------------------------------------------------
 // QPushButton
@@ -1018,6 +1069,16 @@ QTF_API void qtf_qtoolbar_addWidget(void *self, void *widget) {
     as<QToolBar>(self)->addWidget(as<QWidget>(widget));
 }
 
+// Set the size of the action icons in pixels.
+QTF_API void qtf_qtoolbar_setIconSize(void *self, int width, int height) {
+    as<QToolBar>(self)->setIconSize(QSize(width, height));
+}
+
+// Icons, text, or both (Qt_ToolButton* constants).
+QTF_API void qtf_qtoolbar_setToolButtonStyle(void *self, int style) {
+    as<QToolBar>(self)->setToolButtonStyle(Qt::ToolButtonStyle(style));
+}
+
 // ---------------------------------------------------------------------------
 // QDialog
 
@@ -1385,6 +1446,11 @@ QTF_API void qtf_qtablewidgetitem_setToolTip(void *self, const char *text, int t
     as<QTableWidgetItem>(self)->setToolTip(qtf_qstring(text, text_len));
 }
 
+// Show an icon in the cell (copied).
+QTF_API void qtf_qtablewidgetitem_setIcon(void *self, void *icon) {
+    as<QTableWidgetItem>(self)->setIcon(*as<QIcon>(icon));
+}
+
 // Set the cell background color.
 QTF_API void qtf_qtablewidgetitem_setBackground(void *self, int color_r, int color_g, int color_b, int color_a, int color_valid) {
     as<QTableWidgetItem>(self)->setBackground(QBrush(QColor(color_r, color_g, color_b, color_a)));
@@ -1591,6 +1657,11 @@ QTF_API int qtf_qtreewidgetitem_isExpanded(void *self) {
 // Set the tool tip of a column.
 QTF_API void qtf_qtreewidgetitem_setToolTip(void *self, int column, const char *text, int text_len) {
     as<QTreeWidgetItem>(self)->setToolTip(column, qtf_qstring(text, text_len));
+}
+
+// Show an icon in a column (copied).
+QTF_API void qtf_qtreewidgetitem_setIcon(void *self, int column, void *icon) {
+    as<QTreeWidgetItem>(self)->setIcon(column, *as<QIcon>(icon));
 }
 
 // Set the item flags (add Qt_ItemIsEditable to allow editing).
@@ -1871,6 +1942,11 @@ QTF_API char *qtf_qtabwidget_tabText(void *self, int index, int *len) {
 // Set a tab's tool tip.
 QTF_API void qtf_qtabwidget_setTabToolTip(void *self, int index, const char *tip, int tip_len) {
     as<QTabWidget>(self)->setTabToolTip(index, qtf_qstring(tip, tip_len));
+}
+
+// Show an icon on a tab (copied).
+QTF_API void qtf_qtabwidget_setTabIcon(void *self, int index, void *icon) {
+    as<QTabWidget>(self)->setTabIcon(index, *as<QIcon>(icon));
 }
 
 // Enable or disable a tab.
@@ -2609,6 +2685,14 @@ QTF_API void qtf_qformlayout_setHorizontalSpacing(void *self, int spacing) {
 // Space between rows, in pixels.
 QTF_API void qtf_qformlayout_setVerticalSpacing(void *self, int spacing) {
     as<QFormLayout>(self)->setVerticalSpacing(spacing);
+}
+
+// ---------------------------------------------------------------------------
+// QStyle
+
+// A standard icon of the application style by its QStyle::StandardPixmap name, e.g. 'SP_MediaPlay', 'SP_DialogSaveButton', 'SP_BrowserReload' (null if unknown). Delete it when done.
+QTF_API void *qtf_qstyle_standardIcon(const char *name, int name_len) {
+    return qtf_standard_icon(qtf_qstring(name, name_len));
 }
 
 // ---------------------------------------------------------------------------

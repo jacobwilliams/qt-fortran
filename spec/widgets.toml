@@ -15,7 +15,7 @@ uses = [
     "use qt_gui_types",
     "use qt_gui",
 ]
-handle_types = ["QPixmap"]
+handle_types = ["QPixmap", "QImage", "QIcon"]
 cpp_includes = [
     "QAction", "QApplication", "QBoxLayout", "QCheckBox", "QComboBox", "QDialog", "QDoubleSpinBox",
     "QFileDialog", "QGridLayout", "QLabel", "QLineEdit", "QMainWindow", "QMenu", "QMenuBar",
@@ -25,14 +25,38 @@ cpp_includes = [
     "QDateEdit", "QDial", "QDockWidget", "QFontDialog", "QFormLayout", "QFrame", "QGroupBox", "QHeaderView",
     "QInputDialog", "QLCDNumber", "QListWidget", "QPlainTextEdit", "QProgressBar", "QProgressDialog",
     "QScrollArea", "QSplitter", "QStackedWidget", "QTabWidget", "QTableView", "QTableWidget", "QTextEdit",
-    "QTime", "QTimeEdit", "QToolButton", "QTreeWidget", "QVariant",
+    "QTime", "QTimeEdit", "QToolButton", "QTreeWidget", "QVariant", "QIcon", "QMetaEnum", "QStyle", "string",
 ]
 
 cpp_prelude = """
 // QApplication keeps references to argc/argv, so they must outlive it.
-static int qtf_argc = 1;
-static char qtf_argv0[] = "qt-fortran";
-static char *qtf_argv[] = {qtf_argv0, nullptr};
+static int qtf_argc = 0;
+static std::vector<std::string> qtf_arg_strings;
+static std::vector<char *> qtf_argv;
+
+// Create the application with the program's command-line arguments (n items
+// of `itemlen` bytes, blank padded; the first is the program name), or return
+// the existing one.
+QTF_API void *qtf_qapplication_new_args(const char *s, int itemlen, int n) {
+    if (QApplication::instance()) return QApplication::instance();
+    qtf_arg_strings.clear();
+    for (const QString &a : qtf_qstringlist(s, itemlen, n)) qtf_arg_strings.push_back(a.toStdString());
+    if (qtf_arg_strings.empty()) qtf_arg_strings.push_back("qt-fortran");
+    qtf_argv.clear();
+    for (std::string &a : qtf_arg_strings) qtf_argv.push_back(a.data());
+    qtf_argv.push_back(nullptr);
+    qtf_argc = static_cast<int>(qtf_arg_strings.size());
+    return new QApplication(qtf_argc, qtf_argv.data());
+}
+
+// One of the style's standard icons by enum name (e.g. "SP_MediaPlay"); a null
+// icon if the name is unknown.
+static QIcon *qtf_standard_icon(const QString &name) {
+    const QMetaEnum e = QMetaEnum::fromType<QStyle::StandardPixmap>();
+    bool ok = false;
+    const int v = e.keyToValue(name.toLatin1().constData(), &ok);
+    return new QIcon(ok ? QApplication::style()->standardIcon(QStyle::StandardPixmap(v)) : QIcon());
+}
 
 // QtfWidget: a QWidget whose event handlers (virtual functions) are forwarded
 // to Fortran slots. An event with no connected slot gets Qt's default handling.
@@ -220,6 +244,11 @@ fortran_decls = '''
 '''
 
 fortran_decls_after = '''
+    !> Constructor: `QApplication()`, with the program's command-line arguments.
+    interface QApplication
+        module procedure :: qapplication_new
+    end interface QApplication
+
     abstract interface
         !> Slot providing one table cell: set its value with `request%setText` etc.
         subroutine qt_slot_model_data(row, column, request, data)
@@ -284,6 +313,26 @@ fortran_decls_after = '''
 '''
 
 fortran_procedures = '''
+    !> Create the application object, passing the program's command-line
+    !> arguments to Qt (trailing blanks of each argument are dropped), or return
+    !> the existing one.
+    function qapplication_new() result(app)
+        type(QApplication) :: app
+        character(len=:), allocatable :: args(:)
+        integer :: i, n, l, maxlen
+        n = command_argument_count()
+        maxlen = 1
+        do i = 0, n
+            call get_command_argument(i, length=l)
+            maxlen = max(maxlen, l)
+        end do
+        allocate(character(len=maxlen) :: args(0:n))
+        do i = 0, n
+            call get_command_argument(i, args(i))
+        end do
+        call app%attach(qtf_qapplication_new_args(args, len(args, c_int), int(n + 1, c_int)))
+    end function qapplication_new
+
     !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalmodeldata_connect(self, slot, data)
         class(QSignalModelData), intent(in) :: self
@@ -579,10 +628,12 @@ values = [
 
 [[class]]
 name = "QApplication"
-doc = "The application object. Create exactly one, before any widget."
-ctor = "() -- Create the application object (or return the existing one)."
-cpp_ctor = "QApplication::instance() ? QApplication::instance() : new QApplication(qtf_argc, qtf_argv)"
+doc = """
+The application object. Create exactly one, before any widget, with
+`QApplication()`: it receives the program's command-line arguments (Qt handles
+its own options such as -style or -platform; see QApplication_arguments)."""
 methods = [
+    { sig = "static arguments() -> strings", cpp = "QApplication::arguments()", doc = "The command-line arguments left after Qt removed its own options (the first is the program); `args(i)%s` is the i-th." },
     { sig = "static exec() -> int", doc = "Run the event loop until quit; returns the exit code.", nopass = true },
     { sig = "static quit()", doc = "Ask the event loop to exit (`exec` then returns 0).", nopass = true },
     { sig = "static processEvents()", doc = "Process pending events, then return.", nopass = true },
@@ -631,6 +682,7 @@ methods = [
     "setFixedHeight(height: int) -- Fix the height.",
     "setSizePolicy(horizontal: QSizePolicy::Policy, vertical: QSizePolicy::Policy) -- How the widget grows and shrinks in layouts (QSizePolicy_* constants).",
     "setContentsMargins(left: int, top: int, right: int, bottom: int) -- Set the margins around the widget's contents, in pixels.",
+    { sig = "setWindowIcon(icon: QIcon)", cpp = "{self}->setWindowIcon(*{icon})", doc = "Set the icon of the window (copied)." },
 ]
 
 [[class]]
@@ -680,6 +732,8 @@ methods = [
     "text() -> string -- The label text.",
     "setAlignment(alignment: Qt::Alignment) -- Align the text (a combination of Qt_Align* flags).",
     "setWordWrap(on: bool) -- Wrap long text across lines.",
+    { sig = "setPixmap(pixmap: QPixmap)", cpp = "{self}->setPixmap(*{pixmap})", doc = "Show an image instead of text (copied; see QPixmap_fromImage)." },
+    "setScaledContents(scaled: bool) -- Scale the pixmap to fill the label.",
 ]
 
 # ---------------------------------------------------------------------------
@@ -706,6 +760,8 @@ methods = [
     "isChecked() -> bool -- True if the button is checked.",
     "click() -- Simulate a click (emits pressed, released, clicked, and toggled if checkable).",
     "toggle() -- Toggle the checked state (emits toggled).",
+    { sig = "setIcon(icon: QIcon)", cpp = "{self}->setIcon(*{icon})", doc = "Show an icon on the button (copied)." },
+    { sig = "setIconSize(width: int, height: int)", cpp = "{self}->setIconSize(QSize({width}, {height}))", doc = "Set the icon size in pixels." },
 ]
 
 [[class]]
@@ -968,6 +1024,8 @@ doc = "A tool bar. Add actions with the inherited `addAction`."
 methods = [
     "addSeparator() -- Append a separator.",
     "addWidget(widget: QWidget) -- Append a widget (e.g. a combo box) to the tool bar.",
+    { sig = "setIconSize(width: int, height: int)", cpp = "{self}->setIconSize(QSize({width}, {height}))", doc = "Set the size of the action icons in pixels." },
+    "setToolButtonStyle(style: Qt::ToolButtonStyle) -- Icons, text, or both (Qt_ToolButton* constants).",
 ]
 
 # ---------------------------------------------------------------------------
@@ -1129,6 +1187,7 @@ methods = [
     "setFlags(flags: Qt::ItemFlags) -- Set the item flags (e.g. without Qt_ItemIsEditable for read-only).",
     "flags() -> Qt::ItemFlags -- The item flags.",
     "setToolTip(text: string) -- Set the tool tip.",
+    { sig = "setIcon(icon: QIcon)", cpp = "{self}->setIcon(*{icon})", doc = "Show an icon in the cell (copied)." },
     { sig = "setBackground(color: QColor)", cpp = "{self}->setBackground(QBrush({color}))", doc = "Set the cell background color." },
     { sig = "setForeground(color: QColor)", cpp = "{self}->setForeground(QBrush({color}))", doc = "Set the text color." },
     "row() -> int -- Row of the item in its table (-1 if none).",
@@ -1221,6 +1280,7 @@ methods = [
     "setExpanded(expand: bool) -- Expand or collapse the item (in a tree).",
     "isExpanded() -> bool -- True if the item is expanded.",
     "setToolTip(column: int, text: string) -- Set the tool tip of a column.",
+    { sig = "setIcon(column: int, icon: QIcon)", cpp = "{self}->setIcon({column}, *{icon})", doc = "Show an icon in a column (copied)." },
     "setFlags(flags: Qt::ItemFlags) -- Set the item flags (add Qt_ItemIsEditable to allow editing).",
 ]
 fortran_bindings = "procedure :: isNull => qtreewidgetitem_isNull"
@@ -1342,6 +1402,7 @@ methods = [
     "setTabText(index: int, label: string) -- Change a tab's label.",
     "tabText(index: int) -> string -- A tab's label.",
     "setTabToolTip(index: int, tip: string) -- Set a tab's tool tip.",
+    { sig = "setTabIcon(index: int, icon: QIcon)", cpp = "{self}->setTabIcon({index}, *{icon})", doc = "Show an icon on a tab (copied)." },
     "setTabEnabled(index: int, enabled: bool) -- Enable or disable a tab.",
     "setTabsClosable(closeable: bool) -- Show close buttons on the tabs (they emit tabCloseRequested).",
     "setTabPosition(position: QTabWidget::TabPosition) -- Where the tabs are (QTabWidget_North, ...).",
@@ -1668,4 +1729,14 @@ methods = [
     "setLabelAlignment(alignment: Qt::Alignment) -- Align the labels (e.g. Qt_AlignRight).",
     "setHorizontalSpacing(spacing: int) -- Space between labels and fields, in pixels.",
     "setVerticalSpacing(spacing: int) -- Space between rows, in pixels.",
+]
+
+# ---------------------------------------------------------------------------
+# style
+
+[[class]]
+name = "QStyle"
+doc = "The application's look and feel; provides the standard icons."
+methods = [
+    { sig = "static standardIcon(name: string) -> QIcon", cpp = "qtf_standard_icon({name})", doc = "A standard icon of the application style by its QStyle::StandardPixmap name, e.g. 'SP_MediaPlay', 'SP_DialogSaveButton', 'SP_BrowserReload' (null if unknown). Delete it when done." },
 ]

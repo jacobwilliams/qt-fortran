@@ -10,6 +10,7 @@
 
 #include <QAction>
 #include <QFontMetrics>
+#include <QIcon>
 #include <QImage>
 #include <QKeyEvent>
 #include <QKeySequence>
@@ -19,6 +20,8 @@
 #include <QPolygonF>
 #include <QResizeEvent>
 #include <QWheelEvent>
+#include <cmath>
+#include <vector>
 
 template <typename T> static T *as(void *p) { return static_cast<T *>(p); }
 
@@ -40,6 +43,77 @@ static QPen qtf_pen(const QColor &color, double width, int style) {
     pen.setWidthF(width);
     pen.setStyle(Qt::PenStyle(style));
     return pen;
+}
+
+// Colormaps: evenly spaced stops (sampled from matplotlib's maps), expanded to
+// a 256-entry lookup table. Unknown names give viridis.
+static std::vector<QRgb> qtf_colormap(const QString &name) {
+    static const struct {
+        const char *name;
+        std::vector<QRgb> stops;
+    } maps[] = {
+        {"viridis", {0x440154, 0x482878, 0x3e4989, 0x31688e, 0x26828e, 0x1f9e89, 0x35b779, 0x6ece58, 0xb5de2b,
+                     0xfde725}},
+        {"magma", {0x000004, 0x180f3d, 0x440f76, 0x721f81, 0x9e2f7f, 0xcd4071, 0xf1605d, 0xfd9668, 0xfeca8d,
+                   0xfcfdbf}},
+        {"inferno", {0x000004, 0x1b0c41, 0x4a0c6b, 0x781c6d, 0xa52c60, 0xcf4446, 0xed6925, 0xfb9b06, 0xf7d13d,
+                     0xfcffa4}},
+        {"plasma", {0x0d0887, 0x46039f, 0x7201a8, 0x9c179e, 0xbd3786, 0xd8576b, 0xed7953, 0xfb9f3a, 0xfdca26,
+                    0xf0f921}},
+        {"coolwarm", {0x3b4cc0, 0x6788ee, 0x9abbff, 0xc9d7f0, 0xedd1c2, 0xf7a889, 0xe26952, 0xb40426}},
+        {"gray", {0x000000, 0xffffff}},
+    };
+    const std::vector<QRgb> *stops = &maps[0].stops;
+    for (const auto &m : maps)
+        if (name.compare(QLatin1String(m.name), Qt::CaseInsensitive) == 0) stops = &m.stops;
+    std::vector<QRgb> lut(256);
+    const int n = int(stops->size());
+    for (int k = 0; k < 256; ++k) {
+        const double t = k / 255.0 * (n - 1);
+        const int i = std::min(int(t), n - 2);
+        const double f = t - i;
+        const QRgb a = (*stops)[i], b = (*stops)[i + 1];
+        lut[k] = qRgb(int(qRed(a) + f * (qRed(b) - qRed(a)) + 0.5), int(qGreen(a) + f * (qGreen(b) - qGreen(a)) + 0.5),
+                      int(qBlue(a) + f * (qBlue(b) - qBlue(a)) + 0.5));
+    }
+    return lut;
+}
+
+// An nx x ny image of values v (v[i + j*nx], i.e. a Fortran array v(nx, ny))
+// through a colormap; NaN is transparent. flip: row 0 shows the last j.
+QTF_API void *qtf_qimage_fromArray(const double *v, int nx, int ny, double vmin, double vmax, const char *cmap,
+                                   int len, int flip) {
+    const std::vector<QRgb> lut = qtf_colormap(qtf_qstring(cmap, len));
+    auto *img = new QImage(nx, ny, QImage::Format_ARGB32);
+    const double span = vmax > vmin ? vmax - vmin : 1.0;
+    for (int j = 0; j < ny; ++j) {
+        auto *line = reinterpret_cast<QRgb *>(img->scanLine(flip ? ny - 1 - j : j));
+        const double *row = v + static_cast<size_t>(j) * nx;
+        for (int i = 0; i < nx; ++i) {
+            if (std::isnan(row[i])) {
+                line[i] = qRgba(0, 0, 0, 0);
+                continue;
+            }
+            const double t = std::clamp((row[i] - vmin) / span, 0.0, 1.0);
+            line[i] = lut[int(t * 255 + 0.5)];
+        }
+    }
+    return img;
+}
+
+// A colormap gradient for legends (vertical: the maximum is at the top).
+QTF_API void *qtf_qimage_colorbar(const char *cmap, int len, int width, int height, int vertical) {
+    const std::vector<QRgb> lut = qtf_colormap(qtf_qstring(cmap, len));
+    auto *img = new QImage(std::max(width, 1), std::max(height, 1), QImage::Format_ARGB32);
+    for (int y = 0; y < img->height(); ++y) {
+        auto *line = reinterpret_cast<QRgb *>(img->scanLine(y));
+        for (int x = 0; x < img->width(); ++x) {
+            const double t = vertical ? 1.0 - double(y) / std::max(img->height() - 1, 1)
+                                      : double(x) / std::max(img->width() - 1, 1);
+            line[x] = lut[int(t * 255 + 0.5)];
+        }
+    }
+    return img;
 }
 
 static QPolygonF qtf_polygon(const double *xs, const double *ys, int n) {
@@ -112,10 +186,32 @@ QTF_API int qtf_qpixmap_height(void *self) { return as<QPixmap>(self)->height();
 // A new image with the pixmap's contents (delete it when done).
 QTF_API void *qtf_qpixmap_toImage(void *self) { return new QImage(as<QPixmap>(self)->toImage()); }
 
+// A new pixmap with an image's contents, e.g. for QLabel%setPixmap (delete it when done).
+QTF_API void *qtf_qpixmap_fromImage(void *image) {
+    return new QPixmap(QPixmap::fromImage(*as<QImage>(image)));
+}
+
 // Save to a file; the format follows the extension (.png, .jpg, ...).
 QTF_API int qtf_qpixmap_save(void *self, const char *fileName, int fileName_len) {
     return qtf_bool(as<QPixmap>(self)->save(qtf_qstring(fileName, fileName_len)));
 }
+
+// ---------------------------------------------------------------------------
+// QIcon
+
+// Release an icon.
+QTF_API void qtf_qicon_delete(void *self) { delete as<QIcon>(self); }
+
+// True if the icon has no image.
+QTF_API int qtf_qicon_isNull(void *self) { return qtf_bool(as<QIcon>(self)->isNull()); }
+
+// An icon from an image file (PNG, SVG, ...); check `isNull()`.
+QTF_API void *qtf_qicon_new(const char *fileName, int fileName_len) {
+    return new QIcon(qtf_qstring(fileName, fileName_len));
+}
+
+// An icon from a pixmap (e.g. QPixmap_fromImage of a generated image).
+QTF_API void *qtf_qicon_fromPixmap(void *pixmap) { return new QIcon(*as<QPixmap>(pixmap)); }
 
 // ---------------------------------------------------------------------------
 // QPainter
@@ -249,6 +345,11 @@ QTF_API void qtf_qpainter_drawTextRect(void *self, double x, double y, double w,
 // Draw `image` with its top-left corner at (x, y).
 QTF_API void qtf_qpainter_drawImage(void *self, int x, int y, void *image) {
     as<QPainter>(self)->drawImage(QPointF(x, y), *as<QImage>(image));
+}
+
+// Draw `image` scaled into the rectangle (x, y, w, h); smooth with the QPainter_SmoothPixmapTransform hint.
+QTF_API void qtf_qpainter_drawImageRect(void *self, double x, double y, double w, double h, void *image) {
+    as<QPainter>(self)->drawImage(QRectF(x, y, w, h), *as<QImage>(image));
 }
 
 // Width in pixels of `text` in the current font.
@@ -410,6 +511,9 @@ QTF_API void qtf_qaction_setToolTip(void *self, const char *tip, int tip_len) {
 
 // Activate the action (emits triggered, and toggled if checkable).
 QTF_API void qtf_qaction_trigger(void *self) { as<QAction>(self)->trigger(); }
+
+// Set the icon shown in menus and tool bars (the icon is copied).
+QTF_API void qtf_qaction_setIcon(void *self, void *icon) { as<QAction>(self)->setIcon(*as<QIcon>(icon)); }
 
 // ---------------------------------------------------------------------------
 // signal connectors

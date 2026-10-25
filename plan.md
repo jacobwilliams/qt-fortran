@@ -226,7 +226,7 @@ Portability rules for sources:
 ```sh
 pixi run build             # fpm build with Qt flags
 pixi run test              # headless (QT_QPA_PLATFORM=offscreen)
-pixi run example hello     # run an example (hello, timer, form, plot, explorer, timeseries, surface3d, orbit3d)
+pixi run example hello     # run an example (hello, timer, form, plot, explorer, timeseries, fieldviewer, surface3d, orbit3d)
 pixi run gen               # specs -> shims + high-level modules -> raw bind(C) modules
 pixi run gen-check         # fail if any generated file is stale (CI)
 pixi run lint              # docstrings + implicit none in interface bodies (CI)
@@ -366,16 +366,19 @@ spec-only work now; items marked *(design)* need new machinery.
   - Not yet: a model for `QTreeView`/`QListView` (only the table model exists),
     item icons and check states.
 - **Gui**
-  - `QIcon` (icons on actions and buttons).
-  - **`QImage` from Fortran arrays** (bulk pixel data) plus colormaps, for
-    heatmaps and field plots. Today only per-pixel `setPixelColor` exists.
+  - **Done:** `QIcon` (from files or pixmaps), `QStyle_standardIcon(name)`, and
+    icons on actions, buttons, tabs, table/tree items and windows.
+  - **Done:** `QImage_fromArray(values(:,:), colormap, vmin, vmax, flipY)` and
+    `QImage_colorbar`. Colormapping is done in C++ with 256-entry lookup tables
+    (viridis, magma, inferno, plasma, coolwarm, gray); NaN is transparent. Also
+    `QPixmap_fromImage`, `QLabel%setPixmap`, and a scaled `QPainter%drawImage`.
   - Painting: `QPainterPath` (curves), gradients, `QTransform`, standalone font metrics.
   - System: clipboard, cursors, drag and drop, screens/DPI.
 - **Core**
   - **`QThread` / QtConcurrent**: long computations without freezing the UI. *(design)*
   - `QSettings`: persist preferences and window state.
-  - Pass the real command-line arguments to `QApplication`. A fixed argv is used
-    today, so Qt options such as `-platform` and `-style` are ignored.
+  - **Done:** `QApplication()` passes the program's command-line arguments to Qt
+    (so -style, -platform, ... work); `QApplication_arguments()` returns the rest.
   - `QDateTime`, `QObject` properties, `findChild`.
 - **Events**: close (confirm on quit), enter/leave, focus, context menu,
   show/hide, drag/drop.
@@ -402,11 +405,11 @@ a C++ `lambda`/`emit`, with the sender as `s`).
   charts, a big win for plotting), Qt3D, Multimedia, WebEngine.
 
 ### Priorities (for Fortran users)
-1. `QImage` from Fortran arrays, plus colormaps.
+1. ~~`QImage` from Fortran arrays, plus colormaps.~~ Done (fieldviewer example).
 2. Background computation (`QThread`-style worker, or a documented
    `processEvents` pattern with `QProgressBar`).
 3. ~~`QTableWidget`, then model/view.~~ Done.
-4. ~~Layout and polish widgets.~~ Done, except `QIcon` on actions (Gui).
+4. ~~Layout and polish widgets.~~ Done, including icons.
 5. Close event and `QSettings`.
 6. Fortran-defined signals and `disconnect`.
 7. Qt Charts / Qt Graphs.
