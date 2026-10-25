@@ -197,14 +197,18 @@ A few conventions to know (the full list is in [plan.md](plan.md)):
 
 ## How it works
 
-```
-your program  ──  use qt                   Modern Fortran API (derived types, type-bound procedures)
-                      │
-                  qt_c_* modules           raw bind(C) interfaces, iso_c_binding only
-                      │  (C ABI)
-                  libqtf (shim/)           thin extern "C" C++ layer over Qt
-                      │
-                  Qt 6 (Core, Gui, Widgets)
+```mermaid
+flowchart TD
+    app["Your program<br/>use qt"]
+    api["<b>qt_core, qt_gui, qt_widgets</b><br/>Modern Fortran API: derived types, type-bound procedures"]
+    raw["<b>qt_c_* modules</b><br/>raw bind(C) interfaces (iso_c_binding only)"]
+    shim["<b>libqtf</b> (shim/)<br/>thin extern &quot;C&quot; C++ layer over Qt"]
+    qt["<b>Qt 6</b><br/>Core, Gui, Widgets"]
+
+    app --> api --> raw
+    raw -- "C ABI" --> shim
+    shim --> qt
+    shim -. "signals and events<br/>(one Fortran dispatcher)" .-> api
 ```
 
 - **The shim** exposes Qt as flat C functions (`qtf_qlabel_setText(void*,
