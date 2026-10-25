@@ -128,7 +128,7 @@ mode. Fortran is still gfortran.
 ```sh
 pixi run build                  # build the library and examples
 pixi run test                   # run the test suite (headless)
-pixi run example hello          # run an example: hello, timer, form, plot, explorer, surface3d, orbit3d
+pixi run example hello          # run an example: hello, timer, form, plot, explorer, timeseries, surface3d, orbit3d
 ```
 
 Examples:
@@ -140,6 +140,7 @@ Examples:
 | [form](example/form.f90) | input widgets, layouts, validation, a message box |
 | [plot](example/plot.f90) | a live scrolling plot with `QtfWidget` and `QPainter` |
 | [explorer](example/explorer.f90) | a tour of nearly everything: menus, toolbar, all control types, custom painting, mouse/keyboard/wheel input, animation, file and message dialogs |
+| [timeseries](example/timeseries.f90) | a simulation workbench: a dock of parameters (group boxes, form layouts, dial + LCD, radio group), cancellable chunked runs with a progress bar, tabs with a splitter, a million-row table served from Fortran arrays (`QtfTableModel`), a statistics tree, a log console, a tool-button preset menu, input and color dialogs |
 | [surface3d](example/surface3d.f90) | an interactive 3D surface plot with modern OpenGL: GLSL shaders, an indexed mesh with lighting, orbit/zoom with the mouse, auto-rotation, PNG export |
 | [orbit3d](example/orbit3d.f90) | a spacecraft orbit viewer: Kepler propagation, orbital elements and presets in a side panel, a rotating lit planet, time warp, live readouts, OpenGL 3D view |
 
@@ -158,6 +159,8 @@ no OpenGL), but can still save a screenshot and exit:
 ```sh
 pixi run example surface3d -- --screenshot surface.png
 ```
+
+![Time series example](media/timeseries.png)
 
 ![3D surface example](media/surface3d.png)
 
@@ -257,6 +260,12 @@ A few conventions to know (the full list is in [plan.md](plan.md)):
 - **Indices are 0-based** (combo box items, grid rows/columns), as in Qt.
 - **Reals** are `real(c_double)` (i.e. real64); drawing methods accept integer
   or real coordinates.
+- **String lists** (header labels, combo and list items) are character arrays;
+  trailing blanks are trimmed, e.g. `call table%setHorizontalHeaderLabels(['Name ', 'Value'])`.
+  - **gfortran pitfall:** don't put a function result into a type-spec array
+    constructor, as in `[character(len=40) :: 'n', itoa(n)]`. gfortran 15
+    miscompiles it and corrupts the heap. Assign the elements to a fixed-length
+    array first.
 
 ## How it works
 

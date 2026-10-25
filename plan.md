@@ -138,6 +138,12 @@ user code   ->  use qt                      Modern Fortran OO API
   `QToolBar::addWidget` return a `QAction*`) are subroutines.
 - **C++ pitfall**: `slots`, `signals` and `emit` are Qt macros; don't use them as
   identifiers in the shim.
+- **gfortran 15 pitfall**: an array constructor with a type-spec whose elements
+  include a deferred-length function result, e.g.
+  `[character(len=40) :: 'samples', itoa(n)]`, gets a heap temporary that is too
+  small. This is a heap overflow and an intermittent crash. It was found in the
+  timeseries example with Guard Malloc and reproduced without Qt (any flags).
+  Build such string arrays in a fixed-length variable first.
 
 ## Platforms & toolchains (and fpm packaging)
 
@@ -220,7 +226,7 @@ Portability rules for sources:
 ```sh
 pixi run build             # fpm build with Qt flags
 pixi run test              # headless (QT_QPA_PLATFORM=offscreen)
-pixi run example hello     # run an example (hello, timer, form, plot, explorer, surface3d, orbit3d)
+pixi run example hello     # run an example (hello, timer, form, plot, explorer, timeseries, surface3d, orbit3d)
 pixi run gen               # specs -> shims + high-level modules -> raw bind(C) modules
 pixi run gen-check         # fail if any generated file is stale (CI)
 pixi run lint              # docstrings + implicit none in interface bodies (CI)
