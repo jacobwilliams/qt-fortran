@@ -6,22 +6,20 @@ platforms = ["osx-arm64", "linux-64", "linux-aarch64", "osx-64", "win-64"]
 version = "0.0.1"
 
 [dependencies]
+gfortran = "15.*"
 fpm = ">=0.13.0,<0.14"
 python = "3.13.*"
 ford = ">=7.0"
 graphviz = ">=14.1.2,<15"
 pyside6 = ">=6.11.1,<7"
+# C++ compiler for the shim library (on windows: MSVC linker/SDK activation)
 cxx-compiler = ">=2.0.0,<3"
 
-# linux/macOS: gfortran + g++/clang++, Qt flags via pkg-config
 [target.unix.dependencies]
-gfortran = "15.*"
 pkg-config = ">=0.29.2,<0.30"
 
-# windows: conda-forge Qt is MSVC-built, so use MSVC-ABI compilers
-# (cxx-compiler provides the MSVC linker/SDK activation)
+# windows: conda-forge Qt is MSVC-built, so the shim is built with clang++ (MSVC target)
 [target.win.dependencies]
-flang = "*"
 clangxx = "*"
 
 [tasks]
