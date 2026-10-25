@@ -10,7 +10,7 @@ environment.
 | Topic | Decision |
 |-------|----------|
 | API naming | Qt style: `QPushButton`, `btn%setText(...)`, `clicked`. The Qt/PySide docs carry over directly. |
-| Qt modules | Minimum for now: QtCore, QtGui, QtWidgets. |
+| Qt modules | QtCore, QtGui, QtWidgets, plus QtOpenGL / QtOpenGLWidgets for 3D. |
 | Platforms | Cross-platform: Linux, macOS, Windows. |
 | Build | `tools/fpm_qt.py` builds the C++ shim as a shared library (`qtf`), then fpm builds the Fortran code (gfortran everywhere) and links `-lqtf`. |
 | Toolchain | gfortran on all OSes. See the table below. |
@@ -193,10 +193,11 @@ Portability rules for sources:
 ```sh
 pixi run build             # fpm build with Qt flags
 pixi run test              # headless (QT_QPA_PLATFORM=offscreen)
-pixi run example hello     # run an example (hello, timer, form, plot, explorer)
+pixi run example hello     # run an example (hello, timer, form, plot, explorer, surface3d)
 pixi run gen               # specs -> shims + high-level modules -> raw bind(C) modules
 pixi run gen-check         # fail if any generated file is stale (CI)
 pixi run lint              # docstrings + implicit none in interface bodies (CI)
+pixi run test-gl           # the OpenGL test on the real display (CI: macOS)
 ```
 
 Every module, program, procedure, derived type and generic interface has a
@@ -268,3 +269,35 @@ against the generated modules.
 - Re-entrancy: Fortran callbacks running inside `exec()` that emit more signals.
 - gfortran edge cases with `class(*)` in the dispatcher table.
 - Every phase must stay green on all three CI platforms before it counts as done.
+
+## OpenGL (added after phase 4)
+
+**Decision:** modern OpenGL through Qt's helper classes, as PySide users write it.
+Legacy fixed-function GL and a high-level scene API were the alternatives considered.
+
+- **Spec and generated files:** `spec/opengl.toml` produces `qt_opengl`.
+  - `QtfOpenGLWidget` forwards `initializeGL` / `resizeGL` / `paintGL` (with the
+    context current) and input events to Fortran slots.
+  - `QOpenGLShaderProgram` has a generic `setUniformValue` covering float, int,
+    vec3, vec4, `QColor`, mat3 and mat4.
+  - `QOpenGLBuffer%allocate` takes `real(c_double)` or integer arrays and stores
+    them as 32-bit floats or uints. Byte offsets and strides therefore count 4
+    bytes per element.
+  - The other classes are `QOpenGLVertexArrayObject` and `QSurfaceFormat`.
+- **GL functions:** a curated set of `glXxx` free procedures, routed through the
+  current context's `QOpenGLFunctions`. No platform GL library is linked, and
+  each is a no-op without a current context.
+- **`QMatrix4x4`** is pure Fortran (`src/opengl/qt_matrix.f90`), not a binding.
+  - Column-major `m(4,4)`, with Qt's post-multiply semantics and angles in degrees.
+  - It's passed to C++ as a value type with a `double[16]` field.
+- **Portability:** request OpenGL 3.3 core via `QSurfaceFormat_setDefaultFormat`
+  before creating the application, and use `#version 330 core` shaders.
+  - Works with macOS (4.1 core via Metal), Mesa and desktop drivers.
+  - Linux needs `libgl-devel` for the GL headers that Qt's headers include.
+- **Testing:** the offscreen platform has no OpenGL, so `test_opengl` prints
+  SKIP there (and wherever 3.3 isn't available). `pixi run test-gl` runs it on
+  the real display, and CI does so on macOS.
+- **Qt behavior to know:** a hidden QOpenGLWidget's `grabFramebuffer` calls
+  `initializeGL` and `paintGL` but not `resizeGL`, which follows real resize events.
+- **Generator additions:** module-level free functions (`functions`),
+  `double[]` / `int[]` array arguments, and `double[N]` fields in value types.

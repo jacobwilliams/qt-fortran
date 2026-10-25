@@ -21,7 +21,10 @@ Module keys:
     handle_types  non-QObject handle types from other modules (bound with `%ptr = ...`)
     value_types   Fortran value types passed to C++ field by field:
                   [value_types.QColor] fields = ["r: int", ...], cpp = "QColor({r}, ...)"
-                  (fields are int, double, bool or another value type)
+                  (fields are int, double, bool, double[N] or another value type)
+    functions     module-level free functions: "name(args) [-> type] -- doc" strings
+                  or tables {sig, doc, cpp}; the Fortran name is `name`, the C name
+                  `qtf_<name>`
     fortran_decls_after  verbatim Fortran declarations after the generated types
     fortran_procedures   verbatim Fortran procedures (module level)
 
@@ -47,6 +50,8 @@ Argument and result types:
     num                    integer or real(c_double): generates `_i`/`_d` specifics
                            under a generic binding (double in C++)
     num[]                  integer or real(c_double) array (const double * in C++);
+                           the element count is passed as `{n}`
+    double[] / int[]       real(c_double) / integer array (const double * / const int *);
                            the element count is passed as `{n}`
     Scope::Enum            an enum/flags value (integer in Fortran)
     QClass / QClass?       an object handle (`?`: optional, null when absent)
@@ -126,6 +131,10 @@ def kind(typ, where=""):
         return typ
     if typ == "num[]":
         return "numarray"
+    if typ == "double[]":
+        return "doublearray"
+    if typ == "int[]":
+        return "intarray"
     if typ in VALUE_TYPES:
         return "value"
     if "::" in typ:
@@ -200,11 +209,16 @@ def entries(items, where):
 # ---------------------------------------------------------------------------
 # C++ generation
 
+ARRAY_FIELD = re.compile(r"double\[\d+\]")
+
+
 def value_c_params(vt, prefix):
     out = []
     for f, t in VALUE_TYPES[vt]["fields"]:
         if t in VALUE_TYPES:
             out += value_c_params(t, f"{prefix}_{f}")
+        elif ARRAY_FIELD.fullmatch(t):
+            out.append(f"const double *{prefix}_{f}")
         else:
             out.append(f"{'double' if t == 'double' else 'int'} {prefix}_{f}")
     return out
@@ -226,13 +240,18 @@ def value_f_args(vt, expr):
         e = f"{expr}%{f}"
         if t in VALUE_TYPES:
             out += value_f_args(t, e)
+        elif ARRAY_FIELD.fullmatch(t):
+            out.append(e)
         else:
             out.append({"double": e, "bool": f"qtf_int({e})"}.get(t, f"int({e}, c_int)"))
     return out
 
 
+ARRAY_KINDS = ("numarray", "doublearray", "intarray")
+
+
 def has_arrays(sig):
-    return any(kind(a.type) == "numarray" for a in sig.args)
+    return any(kind(a.type) in ARRAY_KINDS for a in sig.args)
 
 
 def cpp_params(sig, has_self):
@@ -245,8 +264,10 @@ def cpp_params(sig, has_self):
             params.append(f"void *{n}")
         elif k in ("double", "num"):
             params.append(f"double {n}")
-        elif k == "numarray":
+        elif k in ("numarray", "doublearray"):
             params.append(f"const double *{n}")
+        elif k == "intarray":
+            params.append(f"const int *{n}")
         elif k == "value":
             params += value_c_params(a.type, n)
         else:
@@ -273,6 +294,8 @@ def cpp_call(cls, sig, template, ctor=False):
     values = {a.name: cpp_value(a) for a in sig.args}
     values["self"] = f"as<{cls}>(self)"
     values["n"] = "n"
+    if cls is None and not template:
+        fail(f"free function {sig.name} needs a `cpp` expression")
     if template:
         try:
             return template.format(**values)
@@ -287,7 +310,7 @@ def cpp_call(cls, sig, template, ctor=False):
 
 
 def cpp_function(cls, sig, template, ctor=False):
-    cfunc = f"qtf_{cls.lower()}_{sig.name}"
+    cfunc = f"qtf_{sig.name}" if cls is None else f"qtf_{cls.lower()}_{sig.name}"
     call = cpp_call(cls, sig, template, ctor)
     ret = "void *" if ctor else {
         None: "void ", "int": "int ", "bool": "int ", "double": "double ", "enum": "int ",
@@ -304,7 +327,7 @@ def cpp_function(cls, sig, template, ctor=False):
             "string": f"return qtf_to_c({call}, len);",
             "strings": f"return qtf_list_to_c({call}, len);",
         }.get(kind(sig.ret), f"return {call};")
-    params = ", ".join(cpp_params(sig, not (ctor or sig.static))) or "void"
+    params = ", ".join(cpp_params(sig, not (ctor or sig.static or cls is None))) or "void"
     head = f"QTF_API {ret}{cfunc}({params})"
     doc = "".join(f"// {l}\n" for l in sig.doc.splitlines()) if sig.doc else ""
     if len(head) + len(body) + 5 <= 110:
@@ -334,10 +357,13 @@ def f_dummy(a, handle_types, variant=None):
         "int": "integer", "enum": "integer", "bool": "logical", "double": "real(c_double)",
         "string": "character(len=*)",
     }.get(k)
-    dims = ""
+    dims = "(:)" if k in ARRAY_KINDS else ""
     if k in ("num", "numarray"):
         decl = "integer" if variant == "i" else "real(c_double)"
-        dims = "(:)" if k == "numarray" else ""
+    elif k == "doublearray":
+        decl = "real(c_double)"
+    elif k == "intarray":
+        decl = "integer"
     elif k == "value":
         decl = f"type({a.type})"
     elif k == "object":
@@ -353,6 +379,12 @@ def f_locals_and_args(sig, handle_types, variant=None):
         n = a.name
         if k in ("num", "numarray"):
             args.append(f"real({n}, c_double)" if variant == "i" else n)
+            continue
+        if k == "doublearray":
+            args.append(n)
+            continue
+        if k == "intarray":
+            args.append(f"int({n}, c_int)")
             continue
         if k == "value":
             args += value_f_args(a.type, n)
@@ -388,7 +420,7 @@ def f_locals_and_args(sig, handle_types, variant=None):
             decls.append(f"integer(c_int) :: {local}")
             setup += [f"{local} = {a.default}", f"if (present({n})) {local} = int({n}, c_int)"]
             args.append(local)
-    arrays = [a.name for a in sig.args if kind(a.type) == "numarray"]
+    arrays = [a.name for a in sig.args if kind(a.type) in ARRAY_KINDS]
     if arrays:
         sizes = ", ".join(f"size({x})" for x in arrays)
         args.append(f"int(min({sizes}), c_int)" if len(arrays) > 1 else f"int({sizes}, c_int)")
@@ -404,15 +436,18 @@ def variants(sig):
 
 def f_procedure(cls, sig, handle_types, ctor=False, suffix="", variant=None, handle=False, ctor_post=()):
     """A high-level Fortran procedure wrapping one shim function."""
-    cl = cls.lower()
-    raw = f"qtf_{cl}_{sig.name}"
-    if ctor:
-        pname = f"{cl}_{sig.name}"
-    elif sig.static:
-        pname = f"{cls}_{sig.name}"
+    if cls is None:   # module-level free function
+        raw, pname = f"qtf_{sig.name}", sig.name
     else:
-        pname = f"{cl}_{sig.name}{suffix}"
-    has_self = not (ctor or sig.static)
+        cl = cls.lower()
+        raw = f"qtf_{cl}_{sig.name}"
+        if ctor:
+            pname = f"{cl}_{sig.name}"
+        elif sig.static:
+            pname = f"{cls}_{sig.name}"
+        else:
+            pname = f"{cl}_{sig.name}{suffix}"
+    has_self = not (ctor or sig.static or cls is None)
     dummies = (["self"] if has_self else []) + [a.name for a in sig.args]
     decls = [f"class({cls}), intent(in) :: self"] if has_self else []
     decls += [f_dummy(a, handle_types, variant) for a in sig.args]
@@ -494,7 +529,8 @@ def f_value(v):
 # ---------------------------------------------------------------------------
 
 MODULE_KEYS = {"module", "doc", "uses", "cpp_includes", "cpp_prelude", "fortran_decls", "signal_base",
-               "handle_types", "value_types", "fortran_decls_after", "fortran_procedures", "enum", "class"}
+               "handle_types", "value_types", "fortran_decls_after", "fortran_procedures", "enum", "class",
+               "functions"}
 CLASS_KEYS = {"name", "base", "doc", "handle", "ctor", "cpp_ctor", "ctors", "ctor_post", "fortran_components",
               "methods", "signals", "fortran_bindings", "fortran_procedures", "cpp"}
 
@@ -627,6 +663,22 @@ def generate(spec):
         tdef.append(f"    end type {cls}")
         f_types.append("\n".join(tdef) + ("\n" + ctor_iface if ctor_iface else ""))
         cpp_funcs.append("\n".join(cpp_class))
+
+    # ---- module-level free functions
+    free_cpp = []
+    for text, table in entries(spec.get("functions"), "functions"):
+        sig = Sig(text, "functions")
+        if not sig.doc:
+            fail(f"function {sig.name} has no doc")
+        if any(kind(a.type) in ("num", "numarray") for a in sig.args):
+            fail(f"function {sig.name}: num types are only supported in methods")
+        src, _ = cpp_function(None, sig, table.get("cpp"))
+        free_cpp.append(src)
+        proc, pname = f_procedure(None, sig, handle_types)
+        f_procs.append(proc)
+        publics.append(pname)
+    if free_cpp:
+        cpp_funcs.append(f"// {'-' * 75}\n// functions\n\n" + "\n".join(free_cpp))
 
     # ---- C++ file
     includes = "".join(f"#include <{h}>\n" for h in sorted(spec.get("cpp_includes", [])))

@@ -37,6 +37,7 @@ MODULES = [
     ("shim/qtf_core.cpp", "src/core/qt_c_core.f90", "qt_c_core", (1, 999)),
     ("shim/qtf_gui.cpp", "src/gui/qt_c_gui.f90", "qt_c_gui", (2000, 2999)),
     ("shim/qtf_widgets.cpp", "src/widgets/qt_c_widgets.f90", "qt_c_widgets", (1000, 1999)),
+    ("shim/qtf_opengl.cpp", "src/opengl/qt_c_opengl.f90", "qt_c_opengl", (3000, 3999)),
 ]
 
 PARAMS = [

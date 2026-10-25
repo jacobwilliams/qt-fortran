@@ -1,0 +1,390 @@
+# Bindings for modern OpenGL through Qt (QtOpenGL / QtOpenGLWidgets).
+# `pixi run gen` turns this into shim/qtf_opengl.cpp and src/opengl/qt_opengl.f90
+# (see tools/gen_bindings.py for the format). QMatrix4x4 is hand-written in
+# src/opengl/qt_matrix.f90.
+
+module = "opengl"
+signal_base = 3000
+doc = """
+Modern OpenGL through Qt: an OpenGL widget whose initializeGL / resizeGL /
+paintGL are Fortran slots, shader programs, buffers, vertex array objects, and
+a set of OpenGL functions.
+
+GL functions act on the current context: call them from the widget's slots
+(where Qt makes its context current) or after `makeCurrent()`; without a
+current context they do nothing. Buffer data is given as Fortran arrays and
+stored as 32-bit floats (or unsigned ints for index buffers), so byte offsets
+and strides count 4 bytes per element.
+
+For portable shaders, request one OpenGL version everywhere before creating
+the application, e.g. 3.3 core with GLSL `#version 330 core`:
+
+    fmt = QSurfaceFormat()
+    call fmt%setVersion(3, 3)
+    call fmt%setProfile(QSurfaceFormat_CoreProfile)
+    call QSurfaceFormat_setDefaultFormat(fmt)
+    app = QApplication()
+"""
+uses = [
+    "use qt_c_util",
+    "use qt_c_opengl",
+    "use qt_core",
+    "use qt_gui_types",
+    "use qt_gui",
+    "use qt_widgets",
+    "use qt_matrix",
+]
+handle_types = ["QImage"]
+cpp_includes = [
+    "QColor", "QGenericMatrix", "QImage", "QKeyEvent", "QMatrix4x4", "QMouseEvent", "QOpenGLBuffer",
+    "QOpenGLContext", "QOpenGLFunctions", "QOpenGLShaderProgram", "QOpenGLVertexArrayObject",
+    "QOpenGLWidget", "QSurfaceFormat", "QVector3D", "QVector4D", "QWheelEvent", "array", "vector",
+]
+
+cpp_prelude = """
+// The current context's OpenGL functions (null without a current context).
+static QOpenGLFunctions *qtf_gl() {
+    QOpenGLContext *ctx = QOpenGLContext::currentContext();
+    return ctx ? ctx->functions() : nullptr;
+}
+
+static QString qtf_gl_string(int name) {
+    QOpenGLFunctions *f = qtf_gl();
+    const GLubyte *s = f ? f->glGetString(GLenum(name)) : nullptr;
+    return s ? QString::fromLatin1(reinterpret_cast<const char *>(s)) : QString();
+}
+
+// Fortran arrays are double / default integer; GL buffers hold float / uint.
+static bool qtf_allocate_floats(QOpenGLBuffer *b, const double *data, int n) {
+    std::vector<float> v(data, data + n);
+    b->allocate(v.data(), int(v.size() * sizeof(float)));
+    return true;
+}
+
+static bool qtf_allocate_uints(QOpenGLBuffer *b, const int *data, int n) {
+    std::vector<GLuint> v(data, data + n);
+    b->allocate(v.data(), int(v.size() * sizeof(GLuint)));
+    return true;
+}
+
+// Matrices arrive column-major (Fortran m(4,4) / m(3,3)), as OpenGL expects.
+static QMatrix4x4 qtf_mat4(const double *m) {
+    QMatrix4x4 q;
+    for (int c = 0; c < 4; ++c)
+        for (int r = 0; r < 4; ++r) q(r, c) = float(m[c * 4 + r]);
+    return q;
+}
+
+static QMatrix3x3 qtf_mat3(const double *m) {
+    QMatrix3x3 q;
+    for (int c = 0; c < 3; ++c)
+        for (int r = 0; r < 3; ++r) q(r, c) = float(m[c * 3 + r]);
+    return q;
+}
+
+// QtfOpenGLWidget: a QOpenGLWidget whose initializeGL / resizeGL / paintGL and
+// input events are forwarded to Fortran slots (with the context current).
+
+enum qtf_gl_event {
+    QTF_GL_INITIALIZE,
+    QTF_GL_RESIZE,
+    QTF_GL_PAINT,
+    QTF_GL_MOUSEPRESS,
+    QTF_GL_MOUSERELEASE,
+    QTF_GL_MOUSEMOVE,
+    QTF_GL_MOUSEDOUBLECLICK,
+    QTF_GL_WHEEL,
+    QTF_GL_KEYPRESS,
+    QTF_GL_KEYRELEASE,
+    QTF_GL_COUNT
+};
+
+class QtfOpenGLWidget : public QOpenGLWidget {
+  public:
+    explicit QtfOpenGLWidget(QWidget *parent) : QOpenGLWidget(parent) { setFocusPolicy(Qt::StrongFocus); }
+
+    // (not named `slots`: that is a Qt macro)
+    std::array<std::vector<qtf_slot>, QTF_GL_COUNT> handlers;
+
+  protected:
+    // Emit to a copy: a slot may connect more slots while we iterate.
+    bool forward(qtf_gl_event ev, void *p) {
+        const std::vector<qtf_slot> targets = handlers[ev];
+        for (const qtf_slot &s : targets) qtf_emit_ptr(s, p);
+        return !targets.empty();
+    }
+
+    void initializeGL() override { forward(QTF_GL_INITIALIZE, nullptr); }
+    void resizeGL(int, int) override { forward(QTF_GL_RESIZE, nullptr); }
+    void paintGL() override { forward(QTF_GL_PAINT, nullptr); }
+    void mousePressEvent(QMouseEvent *e) override {
+        if (!forward(QTF_GL_MOUSEPRESS, e)) QOpenGLWidget::mousePressEvent(e);
+    }
+    void mouseReleaseEvent(QMouseEvent *e) override {
+        if (!forward(QTF_GL_MOUSERELEASE, e)) QOpenGLWidget::mouseReleaseEvent(e);
+    }
+    void mouseMoveEvent(QMouseEvent *e) override {
+        if (!forward(QTF_GL_MOUSEMOVE, e)) QOpenGLWidget::mouseMoveEvent(e);
+    }
+    void mouseDoubleClickEvent(QMouseEvent *e) override {
+        if (!forward(QTF_GL_MOUSEDOUBLECLICK, e)) QOpenGLWidget::mouseDoubleClickEvent(e);
+    }
+    void wheelEvent(QWheelEvent *e) override {
+        if (!forward(QTF_GL_WHEEL, e)) QOpenGLWidget::wheelEvent(e);
+    }
+    void keyPressEvent(QKeyEvent *e) override {
+        if (!forward(QTF_GL_KEYPRESS, e)) QOpenGLWidget::keyPressEvent(e);
+    }
+    void keyReleaseEvent(QKeyEvent *e) override {
+        if (!forward(QTF_GL_KEYRELEASE, e)) QOpenGLWidget::keyReleaseEvent(e);
+    }
+};
+
+// Attach a slot to one of the QtfOpenGLWidget's handlers (owned by the widget).
+template <qtf_gl_event EV> static bool connect_gl_event(void *s, const qtf_slot &ref) {
+    auto *w = dynamic_cast<QtfOpenGLWidget *>(static_cast<QWidget *>(s));
+    if (!w) return false;
+    w->handlers[EV].push_back(ref);
+    return true;
+}
+"""
+
+# ---------------------------------------------------------------------------
+# GL functions (module level; they act on the current context)
+
+functions = [
+    { sig = "glClearColor(red: double, green: double, blue: double, alpha: double)", cpp = "if (auto *f = qtf_gl()) f->glClearColor(GLfloat({red}), GLfloat({green}), GLfloat({blue}), GLfloat({alpha}))", doc = "Set the color used by glClear for the color buffer (components 0..1)." },
+    { sig = "glClear(mask: int)", cpp = "if (auto *f = qtf_gl()) f->glClear(GLbitfield({mask}))", doc = "Clear buffers, e.g. ior(GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT)." },
+    { sig = "glEnable(cap: int)", cpp = "if (auto *f = qtf_gl()) f->glEnable(GLenum({cap}))", doc = "Enable a capability, e.g. GL_DEPTH_TEST." },
+    { sig = "glDisable(cap: int)", cpp = "if (auto *f = qtf_gl()) f->glDisable(GLenum({cap}))", doc = "Disable a capability." },
+    { sig = "glViewport(x: int, y: int, width: int, height: int)", cpp = "if (auto *f = qtf_gl()) f->glViewport({x}, {y}, {width}, {height})", doc = "Set the viewport (QtfOpenGLWidget sets it to the whole widget before paintGL)." },
+    { sig = "glDrawArrays(mode: int, first: int, count: int)", cpp = "if (auto *f = qtf_gl()) f->glDrawArrays(GLenum({mode}), {first}, {count})", doc = "Draw `count` vertices starting at `first` from the bound buffers (mode: GL_TRIANGLES, GL_LINES, ...)." },
+    { sig = "glDrawElements(mode: int, count: int, type: int, offset: int = 0)", cpp = "if (auto *f = qtf_gl()) f->glDrawElements(GLenum({mode}), {count}, GLenum({type}), reinterpret_cast<const void *>(qintptr({offset})))", doc = "Draw `count` indexed vertices from the bound index buffer (type: GL_UNSIGNED_INT; offset in bytes)." },
+    { sig = "glLineWidth(width: double)", cpp = "if (auto *f = qtf_gl()) f->glLineWidth(GLfloat({width}))", doc = "Set the line width in pixels (core profiles may only support 1)." },
+    { sig = "glBlendFunc(sfactor: int, dfactor: int)", cpp = "if (auto *f = qtf_gl()) f->glBlendFunc(GLenum({sfactor}), GLenum({dfactor}))", doc = "Set the blending factors, e.g. GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA." },
+    { sig = "glDepthFunc(func: int)", cpp = "if (auto *f = qtf_gl()) f->glDepthFunc(GLenum({func}))", doc = "Set the depth comparison, e.g. GL_LESS (default) or GL_LEQUAL." },
+    { sig = "glDepthMask(flag: bool)", cpp = "if (auto *f = qtf_gl()) f->glDepthMask(GLboolean({flag}))", doc = "Enable or disable writing to the depth buffer." },
+    { sig = "glCullFace(mode: int)", cpp = "if (auto *f = qtf_gl()) f->glCullFace(GLenum({mode}))", doc = "Select which faces are culled (GL_BACK or GL_FRONT) when GL_CULL_FACE is enabled." },
+    { sig = "glFrontFace(mode: int)", cpp = "if (auto *f = qtf_gl()) f->glFrontFace(GLenum({mode}))", doc = "Set the winding of front faces (GL_CCW, the default, or GL_CW)." },
+    { sig = "glPolygonOffset(factor: double, units: double)", cpp = "if (auto *f = qtf_gl()) f->glPolygonOffset(GLfloat({factor}), GLfloat({units}))", doc = "Set the depth offset used when GL_POLYGON_OFFSET_FILL is enabled." },
+    { sig = "glFlush()", cpp = "if (auto *f = qtf_gl()) f->glFlush()", doc = "Start executing queued commands." },
+    { sig = "glFinish()", cpp = "if (auto *f = qtf_gl()) f->glFinish()", doc = "Block until all queued commands have completed." },
+    { sig = "glGetError() -> int", cpp = "qtf_gl() ? int(qtf_gl()->glGetError()) : 0", doc = "The oldest recorded error (GL_NO_ERROR if none)." },
+    { sig = "glGetString(name: int) -> string", cpp = "qtf_gl_string({name})", doc = "A context string: GL_VERSION, GL_RENDERER, GL_VENDOR or GL_SHADING_LANGUAGE_VERSION." },
+]
+
+# Fortran value types passed to C++ field by field
+[value_types.QColor]
+fields = ["r: int", "g: int", "b: int", "a: int"]
+cpp = "QColor({r}, {g}, {b}, {a})"
+
+[value_types.QMatrix4x4]
+fields = ["m: double[16]"]
+cpp = "qtf_mat4({m})"
+
+# ---------------------------------------------------------------------------
+# enums
+
+[[enum]]
+doc = "QSurfaceFormat::OpenGLContextProfile"
+values = ["QSurfaceFormat_NoProfile = 0", "QSurfaceFormat_CoreProfile = 1", "QSurfaceFormat_CompatibilityProfile = 2"]
+
+[[enum]]
+doc = "QOpenGLShader::ShaderTypeBit"
+values = ["QOpenGLShader_Vertex = 1", "QOpenGLShader_Fragment = 2", "QOpenGLShader_Geometry = 4"]
+
+[[enum]]
+doc = "QOpenGLBuffer::Type"
+values = ["QOpenGLBuffer_VertexBuffer = 0x8892", "QOpenGLBuffer_IndexBuffer = 0x8893"]
+
+[[enum]]
+doc = "QOpenGLBuffer::UsagePattern (subset)"
+values = ["QOpenGLBuffer_StreamDraw = 0x88E0", "QOpenGLBuffer_StaticDraw = 0x88E4", "QOpenGLBuffer_DynamicDraw = 0x88E8"]
+
+[[enum]]
+doc = "OpenGL constants (subset)"
+values = [
+    "GL_NO_ERROR = 0",
+    "GL_DEPTH_BUFFER_BIT = 0x00000100",
+    "GL_COLOR_BUFFER_BIT = 0x00004000",
+    "GL_POINTS = 0",
+    "GL_LINES = 1",
+    "GL_LINE_LOOP = 2",
+    "GL_LINE_STRIP = 3",
+    "GL_TRIANGLES = 4",
+    "GL_TRIANGLE_STRIP = 5",
+    "GL_TRIANGLE_FAN = 6",
+    "GL_NEVER = 0x0200",
+    "GL_LESS = 0x0201",
+    "GL_EQUAL = 0x0202",
+    "GL_LEQUAL = 0x0203",
+    "GL_GREATER = 0x0204",
+    "GL_ALWAYS = 0x0207",
+    "GL_ZERO = 0",
+    "GL_ONE = 1",
+    "GL_SRC_ALPHA = 0x0302",
+    "GL_ONE_MINUS_SRC_ALPHA = 0x0303",
+    "GL_FRONT = 0x0404",
+    "GL_BACK = 0x0405",
+    "GL_CW = 0x0900",
+    "GL_CCW = 0x0901",
+    "GL_CULL_FACE = 0x0B44",
+    "GL_DEPTH_TEST = 0x0B71",
+    "GL_BLEND = 0x0BE2",
+    "GL_POLYGON_OFFSET_FILL = 0x8037",
+    "GL_MULTISAMPLE = 0x809D",
+    "GL_PROGRAM_POINT_SIZE = 0x8642",
+    "GL_UNSIGNED_INT = 0x1405",
+    "GL_FLOAT = 0x1406",
+    "GL_VENDOR = 0x1F00",
+    "GL_RENDERER = 0x1F01",
+    "GL_VERSION = 0x1F02",
+    "GL_SHADING_LANGUAGE_VERSION = 0x8B8C",
+]
+
+# ---------------------------------------------------------------------------
+# classes
+
+[[class]]
+name = "QSurfaceFormat"
+handle = true
+doc = """
+OpenGL context settings (version, profile, depth buffer, multisampling).
+Set the default with QSurfaceFormat_setDefaultFormat before creating the
+application. Release with `delete`."""
+ctor = "() -- A default format (no particular version; 24-bit depth buffer)."
+cpp_ctor = "new QSurfaceFormat(QSurfaceFormat::defaultFormat())"
+methods = [
+    "setVersion(major: int, minor: int) -- Request an OpenGL version, e.g. 3, 3.",
+    "majorVersion() -> int -- The major OpenGL version.",
+    "minorVersion() -> int -- The minor OpenGL version.",
+    "setProfile(profile: QSurfaceFormat::OpenGLContextProfile) -- Request a profile (QSurfaceFormat_CoreProfile or _CompatibilityProfile).",
+    "profile() -> QSurfaceFormat::OpenGLContextProfile -- The profile.",
+    "setDepthBufferSize(size: int) -- Bits of depth buffer (24 is typical; 0 for none).",
+    "depthBufferSize() -> int -- Bits of depth buffer.",
+    "setSamples(numSamples: int) -- Samples per pixel for multisample antialiasing (e.g. 4).",
+    "samples() -> int -- Samples per pixel.",
+    { sig = "static setDefaultFormat(format: QSurfaceFormat)", cpp = "QSurfaceFormat::setDefaultFormat(*{format})", doc = "Use `format` for all OpenGL widgets; call before creating the application." },
+]
+cpp = '''
+// Release a surface format.
+QTF_API void qtf_qsurfaceformat_delete(void *self) { delete as<QSurfaceFormat>(self); }
+'''
+fortran_bindings = "procedure :: delete => qsurfaceformat_delete"
+fortran_procedures = '''
+    !> Release the format.
+    subroutine qsurfaceformat_delete(self)
+        class(QSurfaceFormat), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qsurfaceformat_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qsurfaceformat_delete
+'''
+
+[[class]]
+name = "QtfOpenGLWidget"
+base = "QWidget"
+doc = """
+An OpenGL widget whose virtual functions are delivered to Fortran slots, the
+qt-fortran counterpart of subclassing QOpenGLWidget (`Qtf` marks a qt-fortran
+class). Qt makes the widget's context current before `initializeGL`,
+`resizeGL` and `paintGL`, and sets the viewport to the whole widget before
+`paintGL`. Call `update()` to request a repaint.
+
+Input events work as in QtfWidget; the widget accepts keyboard focus."""
+ctor = "(parent: QWidget?) -- Create an OpenGL widget; without a parent it is a top-level window."
+signals = [
+    { sig = "initializeGL: void", doc = "Set up resources (shaders, buffers); called once, before the first resizeGL / paintGL.", connector = "connect_gl_event<QTF_GL_INITIALIZE>" },
+    { sig = "resizeGL: void", doc = "The widget was resized; query `width()` / `height()`.", connector = "connect_gl_event<QTF_GL_RESIZE>" },
+    { sig = "paintGL: void", doc = "Render the scene.", connector = "connect_gl_event<QTF_GL_PAINT>" },
+    { sig = "mousePressEvent: mouse", doc = "Mouse button pressed.", connector = "connect_gl_event<QTF_GL_MOUSEPRESS>" },
+    { sig = "mouseReleaseEvent: mouse", doc = "Mouse button released.", connector = "connect_gl_event<QTF_GL_MOUSERELEASE>" },
+    { sig = "mouseMoveEvent: mouse", doc = "Mouse moved.", connector = "connect_gl_event<QTF_GL_MOUSEMOVE>" },
+    { sig = "mouseDoubleClickEvent: mouse", doc = "Mouse button double-clicked.", connector = "connect_gl_event<QTF_GL_MOUSEDOUBLECLICK>" },
+    { sig = "wheelEvent: wheel", doc = "Wheel turned.", connector = "connect_gl_event<QTF_GL_WHEEL>" },
+    { sig = "keyPressEvent: key", doc = "Key pressed.", connector = "connect_gl_event<QTF_GL_KEYPRESS>" },
+    { sig = "keyReleaseEvent: key", doc = "Key released.", connector = "connect_gl_event<QTF_GL_KEYRELEASE>" },
+]
+methods = [
+    "makeCurrent() -- Make the widget's context current (for GL calls outside its slots).",
+    "doneCurrent() -- Release the widget's context.",
+    "isValid() -> bool -- True once the widget has a working OpenGL context.",
+    { sig = "format() -> QSurfaceFormat", cpp = "new QSurfaceFormat({self}->format())", doc = "The format of the actual context (version, profile, ...); delete it when done." },
+    { sig = "grabFramebuffer() -> QImage", cpp = "new QImage({self}->grabFramebuffer())", doc = "Render the scene into a new image (e.g. for screenshots); delete it when done." },
+]
+
+[[class]]
+name = "QOpenGLShaderProgram"
+doc = """
+A GLSL shader program. Add vertex and fragment shaders, `link`, then `bind`
+it while drawing. Create it in the initializeGL slot (it needs a current
+context)."""
+ctor = "(parent: QObject?) -- Create an empty shader program."
+methods = [
+    "addShaderFromSourceCode(type: QOpenGLShader::ShaderTypeBit, source: string) -> bool -- Compile a shader (QOpenGLShader_Vertex or _Fragment) and add it; false on error (see `log`).",
+    "link() -> bool -- Link the shaders; false on error (see `log`).",
+    "isLinked() -> bool -- True if the program is linked.",
+    "bind() -> bool -- Use this program for drawing.",
+    "release() -- Stop using this program.",
+    "log() -> string -- Compiler / linker messages from the last operation.",
+    "programId() -> int -- The OpenGL program id.",
+    "attributeLocation(name: string) -> int -- Location of a vertex attribute (-1 if not found).",
+    "uniformLocation(name: string) -> int -- Location of a uniform (-1 if not found).",
+    "bindAttributeLocation(name: string, location: int) -- Assign an attribute location (before `link`).",
+    "enableAttributeArray(location: int) -- Read the attribute from the bound buffer.",
+    "disableAttributeArray(location: int) -- Stop reading the attribute from a buffer.",
+    { sig = "setAttributeBuffer(location: int, type: int, offset: int, tupleSize: int, stride: int = 0)", cpp = "{self}->setAttributeBuffer({location}, GLenum({type}), {offset}, {tupleSize}, {stride})", doc = "Describe an attribute in the bound vertex buffer: `tupleSize` values of `type` (GL_FLOAT) starting `offset` bytes in, `stride` bytes apart (0: tightly packed)." },
+    { sig = "setUniformValueFloat(name: string, value: double)", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), GLfloat({value}))", doc = "Set a float uniform." },
+    { sig = "setUniformValueInt(name: string, value: int)", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), GLint({value}))", doc = "Set an int (or sampler) uniform." },
+    { sig = "setUniformValueVec3(name: string, x: double, y: double, z: double)", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), QVector3D({x}, {y}, {z}))", doc = "Set a vec3 uniform." },
+    { sig = "setUniformValueVec4(name: string, x: double, y: double, z: double, w: double)", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), QVector4D({x}, {y}, {z}, {w}))", doc = "Set a vec4 uniform." },
+    { sig = "setUniformValueColor(name: string, color: QColor)", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), {color})", doc = "Set a vec4 uniform from a color (components scaled to 0..1)." },
+    { sig = "setUniformValueMat4(name: string, value: QMatrix4x4)", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), {value})", doc = "Set a mat4 uniform." },
+    { sig = "setUniformValueMat3(name: string, value: double[])", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), qtf_mat3({value}))", doc = "Set a mat3 uniform from a 3x3 array (e.g. `QMatrix4x4%normalMatrix()`), passed as 9 values in column-major order." },
+]
+
+[[class]]
+name = "QOpenGLBuffer"
+handle = true
+doc = """
+An OpenGL buffer object (vertex or index data). Create it with a current
+context, `bind` it, then `allocate` it from a Fortran array. Release with
+`delete` (with the context current)."""
+ctor = "(type: QOpenGLBuffer::Type = QOpenGLBuffer_VertexBuffer) -- A vertex (default) or index buffer; call `create` before use."
+methods = [
+    "create() -> bool -- Create the buffer object in the current context.",
+    "isCreated() -> bool -- True after a successful `create`.",
+    "bind() -> bool -- Bind the buffer to its target.",
+    "release() -- Unbind the buffer.",
+    "destroy() -- Destroy the buffer object (with the context current).",
+    "size() -> int -- Size of the data in bytes.",
+    "setUsagePattern(value: QOpenGLBuffer::UsagePattern) -- Hint how the data is used (QOpenGLBuffer_StaticDraw, ...); set before `allocate`.",
+    { sig = "allocateFloats(data: double[])", fortran_name = "allocate", cpp = "qtf_allocate_floats({self}, {data}, {n})", doc = "Upload real data (stored as 32-bit floats: 4 bytes per value) to the bound buffer." },
+    { sig = "allocateIndices(data: int[])", fortran_name = "allocate", cpp = "qtf_allocate_uints({self}, {data}, {n})", doc = "Upload integer indices (stored as 32-bit unsigned ints; use GL_UNSIGNED_INT) to the bound buffer." },
+]
+cpp = '''
+// Release a buffer handle.
+QTF_API void qtf_qopenglbuffer_delete(void *self) { delete as<QOpenGLBuffer>(self); }
+'''
+fortran_bindings = "procedure :: delete => qopenglbuffer_delete"
+fortran_procedures = '''
+    !> Release the buffer handle (call `destroy` first to free the GL object).
+    subroutine qopenglbuffer_delete(self)
+        class(QOpenGLBuffer), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qopenglbuffer_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qopenglbuffer_delete
+'''
+
+[[class]]
+name = "QOpenGLVertexArrayObject"
+doc = """
+A vertex array object: records the vertex buffer and attribute setup so it
+can be restored with one `bind` (required by core profiles)."""
+ctor = "(parent: QObject?) -- Create a vertex array object; call `create` with a current context."
+methods = [
+    "create() -> bool -- Create the object in the current context.",
+    "isCreated() -> bool -- True after a successful `create`.",
+    "bind() -- Bind it (attribute setup is recorded / restored).",
+    "release() -- Unbind it.",
+    "destroy() -- Destroy the object (with the context current).",
+]

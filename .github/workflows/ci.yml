@@ -33,3 +33,9 @@ jobs:
 
       - name: Test (headless)
         run: pixi run test
+
+      # OpenGL needs a real display; only the macOS runners have a window server.
+      # The test prints SKIP if no OpenGL 3.3 context is available.
+      - name: Test OpenGL
+        if: runner.os == 'macOS'
+        run: pixi run test-gl

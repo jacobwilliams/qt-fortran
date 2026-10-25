@@ -6,6 +6,8 @@ module qt
     use qt_gui_types
     use qt_gui
     use qt_widgets
+    use qt_matrix
+    use qt_opengl
     implicit none
     public
 

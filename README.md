@@ -13,8 +13,8 @@ compiler extensions, and you never write C++.
 
 *The [Function Explorer](example/explorer.f90) example, written in about 800 lines of Fortran.*
 
-> **Status: early development.** The API covers QtCore, QtGui and QtWidgets
-> essentials and is tested on Linux, macOS and Windows, but it may still change.
+> **Status: early development.** The API covers QtCore, QtGui, QtWidgets
+> and modern OpenGL essentials and is tested on Linux, macOS and Windows, but it may still change.
 
 ## A taste
 
@@ -75,6 +75,11 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
   - Connections are released automatically when Qt destroys the sender.
 - **Custom widgets**: `QtfWidget` delivers `paintEvent`, mouse, wheel, keyboard
   and resize events to Fortran slots, so you can draw anything with `QPainter`.
+- **3D graphics with modern OpenGL**: `QtfOpenGLWidget` delivers `initializeGL` /
+  `paintGL` to Fortran slots.
+  - Shader programs, buffers and vertex array objects come from Qt's helpers.
+  - Vertex data comes straight from Fortran arrays.
+  - `QMatrix4x4` (perspective, lookAt, rotations, ...) is implemented in pure Fortran.
 - **Strings**: UTF-8 in both directions, using ordinary `character(len=*)` and
   `character(len=:), allocatable`.
 - **Cross-platform**: Linux, macOS and Windows, built and tested in CI with
@@ -94,6 +99,7 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 | Dialogs | `QDialog`, `QMessageBox`, `QFileDialog` |
 | Painting | `QPainter`, `QImage`, `QPixmap`, `QColor`, `QPen`, `QBrush`, `QFont` |
 | Input events | `QMouseEvent`, `QKeyEvent`, `QWheelEvent`, `QResizeEvent` |
+| OpenGL | `QtfOpenGLWidget`, `QOpenGLShaderProgram`, `QOpenGLBuffer`, `QOpenGLVertexArrayObject`, `QSurfaceFormat`, `QMatrix4x4`, and `glClear`, `glDrawArrays`, `glDrawElements`, ... |
 
 ## Getting started
 
@@ -119,7 +125,7 @@ mode. Fortran is still gfortran.
 ```sh
 pixi run build                  # build the library and examples
 pixi run test                   # run the test suite (headless)
-pixi run example hello          # run an example: hello, timer, form, plot, explorer
+pixi run example hello          # run an example: hello, timer, form, plot, explorer, surface3d
 ```
 
 Examples:
@@ -131,6 +137,7 @@ Examples:
 | [form](example/form.f90) | input widgets, layouts, validation, a message box |
 | [plot](example/plot.f90) | a live scrolling plot with `QtfWidget` and `QPainter` |
 | [explorer](example/explorer.f90) | a tour of nearly everything: menus, toolbar, all control types, custom painting, mouse/keyboard/wheel input, animation, file and message dialogs |
+| [surface3d](example/surface3d.f90) | an interactive 3D surface plot with modern OpenGL: GLSL shaders, an indexed mesh with lighting, orbit/zoom with the mouse, auto-rotation, PNG export |
 
 The `plot` and `explorer` examples can render themselves to an image without
 opening a window, which is handy on servers and in CI:
@@ -140,6 +147,15 @@ QT_QPA_PLATFORM=offscreen pixi run example explorer -- --screenshot explorer.png
 ```
 
 ![Live plot example](media/plot.png)
+
+The OpenGL example needs a display with OpenGL 3.3 (the offscreen platform has
+no OpenGL), but can still save a screenshot and exit:
+
+```sh
+pixi run example surface3d -- --screenshot surface.png
+```
+
+![3D surface example](media/surface3d.png)
 
 ### Using qt-fortran in your own project
 
@@ -223,9 +239,10 @@ block-beta
 ### Repository layout
 
 ```
-spec/       binding specs (TOML): widgets.toml, gui.toml
-src/        Fortran sources: core/ (hand-written), gui/, widgets/ (mostly generated), qt.f90
-shim/       C++ shim: qtf_common.h, qtf_core.cpp (hand-written), qtf_gui.cpp, qtf_widgets.cpp (generated)
+spec/       binding specs (TOML): widgets.toml, gui.toml, opengl.toml
+src/        Fortran sources: core/ (hand-written), gui/, widgets/, opengl/ (mostly generated), qt.f90
+shim/       C++ shim: qtf_common.h, qtf_core.cpp (hand-written); qtf_gui.cpp, qtf_widgets.cpp,
+            qtf_opengl.cpp (generated)
 tools/      fpm_qt.py, gen_bindings.py, gen_c_interfaces.py, check_fortran.py
 test/       headless test programs (one per area)
 example/    example applications
@@ -269,13 +286,15 @@ if any of them is stale.
 ### Checks
 
 ```sh
-pixi run test        # headless tests (QT_QPA_PLATFORM=offscreen)
+pixi run test        # headless tests (QT_QPA_PLATFORM=offscreen); the OpenGL test SKIPs here
+pixi run test-gl     # the OpenGL test on the real display
 pixi run lint        # every procedure/type documented; implicit none in interface bodies
 pixi run gen-check   # generated files up to date
 ```
 
 CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) builds and tests on
-Ubuntu, macOS and Windows, and runs `lint` and `gen-check`.
+Ubuntu, macOS and Windows, runs `lint` and `gen-check`, and runs the OpenGL test
+on macOS (the only runner with a window server).
 
 ### Code style
 

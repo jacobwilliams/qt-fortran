@@ -23,7 +23,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHIM_SRC = os.path.join(ROOT, "shim")
 SHIM_OUT = os.path.join(ROOT, "build", "qtf")
-QT_MODULES = ["Core", "Gui", "Widgets"]
+QT_MODULES = ["Core", "Gui", "Widgets", "OpenGL", "OpenGLWidgets"]
 CXX_STD = "-std=c++17"
 WINDOWS = os.name == "nt"
 MACOS = sys.platform == "darwin"

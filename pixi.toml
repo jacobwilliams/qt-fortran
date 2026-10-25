@@ -18,6 +18,10 @@ cxx-compiler = ">=2.0.0,<3"
 [target.unix.dependencies]
 pkg-config = ">=0.29.2,<0.30"
 
+# GL headers included by Qt's OpenGL headers (macOS and Windows have them in the SDK)
+[target.linux.dependencies]
+libgl-devel = "*"
+
 # windows: conda-forge Qt is MSVC-built, so the shim is built with clang++ (MSVC target)
 [target.win.dependencies]
 clangxx = "*"
@@ -25,6 +29,8 @@ clangxx = "*"
 [tasks]
 build = "python tools/fpm_qt.py build"
 test = { cmd = "python tools/fpm_qt.py test", env = { QT_QPA_PLATFORM = "offscreen" } }
+# the OpenGL test needs a real display (the offscreen platform has no OpenGL)
+test-gl = "python tools/fpm_qt.py test test_opengl"
 example = "python tools/fpm_qt.py run --example"
 gen = "python tools/gen_bindings.py && python tools/gen_c_interfaces.py"
 gen-check = "python tools/gen_bindings.py --check && python tools/gen_c_interfaces.py --check"
