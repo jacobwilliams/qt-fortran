@@ -1,12 +1,14 @@
 // Shared definitions for the qtf C ABI shim.
 #pragma once
 
+#include <QObject>
 #include <QString>
 #include <QStringList>
 
 #include <cstdint>
 #include <initializer_list>
 #include <memory>
+#include <vector>
 
 // Every shim function is exported from the qtf shared library.
 #if defined(_WIN32)
@@ -21,6 +23,7 @@ enum qtf_signal : int {
     QTF_SIG_QOBJECT_DESTROYED = 1,
     QTF_SIG_QOBJECT_OBJECTNAMECHANGED = 2,
     QTF_SIG_QTIMER_TIMEOUT = 3,
+    QTF_SIG_QTFSIGNAL = 4,   // a signal defined in Fortran (QtfSignalSource)
     // widgets (1000..1999): generated in shim/qtf_widgets.cpp from spec/widgets.toml
     // gui (2000..2999): generated in shim/qtf_gui.cpp from spec/gui.toml
 };
@@ -41,16 +44,30 @@ typedef void (*qtf_release_fn)(int slot);
 
 // A Fortran slot id owned by a connection. When Qt destroys the connection
 // (sender/context deleted, single-shot fired), the Fortran slot is released.
+// qtf_disconnect releases it early: the ref is then dead (emits are ignored)
+// until its last owner lets go of it.
 struct qtf_slot_ref {
-    explicit qtf_slot_ref(int id) : id(id) {}
+    explicit qtf_slot_ref(int id);
     ~qtf_slot_ref();
     qtf_slot_ref(const qtf_slot_ref &) = delete;
     qtf_slot_ref &operator=(const qtf_slot_ref &) = delete;
     const int id;
+    bool alive = true;
+    QMetaObject::Connection connection;   // the Qt connection, if made with QObject::connect
 };
 using qtf_slot = std::shared_ptr<qtf_slot_ref>;
 
 inline qtf_slot qtf_make_slot(int id) { return std::make_shared<qtf_slot_ref>(id); }
+
+// Remember the Qt connection that owns `slot` (so it can be disconnected).
+inline bool qtf_track(const qtf_slot &slot, const QMetaObject::Connection &c) {
+    slot->connection = c;
+    return bool(c);
+}
+
+// Emit to every live slot of `slots` (iterating over a copy: a slot may connect
+// more); returns the number of slots called.
+int qtf_emit_all(const std::vector<qtf_slot> &slots_, const qtf_args &args);
 
 // Invoke the Fortran slot.
 void qtf_emit(const qtf_slot &slot, const qtf_args &args);

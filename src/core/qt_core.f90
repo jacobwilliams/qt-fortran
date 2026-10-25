@@ -8,6 +8,14 @@
 !> The optional `data` passed to `connect` is handed back to the slot on every
 !> call. It is stored by reference, so it must have the TARGET (or POINTER)
 !> attribute and outlive the connection.
+!>
+!> Connections last until the sender is destroyed, or until they are broken
+!> with `call sig%disconnect()` (all Fortran slots of that signal) or
+!> `QObject_disconnect(connection)` (one connection, from `connect`'s
+!> optional `connection` argument).
+!>
+!> Signals can also be defined in Fortran: `sig = QSignalInt(parent)` creates
+!> one, and `call sig%emit(42)` calls its slots.
 module qt_core
 
     use iso_c_binding
@@ -139,69 +147,110 @@ module qt_core
         end subroutine qt_handler_invoke
     end interface
 
-    !> A signal without arguments.
-    type, public :: QSignal
+    !> Base of all signal types: the sender object and the signal's id.
+    type, abstract, public :: QtfSignal
         type(c_ptr) :: sender = c_null_ptr
         integer(c_int) :: id = 0
     contains
+        procedure :: disconnect => qtfsignal_disconnect
+    end type QtfSignal
+
+    !> One connection, from `connect`'s optional `connection` argument; break it
+    !> with QObject_disconnect.
+    type, public :: QMetaObject_Connection
+        private
+        integer :: slot = 0              !! the slot's registry index
+        integer(c_int64_t) :: serial = 0 !! tells this connection from a later one reusing the index
+    end type QMetaObject_Connection
+
+    !> A signal without arguments.
+    type, extends(QtfSignal), public :: QSignal
+    contains
         procedure :: connect => qsignal_connect
+        procedure :: emit => qsignal_emit
     end type QSignal
 
     !> A signal with a single string argument.
-    type, public :: QSignalString
-        type(c_ptr) :: sender = c_null_ptr
-        integer(c_int) :: id = 0
+    type, extends(QtfSignal), public :: QSignalString
     contains
         procedure :: connect => qsignalstring_connect
+        procedure :: emit => qsignalstring_emit
     end type QSignalString
 
     !> A signal with a single logical argument.
-    type, public :: QSignalBool
-        type(c_ptr) :: sender = c_null_ptr
-        integer(c_int) :: id = 0
+    type, extends(QtfSignal), public :: QSignalBool
     contains
         procedure :: connect => qsignalbool_connect
+        procedure :: emit => qsignalbool_emit
     end type QSignalBool
 
     !> A signal with a single integer argument.
-    type, public :: QSignalInt
-        type(c_ptr) :: sender = c_null_ptr
-        integer(c_int) :: id = 0
+    type, extends(QtfSignal), public :: QSignalInt
     contains
         procedure :: connect => qsignalint_connect
+        procedure :: emit => qsignalint_emit
     end type QSignalInt
 
     !> A signal with two integer arguments.
-    type, public :: QSignalInt2
-        type(c_ptr) :: sender = c_null_ptr
-        integer(c_int) :: id = 0
+    type, extends(QtfSignal), public :: QSignalInt2
     contains
         procedure :: connect => qsignalint2_connect
+        procedure :: emit => qsignalint2_emit
     end type QSignalInt2
 
     !> A signal with three integer arguments.
-    type, public :: QSignalInt3
-        type(c_ptr) :: sender = c_null_ptr
-        integer(c_int) :: id = 0
+    type, extends(QtfSignal), public :: QSignalInt3
     contains
         procedure :: connect => qsignalint3_connect
+        procedure :: emit => qsignalint3_emit
     end type QSignalInt3
 
     !> A signal with four integer arguments.
-    type, public :: QSignalInt4
-        type(c_ptr) :: sender = c_null_ptr
-        integer(c_int) :: id = 0
+    type, extends(QtfSignal), public :: QSignalInt4
     contains
         procedure :: connect => qsignalint4_connect
+        procedure :: emit => qsignalint4_emit
     end type QSignalInt4
 
     !> A signal with a single real argument.
-    type, public :: QSignalDouble
-        type(c_ptr) :: sender = c_null_ptr
-        integer(c_int) :: id = 0
+    type, extends(QtfSignal), public :: QSignalDouble
     contains
         procedure :: connect => qsignaldouble_connect
+        procedure :: emit => qsignaldouble_emit
     end type QSignalDouble
+
+    !> Constructor: `QSignal(parent)` creates a signal defined in Fortran (emit it with `emit`).
+    interface QSignal
+        module procedure :: qsignal_new
+    end interface QSignal
+    !> Constructor: `QSignalString(parent)` creates a signal defined in Fortran (emit it with `emit`).
+    interface QSignalString
+        module procedure :: qsignalstring_new
+    end interface QSignalString
+    !> Constructor: `QSignalBool(parent)` creates a signal defined in Fortran (emit it with `emit`).
+    interface QSignalBool
+        module procedure :: qsignalbool_new
+    end interface QSignalBool
+    !> Constructor: `QSignalInt(parent)` creates a signal defined in Fortran (emit it with `emit`).
+    interface QSignalInt
+        module procedure :: qsignalint_new
+    end interface QSignalInt
+    !> Constructor: `QSignalInt2(parent)` creates a signal defined in Fortran (emit it with `emit`).
+    interface QSignalInt2
+        module procedure :: qsignalint2_new
+    end interface QSignalInt2
+    !> Constructor: `QSignalInt3(parent)` creates a signal defined in Fortran (emit it with `emit`).
+    interface QSignalInt3
+        module procedure :: qsignalint3_new
+    end interface QSignalInt3
+    !> Constructor: `QSignalInt4(parent)` creates a signal defined in Fortran (emit it with `emit`).
+    interface QSignalInt4
+        module procedure :: qsignalint4_new
+    end interface QSignalInt4
+    !> Constructor: `QSignalDouble(parent)` creates a signal defined in Fortran (emit it with `emit`).
+    interface QSignalDouble
+        module procedure :: qsignaldouble_new
+    end interface QSignalDouble
 
     !> Base of all Qt objects: a handle (`ptr`) to a C++ QObject plus its signals.
     type, public :: QObject
@@ -277,7 +326,7 @@ module qt_core
     end type int4_handler
 
     public :: QTimer_singleShot, QCoreApplication_sendEvent
-    public :: qtf_ptr, qt_slot_count, qt_connect_handler
+    public :: qtf_ptr, qt_slot_count, qt_connect_handler, QObject_disconnect
 
     ! ------------------------------------------------------------------
     ! slot registry: the shim refers to Fortran slots by index into `slots`
@@ -295,10 +344,14 @@ module qt_core
         procedure(qt_slot_double), pointer, nopass :: double => null()
         class(qt_slot_handler), allocatable :: handler
         class(*), pointer :: data => null()
+        type(c_ptr) :: sender = c_null_ptr     !! the connected signal
+        integer :: signal = 0
+        integer(c_int64_t) :: serial = 0       !! see QMetaObject_Connection
     end type slot_entry
 
     type(slot_entry), allocatable, save :: slots(:)
     integer, save :: nslots = 0     !! number of slots in use
+    integer(c_int64_t), save :: last_serial = 0
     logical, save :: dispatcher_registered = .false.
 
 contains
@@ -333,14 +386,44 @@ contains
     end function new_slot
 
     !> Connect `signal` of `sender` to the reserved slot `id`.
-    subroutine connect_slot(sender, signal, id)
+    subroutine connect_slot(sender, signal, id, connection)
         type(c_ptr), intent(in) :: sender
         integer(c_int), intent(in) :: signal
         integer, intent(in) :: id
+        type(QMetaObject_Connection), intent(out), optional :: connection
+        last_serial = last_serial + 1
+        slots(id)%sender = sender
+        slots(id)%signal = signal
+        slots(id)%serial = last_serial
+        if (present(connection)) connection = QMetaObject_Connection(id, last_serial)
         ! on failure the shim has already released the slot
         if (qtf_connect(sender, signal, int(id, c_int)) == 0) &
             error stop 'qt: failed to connect signal (null or unsupported sender)'
     end subroutine connect_slot
+
+    !> Break one connection made by `connect`; returns .false. if it was
+    !> already broken (disconnected, or its sender destroyed).
+    logical function QObject_disconnect(connection)
+        type(QMetaObject_Connection), intent(in) :: connection
+        QObject_disconnect = .false.
+        if (.not. allocated(slots)) return
+        if (connection%slot < 1 .or. connection%slot > size(slots)) return
+        if (slots(connection%slot)%kind == 0 .or. slots(connection%slot)%serial /= connection%serial) return
+        QObject_disconnect = qtf_disconnect(int(connection%slot, c_int)) /= 0
+    end function QObject_disconnect
+
+    !> Disconnect all Fortran slots connected to this signal.
+    subroutine qtfsignal_disconnect(self)
+        class(QtfSignal), intent(in) :: self
+        integer :: id
+        integer(c_int) :: found
+        if (.not. allocated(slots) .or. .not. c_associated(self%sender)) return
+        do id = 1, size(slots)
+            if (slots(id)%kind == 0 .or. slots(id)%signal /= self%id) cycle
+            if (.not. c_associated(slots(id)%sender, self%sender)) cycle
+            found = qtf_disconnect(int(id, c_int))   ! releases slots(id)
+        end do
+    end subroutine qtfsignal_disconnect
 
     !> Called by the shim when a signal fires.
     subroutine qtf_dispatch(id, args) bind(C)
@@ -411,87 +494,94 @@ contains
     ! signals
 
     !> Connect a slot (with optional user data) to this signal.
-    subroutine qsignal_connect(self, slot, data)
+    subroutine qsignal_connect(self, slot, data, connection)
         class(QSignal), intent(in) :: self
         procedure(qt_slot) :: slot
         class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         integer :: id
         id = new_slot(SLOT_VOID)
         slots(id)%void => slot
         if (present(data)) slots(id)%data => data
-        call connect_slot(self%sender, self%id, id)
+        call connect_slot(self%sender, self%id, id, connection)
     end subroutine qsignal_connect
 
     !> Connect a slot (with optional user data) to this signal.
-    subroutine qsignalstring_connect(self, slot, data)
+    subroutine qsignalstring_connect(self, slot, data, connection)
         class(QSignalString), intent(in) :: self
         procedure(qt_slot_string) :: slot
         class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         integer :: id
         id = new_slot(SLOT_STRING)
         slots(id)%string => slot
         if (present(data)) slots(id)%data => data
-        call connect_slot(self%sender, self%id, id)
+        call connect_slot(self%sender, self%id, id, connection)
     end subroutine qsignalstring_connect
 
     !> Connect a slot (with optional user data) to this signal.
-    subroutine qsignalbool_connect(self, slot, data)
+    subroutine qsignalbool_connect(self, slot, data, connection)
         class(QSignalBool), intent(in) :: self
         procedure(qt_slot_bool) :: slot
         class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         integer :: id
         id = new_slot(SLOT_BOOL)
         slots(id)%bool => slot
         if (present(data)) slots(id)%data => data
-        call connect_slot(self%sender, self%id, id)
+        call connect_slot(self%sender, self%id, id, connection)
     end subroutine qsignalbool_connect
 
     !> Connect a slot (with optional user data) to this signal.
-    subroutine qsignalint_connect(self, slot, data)
+    subroutine qsignalint_connect(self, slot, data, connection)
         class(QSignalInt), intent(in) :: self
         procedure(qt_slot_int) :: slot
         class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         integer :: id
         id = new_slot(SLOT_INT)
         slots(id)%int => slot
         if (present(data)) slots(id)%data => data
-        call connect_slot(self%sender, self%id, id)
+        call connect_slot(self%sender, self%id, id, connection)
     end subroutine qsignalint_connect
 
     !> Connect a slot (with optional user data) to this signal.
-    subroutine qsignaldouble_connect(self, slot, data)
+    subroutine qsignaldouble_connect(self, slot, data, connection)
         class(QSignalDouble), intent(in) :: self
         procedure(qt_slot_double) :: slot
         class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         integer :: id
         id = new_slot(SLOT_DOUBLE)
         slots(id)%double => slot
         if (present(data)) slots(id)%data => data
-        call connect_slot(self%sender, self%id, id)
+        call connect_slot(self%sender, self%id, id, connection)
     end subroutine qsignaldouble_connect
 
     !> Connect `signal` of `sender` to a handler (a slot kind defined outside
     !> this module). The handler is copied.
-    subroutine qt_connect_handler(sender, signal, handler, data)
+    subroutine qt_connect_handler(sender, signal, handler, data, connection)
         type(c_ptr), intent(in) :: sender
         integer(c_int), intent(in) :: signal
         class(qt_slot_handler), intent(in) :: handler
         class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection
         integer :: id
         id = new_slot(SLOT_HANDLER)
         allocate(slots(id)%handler, source=handler)
         if (present(data)) slots(id)%data => data
-        call connect_slot(sender, signal, id)
+        call connect_slot(sender, signal, id, connection)
     end subroutine qt_connect_handler
 
     !> Connect a slot (with optional user data) to this signal.
-    subroutine qsignalint2_connect(self, slot, data)
+    subroutine qsignalint2_connect(self, slot, data, connection)
         class(QSignalInt2), intent(in) :: self
         procedure(qt_slot_int2) :: slot
         class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(int2_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data)
+        call qt_connect_handler(self%sender, self%id, h, data, connection)
     end subroutine qsignalint2_connect
 
     !> Call the slot with the first two integer arguments.
@@ -507,13 +597,14 @@ contains
     end subroutine int2_handler_invoke
 
     !> Connect a slot (with optional user data) to this signal.
-    subroutine qsignalint3_connect(self, slot, data)
+    subroutine qsignalint3_connect(self, slot, data, connection)
         class(QSignalInt3), intent(in) :: self
         procedure(qt_slot_int3) :: slot
         class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(int3_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data)
+        call qt_connect_handler(self%sender, self%id, h, data, connection)
     end subroutine qsignalint3_connect
 
     !> Call the slot with the first three integer arguments.
@@ -529,13 +620,14 @@ contains
     end subroutine int3_handler_invoke
 
     !> Connect a slot (with optional user data) to this signal.
-    subroutine qsignalint4_connect(self, slot, data)
+    subroutine qsignalint4_connect(self, slot, data, connection)
         class(QSignalInt4), intent(in) :: self
         procedure(qt_slot_int4) :: slot
         class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(int4_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data)
+        call qt_connect_handler(self%sender, self%id, h, data, connection)
     end subroutine qsignalint4_connect
 
     !> Call the slot with the four integer arguments.
@@ -549,6 +641,157 @@ contains
             call self%f(int(args%i(1)), int(args%i(2)), int(args%i(3)), int(args%i(4)))
         end if
     end subroutine int4_handler_invoke
+
+    ! ------------------------------------------------------------------
+    ! signals defined in Fortran
+
+    !> A new Fortran-defined signal source, owned by `parent` if given (one
+    !> without a parent lives until the program ends).
+    type(c_ptr) function new_source(parent)
+        class(QObject), intent(in), optional :: parent
+        new_source = qtf_qtfsignal_new(qtf_ptr(parent))
+    end function new_source
+
+    !> Call the slots of a Fortran-defined signal.
+    subroutine emit_args(sig, ints, d, s)
+        class(QtfSignal), intent(in) :: sig
+        integer, intent(in), optional :: ints(:)
+        real(c_double), intent(in), optional :: d
+        character(len=*), intent(in), optional :: s
+        integer(c_int) :: i(4)
+        real(c_double) :: d_
+        i = 0
+        d_ = 0
+        if (present(ints)) i(1:size(ints)) = int(ints, c_int)
+        if (present(d)) d_ = d
+        if (.not. c_associated(sig%sender)) error stop 'qt: emit on a signal that was not created'
+        if (present(s)) then
+            if (qtf_qtfsignal_emit(sig%sender, i, d_, s, len(s, c_int)) == 0) &
+                error stop 'qt: only signals created in Fortran (e.g. QSignal(parent)) can be emitted'
+        else
+            if (qtf_qtfsignal_emit(sig%sender, i, d_, '', 0_c_int) == 0) &
+                error stop 'qt: only signals created in Fortran (e.g. QSignal(parent)) can be emitted'
+        end if
+    end subroutine emit_args
+
+    !> Create a signal defined in Fortran, owned by `parent` if given.
+    function qsignal_new(parent) result(sig)
+        class(QObject), intent(in), optional :: parent
+        type(QSignal) :: sig
+        sig%sender = new_source(parent)
+        sig%id = QTF_SIG_QTFSIGNAL
+    end function qsignal_new
+
+    !> Call the connected slots. Only for signals created in Fortran.
+    subroutine qsignal_emit(self)
+        class(QSignal), intent(in) :: self
+        call emit_args(self)
+    end subroutine qsignal_emit
+
+    !> Create a signal defined in Fortran, owned by `parent` if given.
+    function qsignalstring_new(parent) result(sig)
+        class(QObject), intent(in), optional :: parent
+        type(QSignalString) :: sig
+        sig%sender = new_source(parent)
+        sig%id = QTF_SIG_QTFSIGNAL
+    end function qsignalstring_new
+
+    !> Call the connected slots with `value`. Only for signals created in Fortran.
+    subroutine qsignalstring_emit(self, value)
+        class(QSignalString), intent(in) :: self
+        character(len=*), intent(in) :: value
+        call emit_args(self, s=value)
+    end subroutine qsignalstring_emit
+
+    !> Create a signal defined in Fortran, owned by `parent` if given.
+    function qsignalbool_new(parent) result(sig)
+        class(QObject), intent(in), optional :: parent
+        type(QSignalBool) :: sig
+        sig%sender = new_source(parent)
+        sig%id = QTF_SIG_QTFSIGNAL
+    end function qsignalbool_new
+
+    !> Call the connected slots with `value`. Only for signals created in Fortran.
+    subroutine qsignalbool_emit(self, value)
+        class(QSignalBool), intent(in) :: self
+        logical, intent(in) :: value
+        call emit_args(self, [merge(1, 0, value)])
+    end subroutine qsignalbool_emit
+
+    !> Create a signal defined in Fortran, owned by `parent` if given.
+    function qsignalint_new(parent) result(sig)
+        class(QObject), intent(in), optional :: parent
+        type(QSignalInt) :: sig
+        sig%sender = new_source(parent)
+        sig%id = QTF_SIG_QTFSIGNAL
+    end function qsignalint_new
+
+    !> Call the connected slots with `value`. Only for signals created in Fortran.
+    subroutine qsignalint_emit(self, value)
+        class(QSignalInt), intent(in) :: self
+        integer, intent(in) :: value
+        call emit_args(self, [value])
+    end subroutine qsignalint_emit
+
+    !> Create a signal defined in Fortran, owned by `parent` if given.
+    function qsignalint2_new(parent) result(sig)
+        class(QObject), intent(in), optional :: parent
+        type(QSignalInt2) :: sig
+        sig%sender = new_source(parent)
+        sig%id = QTF_SIG_QTFSIGNAL
+    end function qsignalint2_new
+
+    !> Call the connected slots with (a, b). Only for signals created in Fortran.
+    subroutine qsignalint2_emit(self, a, b)
+        class(QSignalInt2), intent(in) :: self
+        integer, intent(in) :: a, b
+        call emit_args(self, [a, b])
+    end subroutine qsignalint2_emit
+
+    !> Create a signal defined in Fortran, owned by `parent` if given.
+    function qsignalint3_new(parent) result(sig)
+        class(QObject), intent(in), optional :: parent
+        type(QSignalInt3) :: sig
+        sig%sender = new_source(parent)
+        sig%id = QTF_SIG_QTFSIGNAL
+    end function qsignalint3_new
+
+    !> Call the connected slots with (a, b, c). Only for signals created in Fortran.
+    subroutine qsignalint3_emit(self, a, b, c)
+        class(QSignalInt3), intent(in) :: self
+        integer, intent(in) :: a, b, c
+        call emit_args(self, [a, b, c])
+    end subroutine qsignalint3_emit
+
+    !> Create a signal defined in Fortran, owned by `parent` if given.
+    function qsignalint4_new(parent) result(sig)
+        class(QObject), intent(in), optional :: parent
+        type(QSignalInt4) :: sig
+        sig%sender = new_source(parent)
+        sig%id = QTF_SIG_QTFSIGNAL
+    end function qsignalint4_new
+
+    !> Call the connected slots with (a, b, c, d). Only for signals created in Fortran.
+    subroutine qsignalint4_emit(self, a, b, c, d)
+        class(QSignalInt4), intent(in) :: self
+        integer, intent(in) :: a, b, c, d
+        call emit_args(self, [a, b, c, d])
+    end subroutine qsignalint4_emit
+
+    !> Create a signal defined in Fortran, owned by `parent` if given.
+    function qsignaldouble_new(parent) result(sig)
+        class(QObject), intent(in), optional :: parent
+        type(QSignalDouble) :: sig
+        sig%sender = new_source(parent)
+        sig%id = QTF_SIG_QTFSIGNAL
+    end function qsignaldouble_new
+
+    !> Call the connected slots with `value`. Only for signals created in Fortran.
+    subroutine qsignaldouble_emit(self, value)
+        class(QSignalDouble), intent(in) :: self
+        real(c_double), intent(in) :: value
+        call emit_args(self, d=value)
+    end subroutine qsignaldouble_emit
 
     ! ------------------------------------------------------------------
     ! QEvent

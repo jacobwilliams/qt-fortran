@@ -77,17 +77,15 @@ class QtfEventFilter : public QObject {
 
   protected:
     bool eventFilter(QObject *o, QEvent *e) override {
-        if (e->type() == QEvent::Close && !close_handlers.empty()) {
-            const std::vector<qtf_slot> targets = close_handlers;   // a slot may connect more
-            for (const qtf_slot &s : targets) qtf_emit_ptr(s, e);
+        qtf_args a{};
+        a.p = e;
+        if (e->type() == QEvent::Close) {
             // Vetoed: stop here, since the widget's own closeEvent would accept it again.
-            return !e->isAccepted();
-        }
-        if (e->type() == QEvent::ContextMenu && !context_menu_handlers.empty()) {
-            const std::vector<qtf_slot> targets = context_menu_handlers;
+            if (qtf_emit_all(close_handlers, a) > 0) return !e->isAccepted();
+        } else if (e->type() == QEvent::ContextMenu) {
             e->accept();
-            for (const qtf_slot &s : targets) qtf_emit_ptr(s, e);
-            return e->isAccepted();   // ignored: let it propagate to the parent
+            // ignored by the slots: let it propagate to the parent
+            if (qtf_emit_all(context_menu_handlers, a) > 0) return e->isAccepted();
         }
         return QObject::eventFilter(o, e);
     }
@@ -124,11 +122,11 @@ class QtfWidget : public QWidget {
     std::array<std::vector<qtf_slot>, QTF_EV_COUNT> handlers;
 
   protected:
-    // Emit to a copy: a slot may connect more slots while we iterate.
+    // True if a (live) slot handled the event.
     bool forward(qtf_widget_event ev, void *p) {
-        const std::vector<qtf_slot> targets = handlers[ev];
-        for (const qtf_slot &s : targets) qtf_emit_ptr(s, p);
-        return !targets.empty();
+        qtf_args a{};
+        a.p = p;
+        return qtf_emit_all(handlers[ev], a) > 0;
     }
 
     void paintEvent(QPaintEvent *e) override {
@@ -251,33 +249,25 @@ template <qtf_widget_event EV> static bool connect_event(void *s, const qtf_slot
 
 fortran_decls = '''
     !> A table-model data request: slots get (row, column, request) and fill the request.
-    type, public :: QSignalModelData
-        type(c_ptr) :: sender = c_null_ptr
-        integer(c_int) :: id = 0
+    type, extends(QtfSignal), public :: QSignalModelData
     contains
         procedure :: connect => qsignalmodeldata_connect
     end type QSignalModelData
 
     !> A table-model edit: slots get (row, column, text).
-    type, public :: QSignalModelEdit
-        type(c_ptr) :: sender = c_null_ptr
-        integer(c_int) :: id = 0
+    type, extends(QtfSignal), public :: QSignalModelEdit
     contains
         procedure :: connect => qsignalmodeledit_connect
     end type QSignalModelEdit
 
     !> A signal carrying a tree item.
-    type, public :: QSignalTreeItem
-        type(c_ptr) :: sender = c_null_ptr
-        integer(c_int) :: id = 0
+    type, extends(QtfSignal), public :: QSignalTreeItem
     contains
         procedure :: connect => qsignaltreeitem_connect
     end type QSignalTreeItem
 
     !> A signal carrying a tree item and a column.
-    type, public :: QSignalTreeItemInt
-        type(c_ptr) :: sender = c_null_ptr
-        integer(c_int) :: id = 0
+    type, extends(QtfSignal), public :: QSignalTreeItemInt
     contains
         procedure :: connect => qsignaltreeitemint_connect
     end type QSignalTreeItemInt
@@ -376,13 +366,14 @@ fortran_procedures = '''
     end function qapplication_new
 
     !> Connect a slot (with optional user data) to this signal.
-    subroutine qsignalmodeldata_connect(self, slot, data)
+    subroutine qsignalmodeldata_connect(self, slot, data, connection)
         class(QSignalModelData), intent(in) :: self
         procedure(qt_slot_model_data) :: slot
         class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(model_data_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data)
+        call qt_connect_handler(self%sender, self%id, h, data, connection)
     end subroutine qsignalmodeldata_connect
 
     !> Call the slot with (row, column, request).
@@ -400,13 +391,14 @@ fortran_procedures = '''
     end subroutine model_data_handler_invoke
 
     !> Connect a slot (with optional user data) to this signal.
-    subroutine qsignalmodeledit_connect(self, slot, data)
+    subroutine qsignalmodeledit_connect(self, slot, data, connection)
         class(QSignalModelEdit), intent(in) :: self
         procedure(qt_slot_model_edit) :: slot
         class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(model_edit_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data)
+        call qt_connect_handler(self%sender, self%id, h, data, connection)
     end subroutine qsignalmodeledit_connect
 
     !> Call the slot with (row, column, text).
@@ -422,13 +414,14 @@ fortran_procedures = '''
     end subroutine model_edit_handler_invoke
 
     !> Connect a slot (with optional user data) to this signal.
-    subroutine qsignaltreeitem_connect(self, slot, data)
+    subroutine qsignaltreeitem_connect(self, slot, data, connection)
         class(QSignalTreeItem), intent(in) :: self
         procedure(qt_slot_tree_item) :: slot
         class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(tree_item_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data)
+        call qt_connect_handler(self%sender, self%id, h, data, connection)
     end subroutine qsignaltreeitem_connect
 
     !> Call the slot with the item (null if none).
@@ -446,13 +439,14 @@ fortran_procedures = '''
     end subroutine tree_item_handler_invoke
 
     !> Connect a slot (with optional user data) to this signal.
-    subroutine qsignaltreeitemint_connect(self, slot, data)
+    subroutine qsignaltreeitemint_connect(self, slot, data, connection)
         class(QSignalTreeItemInt), intent(in) :: self
         procedure(qt_slot_tree_item_int) :: slot
         class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(tree_item_int_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data)
+        call qt_connect_handler(self%sender, self%id, h, data, connection)
     end subroutine qsignaltreeitemint_connect
 
     !> Call the slot with the item and column.

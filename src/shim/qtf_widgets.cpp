@@ -196,17 +196,15 @@ class QtfEventFilter : public QObject {
 
   protected:
     bool eventFilter(QObject *o, QEvent *e) override {
-        if (e->type() == QEvent::Close && !close_handlers.empty()) {
-            const std::vector<qtf_slot> targets = close_handlers;   // a slot may connect more
-            for (const qtf_slot &s : targets) qtf_emit_ptr(s, e);
+        qtf_args a{};
+        a.p = e;
+        if (e->type() == QEvent::Close) {
             // Vetoed: stop here, since the widget's own closeEvent would accept it again.
-            return !e->isAccepted();
-        }
-        if (e->type() == QEvent::ContextMenu && !context_menu_handlers.empty()) {
-            const std::vector<qtf_slot> targets = context_menu_handlers;
+            if (qtf_emit_all(close_handlers, a) > 0) return !e->isAccepted();
+        } else if (e->type() == QEvent::ContextMenu) {
             e->accept();
-            for (const qtf_slot &s : targets) qtf_emit_ptr(s, e);
-            return e->isAccepted();   // ignored: let it propagate to the parent
+            // ignored by the slots: let it propagate to the parent
+            if (qtf_emit_all(context_menu_handlers, a) > 0) return e->isAccepted();
         }
         return QObject::eventFilter(o, e);
     }
@@ -243,11 +241,11 @@ class QtfWidget : public QWidget {
     std::array<std::vector<qtf_slot>, QTF_EV_COUNT> handlers;
 
   protected:
-    // Emit to a copy: a slot may connect more slots while we iterate.
+    // True if a (live) slot handled the event.
     bool forward(qtf_widget_event ev, void *p) {
-        const std::vector<qtf_slot> targets = handlers[ev];
-        for (const qtf_slot &s : targets) qtf_emit_ptr(s, p);
-        return !targets.empty();
+        qtf_args a{};
+        a.p = p;
+        return qtf_emit_all(handlers[ev], a) > 0;
     }
 
     void paintEvent(QPaintEvent *e) override {
@@ -2830,174 +2828,174 @@ static const bool qtf_widgets_registered = [] {
     qtf_register_connector(QTF_SIG_QTFWIDGET_KEYRELEASEEVENT, connect_event<QTF_EV_KEYRELEASE>);
     qtf_register_connector(QTF_SIG_QTFWIDGET_RESIZEEVENT, connect_event<QTF_EV_RESIZE>);
     qtf_register_connector(QTF_SIG_QABSTRACTBUTTON_CLICKED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QAbstractButton>(s), &QAbstractButton::clicked, as<QAbstractButton>(s), [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(as<QAbstractButton>(s), &QAbstractButton::clicked, as<QAbstractButton>(s), [ref]() { qtf_emit(ref); }));
     });
     qtf_register_connector(QTF_SIG_QABSTRACTBUTTON_TOGGLED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QAbstractButton>(s), &QAbstractButton::toggled, as<QAbstractButton>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QAbstractButton>(s), &QAbstractButton::toggled, as<QAbstractButton>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QABSTRACTBUTTON_PRESSED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QAbstractButton>(s), &QAbstractButton::pressed, as<QAbstractButton>(s), [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(as<QAbstractButton>(s), &QAbstractButton::pressed, as<QAbstractButton>(s), [ref]() { qtf_emit(ref); }));
     });
     qtf_register_connector(QTF_SIG_QABSTRACTBUTTON_RELEASED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QAbstractButton>(s), &QAbstractButton::released, as<QAbstractButton>(s), [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(as<QAbstractButton>(s), &QAbstractButton::released, as<QAbstractButton>(s), [ref]() { qtf_emit(ref); }));
     });
     qtf_register_connector(QTF_SIG_QLINEEDIT_TEXTCHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QLineEdit>(s), &QLineEdit::textChanged, as<QLineEdit>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QLineEdit>(s), &QLineEdit::textChanged, as<QLineEdit>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QLINEEDIT_TEXTEDITED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QLineEdit>(s), &QLineEdit::textEdited, as<QLineEdit>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QLineEdit>(s), &QLineEdit::textEdited, as<QLineEdit>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QLINEEDIT_RETURNPRESSED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QLineEdit>(s), &QLineEdit::returnPressed, as<QLineEdit>(s), [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(as<QLineEdit>(s), &QLineEdit::returnPressed, as<QLineEdit>(s), [ref]() { qtf_emit(ref); }));
     });
     qtf_register_connector(QTF_SIG_QLINEEDIT_EDITINGFINISHED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QLineEdit>(s), &QLineEdit::editingFinished, as<QLineEdit>(s), [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(as<QLineEdit>(s), &QLineEdit::editingFinished, as<QLineEdit>(s), [ref]() { qtf_emit(ref); }));
     });
     qtf_register_connector(QTF_SIG_QSPINBOX_VALUECHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QSpinBox>(s), &QSpinBox::valueChanged, as<QSpinBox>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QSpinBox>(s), &QSpinBox::valueChanged, as<QSpinBox>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QDOUBLESPINBOX_VALUECHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QDoubleSpinBox>(s), &QDoubleSpinBox::valueChanged, as<QDoubleSpinBox>(s), [ref](double v) { qtf_emit_double(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QDoubleSpinBox>(s), &QDoubleSpinBox::valueChanged, as<QDoubleSpinBox>(s), [ref](double v) { qtf_emit_double(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QABSTRACTSLIDER_VALUECHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QAbstractSlider>(s), &QAbstractSlider::valueChanged, as<QAbstractSlider>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QAbstractSlider>(s), &QAbstractSlider::valueChanged, as<QAbstractSlider>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QAbstractSlider>(s), &QAbstractSlider::sliderMoved, as<QAbstractSlider>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QAbstractSlider>(s), &QAbstractSlider::sliderMoved, as<QAbstractSlider>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QAbstractSlider>(s), &QAbstractSlider::sliderPressed, as<QAbstractSlider>(s), [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(as<QAbstractSlider>(s), &QAbstractSlider::sliderPressed, as<QAbstractSlider>(s), [ref]() { qtf_emit(ref); }));
     });
     qtf_register_connector(QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QAbstractSlider>(s), &QAbstractSlider::sliderReleased, as<QAbstractSlider>(s), [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(as<QAbstractSlider>(s), &QAbstractSlider::sliderReleased, as<QAbstractSlider>(s), [ref]() { qtf_emit(ref); }));
     });
     qtf_register_connector(QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QComboBox>(s), &QComboBox::currentIndexChanged, as<QComboBox>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QComboBox>(s), &QComboBox::currentIndexChanged, as<QComboBox>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QComboBox>(s), &QComboBox::currentTextChanged, as<QComboBox>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QComboBox>(s), &QComboBox::currentTextChanged, as<QComboBox>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QCOMBOBOX_ACTIVATED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QComboBox>(s), &QComboBox::activated, as<QComboBox>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QComboBox>(s), &QComboBox::activated, as<QComboBox>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QDIALOG_ACCEPTED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QDialog>(s), &QDialog::accepted, as<QDialog>(s), [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(as<QDialog>(s), &QDialog::accepted, as<QDialog>(s), [ref]() { qtf_emit(ref); }));
     });
     qtf_register_connector(QTF_SIG_QDIALOG_REJECTED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QDialog>(s), &QDialog::rejected, as<QDialog>(s), [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(as<QDialog>(s), &QDialog::rejected, as<QDialog>(s), [ref]() { qtf_emit(ref); }));
     });
     qtf_register_connector(QTF_SIG_QDIALOG_FINISHED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QDialog>(s), &QDialog::finished, as<QDialog>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QDialog>(s), &QDialog::finished, as<QDialog>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QTFTABLEMODEL_DATAREQUESTED, connect_model<0>);
     qtf_register_connector(QTF_SIG_QTFTABLEMODEL_DATAEDITED, connect_model<1>);
     qtf_register_connector(QTF_SIG_QABSTRACTITEMVIEW_CLICKED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QAbstractItemView>(s), &QAbstractItemView::clicked, as<QAbstractItemView>(s), [ref](const QModelIndex &i) { qtf_emit_ints(ref, {i.row(), i.column()}); }));
+        return qtf_track(ref, QObject::connect(as<QAbstractItemView>(s), &QAbstractItemView::clicked, as<QAbstractItemView>(s), [ref](const QModelIndex &i) { qtf_emit_ints(ref, {i.row(), i.column()}); }));
     });
     qtf_register_connector(QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QAbstractItemView>(s), &QAbstractItemView::doubleClicked, as<QAbstractItemView>(s), [ref](const QModelIndex &i) { qtf_emit_ints(ref, {i.row(), i.column()}); }));
+        return qtf_track(ref, QObject::connect(as<QAbstractItemView>(s), &QAbstractItemView::doubleClicked, as<QAbstractItemView>(s), [ref](const QModelIndex &i) { qtf_emit_ints(ref, {i.row(), i.column()}); }));
     });
     qtf_register_connector(QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QAbstractItemView>(s), &QAbstractItemView::activated, as<QAbstractItemView>(s), [ref](const QModelIndex &i) { qtf_emit_ints(ref, {i.row(), i.column()}); }));
+        return qtf_track(ref, QObject::connect(as<QAbstractItemView>(s), &QAbstractItemView::activated, as<QAbstractItemView>(s), [ref](const QModelIndex &i) { qtf_emit_ints(ref, {i.row(), i.column()}); }));
     });
     qtf_register_connector(QTF_SIG_QTABLEWIDGET_CELLCLICKED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QTableWidget>(s), &QTableWidget::cellClicked, as<QTableWidget>(s), [ref](int a, int b) { qtf_emit_ints(ref, {a, b}); }));
+        return qtf_track(ref, QObject::connect(as<QTableWidget>(s), &QTableWidget::cellClicked, as<QTableWidget>(s), [ref](int a, int b) { qtf_emit_ints(ref, {a, b}); }));
     });
     qtf_register_connector(QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QTableWidget>(s), &QTableWidget::cellDoubleClicked, as<QTableWidget>(s), [ref](int a, int b) { qtf_emit_ints(ref, {a, b}); }));
+        return qtf_track(ref, QObject::connect(as<QTableWidget>(s), &QTableWidget::cellDoubleClicked, as<QTableWidget>(s), [ref](int a, int b) { qtf_emit_ints(ref, {a, b}); }));
     });
     qtf_register_connector(QTF_SIG_QTABLEWIDGET_CELLCHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QTableWidget>(s), &QTableWidget::cellChanged, as<QTableWidget>(s), [ref](int a, int b) { qtf_emit_ints(ref, {a, b}); }));
+        return qtf_track(ref, QObject::connect(as<QTableWidget>(s), &QTableWidget::cellChanged, as<QTableWidget>(s), [ref](int a, int b) { qtf_emit_ints(ref, {a, b}); }));
     });
     qtf_register_connector(QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QTableWidget>(s), &QTableWidget::currentCellChanged, as<QTableWidget>(s), [ref](int a, int b, int c, int d) { qtf_emit_ints(ref, {a, b, c, d}); }));
+        return qtf_track(ref, QObject::connect(as<QTableWidget>(s), &QTableWidget::currentCellChanged, as<QTableWidget>(s), [ref](int a, int b, int c, int d) { qtf_emit_ints(ref, {a, b, c, d}); }));
     });
     qtf_register_connector(QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QListWidget>(s), &QListWidget::currentRowChanged, as<QListWidget>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QListWidget>(s), &QListWidget::currentRowChanged, as<QListWidget>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QListWidget>(s), &QListWidget::currentTextChanged, as<QListWidget>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QListWidget>(s), &QListWidget::currentTextChanged, as<QListWidget>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QListWidget>(s), &QListWidget::itemDoubleClicked, as<QListWidget>(s), [ref, s](QListWidgetItem *item) { qtf_emit_int(ref, as<QListWidget>(s)->row(item)); }));
+        return qtf_track(ref, QObject::connect(as<QListWidget>(s), &QListWidget::itemDoubleClicked, as<QListWidget>(s), [ref, s](QListWidgetItem *item) { qtf_emit_int(ref, as<QListWidget>(s)->row(item)); }));
     });
     qtf_register_connector(QTF_SIG_QTREEWIDGET_ITEMCLICKED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QTreeWidget>(s), &QTreeWidget::itemClicked, as<QTreeWidget>(s), [ref](QTreeWidgetItem *item, int column) { qtf_emit_ptr_ints(ref, item, {column}); }));
+        return qtf_track(ref, QObject::connect(as<QTreeWidget>(s), &QTreeWidget::itemClicked, as<QTreeWidget>(s), [ref](QTreeWidgetItem *item, int column) { qtf_emit_ptr_ints(ref, item, {column}); }));
     });
     qtf_register_connector(QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QTreeWidget>(s), &QTreeWidget::itemDoubleClicked, as<QTreeWidget>(s), [ref](QTreeWidgetItem *item, int column) { qtf_emit_ptr_ints(ref, item, {column}); }));
+        return qtf_track(ref, QObject::connect(as<QTreeWidget>(s), &QTreeWidget::itemDoubleClicked, as<QTreeWidget>(s), [ref](QTreeWidgetItem *item, int column) { qtf_emit_ptr_ints(ref, item, {column}); }));
     });
     qtf_register_connector(QTF_SIG_QTREEWIDGET_ITEMCHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QTreeWidget>(s), &QTreeWidget::itemChanged, as<QTreeWidget>(s), [ref](QTreeWidgetItem *item, int column) { qtf_emit_ptr_ints(ref, item, {column}); }));
+        return qtf_track(ref, QObject::connect(as<QTreeWidget>(s), &QTreeWidget::itemChanged, as<QTreeWidget>(s), [ref](QTreeWidgetItem *item, int column) { qtf_emit_ptr_ints(ref, item, {column}); }));
     });
     qtf_register_connector(QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QTreeWidget>(s), &QTreeWidget::currentItemChanged, as<QTreeWidget>(s), [ref](QTreeWidgetItem *current, QTreeWidgetItem *) { qtf_emit_ptr(ref, current); }));
+        return qtf_track(ref, QObject::connect(as<QTreeWidget>(s), &QTreeWidget::currentItemChanged, as<QTreeWidget>(s), [ref](QTreeWidgetItem *current, QTreeWidgetItem *) { qtf_emit_ptr(ref, current); }));
     });
     qtf_register_connector(QTF_SIG_QTREEWIDGET_ITEMEXPANDED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QTreeWidget>(s), &QTreeWidget::itemExpanded, as<QTreeWidget>(s), [ref](QTreeWidgetItem *item) { qtf_emit_ptr(ref, item); }));
+        return qtf_track(ref, QObject::connect(as<QTreeWidget>(s), &QTreeWidget::itemExpanded, as<QTreeWidget>(s), [ref](QTreeWidgetItem *item) { qtf_emit_ptr(ref, item); }));
     });
     qtf_register_connector(QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QTreeWidget>(s), &QTreeWidget::itemCollapsed, as<QTreeWidget>(s), [ref](QTreeWidgetItem *item) { qtf_emit_ptr(ref, item); }));
+        return qtf_track(ref, QObject::connect(as<QTreeWidget>(s), &QTreeWidget::itemCollapsed, as<QTreeWidget>(s), [ref](QTreeWidgetItem *item) { qtf_emit_ptr(ref, item); }));
     });
     qtf_register_connector(QTF_SIG_QTEXTEDIT_TEXTCHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QTextEdit>(s), &QTextEdit::textChanged, as<QTextEdit>(s), [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(as<QTextEdit>(s), &QTextEdit::textChanged, as<QTextEdit>(s), [ref]() { qtf_emit(ref); }));
     });
     qtf_register_connector(QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QPlainTextEdit>(s), &QPlainTextEdit::textChanged, as<QPlainTextEdit>(s), [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(as<QPlainTextEdit>(s), &QPlainTextEdit::textChanged, as<QPlainTextEdit>(s), [ref]() { qtf_emit(ref); }));
     });
     qtf_register_connector(QTF_SIG_QTABWIDGET_CURRENTCHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QTabWidget>(s), &QTabWidget::currentChanged, as<QTabWidget>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QTabWidget>(s), &QTabWidget::currentChanged, as<QTabWidget>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QTabWidget>(s), &QTabWidget::tabCloseRequested, as<QTabWidget>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QTabWidget>(s), &QTabWidget::tabCloseRequested, as<QTabWidget>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QTABWIDGET_TABBARCLICKED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QTabWidget>(s), &QTabWidget::tabBarClicked, as<QTabWidget>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QTabWidget>(s), &QTabWidget::tabBarClicked, as<QTabWidget>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QStackedWidget>(s), &QStackedWidget::currentChanged, as<QStackedWidget>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QStackedWidget>(s), &QStackedWidget::currentChanged, as<QStackedWidget>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QStackedWidget>(s), &QStackedWidget::widgetRemoved, as<QStackedWidget>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QStackedWidget>(s), &QStackedWidget::widgetRemoved, as<QStackedWidget>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QSPLITTER_SPLITTERMOVED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QSplitter>(s), &QSplitter::splitterMoved, as<QSplitter>(s), [ref](int a, int b) { qtf_emit_ints(ref, {a, b}); }));
+        return qtf_track(ref, QObject::connect(as<QSplitter>(s), &QSplitter::splitterMoved, as<QSplitter>(s), [ref](int a, int b) { qtf_emit_ints(ref, {a, b}); }));
     });
     qtf_register_connector(QTF_SIG_QGROUPBOX_TOGGLED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QGroupBox>(s), &QGroupBox::toggled, as<QGroupBox>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QGroupBox>(s), &QGroupBox::toggled, as<QGroupBox>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QGROUPBOX_CLICKED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QGroupBox>(s), &QGroupBox::clicked, as<QGroupBox>(s), [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(as<QGroupBox>(s), &QGroupBox::clicked, as<QGroupBox>(s), [ref]() { qtf_emit(ref); }));
     });
     qtf_register_connector(QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QDockWidget>(s), &QDockWidget::visibilityChanged, as<QDockWidget>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QDockWidget>(s), &QDockWidget::visibilityChanged, as<QDockWidget>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QDockWidget>(s), &QDockWidget::topLevelChanged, as<QDockWidget>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QDockWidget>(s), &QDockWidget::topLevelChanged, as<QDockWidget>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QPROGRESSBAR_VALUECHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QProgressBar>(s), &QProgressBar::valueChanged, as<QProgressBar>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QProgressBar>(s), &QProgressBar::valueChanged, as<QProgressBar>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QBUTTONGROUP_IDCLICKED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QButtonGroup>(s), &QButtonGroup::idClicked, as<QButtonGroup>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QButtonGroup>(s), &QButtonGroup::idClicked, as<QButtonGroup>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QDATEEDIT_DATECHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QDateEdit>(s), &QDateEdit::dateChanged, as<QDateEdit>(s), [ref](QDate d) { qtf_emit_ints(ref, {d.year(), d.month(), d.day()}); }));
+        return qtf_track(ref, QObject::connect(as<QDateEdit>(s), &QDateEdit::dateChanged, as<QDateEdit>(s), [ref](QDate d) { qtf_emit_ints(ref, {d.year(), d.month(), d.day()}); }));
     });
     qtf_register_connector(QTF_SIG_QTIMEEDIT_TIMECHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QTimeEdit>(s), &QTimeEdit::timeChanged, as<QTimeEdit>(s), [ref](QTime t) { qtf_emit_ints(ref, {t.hour(), t.minute(), t.second()}); }));
+        return qtf_track(ref, QObject::connect(as<QTimeEdit>(s), &QTimeEdit::timeChanged, as<QTimeEdit>(s), [ref](QTime t) { qtf_emit_ints(ref, {t.hour(), t.minute(), t.second()}); }));
     });
     qtf_register_connector(QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QCalendarWidget>(s), &QCalendarWidget::selectionChanged, as<QCalendarWidget>(s), [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(as<QCalendarWidget>(s), &QCalendarWidget::selectionChanged, as<QCalendarWidget>(s), [ref]() { qtf_emit(ref); }));
     });
     qtf_register_connector(QTF_SIG_QCALENDARWIDGET_CLICKED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QCalendarWidget>(s), &QCalendarWidget::clicked, as<QCalendarWidget>(s), [ref](QDate d) { qtf_emit_ints(ref, {d.year(), d.month(), d.day()}); }));
+        return qtf_track(ref, QObject::connect(as<QCalendarWidget>(s), &QCalendarWidget::clicked, as<QCalendarWidget>(s), [ref](QDate d) { qtf_emit_ints(ref, {d.year(), d.month(), d.day()}); }));
     });
     qtf_register_connector(QTF_SIG_QCALENDARWIDGET_ACTIVATED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QCalendarWidget>(s), &QCalendarWidget::activated, as<QCalendarWidget>(s), [ref](QDate d) { qtf_emit_ints(ref, {d.year(), d.month(), d.day()}); }));
+        return qtf_track(ref, QObject::connect(as<QCalendarWidget>(s), &QCalendarWidget::activated, as<QCalendarWidget>(s), [ref](QDate d) { qtf_emit_ints(ref, {d.year(), d.month(), d.day()}); }));
     });
     qtf_register_connector(QTF_SIG_QPROGRESSDIALOG_CANCELED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QProgressDialog>(s), &QProgressDialog::canceled, as<QProgressDialog>(s), [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(as<QProgressDialog>(s), &QProgressDialog::canceled, as<QProgressDialog>(s), [ref]() { qtf_emit(ref); }));
     });
     return true;
 }();

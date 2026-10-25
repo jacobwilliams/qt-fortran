@@ -401,7 +401,7 @@ def cpp_connector(cls, name, k, table):
     sig = table.get("cpp_signal", f"&{cls}::{name}")
     capture = "ref, s" if re.search(r"\bs\b", emit) else "ref"
     return (f"[](void *s, const qtf_slot &ref) {{\n"
-            f"        return bool(QObject::connect(as<{cls}>(s), {sig}, as<{cls}>(s), "
+            f"        return qtf_track(ref, QObject::connect(as<{cls}>(s), {sig}, as<{cls}>(s), "
             f"[{capture}]({params}) {{ {emit}; }}));\n    }}")
 
 

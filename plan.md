@@ -398,8 +398,20 @@ spec-only work now; items marked *(design)* need new machinery.
     would accept it again. The other events above can use the same filter.
 
 ### Binding machinery *(design)*
-- Signals defined in Fortran (custom signals).
-- `disconnect` (connections currently live until the sender is destroyed).
+- **Done:** signals defined in Fortran. `QSignalInt(parent)` (and the other
+  core kinds) creates a `QtfSignalSource` in C++, a QObject holding the slot
+  list; `sig%emit(...)` calls the slots synchronously, in order. Signal types
+  share the base `QtfSignal` (sender + id), which provides `disconnect`.
+- **Done:** `disconnect`. Every `connect` takes an optional `connection`
+  (`QMetaObject_Connection`: slot index + serial number, so a stale handle
+  cannot hit a reused index). `QObject_disconnect(connection)` breaks one;
+  `sig%disconnect()` breaks all Fortran slots of a signal (the registry now
+  records each slot's sender and signal). In the shim each `qtf_slot_ref` has
+  an `alive` flag and the `QMetaObject::Connection` that owns it (connectors
+  record it with `qtf_track`); `qtf_disconnect` marks it dead, disconnects the
+  Qt connection and releases the Fortran slot at once. Dead refs in handler
+  lists (event slots) stay until their owner is destroyed, and forwarders
+  count only live slots (`qtf_emit_all`), so Qt's default handling resumes.
 - **Done:** signals with several integer arguments (`QSignalInt2/3/4`, e.g.
   `cellChanged(row, column)`, `dateChanged(year, month, day)`), and custom
   signal kinds (tree items, model requests).
@@ -426,5 +438,5 @@ a C++ `lambda`/`emit`, with the sender as `s`).
 4. ~~Layout and polish widgets.~~ Done, including icons.
 5. ~~Close event and `QSettings`.~~ Done (timeseries example: remembers the
    layout and parameters, asks before quitting, plot context menu).
-6. Fortran-defined signals and `disconnect`.
+6. ~~Fortran-defined signals and `disconnect`.~~ Done (test_signals).
 7. Qt Charts / Qt Graphs.

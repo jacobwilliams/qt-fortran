@@ -11,6 +11,7 @@ module qt_c_core
     integer(c_int), parameter, public :: QTF_SIG_QOBJECT_DESTROYED = 1
     integer(c_int), parameter, public :: QTF_SIG_QOBJECT_OBJECTNAMECHANGED = 2
     integer(c_int), parameter, public :: QTF_SIG_QTIMER_TIMEOUT = 3
+    integer(c_int), parameter, public :: QTF_SIG_QTFSIGNAL = 4
 
     interface
 
@@ -28,6 +29,18 @@ module qt_c_core
             type(c_funptr), value :: dispatch
             type(c_funptr), value :: release
         end subroutine qtf_set_dispatcher
+
+        !> Disconnect the connection that owns Fortran slot `slot` and release the slot
+        !> now. Returns 1 if it was connected. A connection kept in a handler list (event
+        !> slots) stays in the list, dead, until its owner is destroyed.
+        !>
+        !> C: `int qtf_disconnect(int slot)`
+        function qtf_disconnect(slot) result(res) bind(C, name='qtf_disconnect')
+            import :: c_int
+            implicit none
+            integer(c_int), value :: slot
+            integer(c_int) :: res
+        end function qtf_disconnect
 
         !> Returns 1 on success. On failure the slot is released before returning.
         !>
@@ -235,14 +248,39 @@ module qt_c_core
             integer(c_int), value :: slot
         end subroutine qtf_qtimer_singleShot
 
+        !> A new signal source, owned by `parent` if given.
+        !>
+        !> C: `void *qtf_qtfsignal_new(void *parent)`
+        function qtf_qtfsignal_new(parent) result(res) bind(C, name='qtf_qtfsignal_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qtfsignal_new
+
+        !> Call the slots of a Fortran-defined signal with the given arguments (integers,
+        !> one real, a string). Returns 0 if `source` is not a Fortran-defined signal.
+        !>
+        !> C: `int qtf_qtfsignal_emit(void *source, const int *ints, double d, const char *s, int slen)`
+        function qtf_qtfsignal_emit(source, ints, d, s, slen) result(res) bind(C, name='qtf_qtfsignal_emit')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: source
+            integer(c_int), dimension(*), intent(in) :: ints
+            real(c_double), value :: d
+            character(kind=c_char), dimension(*), intent(in) :: s
+            integer(c_int), value :: slen
+            integer(c_int) :: res
+        end function qtf_qtfsignal_emit
+
     end interface
 
-    public :: qtf_free, qtf_set_dispatcher, qtf_connect, qtf_qobject_new, qtf_qobject_delete
+    public :: qtf_free, qtf_set_dispatcher, qtf_disconnect, qtf_connect, qtf_qobject_new, qtf_qobject_delete
     public :: qtf_qobject_deleteLater, qtf_qobject_objectName, qtf_qobject_setObjectName
     public :: qtf_qobject_setParent, qtf_qobject_parent, qtf_qobject_className, qtf_qobject_inherits
     public :: qtf_qevent_type, qtf_qevent_accept, qtf_qevent_ignore, qtf_qevent_isAccepted, qtf_qevent_delete
     public :: qtf_qcoreapplication_sendEvent, qtf_qtimer_new, qtf_qtimer_start, qtf_qtimer_stop
     public :: qtf_qtimer_setInterval, qtf_qtimer_interval, qtf_qtimer_isActive, qtf_qtimer_setSingleShot
-    public :: qtf_qtimer_isSingleShot, qtf_qtimer_singleShot
+    public :: qtf_qtimer_isSingleShot, qtf_qtimer_singleShot, qtf_qtfsignal_new, qtf_qtfsignal_emit
 
 end module qt_c_core

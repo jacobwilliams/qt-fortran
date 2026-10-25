@@ -71,12 +71,48 @@ QTF_API void qtf_set_dispatcher(qtf_dispatch_fn dispatch, qtf_release_fn release
     qtf_releaser = release;
 }
 
+// The live refs by Fortran slot id, for qtf_disconnect.
+static std::unordered_map<int, qtf_slot_ref *> &qtf_live_slots() {
+    static std::unordered_map<int, qtf_slot_ref *> m;
+    return m;
+}
+
+qtf_slot_ref::qtf_slot_ref(int id) : id(id) { qtf_live_slots()[id] = this; }
+
 qtf_slot_ref::~qtf_slot_ref() {
+    if (!alive) return;   // already released by qtf_disconnect
+    qtf_live_slots().erase(id);
     if (qtf_releaser) qtf_releaser(id);
 }
 
 void qtf_emit(const qtf_slot &slot, const qtf_args &args) {
-    if (qtf_dispatcher) qtf_dispatcher(slot->id, &args);
+    if (slot->alive && qtf_dispatcher) qtf_dispatcher(slot->id, &args);
+}
+
+int qtf_emit_all(const std::vector<qtf_slot> &slots_, const qtf_args &args) {
+    const std::vector<qtf_slot> targets = slots_;
+    int n = 0;
+    for (const qtf_slot &s : targets) {
+        if (!s->alive) continue;
+        qtf_emit(s, args);
+        ++n;
+    }
+    return n;
+}
+
+// Disconnect the connection that owns Fortran slot `slot` and release the slot
+// now. Returns 1 if it was connected. A connection kept in a handler list (event
+// slots) stays in the list, dead, until its owner is destroyed.
+QTF_API int qtf_disconnect(int slot) {
+    auto it = qtf_live_slots().find(slot);
+    if (it == qtf_live_slots().end()) return 0;
+    qtf_slot_ref *ref = it->second;
+    qtf_live_slots().erase(it);
+    ref->alive = false;
+    // may destroy `ref` (the lambda owned the last reference): do not touch it after
+    QObject::disconnect(QMetaObject::Connection(ref->connection));
+    if (qtf_releaser) qtf_releaser(slot);
+    return 1;
 }
 
 void qtf_emit(const qtf_slot &slot) {
@@ -242,18 +278,51 @@ QTF_API void qtf_qtimer_singleShot(int msec, int slot) {
 }
 
 // ---------------------------------------------------------------------------
+// signals defined in Fortran
+
+// The sender of a signal created in Fortran (QSignal(parent), ...): it holds the
+// connected slots, which `emit` calls in order.
+class QtfSignalSource : public QObject {
+  public:
+    using QObject::QObject;
+    std::vector<qtf_slot> handlers;
+};
+
+// A new signal source, owned by `parent` if given.
+QTF_API void *qtf_qtfsignal_new(void *parent) { return new QtfSignalSource(obj(parent)); }
+
+// Call the slots of a Fortran-defined signal with the given arguments (integers,
+// one real, a string). Returns 0 if `source` is not a Fortran-defined signal.
+QTF_API int qtf_qtfsignal_emit(void *source, const int *ints, double d, const char *s, int slen) {
+    auto *src = dynamic_cast<QtfSignalSource *>(obj(source));
+    if (!src) return 0;
+    qtf_args a{};
+    for (int k = 0; k < 4; ++k) a.i[k] = ints[k];
+    a.d[0] = d;
+    a.s = s;
+    a.slen = slen;
+    qtf_emit_all(src->handlers, a);
+    return 1;
+}
+
+// ---------------------------------------------------------------------------
 // signal connectors
 
 static const bool qtf_core_registered = [] {
     qtf_register_connector(QTF_SIG_QOBJECT_DESTROYED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(obj(s), &QObject::destroyed, [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(obj(s), &QObject::destroyed, [ref]() { qtf_emit(ref); }));
     });
     qtf_register_connector(QTF_SIG_QOBJECT_OBJECTNAMECHANGED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(obj(s), &QObject::objectNameChanged, obj(s),
-                                     [ref](const QString &name) { qtf_emit(ref, name); }));
+        return qtf_track(ref, QObject::connect(obj(s), &QObject::objectNameChanged, obj(s),
+                                               [ref](const QString &name) { qtf_emit(ref, name); }));
     });
     qtf_register_connector(QTF_SIG_QTIMER_TIMEOUT, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(timer(s), &QTimer::timeout, timer(s), [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(timer(s), &QTimer::timeout, timer(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QTFSIGNAL, [](void *s, const qtf_slot &ref) {
+        auto *src = dynamic_cast<QtfSignalSource *>(obj(s));
+        if (src) src->handlers.push_back(ref);
+        return src != nullptr;
     });
     return true;
 }();

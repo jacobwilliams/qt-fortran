@@ -556,10 +556,10 @@ QTF_API void qtf_qaction_setIcon(void *self, void *icon) { as<QAction>(self)->se
 
 static const bool qtf_gui_registered = [] {
     qtf_register_connector(QTF_SIG_QACTION_TRIGGERED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QAction>(s), &QAction::triggered, as<QAction>(s), [ref]() { qtf_emit(ref); }));
+        return qtf_track(ref, QObject::connect(as<QAction>(s), &QAction::triggered, as<QAction>(s), [ref]() { qtf_emit(ref); }));
     });
     qtf_register_connector(QTF_SIG_QACTION_TOGGLED, [](void *s, const qtf_slot &ref) {
-        return bool(QObject::connect(as<QAction>(s), &QAction::toggled, as<QAction>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+        return qtf_track(ref, QObject::connect(as<QAction>(s), &QAction::toggled, as<QAction>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
     });
     return true;
 }();

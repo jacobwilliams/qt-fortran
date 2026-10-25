@@ -107,11 +107,11 @@ class QtfOpenGLWidget : public QOpenGLWidget {
     std::array<std::vector<qtf_slot>, QTF_GL_COUNT> handlers;
 
   protected:
-    // Emit to a copy: a slot may connect more slots while we iterate.
+    // True if a (live) slot handled the event.
     bool forward(qtf_gl_event ev, void *p) {
-        const std::vector<qtf_slot> targets = handlers[ev];
-        for (const qtf_slot &s : targets) qtf_emit_ptr(s, p);
-        return !targets.empty();
+        qtf_args a{};
+        a.p = p;
+        return qtf_emit_all(handlers[ev], a) > 0;
     }
 
     void initializeGL() override { forward(QTF_GL_INITIALIZE, nullptr); }

@@ -72,7 +72,9 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
   - Slots are ordinary Fortran procedures. They receive the signal's arguments
     (none, logical, integer, real, string, or an event) and any user data you
     attach, as `class(*)`.
-  - Connections are released automatically when Qt destroys the sender.
+  - Connections are released automatically when Qt destroys the sender, or
+    explicitly with `disconnect`.
+  - Your own Fortran types can define and emit signals too.
 - **Custom widgets**: `QtfWidget` delivers `paintEvent`, mouse, wheel, keyboard
   and resize events to Fortran slots, so you can draw anything with `QPainter`.
 - **3D graphics with modern OpenGL**: `QtfOpenGLWidget` delivers `initializeGL` /
@@ -276,6 +278,38 @@ A few conventions to know (the full list is in [plan.md](plan.md)):
     constructor, as in `[character(len=40) :: 'n', itoa(n)]`. gfortran 15
     miscompiles it and corrupts the heap. Assign the elements to a fixed-length
     array first.
+- **Disconnecting**: `call sig%disconnect()` removes every Fortran slot from
+  a signal. To remove a single slot, keep the handle from `connect`:
+
+  ```fortran
+  type(QMetaObject_Connection) :: c
+  call button%clicked%connect(on_click, state, connection=c)
+  ...
+  if (QObject_disconnect(c)) print *, 'disconnected'
+  ```
+
+  This works for event slots too: a disconnected `mousePressEvent` slot gives
+  the event back to Qt's default handling. A slot may disconnect itself while
+  it runs.
+- **Signals defined in Fortran**: create one with the signal type's
+  constructor, connect slots as usual, and call `emit`. The available types
+  are `QSignal`, `QSignalBool`, `QSignalInt`, `QSignalDouble`, `QSignalString`
+  and `QSignalInt2/3/4`. This decouples Fortran code from the user interface:
+  a solver announces its progress, and the UI decides what to show.
+
+  ```fortran
+  type :: solver_t
+      type(QSignalInt) :: progress
+      type(QSignal) :: finished
+  end type solver_t
+
+  solver%progress = QSignalInt(window)   ! owned by window: freed with it
+  call solver%progress%connect(on_progress, ui_state)
+  call solver%progress%emit(50)          ! calls on_progress(50, ui_state)
+  ```
+
+  Slots run immediately, in connection order. Only signals created this way
+  can be emitted. A signal without a parent lives until the program ends.
 - **Closing and settings**: every widget has `closeEvent` and `contextMenuEvent`
   signals. A close slot can keep the window open:
 
@@ -402,8 +436,7 @@ on macOS (the only runner with a window server).
 ## Roadmap
 
 - Smoother packaging: a conda-forge package, and Homebrew (framework) Qt support.
-- More of Qt: background computation, Fortran-defined signals and
-  `disconnect`, and Qt Charts / Qt Graphs. See the roadmap in [plan.md](plan.md).
+- More of Qt: background computation, and Qt Charts / Qt Graphs. See the roadmap in [plan.md](plan.md).
 - Seeding specs from PySide6's type-system XML files to cover more of the API
   faster.
 
