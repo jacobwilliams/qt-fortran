@@ -24,7 +24,9 @@ How the C++ shim (src/shim/*.cpp) is built:
       fpm compiles the shim sources as empty files (-DQTF_EXTERNAL_SHIM) and links
       the DLL; the DLL and Qt are found through PATH at run time.
 
-Override the compilers with FPM_FC / FPM_CXX if needed.
+Override the compilers with FPM_FC / FPM_CXX if needed. FPM_CXXFLAGS and
+FPM_LDFLAGS already set in the environment are kept (appended), e.g. for the
+libraries of other dependencies.
 """
 
 import glob
@@ -139,11 +141,21 @@ def run(cmd, env=None):
     return subprocess.call(cmd, env=env)
 
 
+def keep_user_flags(settings):
+    """Append flags already set in the environment (other dependencies' needs)."""
+    for key in ("FPM_CXXFLAGS", "FPM_LDFLAGS"):
+        extra = os.environ.get(key, "").strip()
+        if extra:
+            settings[key] = f"{settings[key]} {extra}"
+    return settings
+
+
 def main():
     if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
         sys.exit(__doc__)
     lib = conda_msvc_qt()
     settings, dll_dir = dll_settings(lib) if lib else fpm_settings()
+    settings = keep_user_flags(settings)
 
     if sys.argv[1] == "--env":
         for k, v in settings.items():

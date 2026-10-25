@@ -1,0 +1,28 @@
+# Environment for the OpenFrames demo: qt-fortran + OpenFrames (built from
+# source against conda-forge's OpenSceneGraph) + openframes-fortran.
+[workspace]
+authors = ["Jacob Williams <jacobwilliams@users.noreply.github.com>"]
+channels = ["conda-forge"]
+name = "qt-fortran-openframes-demo"
+platforms = ["osx-arm64", "linux-64"]
+version = "0.0.1"
+
+[dependencies]
+gfortran = "15.*"
+fpm = ">=0.13.0,<0.14"
+python = "3.13.*"
+qt6-main = ">=6.11.1,<7"
+cxx-compiler = ">=2.0.0,<3"
+pkg-config = ">=0.29.2,<0.30"
+openscenegraph = "3.6.5.*"
+cmake = ">=3.25"
+ninja = "*"
+git = "*"
+
+[target.linux.dependencies]
+libgl-devel = "*"
+
+[tasks]
+openframes = "python demo.py openframes"
+build = "python demo.py build"
+run = "python demo.py run"

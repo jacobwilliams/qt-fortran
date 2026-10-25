@@ -1,0 +1,23 @@
+name = "qtf-openframes-demo"
+version = "0.0.1"
+license = "MIT"
+author = "Jacob Williams"
+maintainer = "Jacob Williams"
+description = "An OpenFrames 3D scene rendered into a qt-fortran GUI"
+
+[build]
+auto-executables = true
+auto-tests = false
+auto-examples = false
+# OpenFrames is built from source by `pixi run openframes` (see demo.py, which
+# also supplies the library path).
+link = ["OpenFrames_Interface_C", "OpenFrames"]
+
+[fortran]
+implicit-typing = false
+implicit-external = false
+source-form = "free"
+
+[dependencies]
+qt-fortran = { path = "../.." }
+openframes-fortran = { git = "https://github.com/jacobwilliams/openframes-fortran.git", rev = "b8bc110d6f65d3afc805cb6fe4ba46e0f2903b29" }

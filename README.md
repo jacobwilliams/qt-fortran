@@ -151,6 +151,11 @@ Examples:
 | [surface3d](example/surface3d.f90) | an interactive 3D surface plot with modern OpenGL: GLSL shaders, an indexed mesh with lighting, orbit/zoom with the mouse, auto-rotation, PNG export |
 | [orbit3d](example/orbit3d.f90) | a spacecraft orbit viewer: Kepler propagation, orbital elements and presets in a side panel, a rotating lit planet, time warp, live readouts, OpenGL 3D view |
 
+A separate project, [demos/openframes](demos/openframes), renders an
+[OpenFrames](https://github.com/ravidavi/OpenFrames) 3D scene from OpenFrames' own
+render thread into a qt-fortran window. It builds OpenFrames from source in
+its own pixi environment.
+
 The `plot` and `explorer` examples can render themselves to an image without
 opening a window, which is handy on servers and in CI:
 
@@ -487,6 +492,7 @@ ci/consumer a separate fpm project that depends on qt-fortran (CI check and temp
 tools/      fpm_qt.py, gen_bindings.py, gen_c_interfaces.py, check_fortran.py
 test/       headless test programs (one per area)
 example/    example applications
+demos/      separate projects that combine qt-fortran with other libraries (demos/openframes)
 plans/      plan.md: design decisions, conventions and project history;
             plan-vibefpmgui.md: side project, porting VibeFPMGUI to qt-fortran
 ```
