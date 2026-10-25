@@ -199,16 +199,16 @@ A few conventions to know (the full list is in [plan.md](plan.md)):
 
 ```mermaid
 flowchart TD
-    app["Your program<br/>use qt"]
-    api["<b>qt_core, qt_gui, qt_widgets</b><br/>Modern Fortran API: derived types, type-bound procedures"]
-    raw["<b>qt_c_* modules</b><br/>raw bind(C) interfaces (iso_c_binding only)"]
-    shim["<b>libqtf</b> (shim/)<br/>thin C++ layer over Qt, with a C interface"]
-    qt["<b>Qt 6</b><br/>Core, Gui, Widgets"]
+    app["Your program<br/>(use qt)"]
+    api["qt_core / qt_gui / qt_widgets<br/>Fortran API: derived types,<br/>type-bound procedures"]
+    raw["qt_c_* modules<br/>raw bind(C) interfaces"]
+    shim["libqtf (shim/)<br/>thin C++ layer over Qt<br/>with a C interface"]
+    qt["Qt 6<br/>Core, Gui, Widgets"]
 
     app --> api --> raw
-    raw -- "C ABI" --> shim
+    raw -- C ABI --> shim
     shim --> qt
-    shim -. "signals and events<br/>(one Fortran dispatcher)" .-> api
+    shim -. signals and events .-> api
 ```
 
 - **The shim** exposes Qt as flat C functions (`qtf_qlabel_setText(void*,
