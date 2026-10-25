@@ -21,7 +21,7 @@ Supported C types (anything else is an error, so new types are added here):
     double x                    real(c_double), value
     qtf_*_fn x                  type(c_funptr), value
 
-    return: void, void *, char *, int, double
+    return: void, void *, char *, int *, int, double
 """
 
 import os
@@ -56,6 +56,7 @@ RETURNS = {
     "void": None,
     "void *": ("type(c_ptr)", "c_ptr"),
     "char *": ("type(c_ptr)", "c_ptr"),
+    "int *": ("type(c_ptr)", "c_ptr"),
     "int": ("integer(c_int)", "c_int"),
     "double": ("real(c_double)", "c_double"),
 }

@@ -38,6 +38,26 @@ char *qtf_list_to_c(const QStringList &list, int *len) {
     return p;
 }
 
+int *qtf_ints_to_c(const QList<int> &list, int *len) {
+    *len = static_cast<int>(list.size());
+    int *p = static_cast<int *>(std::malloc(sizeof(int) * (list.size() + 1)));
+    for (qsizetype i = 0; i < list.size(); ++i) p[i] = list[i];
+    return p;
+}
+
+QStringList qtf_qstringlist(const char *s, int itemlen, int n) {
+    QStringList list;
+    for (int i = 0; i < n; ++i) {
+        const char *item = s + static_cast<qsizetype>(i) * itemlen;
+        int len = itemlen;
+        while (len > 0 && item[len - 1] == ' ') --len;
+        list << QString::fromUtf8(item, len);
+    }
+    return list;
+}
+
+QList<int> qtf_intlist(const int *v, int n) { return QList<int>(v, v + n); }
+
 QTF_API void qtf_free(void *p) { std::free(p); }
 
 // ---------------------------------------------------------------------------
@@ -93,6 +113,31 @@ void qtf_emit_double(const qtf_slot &slot, double d) {
 void qtf_emit_ptr(const qtf_slot &slot, void *p) {
     qtf_args a{};
     a.p = p;
+    qtf_emit(slot, a);
+}
+
+void qtf_emit_ints(const qtf_slot &slot, std::initializer_list<int> ints) {
+    qtf_args a{};
+    int k = 0;
+    for (int v : ints) a.i[k++ & 3] = v;
+    qtf_emit(slot, a);
+}
+
+void qtf_emit_ptr_ints(const qtf_slot &slot, void *p, std::initializer_list<int> ints) {
+    qtf_args a{};
+    a.p = p;
+    int k = 0;
+    for (int v : ints) a.i[k++ & 3] = v;
+    qtf_emit(slot, a);
+}
+
+void qtf_emit_ints_string(const qtf_slot &slot, std::initializer_list<int> ints, const QString &s) {
+    const QByteArray b = s.toUtf8();
+    qtf_args a{};
+    a.s = b.constData();
+    a.slen = static_cast<int32_t>(b.size());
+    int k = 0;
+    for (int v : ints) a.i[k++ & 3] = v;
     qtf_emit(slot, a);
 }
 

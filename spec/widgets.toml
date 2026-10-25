@@ -9,9 +9,10 @@ Qt Widgets: application, basic widgets, layouts, main window, menus and dialogs.
 Indices (e.g. combo box items) are 0-based, as in Qt.
 """
 uses = [
-    "use qt_c_util, only: qtf_take_string, qtf_take_string_list, qtf_logical, qtf_int, qt_string",
+    "use qt_c_util",
     "use qt_c_widgets",
     "use qt_core",
+    "use qt_gui_types",
     "use qt_gui",
 ]
 handle_types = ["QPixmap"]
@@ -20,6 +21,11 @@ cpp_includes = [
     "QFileDialog", "QGridLayout", "QLabel", "QLineEdit", "QMainWindow", "QMenu", "QMenuBar",
     "QMessageBox", "QPainter", "QPixmap", "QPushButton", "QRadioButton", "QSlider", "QSpinBox",
     "QStatusBar", "QToolBar", "QWidget", "array", "vector",
+    "QAbstractItemView", "QAbstractTableModel", "QButtonGroup", "QCalendarWidget", "QColorDialog", "QDate",
+    "QDateEdit", "QDial", "QDockWidget", "QFontDialog", "QFormLayout", "QFrame", "QGroupBox", "QHeaderView",
+    "QInputDialog", "QLCDNumber", "QListWidget", "QPlainTextEdit", "QProgressBar", "QProgressDialog",
+    "QScrollArea", "QSplitter", "QStackedWidget", "QTabWidget", "QTableView", "QTableWidget", "QTextEdit",
+    "QTime", "QTimeEdit", "QToolButton", "QTreeWidget", "QVariant",
 ]
 
 cpp_prelude = """
@@ -91,6 +97,82 @@ class QtfWidget : public QWidget {
     }
 };
 
+// The value a Fortran data slot produces for one table cell.
+struct QtfModelRequest {
+    QVariant value;
+};
+
+// QtfTableModel: a table model whose cells are provided by Fortran slots on
+// demand (dataRequested), so large Fortran arrays can be shown without copying
+// them into Qt. Edits are reported to dataEdited slots.
+class QtfTableModel : public QAbstractTableModel {
+  public:
+    QtfTableModel(int rows, int cols, QObject *parent) : QAbstractTableModel(parent), nrows(rows), ncols(cols) {}
+
+    int nrows, ncols;
+    bool editable = false;
+    QStringList hlabels, vlabels;
+    std::vector<qtf_slot> data_handlers, edit_handlers;
+
+    int rowCount(const QModelIndex &parent) const override { return parent.isValid() ? 0 : nrows; }
+    int columnCount(const QModelIndex &parent) const override { return parent.isValid() ? 0 : ncols; }
+
+    QVariant data(const QModelIndex &i, int role) const override {
+        if (!i.isValid() || (role != Qt::DisplayRole && role != Qt::EditRole)) return QVariant();
+        QtfModelRequest req;
+        const std::vector<qtf_slot> targets = data_handlers;   // a slot may connect more
+        for (const qtf_slot &s : targets) qtf_emit_ptr_ints(s, &req, {i.row(), i.column()});
+        return req.value;
+    }
+
+    bool setData(const QModelIndex &i, const QVariant &v, int role) override {
+        if (!i.isValid() || role != Qt::EditRole || edit_handlers.empty()) return false;
+        const std::vector<qtf_slot> targets = edit_handlers;
+        for (const qtf_slot &s : targets) qtf_emit_ints_string(s, {i.row(), i.column()}, v.toString());
+        emit dataChanged(i, i);
+        return true;
+    }
+
+    Qt::ItemFlags flags(const QModelIndex &i) const override {
+        Qt::ItemFlags f = QAbstractTableModel::flags(i);
+        if (editable && i.isValid()) f |= Qt::ItemIsEditable;
+        return f;
+    }
+
+    QVariant headerData(int section, Qt::Orientation o, int role) const override {
+        const QStringList &labels = o == Qt::Horizontal ? hlabels : vlabels;
+        if (role == Qt::DisplayRole && section < labels.size()) return labels[section];
+        return QAbstractTableModel::headerData(section, o, role);
+    }
+
+    void setShape(int rows, int cols) {
+        beginResetModel();
+        nrows = rows;
+        ncols = cols;
+        endResetModel();
+    }
+
+    void setHeaders(Qt::Orientation o, const QStringList &labels) {
+        (o == Qt::Horizontal ? hlabels : vlabels) = labels;
+        const int n = o == Qt::Horizontal ? ncols : nrows;
+        if (n > 0) emit headerDataChanged(o, 0, n - 1);
+    }
+
+    void refresh() {
+        if (nrows > 0 && ncols > 0) emit dataChanged(index(0, 0), index(nrows - 1, ncols - 1));
+    }
+
+    void refreshCell(int r, int c) { emit dataChanged(index(r, c), index(r, c)); }
+};
+
+// Attach a slot to a QtfTableModel's data (WHICH = 0) or edit (WHICH = 1) requests.
+template <int WHICH> static bool connect_model(void *s, const qtf_slot &ref) {
+    auto *m = dynamic_cast<QtfTableModel *>(static_cast<QObject *>(s));
+    if (!m) return false;
+    (WHICH == 0 ? m->data_handlers : m->edit_handlers).push_back(ref);
+    return true;
+}
+
 // Attach a slot to one of the QtfWidget's event handlers. The slots are owned
 // by the widget, so they are released when it is destroyed.
 template <qtf_widget_event EV> static bool connect_event(void *s, const qtf_slot &ref) {
@@ -100,6 +182,245 @@ template <qtf_widget_event EV> static bool connect_event(void *s, const qtf_slot
     return true;
 }
 """
+
+fortran_decls = '''
+    !> A table-model data request: slots get (row, column, request) and fill the request.
+    type, public :: QSignalModelData
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignalmodeldata_connect
+    end type QSignalModelData
+
+    !> A table-model edit: slots get (row, column, text).
+    type, public :: QSignalModelEdit
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignalmodeledit_connect
+    end type QSignalModelEdit
+
+    !> A signal carrying a tree item.
+    type, public :: QSignalTreeItem
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignaltreeitem_connect
+    end type QSignalTreeItem
+
+    !> A signal carrying a tree item and a column.
+    type, public :: QSignalTreeItemInt
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignaltreeitemint_connect
+    end type QSignalTreeItemInt
+
+    public :: QFontDialog_getFont
+'''
+
+fortran_decls_after = '''
+    abstract interface
+        !> Slot providing one table cell: set its value with `request%setText` etc.
+        subroutine qt_slot_model_data(row, column, request, data)
+            import :: QtfModelRequest
+            implicit none
+            integer, intent(in) :: row, column
+            type(QtfModelRequest), intent(inout) :: request
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_model_data
+        !> Slot receiving an edited table cell.
+        subroutine qt_slot_model_edit(row, column, text, data)
+            implicit none
+            integer, intent(in) :: row, column
+            character(len=*), intent(in) :: text
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_model_edit
+        !> Slot receiving a tree item.
+        subroutine qt_slot_tree_item(item, data)
+            import :: QTreeWidgetItem
+            implicit none
+            type(QTreeWidgetItem), intent(in) :: item
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_tree_item
+        !> Slot receiving a tree item and a column.
+        subroutine qt_slot_tree_item_int(item, column, data)
+            import :: QTreeWidgetItem
+            implicit none
+            type(QTreeWidgetItem), intent(in) :: item
+            integer, intent(in) :: column
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_tree_item_int
+    end interface
+    public :: qt_slot_model_data, qt_slot_model_edit, qt_slot_tree_item, qt_slot_tree_item_int
+
+    !> Slot handler for QSignalModelData.
+    type, extends(qt_slot_handler) :: model_data_handler
+        procedure(qt_slot_model_data), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => model_data_handler_invoke
+    end type model_data_handler
+
+    !> Slot handler for QSignalModelEdit.
+    type, extends(qt_slot_handler) :: model_edit_handler
+        procedure(qt_slot_model_edit), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => model_edit_handler_invoke
+    end type model_edit_handler
+
+    !> Slot handler for QSignalTreeItem.
+    type, extends(qt_slot_handler) :: tree_item_handler
+        procedure(qt_slot_tree_item), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => tree_item_handler_invoke
+    end type tree_item_handler
+
+    !> Slot handler for QSignalTreeItemInt.
+    type, extends(qt_slot_handler) :: tree_item_int_handler
+        procedure(qt_slot_tree_item_int), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => tree_item_int_handler_invoke
+    end type tree_item_int_handler
+'''
+
+fortran_procedures = '''
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalmodeldata_connect(self, slot, data)
+        class(QSignalModelData), intent(in) :: self
+        procedure(qt_slot_model_data) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(model_data_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self%sender, self%id, h, data)
+    end subroutine qsignalmodeldata_connect
+
+    !> Call the slot with (row, column, request).
+    subroutine model_data_handler_invoke(self, args, data)
+        class(model_data_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QtfModelRequest) :: request
+        request%ptr = args%p
+        if (associated(data)) then
+            call self%f(int(args%i(1)), int(args%i(2)), request, data)
+        else
+            call self%f(int(args%i(1)), int(args%i(2)), request)
+        end if
+    end subroutine model_data_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalmodeledit_connect(self, slot, data)
+        class(QSignalModelEdit), intent(in) :: self
+        procedure(qt_slot_model_edit) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(model_edit_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self%sender, self%id, h, data)
+    end subroutine qsignalmodeledit_connect
+
+    !> Call the slot with (row, column, text).
+    subroutine model_edit_handler_invoke(self, args, data)
+        class(model_edit_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        if (associated(data)) then
+            call self%f(int(args%i(1)), int(args%i(2)), qtf_string(args%s, args%slen), data)
+        else
+            call self%f(int(args%i(1)), int(args%i(2)), qtf_string(args%s, args%slen))
+        end if
+    end subroutine model_edit_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignaltreeitem_connect(self, slot, data)
+        class(QSignalTreeItem), intent(in) :: self
+        procedure(qt_slot_tree_item) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(tree_item_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self%sender, self%id, h, data)
+    end subroutine qsignaltreeitem_connect
+
+    !> Call the slot with the item (null if none).
+    subroutine tree_item_handler_invoke(self, args, data)
+        class(tree_item_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QTreeWidgetItem) :: item
+        item%ptr = args%p
+        if (associated(data)) then
+            call self%f(item, data)
+        else
+            call self%f(item)
+        end if
+    end subroutine tree_item_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignaltreeitemint_connect(self, slot, data)
+        class(QSignalTreeItemInt), intent(in) :: self
+        procedure(qt_slot_tree_item_int) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(tree_item_int_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self%sender, self%id, h, data)
+    end subroutine qsignaltreeitemint_connect
+
+    !> Call the slot with the item and column.
+    subroutine tree_item_int_handler_invoke(self, args, data)
+        class(tree_item_int_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QTreeWidgetItem) :: item
+        item%ptr = args%p
+        if (associated(data)) then
+            call self%f(item, int(args%i(1)), data)
+        else
+            call self%f(item, int(args%i(1)))
+        end if
+    end subroutine tree_item_int_handler_invoke
+
+    !> Modal font chooser; returns the chosen font, or the initial one if
+    !> cancelled (then `ok` is false).
+    function QFontDialog_getFont(initial, title, ok, parent) result(font)
+        type(QFont), intent(in), optional :: initial
+        character(len=*), intent(in), optional :: title
+        logical, intent(out), optional :: ok
+        class(QWidget), intent(in), optional :: parent
+        type(QFont) :: font
+        type(QFont) :: f0
+        character(len=:), allocatable :: t
+        integer(c_int) :: ok_, bold, italic, n
+        real(c_double) :: size
+        type(c_ptr) :: p
+        if (present(initial)) f0 = initial
+        if (.not. allocated(f0%family)) f0%family = ''
+        t = ''
+        if (present(title)) t = title
+        p = qtf_qfontdialog_getFont(qtf_ptr(parent), f0%family, len(f0%family, c_int), f0%pointSize, &
+                                    qtf_int(f0%bold), qtf_int(f0%italic), t, len(t, c_int), ok_, size, &
+                                    bold, italic, n)
+        font%family = qtf_take_string(p, n)
+        font%pointSize = size
+        font%bold = qtf_logical(bold)
+        font%italic = qtf_logical(italic)
+        if (present(ok)) ok = qtf_logical(ok_)
+    end function QFontDialog_getFont
+'''
+
+# Value types passed to and returned from C++ field by field
+[value_types.QColor]
+fields = ["r: int", "g: int", "b: int", "a: int", "valid: bool"]
+cpp = "QColor({r}, {g}, {b}, {a})"
+out = { r = "{v}.red()", g = "{v}.green()", b = "{v}.blue()", a = "{v}.alpha()", valid = "{v}.isValid()" }
+
+[value_types.QDate]
+fields = ["year: int", "month: int", "day: int"]
+cpp = "QDate({year}, {month}, {day})"
+out = { year = "{v}.year()", month = "{v}.month()", day = "{v}.day()" }
+
+[value_types.QTime]
+fields = ["hour: int", "minute: int", "second: int"]
+cpp = "QTime({hour}, {minute}, {second})"
+out = { hour = "{v}.hour()", minute = "{v}.minute()", second = "{v}.second()" }
 
 # ---------------------------------------------------------------------------
 # enums
@@ -166,6 +487,93 @@ values = [
     "QFileDialog_HideNameFilterDetails = 0x40",
 ]
 
+[[enum]]
+doc = "QFrame::Shape and QFrame::Shadow"
+values = [
+    "QFrame_NoFrame = 0", "QFrame_Box = 1", "QFrame_Panel = 2", "QFrame_WinPanel = 3",
+    "QFrame_HLine = 4", "QFrame_VLine = 5", "QFrame_StyledPanel = 6",
+    "QFrame_Plain = 0x10", "QFrame_Raised = 0x20", "QFrame_Sunken = 0x30",
+]
+
+[[enum]]
+doc = "QSizePolicy::Policy"
+values = [
+    "QSizePolicy_Fixed = 0", "QSizePolicy_Minimum = 1", "QSizePolicy_Maximum = 4",
+    "QSizePolicy_Preferred = 5", "QSizePolicy_MinimumExpanding = 3", "QSizePolicy_Expanding = 7",
+    "QSizePolicy_Ignored = 13",
+]
+
+[[enum]]
+doc = "Qt::ItemFlag"
+values = [
+    "Qt_NoItemFlags = 0", "Qt_ItemIsSelectable = 1", "Qt_ItemIsEditable = 2", "Qt_ItemIsDragEnabled = 4",
+    "Qt_ItemIsDropEnabled = 8", "Qt_ItemIsUserCheckable = 16", "Qt_ItemIsEnabled = 32",
+]
+
+[[enum]]
+doc = "Qt::SortOrder"
+values = ["Qt_AscendingOrder = 0", "Qt_DescendingOrder = 1"]
+
+[[enum]]
+doc = "Qt::ScrollBarPolicy"
+values = ["Qt_ScrollBarAsNeeded = 0", "Qt_ScrollBarAlwaysOff = 1", "Qt_ScrollBarAlwaysOn = 2"]
+
+[[enum]]
+doc = "Qt::DockWidgetArea"
+values = [
+    "Qt_NoDockWidgetArea = 0", "Qt_LeftDockWidgetArea = 1", "Qt_RightDockWidgetArea = 2",
+    "Qt_TopDockWidgetArea = 4", "Qt_BottomDockWidgetArea = 8", "Qt_AllDockWidgetAreas = 15",
+]
+
+[[enum]]
+doc = "Qt::ToolButtonStyle"
+values = [
+    "Qt_ToolButtonIconOnly = 0", "Qt_ToolButtonTextOnly = 1", "Qt_ToolButtonTextBesideIcon = 2",
+    "Qt_ToolButtonTextUnderIcon = 3", "Qt_ToolButtonFollowStyle = 4",
+]
+
+[[enum]]
+doc = "QAbstractItemView::SelectionMode, SelectionBehavior and EditTrigger"
+values = [
+    "QAbstractItemView_NoSelection = 0", "QAbstractItemView_SingleSelection = 1",
+    "QAbstractItemView_MultiSelection = 2", "QAbstractItemView_ExtendedSelection = 3",
+    "QAbstractItemView_ContiguousSelection = 4",
+    "QAbstractItemView_SelectItems = 0", "QAbstractItemView_SelectRows = 1", "QAbstractItemView_SelectColumns = 2",
+    "QAbstractItemView_NoEditTriggers = 0", "QAbstractItemView_CurrentChanged = 1",
+    "QAbstractItemView_DoubleClicked = 2", "QAbstractItemView_SelectedClicked = 4",
+    "QAbstractItemView_EditKeyPressed = 8", "QAbstractItemView_AnyKeyPressed = 16",
+    "QAbstractItemView_AllEditTriggers = 31",
+]
+
+[[enum]]
+doc = "QTabWidget::TabPosition"
+values = ["QTabWidget_North = 0", "QTabWidget_South = 1", "QTabWidget_West = 2", "QTabWidget_East = 3"]
+
+[[enum]]
+doc = "QDockWidget::DockWidgetFeature"
+values = [
+    "QDockWidget_NoDockWidgetFeatures = 0", "QDockWidget_DockWidgetClosable = 1",
+    "QDockWidget_DockWidgetMovable = 2", "QDockWidget_DockWidgetFloatable = 4",
+]
+
+[[enum]]
+doc = "QToolButton::ToolButtonPopupMode"
+values = ["QToolButton_DelayedPopup = 0", "QToolButton_MenuButtonPopup = 1", "QToolButton_InstantPopup = 2"]
+
+[[enum]]
+doc = "QLCDNumber::Mode and QLCDNumber::SegmentStyle"
+values = [
+    "QLCDNumber_Hex = 0", "QLCDNumber_Dec = 1", "QLCDNumber_Oct = 2", "QLCDNumber_Bin = 3",
+    "QLCDNumber_Outline = 0", "QLCDNumber_Filled = 1", "QLCDNumber_Flat = 2",
+]
+
+[[enum]]
+doc = "QTextEdit::LineWrapMode and QPlainTextEdit::LineWrapMode (subset)"
+values = [
+    "QTextEdit_NoWrap = 0", "QTextEdit_WidgetWidth = 1",
+    "QPlainTextEdit_NoWrap = 0", "QPlainTextEdit_WidgetWidth = 1",
+]
+
 # ---------------------------------------------------------------------------
 # application and base widget
 
@@ -214,6 +622,15 @@ methods = [
     "hasFocus() -> bool -- True if the widget has keyboard focus.",
     { sig = "grab() -> QPixmap", cpp = "new QPixmap({self}->grab())", doc = "Render the widget (and children) into a new pixmap; delete it when done." },
     "addAction(action: QAction) -- Add an action (to a menu or toolbar, or to a widget for its shortcut).",
+    "setMaximumSize(width: int, height: int) -- Set the largest allowed size.",
+    "setMinimumWidth(width: int) -- Set the smallest allowed width.",
+    "setMinimumHeight(height: int) -- Set the smallest allowed height.",
+    "setMaximumWidth(width: int) -- Set the largest allowed width.",
+    "setMaximumHeight(height: int) -- Set the largest allowed height.",
+    "setFixedWidth(width: int) -- Fix the width.",
+    "setFixedHeight(height: int) -- Fix the height.",
+    "setSizePolicy(horizontal: QSizePolicy::Policy, vertical: QSizePolicy::Policy) -- How the widget grows and shrinks in layouts (QSizePolicy_* constants).",
+    "setContentsMargins(left: int, top: int, right: int, bottom: int) -- Set the margins around the widget's contents, in pixels.",
 ]
 
 [[class]]
@@ -242,8 +659,20 @@ signals = [
 ]
 
 [[class]]
-name = "QLabel"
+name = "QFrame"
 base = "QWidget"
+doc = "A widget with an optional frame; also used for separator lines (QFrame_HLine / QFrame_VLine)."
+ctor = "(parent: QWidget?) -- Create a frame."
+methods = [
+    "setFrameShape(shape: QFrame::Shape) -- Set the frame shape (QFrame_Box, QFrame_HLine, ...).",
+    "frameShape() -> QFrame::Shape -- The frame shape.",
+    "setFrameShadow(shadow: QFrame::Shadow) -- Set the shadow (QFrame_Plain, QFrame_Raised, QFrame_Sunken).",
+    "setLineWidth(width: int) -- Set the frame line width in pixels.",
+]
+
+[[class]]
+name = "QLabel"
+base = "QFrame"
 doc = "Displays text."
 ctor = "(text: string = '', parent: QWidget?) -- Create a label showing `text`."
 methods = [
@@ -453,6 +882,8 @@ methods = [
     "addLayout(layout: QLayout, stretch: int = 0) -- Append a nested layout, with an optional stretch factor.",
     "addStretch(stretch: int = 0) -- Append stretchable empty space.",
     "addSpacing(size: int) -- Append fixed empty space of `size` pixels.",
+    { sig = "setStretchFactor(widget: QWidget, stretch: int)", cpp = "{self}->setStretchFactor({widget}, {stretch})", doc = "Set the stretch factor of a widget in the layout." },
+    "setStretch(index: int, stretch: int) -- Set the stretch factor of the item at `index` (0-based).",
 ]
 
 [[class]]
@@ -505,6 +936,9 @@ methods = [
     "statusBar() -> QStatusBar -- The window's status bar (created on first use).",
     "menuBar() -> QMenuBar -- The window's menu bar (created on first use).",
     "addToolBar(title: string) -> QToolBar -- Create a tool bar with the given title and add it to the window.",
+    "addDockWidget(area: Qt::DockWidgetArea, dock: QDockWidget) -- Dock `dock` in `area` (Qt_LeftDockWidgetArea, ...).",
+    "removeDockWidget(dock: QDockWidget) -- Remove a dock widget from the window.",
+    "tabifyDockWidget(first: QDockWidget, second: QDockWidget) -- Stack `second` on `first` as tabs.",
 ]
 
 [[class]]
@@ -598,4 +1032,640 @@ methods = [
     { sig = "static getOpenFileNames(caption: string = '', dir: string = '', filter: string = '', parent: QWidget?, options: QFileDialog::Options = 0) -> strings", cpp = "QFileDialog::getOpenFileNames({parent}, {caption}, {dir}, {filter}, nullptr, {options})", doc = "Modal \"open files\" dialog; returns the chosen paths (empty if cancelled)." },
     { sig = "static getSaveFileName(caption: string = '', dir: string = '', filter: string = '', parent: QWidget?, options: QFileDialog::Options = 0) -> string", cpp = "QFileDialog::getSaveFileName({parent}, {caption}, {dir}, {filter}, nullptr, {options})", doc = "Modal \"save file\" dialog; returns the chosen path, or '' if cancelled." },
     { sig = "static getExistingDirectory(caption: string = '', dir: string = '', parent: QWidget?, options: QFileDialog::Options = QFileDialog_ShowDirsOnly) -> string", cpp = "QFileDialog::getExistingDirectory({parent}, {caption}, {dir}, {options})", doc = "Modal directory chooser; returns the chosen directory, or '' if cancelled." },
+]
+
+# ---------------------------------------------------------------------------
+# item views
+
+[[class]]
+name = "QtfModelRequest"
+handle = true
+doc = "The cell being requested from a QtfTableModel `dataRequested` slot: set its value."
+methods = [
+    { sig = "setText(text: string)", cpp = "{self}->value = {text}", doc = "Show `text` in the cell." },
+    { sig = "setNumber(value: double)", cpp = "{self}->value = {value}", doc = "Show a real number in the cell." },
+    { sig = "setInt(value: int)", cpp = "{self}->value = {value}", doc = "Show an integer in the cell." },
+]
+
+[[class]]
+name = "QtfTableModel"
+doc = """
+A table model whose cells come from Fortran on demand (`Qtf` marks a
+qt-fortran class): connect a slot to `dataRequested` and fill in each cell it
+is asked for. Only visible cells are requested, so a QTableView can show large
+Fortran arrays without copying them into Qt. Call `refresh` after the data
+changes. Rows and columns are 0-based."""
+ctor = "(rows: int = 0, columns: int = 0, parent: QObject?) -- A table model of the given shape."
+cpp_ctor = "new QtfTableModel({rows}, {columns}, {parent})"
+signals = [
+    { sig = "dataRequested: custom", fortran_type = "QSignalModelData", connector = "connect_model<0>", doc = "A cell is needed: slots get (row, column, request) and set the request's value." },
+    { sig = "dataEdited: custom", fortran_type = "QSignalModelEdit", connector = "connect_model<1>", doc = "The user edited a cell: slots get (row, column, text); store the new value." },
+]
+methods = [
+    { sig = "setRowCount(rows: int)", cpp = "{self}->setShape({rows}, {self}->ncols)", doc = "Set the number of rows." },
+    { sig = "setColumnCount(columns: int)", cpp = "{self}->setShape({self}->nrows, {columns})", doc = "Set the number of columns." },
+    { sig = "rowCount() -> int", cpp = "{self}->nrows", doc = "Number of rows." },
+    { sig = "columnCount() -> int", cpp = "{self}->ncols", doc = "Number of columns." },
+    { sig = "setHorizontalHeaderLabels(labels: strings)", cpp = "{self}->setHeaders(Qt::Horizontal, {labels})", doc = "Set the column titles." },
+    { sig = "setVerticalHeaderLabels(labels: strings)", cpp = "{self}->setHeaders(Qt::Vertical, {labels})", doc = "Set the row titles." },
+    { sig = "setEditable(editable: bool)", cpp = "{self}->editable = {editable}", doc = "Allow editing cells (edits arrive at `dataEdited`)." },
+    { sig = "refresh()", cpp = "{self}->refresh()", doc = "Redisplay all cells (after the data changed)." },
+    { sig = "refreshCell(row: int, column: int)", cpp = "{self}->refreshCell({row}, {column})", doc = "Redisplay one cell." },
+    { sig = "dataText(row: int, column: int) -> string", cpp = "{self}->data({self}->index({row}, {column}), Qt::DisplayRole).toString()", doc = "The text of a cell, as the view would show it (asks the `dataRequested` slots)." },
+    { sig = "setDataText(row: int, column: int, text: string) -> bool", cpp = "{self}->setData({self}->index({row}, {column}), {text}, Qt::EditRole)", doc = "Edit a cell as the user would (calls the `dataEdited` slots); false if not accepted." },
+]
+
+[[class]]
+name = "QAbstractItemView"
+base = "QFrame"
+doc = "Base of the item views (tables, lists, trees)."
+signals = [
+    { sig = "clicked: custom", fortran_type = "QSignalInt2", lambda = "const QModelIndex &i", emit = "qtf_emit_ints(ref, {i.row(), i.column()})", doc = "A cell was clicked: (row, column)." },
+    { sig = "doubleClicked: custom", fortran_type = "QSignalInt2", lambda = "const QModelIndex &i", emit = "qtf_emit_ints(ref, {i.row(), i.column()})", doc = "A cell was double-clicked: (row, column)." },
+    { sig = "activated: custom", fortran_type = "QSignalInt2", lambda = "const QModelIndex &i", emit = "qtf_emit_ints(ref, {i.row(), i.column()})", doc = "A cell was activated (double-click or Enter): (row, column)." },
+]
+methods = [
+    "setAlternatingRowColors(enable: bool) -- Shade every other row.",
+    "setSelectionMode(mode: QAbstractItemView::SelectionMode) -- Single, multiple, ... selection (QAbstractItemView_* constants).",
+    "setSelectionBehavior(behavior: QAbstractItemView::SelectionBehavior) -- Select items, rows or columns.",
+    "setEditTriggers(triggers: QAbstractItemView::EditTriggers) -- What starts editing (QAbstractItemView_DoubleClicked, ..., or NoEditTriggers).",
+    "clearSelection() -- Deselect everything.",
+    "scrollToTop() -- Scroll to the first row.",
+    "scrollToBottom() -- Scroll to the last row.",
+]
+
+[[class]]
+name = "QTableView"
+base = "QAbstractItemView"
+doc = "A table view of a model (use QtfTableModel to show Fortran data)."
+ctor = "(parent: QWidget?) -- Create a table view."
+methods = [
+    "setModel(model: QtfTableModel) -- Show `model` (the view does not take ownership).",
+    "resizeColumnsToContents() -- Fit the column widths to their contents.",
+    "resizeRowsToContents() -- Fit the row heights to their contents.",
+    "setColumnWidth(column: int, width: int) -- Set a column width in pixels.",
+    "columnWidth(column: int) -> int -- A column width in pixels.",
+    { sig = "setStretchLastSection(stretch: bool)", cpp = "{self}->horizontalHeader()->setStretchLastSection({stretch})", doc = "Stretch the last column to fill the view." },
+    { sig = "setHorizontalHeaderVisible(visible: bool)", cpp = "{self}->horizontalHeader()->setVisible({visible})", doc = "Show or hide the column titles." },
+    { sig = "setVerticalHeaderVisible(visible: bool)", cpp = "{self}->verticalHeader()->setVisible({visible})", doc = "Show or hide the row titles." },
+    { sig = "currentRow() -> int", cpp = "{self}->currentIndex().row()", doc = "Row of the current cell (-1 if none)." },
+    { sig = "currentColumn() -> int", cpp = "{self}->currentIndex().column()", doc = "Column of the current cell (-1 if none)." },
+    { sig = "setCurrentCell(row: int, column: int)", cpp = "if ({self}->model()) {self}->setCurrentIndex({self}->model()->index({row}, {column}))", doc = "Make (row, column) the current cell." },
+    "selectRow(row: int) -- Select a whole row.",
+    "setWordWrap(on: bool) -- Wrap long cell text.",
+]
+
+[[class]]
+name = "QTableWidgetItem"
+handle = true
+doc = """
+A cell of a QTableWidget. Put it in a table with `setItem`, which takes
+ownership."""
+ctor = "(text: string = '') -- A cell item with `text`."
+methods = [
+    "setText(text: string) -- Set the cell text.",
+    "text() -> string -- The cell text.",
+    "setTextAlignment(alignment: Qt::Alignment) -- Align the text (Qt_Align* flags).",
+    "setFlags(flags: Qt::ItemFlags) -- Set the item flags (e.g. without Qt_ItemIsEditable for read-only).",
+    "flags() -> Qt::ItemFlags -- The item flags.",
+    "setToolTip(text: string) -- Set the tool tip.",
+    { sig = "setBackground(color: QColor)", cpp = "{self}->setBackground(QBrush({color}))", doc = "Set the cell background color." },
+    { sig = "setForeground(color: QColor)", cpp = "{self}->setForeground(QBrush({color}))", doc = "Set the text color." },
+    "row() -> int -- Row of the item in its table (-1 if none).",
+    "column() -> int -- Column of the item in its table (-1 if none).",
+]
+fortran_bindings = "procedure :: isNull => qtablewidgetitem_isNull"
+fortran_procedures = '''
+    !> True if this handle does not refer to an item (e.g. an empty cell).
+    logical function qtablewidgetitem_isNull(self)
+        class(QTableWidgetItem), intent(in) :: self
+        qtablewidgetitem_isNull = .not. c_associated(self%ptr)
+    end function qtablewidgetitem_isNull
+'''
+
+[[class]]
+name = "QTableWidget"
+base = "QTableView"
+doc = "A table of text cells (QTableWidgetItem). Rows and columns are 0-based."
+ctor = "(rows: int = 0, columns: int = 0, parent: QWidget?) -- A table of the given shape."
+cpp_ctor = "new QTableWidget({rows}, {columns}, {parent})"
+signals = [
+    { sig = "cellClicked: int2", doc = "A cell was clicked: (row, column)." },
+    { sig = "cellDoubleClicked: int2", doc = "A cell was double-clicked: (row, column)." },
+    { sig = "cellChanged: int2", doc = "A cell's data changed: (row, column)." },
+    { sig = "currentCellChanged: int4", doc = "The current cell changed: (row, column, previousRow, previousColumn)." },
+]
+methods = [
+    "setRowCount(rows: int) -- Set the number of rows.",
+    "rowCount() -> int -- Number of rows.",
+    "setColumnCount(columns: int) -- Set the number of columns.",
+    "columnCount() -> int -- Number of columns.",
+    "setItem(row: int, column: int, item: QTableWidgetItem) -- Put `item` in a cell (the table takes ownership).",
+    "item(row: int, column: int) -> QTableWidgetItem -- The item in a cell (null if empty).",
+    "setHorizontalHeaderLabels(labels: strings) -- Set the column titles.",
+    "setVerticalHeaderLabels(labels: strings) -- Set the row titles.",
+    "clearContents() -- Delete all items, keeping the headers.",
+    "clear() -- Delete all items and headers.",
+    "insertRow(row: int) -- Insert an empty row before `row`.",
+    "removeRow(row: int) -- Remove a row.",
+    "insertColumn(column: int) -- Insert an empty column before `column`.",
+    "removeColumn(column: int) -- Remove a column.",
+    "setSortingEnabled(enable: bool) -- Let the user sort by clicking a column title.",
+    "sortItems(column: int, order: Qt::SortOrder = Qt_AscendingOrder) -- Sort the rows by a column.",
+]
+
+[[class]]
+name = "QListWidget"
+base = "QAbstractItemView"
+doc = "A list of text items. Rows are 0-based."
+ctor = "(parent: QWidget?) -- Create an empty list."
+signals = [
+    "currentRowChanged: int -- The current row changed (-1 if none).",
+    "currentTextChanged: string -- The current item's text changed.",
+    { sig = "itemDoubleClicked: custom", fortran_type = "QSignalInt", lambda = "QListWidgetItem *item", emit = "qtf_emit_int(ref, as<QListWidget>(s)->row(item))", doc = "An item was double-clicked: its row." },
+]
+methods = [
+    "addItem(text: string) -- Append an item.",
+    "addItems(labels: strings) -- Append several items (trailing blanks are trimmed).",
+    "insertItem(row: int, text: string) -- Insert an item before `row`.",
+    { sig = "takeItem(row: int)", cpp = "delete {self}->takeItem({row})", doc = "Remove (and delete) the item at `row`." },
+    "count() -> int -- Number of items.",
+    "currentRow() -> int -- The current row (-1 if none).",
+    "setCurrentRow(row: int) -- Make `row` the current item.",
+    { sig = "itemText(row: int) -> string", cpp = "{self}->item({row}) ? {self}->item({row})->text() : QString()", doc = "Text of the item at `row` ('' if none)." },
+    { sig = "setItemText(row: int, text: string)", cpp = "if (auto *it = {self}->item({row})) it->setText({text})", doc = "Change the text of the item at `row`." },
+    "clear() -- Remove all items.",
+    "setSortingEnabled(enable: bool) -- Keep the items sorted.",
+    "sortItems(order: Qt::SortOrder = Qt_AscendingOrder) -- Sort the items.",
+]
+
+[[class]]
+name = "QTreeWidgetItem"
+handle = true
+doc = """
+An item of a QTreeWidget: one row of texts (one per column) with child items.
+Items with a parent (a tree or an item) are owned by it."""
+ctors = [
+    { sig = "(texts: strings)", name = "new", doc = "An item with the given column texts, not yet in a tree (add it with addTopLevelItem or addChild)." },
+    { sig = "(parent: QTreeWidget, texts: strings)", name = "newInTree", cpp = "new QTreeWidgetItem({parent}, {texts})", doc = "A top-level item of `parent` with the given column texts." },
+    { sig = "(parent: QTreeWidgetItem, texts: strings)", name = "newChild", cpp = "new QTreeWidgetItem({parent}, {texts})", doc = "A child of `parent` with the given column texts." },
+]
+methods = [
+    "setText(column: int, text: string) -- Set the text of a column.",
+    "text(column: int) -> string -- The text of a column.",
+    "columnCount() -> int -- Number of columns with text.",
+    "childCount() -> int -- Number of child items.",
+    "child(index: int) -> QTreeWidgetItem -- A child item (0-based; null if out of range).",
+    "addChild(child: QTreeWidgetItem) -- Append a child (this item takes ownership).",
+    "parent() -> QTreeWidgetItem -- The parent item (null for a top-level item).",
+    "setExpanded(expand: bool) -- Expand or collapse the item (in a tree).",
+    "isExpanded() -> bool -- True if the item is expanded.",
+    "setToolTip(column: int, text: string) -- Set the tool tip of a column.",
+    "setFlags(flags: Qt::ItemFlags) -- Set the item flags (add Qt_ItemIsEditable to allow editing).",
+]
+fortran_bindings = "procedure :: isNull => qtreewidgetitem_isNull"
+fortran_procedures = '''
+    !> True if this handle does not refer to an item.
+    logical function qtreewidgetitem_isNull(self)
+        class(QTreeWidgetItem), intent(in) :: self
+        qtreewidgetitem_isNull = .not. c_associated(self%ptr)
+    end function qtreewidgetitem_isNull
+'''
+
+[[class]]
+name = "QTreeWidget"
+base = "QAbstractItemView"
+doc = "A tree of items (QTreeWidgetItem) with one or more columns."
+ctor = "(parent: QWidget?) -- Create an empty tree."
+signals = [
+    { sig = "itemClicked: custom", fortran_type = "QSignalTreeItemInt", lambda = "QTreeWidgetItem *item, int column", emit = "qtf_emit_ptr_ints(ref, item, {column})", doc = "An item was clicked: (item, column)." },
+    { sig = "itemDoubleClicked: custom", fortran_type = "QSignalTreeItemInt", lambda = "QTreeWidgetItem *item, int column", emit = "qtf_emit_ptr_ints(ref, item, {column})", doc = "An item was double-clicked: (item, column)." },
+    { sig = "itemChanged: custom", fortran_type = "QSignalTreeItemInt", lambda = "QTreeWidgetItem *item, int column", emit = "qtf_emit_ptr_ints(ref, item, {column})", doc = "An item's text changed: (item, column)." },
+    { sig = "currentItemChanged: custom", fortran_type = "QSignalTreeItem", lambda = "QTreeWidgetItem *current, QTreeWidgetItem *", emit = "qtf_emit_ptr(ref, current)", doc = "The current item changed: the new current item (may be null)." },
+    { sig = "itemExpanded: custom", fortran_type = "QSignalTreeItem", lambda = "QTreeWidgetItem *item", emit = "qtf_emit_ptr(ref, item)", doc = "An item was expanded." },
+    { sig = "itemCollapsed: custom", fortran_type = "QSignalTreeItem", lambda = "QTreeWidgetItem *item", emit = "qtf_emit_ptr(ref, item)", doc = "An item was collapsed." },
+]
+methods = [
+    "setColumnCount(columns: int) -- Set the number of columns.",
+    "columnCount() -> int -- Number of columns.",
+    "setHeaderLabels(labels: strings) -- Set the column titles.",
+    "setHeaderHidden(hide: bool) -- Hide the column titles.",
+    "addTopLevelItem(item: QTreeWidgetItem) -- Append a top-level item (the tree takes ownership).",
+    "topLevelItemCount() -> int -- Number of top-level items.",
+    "topLevelItem(index: int) -> QTreeWidgetItem -- A top-level item (0-based; null if out of range).",
+    "currentItem() -> QTreeWidgetItem -- The current item (null if none).",
+    "setCurrentItem(item: QTreeWidgetItem) -- Make `item` the current item.",
+    "clear() -- Remove (and delete) all items.",
+    "expandAll() -- Expand every item.",
+    "collapseAll() -- Collapse every item.",
+    "resizeColumnToContents(column: int) -- Fit a column's width to its contents.",
+    "setSortingEnabled(enable: bool) -- Let the user sort by clicking a column title.",
+    "sortItems(column: int, order: Qt::SortOrder = Qt_AscendingOrder) -- Sort by a column.",
+]
+
+# ---------------------------------------------------------------------------
+# text
+
+[[class]]
+name = "QTextEdit"
+base = "QFrame"
+doc = "A multi-line rich-text editor (plain text, HTML or Markdown)."
+ctor = "(text: string = '', parent: QWidget?) -- An editor with initial plain `text`."
+signals = ["textChanged: void -- The text changed."]
+methods = [
+    "setPlainText(text: string) -- Replace the contents with plain text.",
+    "toPlainText() -> string -- The contents as plain text.",
+    "setHtml(text: string) -- Replace the contents with HTML.",
+    "toHtml() -> string -- The contents as HTML.",
+    "setMarkdown(markdown: string) -- Replace the contents with Markdown.",
+    "toMarkdown() -> string -- The contents as Markdown.",
+    "append(text: string) -- Append a paragraph.",
+    "insertPlainText(text: string) -- Insert text at the cursor.",
+    "clear() -- Delete all text.",
+    "setReadOnly(readOnly: bool) -- Make the text read-only (or editable).",
+    "isReadOnly() -> bool -- True if the text is read-only.",
+    "setPlaceholderText(text: string) -- Text shown while the editor is empty.",
+    "setLineWrapMode(mode: QTextEdit::LineWrapMode) -- QTextEdit_NoWrap or QTextEdit_WidgetWidth (default).",
+    "selectAll() -- Select all text.",
+    "undo() -- Undo the last edit.",
+    "redo() -- Redo the last undone edit.",
+]
+
+[[class]]
+name = "QPlainTextEdit"
+base = "QFrame"
+doc = """
+A multi-line plain-text editor, efficient for large text and logs. For a log
+console: setReadOnly(.true.), setMaximumBlockCount(n), appendPlainText(line)."""
+ctor = "(text: string = '', parent: QWidget?) -- An editor with initial `text`."
+signals = ["textChanged: void -- The text changed."]
+methods = [
+    "setPlainText(text: string) -- Replace the contents.",
+    "toPlainText() -> string -- The contents.",
+    "appendPlainText(text: string) -- Append a line (scrolls to it if at the bottom).",
+    "insertPlainText(text: string) -- Insert text at the cursor.",
+    "clear() -- Delete all text.",
+    "setReadOnly(readOnly: bool) -- Make the text read-only (or editable).",
+    "isReadOnly() -> bool -- True if the text is read-only.",
+    "setPlaceholderText(text: string) -- Text shown while the editor is empty.",
+    "setMaximumBlockCount(maximum: int) -- Keep at most this many lines (oldest are dropped; 0: unlimited).",
+    "maximumBlockCount() -> int -- The line limit (0: unlimited).",
+    "blockCount() -> int -- Number of lines.",
+    "setLineWrapMode(mode: QPlainTextEdit::LineWrapMode) -- QPlainTextEdit_NoWrap or QPlainTextEdit_WidgetWidth (default).",
+    "selectAll() -- Select all text.",
+    "undo() -- Undo the last edit.",
+    "redo() -- Redo the last undone edit.",
+]
+
+# ---------------------------------------------------------------------------
+# containers
+
+[[class]]
+name = "QTabWidget"
+base = "QWidget"
+doc = "Pages of widgets selected by tabs. Indices are 0-based."
+ctor = "(parent: QWidget?) -- Create an empty tab widget."
+signals = [
+    "currentChanged: int -- The current page changed (its index).",
+    "tabCloseRequested: int -- The close button of a tab was clicked (see setTabsClosable).",
+    "tabBarClicked: int -- A tab was clicked.",
+]
+methods = [
+    { sig = "addTab(widget: QWidget, label: string)", cpp = "{self}->addTab({widget}, {label})", doc = "Append a page (the tab widget takes ownership)." },
+    { sig = "insertTab(index: int, widget: QWidget, label: string)", cpp = "{self}->insertTab({index}, {widget}, {label})", doc = "Insert a page before `index`." },
+    "removeTab(index: int) -- Remove a page (the widget is not deleted).",
+    "count() -> int -- Number of pages.",
+    "currentIndex() -> int -- Index of the current page (-1 if none).",
+    "setCurrentIndex(index: int) -- Show the page at `index`.",
+    "setCurrentWidget(widget: QWidget) -- Show the page containing `widget`.",
+    "widget(index: int) -> QWidget -- The page at `index` (null if none).",
+    "setTabText(index: int, label: string) -- Change a tab's label.",
+    "tabText(index: int) -> string -- A tab's label.",
+    "setTabToolTip(index: int, tip: string) -- Set a tab's tool tip.",
+    "setTabEnabled(index: int, enabled: bool) -- Enable or disable a tab.",
+    "setTabsClosable(closeable: bool) -- Show close buttons on the tabs (they emit tabCloseRequested).",
+    "setTabPosition(position: QTabWidget::TabPosition) -- Where the tabs are (QTabWidget_North, ...).",
+    "setMovable(movable: bool) -- Let the user reorder the tabs.",
+    "setDocumentMode(set: bool) -- Use a frameless, document-style look.",
+]
+
+[[class]]
+name = "QStackedWidget"
+base = "QFrame"
+doc = "A stack of widgets of which one is visible at a time. Indices are 0-based."
+ctor = "(parent: QWidget?) -- Create an empty stack."
+signals = [
+    "currentChanged: int -- The visible widget changed (its index).",
+    "widgetRemoved: int -- A widget was removed (its index).",
+]
+methods = [
+    { sig = "addWidget(widget: QWidget)", cpp = "{self}->addWidget({widget})", doc = "Append a widget (the stack takes ownership)." },
+    { sig = "insertWidget(index: int, widget: QWidget)", cpp = "{self}->insertWidget({index}, {widget})", doc = "Insert a widget before `index`." },
+    "removeWidget(widget: QWidget) -- Remove a widget (it is not deleted).",
+    "count() -> int -- Number of widgets.",
+    "currentIndex() -> int -- Index of the visible widget (-1 if none).",
+    "setCurrentIndex(index: int) -- Show the widget at `index`.",
+    "setCurrentWidget(widget: QWidget) -- Show `widget`.",
+    "widget(index: int) -> QWidget -- The widget at `index` (null if none).",
+    "currentWidget() -> QWidget -- The visible widget (null if none).",
+]
+
+[[class]]
+name = "QSplitter"
+base = "QFrame"
+doc = "Places widgets side by side (or stacked) with draggable dividers between them."
+ctor = "(orientation: Qt::Orientation = Qt_Horizontal, parent: QWidget?) -- A horizontal (default) or vertical splitter."
+signals = ["splitterMoved: int2 -- A divider was moved: (position, index)."]
+methods = [
+    "addWidget(widget: QWidget) -- Append a widget (the splitter takes ownership).",
+    "insertWidget(index: int, widget: QWidget) -- Insert a widget before `index`.",
+    "count() -> int -- Number of widgets.",
+    { sig = "setSizes(sizes: int[])", cpp = "{self}->setSizes(qtf_intlist({sizes}, {n}))", doc = "Set the widths (heights) of the widgets in pixels." },
+    "sizes() -> int[] -- The widths (heights) of the widgets in pixels.",
+    "setStretchFactor(index: int, stretch: int) -- Share of extra space for the widget at `index`.",
+    "setOrientation(orientation: Qt::Orientation) -- Qt_Horizontal or Qt_Vertical.",
+    "orientation() -> Qt::Orientation -- Qt_Horizontal or Qt_Vertical.",
+    "setChildrenCollapsible(collapsible: bool) -- Whether widgets can be collapsed to zero size.",
+    "setHandleWidth(width: int) -- Width of the dividers in pixels.",
+]
+
+[[class]]
+name = "QScrollArea"
+base = "QFrame"
+doc = "Shows a (large) widget through a scrollable viewport."
+ctor = "(parent: QWidget?) -- Create an empty scroll area."
+methods = [
+    "setWidget(widget: QWidget) -- Set the scrolled widget (the area takes ownership).",
+    "widget() -> QWidget -- The scrolled widget (null if none).",
+    "setWidgetResizable(resizable: bool) -- Resize the widget to fill the area when it is smaller.",
+    "widgetResizable() -> bool -- True if the widget is resized to fill the area.",
+    "setHorizontalScrollBarPolicy(policy: Qt::ScrollBarPolicy) -- When to show the horizontal scroll bar.",
+    "setVerticalScrollBarPolicy(policy: Qt::ScrollBarPolicy) -- When to show the vertical scroll bar.",
+    "ensureVisible(x: int, y: int) -- Scroll so that point (x, y) of the widget is visible.",
+    "setAlignment(alignment: Qt::Alignment) -- Where the widget sits when smaller than the area.",
+]
+
+[[class]]
+name = "QGroupBox"
+base = "QWidget"
+doc = "A frame with a title around a group of widgets; optionally checkable to enable or disable them."
+ctor = "(title: string = '', parent: QWidget?) -- A group box with `title`."
+signals = [
+    "toggled: bool -- The check box of a checkable group box changed.",
+    "clicked: void -- The check box was clicked.",
+]
+methods = [
+    "setTitle(title: string) -- Set the title.",
+    "title() -> string -- The title.",
+    "setCheckable(checkable: bool) -- Add a check box to the title that enables the contents.",
+    "isCheckable() -> bool -- True if the group box is checkable.",
+    "setChecked(checked: bool) -- Check or uncheck (enables or disables the contents).",
+    "isChecked() -> bool -- True if checked.",
+    "setFlat(flat: bool) -- Draw only the title and a top line.",
+    "isFlat() -> bool -- True if flat.",
+    "setAlignment(alignment: int) -- Align the title (Qt_AlignLeft, Qt_AlignHCenter, Qt_AlignRight).",
+]
+
+[[class]]
+name = "QDockWidget"
+base = "QWidget"
+doc = "A panel that can be docked around a QMainWindow or float as a window (see QMainWindow%addDockWidget)."
+ctor = "(title: string = '', parent: QWidget?) -- A dock widget with `title`."
+signals = [
+    "visibilityChanged: bool -- The dock was shown or hidden.",
+    "topLevelChanged: bool -- The dock started (.true.) or stopped floating.",
+]
+methods = [
+    "setWidget(widget: QWidget) -- Set the contents (the dock takes ownership).",
+    "widget() -> QWidget -- The contents (null if none).",
+    "setFloating(floating: bool) -- Float the dock as a separate window (or dock it).",
+    "isFloating() -> bool -- True if floating.",
+    "setFeatures(features: QDockWidget::DockWidgetFeatures) -- Closable / movable / floatable (QDockWidget_* flags).",
+    "setAllowedAreas(areas: Qt::DockWidgetAreas) -- Where the dock may be placed (Qt_*DockWidgetArea flags).",
+    "toggleViewAction() -> QAction -- A checkable action that shows/hides the dock (for a View menu).",
+]
+
+# ---------------------------------------------------------------------------
+# controls
+
+[[class]]
+name = "QProgressBar"
+base = "QWidget"
+doc = "A horizontal or vertical progress bar."
+ctor = "(parent: QWidget?) -- A progress bar (range 0..100)."
+signals = ["valueChanged: int -- The value changed."]
+methods = [
+    "setRange(minimum: int, maximum: int) -- Set the range (0, 0 shows a busy indicator).",
+    "minimum() -> int -- The smallest value.",
+    "maximum() -> int -- The largest value.",
+    "setValue(value: int) -- Set the progress.",
+    "value() -> int -- The progress.",
+    "reset() -- Rewind to no progress.",
+    "setFormat(format: string) -- The text shown: %p (percent), %v (value), %m (maximum).",
+    "setTextVisible(visible: bool) -- Show or hide the text.",
+    "setOrientation(orientation: Qt::Orientation) -- Qt_Horizontal or Qt_Vertical.",
+    "setInvertedAppearance(invert: bool) -- Fill from the other end.",
+]
+
+[[class]]
+name = "QToolButton"
+base = "QAbstractButton"
+doc = "A compact button, typically showing an action, optionally with a drop-down menu."
+ctor = "(parent: QWidget?) -- Create a tool button."
+methods = [
+    "setDefaultAction(action: QAction) -- Show and trigger `action`.",
+    "defaultAction() -> QAction -- The default action (null if none).",
+    "setPopupMode(mode: QToolButton::ToolButtonPopupMode) -- How the menu opens (QToolButton_* constants).",
+    "setToolButtonStyle(style: Qt::ToolButtonStyle) -- Text and/or icon (Qt_ToolButton* constants).",
+    "setAutoRaise(enable: bool) -- Draw the button flat until hovered.",
+    "setMenu(menu: QMenu) -- Attach a drop-down menu.",
+    "showMenu() -- Open the drop-down menu.",
+]
+
+[[class]]
+name = "QButtonGroup"
+doc = """
+Groups buttons: makes check boxes or push buttons mutually exclusive and
+reports clicks by id."""
+ctor = "(parent: QObject?) -- Create an empty group."
+signals = ["idClicked: int -- A button in the group was clicked: its id."]
+methods = [
+    "addButton(button: QAbstractButton, id: int = -1) -- Add a button with an id (-1: assign one automatically).",
+    "removeButton(button: QAbstractButton) -- Remove a button from the group.",
+    "checkedId() -> int -- Id of the checked button (-1 if none).",
+    "setExclusive(exclusive: bool) -- Allow only one checked button (the default).",
+    "exclusive() -> bool -- True if exclusive.",
+    "button(id: int) -> QAbstractButton -- The button with this id (null if none).",
+    "setId(button: QAbstractButton, id: int) -- Change a button's id.",
+    "id(button: QAbstractButton) -> int -- A button's id (-1 if not in the group).",
+]
+
+[[class]]
+name = "QDial"
+base = "QAbstractSlider"
+doc = "A rotary knob (an integer value in a range)."
+ctor = "(parent: QWidget?) -- Create a dial."
+methods = [
+    "setNotchesVisible(visible: bool) -- Show tick marks.",
+    "notchesVisible() -> bool -- True if tick marks are shown.",
+    "setWrapping(on: bool) -- Wrap around from maximum to minimum.",
+    "wrapping() -> bool -- True if wrapping.",
+    "setNotchTarget(target: double) -- Target pixels between tick marks.",
+]
+
+[[class]]
+name = "QLCDNumber"
+base = "QFrame"
+doc = "A number shown with LCD-like digits."
+ctor = "(numDigits: int = 5, parent: QWidget?) -- A display with room for `numDigits` digits."
+cpp_ctor = "new QLCDNumber(uint({numDigits}), {parent})"
+methods = [
+    { sig = "displayInt(value: int)", fortran_name = "display", cpp = "{self}->display({value})", doc = "Show an integer." },
+    { sig = "displayDouble(value: double)", fortran_name = "display", cpp = "{self}->display({value})", doc = "Show a real number." },
+    { sig = "displayString(text: string)", fortran_name = "display", cpp = "{self}->display({text})", doc = "Show text (digits, a few letters, ':' and spaces)." },
+    "value() -> double -- The value shown.",
+    "intValue() -> int -- The value shown, rounded.",
+    "setDigitCount(numDigits: int) -- Room for this many digits.",
+    "digitCount() -> int -- The number of digits.",
+    "setMode(mode: QLCDNumber::Mode) -- Base: QLCDNumber_Dec (default), _Hex, _Oct, _Bin.",
+    "setSegmentStyle(style: QLCDNumber::SegmentStyle) -- QLCDNumber_Outline, _Filled or _Flat.",
+    "setSmallDecimalPoint(enable: bool) -- Draw the decimal point between digits.",
+    "checkOverflow(value: double) -> bool -- True if `value` does not fit.",
+]
+
+[[class]]
+name = "QDateEdit"
+base = "QWidget"
+doc = "A date editor (optionally with a calendar popup)."
+ctor = "(parent: QWidget?) -- Create a date editor."
+signals = ["dateChanged: date -- The date changed: (year, month, day)."]
+methods = [
+    "setDate(date: QDate) -- Set the date.",
+    "date() -> QDate -- The date.",
+    "setMinimumDate(date: QDate) -- The earliest allowed date.",
+    "setMaximumDate(date: QDate) -- The latest allowed date.",
+    "setDisplayFormat(format: string) -- How the date is shown, e.g. 'yyyy-MM-dd'.",
+    "displayFormat() -> string -- The display format.",
+    "setCalendarPopup(enable: bool) -- Pick the date from a pop-up calendar.",
+]
+
+[[class]]
+name = "QTimeEdit"
+base = "QWidget"
+doc = "A time-of-day editor."
+ctor = "(parent: QWidget?) -- Create a time editor."
+signals = ["timeChanged: time -- The time changed: (hour, minute, second)."]
+methods = [
+    "setTime(time: QTime) -- Set the time.",
+    "time() -> QTime -- The time.",
+    "setMinimumTime(time: QTime) -- The earliest allowed time.",
+    "setMaximumTime(time: QTime) -- The latest allowed time.",
+    "setDisplayFormat(format: string) -- How the time is shown, e.g. 'HH:mm:ss'.",
+    "displayFormat() -> string -- The display format.",
+]
+
+[[class]]
+name = "QCalendarWidget"
+base = "QWidget"
+doc = "A month calendar for picking a date."
+ctor = "(parent: QWidget?) -- Create a calendar."
+signals = [
+    "selectionChanged: void -- The selected date changed.",
+    "clicked: date -- A date was clicked: (year, month, day).",
+    "activated: date -- A date was activated (double-click or Enter): (year, month, day).",
+]
+methods = [
+    "setSelectedDate(date: QDate) -- Select a date.",
+    "selectedDate() -> QDate -- The selected date.",
+    "setMinimumDate(date: QDate) -- The earliest selectable date.",
+    "setMaximumDate(date: QDate) -- The latest selectable date.",
+    "setGridVisible(show: bool) -- Draw grid lines.",
+]
+
+# ---------------------------------------------------------------------------
+# dialogs
+
+[[class]]
+name = "QInputDialog"
+base = "QDialog"
+doc = "Simple modal dialogs that ask for one value (use the static functions)."
+methods = [
+    { sig = "static getText(title: string, label: string, text: string = '', ok: bool&, parent: QWidget?) -> string", cpp = "QInputDialog::getText({parent}, {title}, {label}, QLineEdit::Normal, {text}, {ok})", doc = "Ask for a line of text; `ok` is false if cancelled." },
+    { sig = "static getMultiLineText(title: string, label: string, text: string = '', ok: bool&, parent: QWidget?) -> string", cpp = "QInputDialog::getMultiLineText({parent}, {title}, {label}, {text}, {ok})", doc = "Ask for multi-line text; `ok` is false if cancelled." },
+    { sig = "static getInt(title: string, label: string, value: int = 0, minimum: int = -2147483647, maximum: int = 2147483647, step: int = 1, ok: bool&, parent: QWidget?) -> int", cpp = "QInputDialog::getInt({parent}, {title}, {label}, {value}, {minimum}, {maximum}, {step}, {ok})", doc = "Ask for an integer; `ok` is false if cancelled." },
+    { sig = "static getDouble(title: string, label: string, value: double = 0.0_c_double, minimum: double = -2147483647.0_c_double, maximum: double = 2147483647.0_c_double, decimals: int = 2, ok: bool&, parent: QWidget?) -> double", cpp = "QInputDialog::getDouble({parent}, {title}, {label}, {value}, {minimum}, {maximum}, {decimals}, {ok})", doc = "Ask for a real number; `ok` is false if cancelled." },
+    { sig = "static getItem(title: string, label: string, items: strings, current: int = 0, editable: bool = .true., ok: bool&, parent: QWidget?) -> string", cpp = "QInputDialog::getItem({parent}, {title}, {label}, {items}, {current}, {editable}, {ok})", doc = "Ask to choose one of `items` (0-based `current` preselected); `ok` is false if cancelled." },
+]
+
+[[class]]
+name = "QColorDialog"
+base = "QDialog"
+doc = "A color chooser (use QColorDialog_getColor)."
+methods = [
+    { sig = "static getColor(initial: QColor = Qt_white, title: string = '', parent: QWidget?) -> QColor", cpp = "QColorDialog::getColor({initial}, {parent}, {title})", doc = "Modal color chooser; returns the chosen color, or an invalid color (`isValid()` false) if cancelled." },
+]
+
+[[class]]
+name = "QFontDialog"
+base = "QDialog"
+doc = "A font chooser (use QFontDialog_getFont)."
+cpp = '''
+// Font chooser: the initial font in, the chosen font out (its family is returned).
+QTF_API char *qtf_qfontdialog_getFont(void *parent, const char *family, int flen, double pointSize, int bold,
+                                      int italic, const char *title, int tlen, int *ok, double *size,
+                                      int *outBold, int *outItalic, int *len) {
+    QFont f;
+    if (flen > 0) f.setFamily(qtf_qstring(family, flen));
+    if (pointSize > 0) f.setPointSizeF(pointSize);
+    f.setBold(bold != 0);
+    f.setItalic(italic != 0);
+    bool accepted = false;
+    const QFont r = QFontDialog::getFont(&accepted, f, as<QWidget>(parent), qtf_qstring(title, tlen));
+    *ok = accepted ? 1 : 0;
+    *size = r.pointSizeF();
+    *outBold = r.bold() ? 1 : 0;
+    *outItalic = r.italic() ? 1 : 0;
+    return qtf_to_c(r.family(), len);
+}
+'''
+
+[[class]]
+name = "QProgressDialog"
+base = "QDialog"
+doc = """
+A dialog showing the progress of a long operation, with a cancel button. It
+appears only if the operation takes longer than `setMinimumDuration` (4 s by
+default). Keep the UI responsive with QApplication_processEvents while working."""
+ctor = "(labelText: string = '', cancelButtonText: string = 'Cancel', minimum: int = 0, maximum: int = 100, parent: QWidget?) -- A progress dialog for the range minimum..maximum."
+cpp_ctor = "new QProgressDialog({labelText}, {cancelButtonText}, {minimum}, {maximum}, {parent})"
+signals = ["canceled: void -- The cancel button was clicked."]
+methods = [
+    "setValue(progress: int) -- Set the progress (at maximum, the dialog closes if auto-close is on).",
+    "value() -> int -- The progress.",
+    "setRange(minimum: int, maximum: int) -- Set the range.",
+    "setLabelText(text: string) -- Set the message.",
+    "wasCanceled() -> bool -- True if the user cancelled.",
+    "setMinimumDuration(ms: int) -- Show the dialog only if the operation takes longer than this.",
+    "reset() -- Reset (hides the dialog if auto-close is on).",
+    "cancel() -- Cancel, as if the button were clicked.",
+    "setAutoClose(close: bool) -- Hide when the value reaches the maximum (default).",
+    "setAutoReset(reset: bool) -- Reset when the value reaches the maximum (default).",
+]
+
+# ---------------------------------------------------------------------------
+# layouts
+
+[[class]]
+name = "QFormLayout"
+base = "QLayout"
+doc = "A two-column layout of labelled fields (label: field rows)."
+ctor = "(parent: QWidget?) -- A form layout, installed on `parent` if given."
+methods = [
+    "addRow(label: string, field: QWidget) -- Append a row with a label and a field widget.",
+    { sig = "addRowLayout(label: string, field: QLayout)", fortran_name = "addRow", cpp = "{self}->addRow({label}, {field})", doc = "Append a row with a label and a nested layout." },
+    { sig = "addRowWidget(widget: QWidget)", fortran_name = "addRow", cpp = "{self}->addRow({widget})", doc = "Append a widget spanning both columns." },
+    "rowCount() -> int -- Number of rows.",
+    "setLabelAlignment(alignment: Qt::Alignment) -- Align the labels (e.g. Qt_AlignRight).",
+    "setHorizontalSpacing(spacing: int) -- Space between labels and fields, in pixels.",
+    "setVerticalSpacing(spacing: int) -- Space between rows, in pixels.",
 ]

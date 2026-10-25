@@ -22,7 +22,7 @@ module qt_c_util
         character(len=:), allocatable :: s
     end type qt_string
 
-    public :: qtf_string, qtf_take_string, qtf_take_string_list, qtf_logical, qtf_int
+    public :: qtf_string, qtf_take_string, qtf_take_string_list, qtf_take_ints, qtf_logical, qtf_int
 
 contains
 
@@ -71,6 +71,20 @@ contains
             end if
         end do
     end function qtf_take_string_list
+
+    !> Copy a malloc'd array of `n` C ints returned by the shim, then free it.
+    function qtf_take_ints(p, n) result(v)
+        type(c_ptr), intent(in) :: p
+        integer(c_int), intent(in) :: n
+        integer, allocatable :: v(:)
+        integer(c_int), pointer :: buf(:)
+        allocate(v(n))
+        if (n > 0) then
+            call c_f_pointer(p, buf, [n])
+            v = buf
+        end if
+        call qtf_free(p)
+    end function qtf_take_ints
 
     !> Shim boolean (0/1) to Fortran logical.
     pure elemental function qtf_logical(b) result(l)

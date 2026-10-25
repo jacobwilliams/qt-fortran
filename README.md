@@ -93,10 +93,13 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 |------|---------|
 | Core | `QObject`, `QTimer`, `QEvent` |
 | Application | `QApplication` |
-| Widgets | `QWidget`, `QLabel`, `QPushButton`, `QCheckBox`, `QRadioButton`, `QLineEdit`, `QSpinBox`, `QDoubleSpinBox`, `QSlider`, `QComboBox`, `QtfWidget` (custom painting/events) |
-| Layouts | `QVBoxLayout`, `QHBoxLayout`, `QGridLayout` |
-| Main window | `QMainWindow`, `QMenuBar`, `QMenu`, `QToolBar`, `QStatusBar`, `QAction` |
-| Dialogs | `QDialog`, `QMessageBox`, `QFileDialog` |
+| Widgets | `QWidget`, `QFrame`, `QLabel`, `QPushButton`, `QToolButton`, `QCheckBox`, `QRadioButton`, `QButtonGroup`, `QLineEdit`, `QSpinBox`, `QDoubleSpinBox`, `QSlider`, `QDial`, `QComboBox`, `QProgressBar`, `QLCDNumber`, `QDateEdit`, `QTimeEdit`, `QCalendarWidget`, `QtfWidget` (custom painting/events) |
+| Text | `QTextEdit`, `QPlainTextEdit` |
+| Item views | `QTableWidget`, `QListWidget`, `QTreeWidget`, and `QTableView` with `QtfTableModel` (cells come from Fortran on demand, so large arrays aren't copied) |
+| Containers | `QTabWidget`, `QStackedWidget`, `QSplitter`, `QScrollArea`, `QGroupBox`, `QDockWidget` |
+| Layouts | `QVBoxLayout`, `QHBoxLayout`, `QGridLayout`, `QFormLayout`, size policies |
+| Main window | `QMainWindow`, `QMenuBar`, `QMenu`, `QToolBar`, `QStatusBar`, `QAction`, docks |
+| Dialogs | `QDialog`, `QMessageBox`, `QFileDialog`, `QInputDialog`, `QColorDialog`, `QFontDialog`, `QProgressDialog` |
 | Painting | `QPainter`, `QImage`, `QPixmap`, `QColor`, `QPen`, `QBrush`, `QFont` |
 | Input events | `QMouseEvent`, `QKeyEvent`, `QWheelEvent`, `QResizeEvent` |
 | OpenGL | `QtfOpenGLWidget`, `QOpenGLShaderProgram`, `QOpenGLBuffer`, `QOpenGLVertexArrayObject`, `QSurfaceFormat`, `QMatrix4x4`, and `glClear`, `glDrawArrays`, `glDrawElements`, ... |
@@ -351,8 +354,8 @@ on macOS (the only runner with a window server).
 ## Roadmap
 
 - Smoother packaging: a conda-forge package, and Homebrew (framework) Qt support.
-- More of Qt: item views (`QListWidget`, `QTableWidget`), `QTextEdit`, `QSplitter`,
-  `QTabWidget`, dialogs (`QColorDialog`, `QInputDialog`), and possibly Qt Charts.
+- More of Qt: arrays as images (heatmaps), background computation, `QSettings`,
+  icons, and Qt Charts / Qt Graphs. See the roadmap in [plan.md](plan.md).
 - Seeding specs from PySide6's type-system XML files to cover more of the API
   faster.
 

@@ -21,7 +21,9 @@ Module keys:
     handle_types  non-QObject handle types from other modules (bound with `%ptr = ...`)
     value_types   Fortran value types passed to C++ field by field:
                   [value_types.QColor] fields = ["r: int", ...], cpp = "QColor({r}, ...)"
-                  (fields are int, double, bool, double[N] or another value type)
+                  (fields are int, double, bool, double[N] or another value type).
+                  To return one, give `out = {r = "{v}.red()", ...}`: C++ expressions
+                  for each (scalar) field of the C++ value `{v}`.
     functions     module-level free functions: "name(args) [-> type] -- doc" strings
                   or tables {sig, doc, cpp}; the Fortran name is `name`, the C name
                   `qtf_<name>`
@@ -46,7 +48,13 @@ Fortran expression).
     fortran_bindings / fortran_procedures / cpp: verbatim additions
 
 Argument and result types:
-    int  bool  double  string  strings (results only)
+    int  bool  double  string
+    strings                a string list: a character array argument (trailing
+                           blanks trimmed; count passed as `{n}`), or a result
+                           (type(qt_string) array)
+    bool&                  an output flag (optional `logical, intent(out)`; C++
+                           receives a `bool *`)
+    int[] (result)         an allocatable integer array
     num                    integer or real(c_double): generates `_i`/`_d` specifics
                            under a generic binding (double in C++)
     num[]                  integer or real(c_double) array (const double * in C++);
@@ -63,9 +71,12 @@ C++ placeholders in `cpp` / `cpp_ctor`: `{self}` and `{argname}` expand to the
 converted C++ values. The default is `{self}->name(args...)`, `Class::name(...)`
 for static methods, and `new Class(args...)` for constructors.
 
-Signal kinds: void, bool, int, double, string (Qt signals, connected with a
-generated lambda) and painter, mouse, key, wheel, resize (QtfWidget events; these
-need an explicit `connector`).
+Signal kinds: void, bool, int, double, string, int2, int3, int4, date (year,
+month, day) and time (hour, minute, second) are Qt signals connected with a
+generated lambda. painter, mouse, key, wheel and resize are QtfWidget events,
+which need an explicit `connector`. `custom` signals give `fortran_type` (the
+Fortran signal type) and either a `connector` or `lambda` (C++ parameter list)
+plus `emit` (C++ statement; the sender is `s`).
 """
 
 import os
@@ -80,6 +91,8 @@ SIGNAL_TYPES = {
     "void": "QSignal", "bool": "QSignalBool", "int": "QSignalInt", "double": "QSignalDouble",
     "string": "QSignalString", "painter": "QSignalPainter", "mouse": "QSignalMouseEvent",
     "key": "QSignalKeyEvent", "wheel": "QSignalWheelEvent", "resize": "QSignalResizeEvent",
+    "int2": "QSignalInt2", "int3": "QSignalInt3", "int4": "QSignalInt4",
+    "date": "QSignalInt3", "time": "QSignalInt3", "custom": None,
 }
 SIGNAL_LAMBDAS = {
     "void": ("", "qtf_emit(ref)"),
@@ -87,6 +100,11 @@ SIGNAL_LAMBDAS = {
     "int": ("int v", "qtf_emit_int(ref, v)"),
     "double": ("double v", "qtf_emit_double(ref, v)"),
     "string": ("const QString &v", "qtf_emit(ref, v)"),
+    "int2": ("int a, int b", "qtf_emit_ints(ref, {a, b})"),
+    "int3": ("int a, int b, int c", "qtf_emit_ints(ref, {a, b, c})"),
+    "int4": ("int a, int b, int c, int d", "qtf_emit_ints(ref, {a, b, c, d})"),
+    "date": ("QDate d", "qtf_emit_ints(ref, {d.year(), d.month(), d.day()})"),
+    "time": ("QTime t", "qtf_emit_ints(ref, {t.hour(), t.minute(), t.second()})"),
 }
 
 
@@ -109,13 +127,13 @@ def fail(msg):
 
 class Arg:
     def __init__(self, text, where):
-        m = re.fullmatch(r"\s*(\w+)\s*:\s*([\w:]+(?:\[\])?\??)\s*(?:=\s*(.+?))?\s*", text)
+        m = re.fullmatch(r"\s*(\w+)\s*:\s*([\w:]+(?:\[\])?[?&]?)\s*(?:=\s*(.+?))?\s*", text)
         if not m:
             fail(f"bad argument '{text}' in {where}")
         self.name, typ, self.default = m.group(1), m.group(2), m.group(3)
         self.nullable = typ.endswith("?")
         self.type = typ.rstrip("?")
-        self.optional = self.nullable or self.default is not None
+        self.optional = self.nullable or self.default is not None or typ.endswith("&")
         kind(self.type, where)
 
     @property
@@ -131,6 +149,8 @@ def kind(typ, where=""):
         return typ
     if typ == "num[]":
         return "numarray"
+    if typ == "bool&":
+        return "outbool"
     if typ == "double[]":
         return "doublearray"
     if typ == "int[]":
@@ -156,7 +176,8 @@ class Sig:
         self.static = text.startswith("static ")
         if self.static:
             text = text[len("static "):]
-        pattern = r"\((.*)\)\s*(?:->\s*([\w:]+))?" if ctor else r"(\w+)\((.*)\)\s*(?:->\s*([\w:]+))?"
+        ret = r"(?:->\s*([\w:]+(?:\[\])?))?"
+        pattern = rf"\((.*)\)\s*{ret}" if ctor else rf"(\w+)\((.*)\)\s*{ret}"
         m = re.fullmatch(pattern, text)
         if not m:
             fail(f"bad signature '{text}' in {where}")
@@ -247,7 +268,7 @@ def value_f_args(vt, expr):
     return out
 
 
-ARRAY_KINDS = ("numarray", "doublearray", "intarray")
+ARRAY_KINDS = ("numarray", "doublearray", "intarray", "strings")
 
 
 def has_arrays(sig):
@@ -268,14 +289,21 @@ def cpp_params(sig, has_self):
             params.append(f"const double *{n}")
         elif k == "intarray":
             params.append(f"const int *{n}")
+        elif k == "strings":
+            params += [f"const char *{n}", f"int {n}_len"]
+        elif k == "outbool":
+            params.append(f"int *{n}")
         elif k == "value":
             params += value_c_params(a.type, n)
         else:
             params.append(f"int {n}")
     if has_arrays(sig):
         params.append("int n")
-    if sig.ret in ("string", "strings"):
+    rk = kind(sig.ret) if sig.ret else None
+    if rk in ("string", "strings", "intarray"):
         params.append("int *len")
+    elif rk == "value":
+        params += [f"{'double' if t == 'double' else 'int'} *res_{f}" for f, t in VALUE_TYPES[sig.ret]["fields"]]
     return params
 
 
@@ -287,6 +315,8 @@ def cpp_value(a):
         "enum": f"{a.type}({n})",
         "object": f"as<{a.type}>({n})",
         "value": value_cpp(a.type, n) if k == "value" else None,
+        "strings": f"qtf_qstringlist({n}, {n}_len, n)",
+        "outbool": f"&{n}_b",
     }.get(k, n)
 
 
@@ -314,23 +344,46 @@ def cpp_function(cls, sig, template, ctor=False):
     call = cpp_call(cls, sig, template, ctor)
     ret = "void *" if ctor else {
         None: "void ", "int": "int ", "bool": "int ", "double": "double ", "enum": "int ",
-        "string": "char *", "strings": "char *", "object": "void *",
+        "string": "char *", "strings": "char *", "object": "void *", "intarray": "int *", "value": "void ",
     }[kind(sig.ret) if sig.ret else None]
+    rk = kind(sig.ret) if sig.ret else None
+    if rk == "value":
+        ret = "void "
+    elif rk == "intarray":
+        ret = "int *"
+    outs = [cname(a.name) for a in sig.args if kind(a.type) == "outbool"]
+    pre = [f"bool {o}_b = false;" for o in outs]
+    post = [f"if ({o}) *{o} = {o}_b ? 1 : 0;" for o in outs]
+
+    def convert(expr):
+        return {
+            "bool": f"qtf_bool({expr})",
+            "enum": f"int({expr})",
+            "string": f"qtf_to_c({expr}, len)",
+            "strings": f"qtf_list_to_c({expr}, len)",
+            "intarray": f"qtf_ints_to_c({expr}, len)",
+        }.get(rk, expr)
+
     if ctor:
-        body = f"return {call};"
-    elif not sig.ret:
-        body = f"{call};"
+        stmts = [f"return {call};"]
+    elif rk is None:
+        stmts = pre + [f"{call};"] + post
+    elif rk == "value":
+        out = VALUE_TYPES[sig.ret].get("out")
+        if not out:
+            fail(f"value type {sig.ret} has no `out` templates (needed by {cls}::{sig.name})")
+        stmts = pre + [f"const auto v_ = {call};"] + post
+        for f, t in VALUE_TYPES[sig.ret]["fields"]:
+            stmts.append(f"*res_{f} = {out[f].format(v='v_')};")
+    elif pre:
+        stmts = pre + [f"const auto r_ = {call};"] + post + [f"return {convert('r_')};"]
     else:
-        body = {
-            "bool": f"return qtf_bool({call});",
-            "enum": f"return int({call});",
-            "string": f"return qtf_to_c({call}, len);",
-            "strings": f"return qtf_list_to_c({call}, len);",
-        }.get(kind(sig.ret), f"return {call};")
+        stmts = [f"return {convert(call)};"]
+    body = "\n    ".join(stmts)
     params = ", ".join(cpp_params(sig, not (ctor or sig.static or cls is None))) or "void"
     head = f"QTF_API {ret}{cfunc}({params})"
     doc = "".join(f"// {l}\n" for l in sig.doc.splitlines()) if sig.doc else ""
-    if len(head) + len(body) + 5 <= 110:
+    if len(stmts) == 1 and len(head) + len(body) + 5 <= 110:
         return f"{doc}{head} {{ {body} }}\n", cfunc
     return f"{doc}{head} {{\n    {body}\n}}\n", cfunc
 
@@ -338,13 +391,17 @@ def cpp_function(cls, sig, template, ctor=False):
 def cpp_connector(cls, name, k, table):
     if "connector" in table:
         return table["connector"]
-    if k not in SIGNAL_LAMBDAS:
-        fail(f"signal {cls}::{name} of kind '{k}' needs an explicit connector")
-    params, emit = SIGNAL_LAMBDAS[k]
+    if "lambda" in table:
+        params, emit = table["lambda"], table["emit"]
+    elif k in SIGNAL_LAMBDAS:
+        params, emit = SIGNAL_LAMBDAS[k]
+    else:
+        fail(f"signal {cls}::{name} of kind '{k}' needs a `connector` or `lambda` and `emit`")
     sig = table.get("cpp_signal", f"&{cls}::{name}")
+    capture = "ref, s" if re.search(r"\bs\b", emit) else "ref"
     return (f"[](void *s, const qtf_slot &ref) {{\n"
             f"        return bool(QObject::connect(as<{cls}>(s), {sig}, as<{cls}>(s), "
-            f"[ref]({params}) {{ {emit}; }}));\n    }}")
+            f"[{capture}]({params}) {{ {emit}; }}));\n    }}")
 
 
 # ---------------------------------------------------------------------------
@@ -355,9 +412,11 @@ def f_dummy(a, handle_types, variant=None):
     opt = ", optional" if a.optional else ""
     decl = {
         "int": "integer", "enum": "integer", "bool": "logical", "double": "real(c_double)",
-        "string": "character(len=*)",
+        "string": "character(len=*)", "strings": "character(len=*)",
     }.get(k)
     dims = "(:)" if k in ARRAY_KINDS else ""
+    if k == "outbool":
+        return f"logical, intent(out), optional :: {a.name}"
     if k in ("num", "numarray"):
         decl = "integer" if variant == "i" else "real(c_double)"
     elif k == "doublearray":
@@ -371,9 +430,11 @@ def f_dummy(a, handle_types, variant=None):
     return f"{decl}, intent(in){opt} :: {a.name}{dims}"
 
 
-def f_locals_and_args(sig, handle_types, variant=None):
-    """Local declarations, default assignments, and the raw-call argument list."""
+def f_locals_and_args(sig, handle_types, variant=None, post=None):
+    """Local declarations, default assignments, and the raw-call argument list.
+    Statements to run after the call are appended to `post`."""
     decls, setup, args = [], [], []
+    post = [] if post is None else post
     for a in sig.args:
         k = kind(a.type)
         n = a.name
@@ -386,8 +447,21 @@ def f_locals_and_args(sig, handle_types, variant=None):
         if k == "intarray":
             args.append(f"int({n}, c_int)")
             continue
+        if k == "strings":
+            args += [n, f"len({n}, c_int)"]
+            continue
+        if k == "outbool":
+            decls.append(f"integer(c_int) :: {n}_")
+            args.append(f"{n}_")
+            post.append(f"if (present({n})) {n} = qtf_logical({n}_)")
+            continue
         if k == "value":
-            args += value_f_args(a.type, n)
+            if a.default is not None:
+                decls.append(f"type({a.type}) :: {n}_")
+                setup += [f"{n}_ = {a.default}", f"if (present({n})) {n}_ = {n}"]
+                args += value_f_args(a.type, f"{n}_")
+            else:
+                args += value_f_args(a.type, n)
             continue
         if k == "object":
             if a.nullable:
@@ -451,7 +525,8 @@ def f_procedure(cls, sig, handle_types, ctor=False, suffix="", variant=None, han
     dummies = (["self"] if has_self else []) + [a.name for a in sig.args]
     decls = [f"class({cls}), intent(in) :: self"] if has_self else []
     decls += [f_dummy(a, handle_types, variant) for a in sig.args]
-    locals_, setup, args = f_locals_and_args(sig, handle_types, variant)
+    post = []
+    locals_, setup, args = f_locals_and_args(sig, handle_types, variant, post)
     if has_self:
         args.insert(0, "self%ptr")
     rk = "ctor" if ctor else (kind(sig.ret) if sig.ret else None)
@@ -484,6 +559,21 @@ def f_procedure(cls, sig, handle_types, ctor=False, suffix="", variant=None, han
             args.append("n_")
             body += [f"p_ = {raw}({', '.join(args)})",
                      f"res = {'qtf_take_string' if rk == 'string' else 'qtf_take_string_list'}(p_, n_)"]
+        elif rk == "intarray":
+            decls.append("integer, allocatable :: res(:)")
+            locals_ += ["integer(c_int) :: n_", "type(c_ptr) :: p_"]
+            args.append("n_")
+            body += [f"p_ = {raw}({', '.join(args)})", "res = qtf_take_ints(p_, n_)"]
+        elif rk == "value":
+            decls.append(f"type({sig.ret}) :: res")
+            fields = VALUE_TYPES[sig.ret]["fields"]
+            for f, t in fields:
+                locals_.append(f"{'real(c_double)' if t == 'double' else 'integer(c_int)'} :: r_{f}")
+                args.append(f"r_{f}")
+            head, end = f"function {pname}({', '.join(dummies)}) result(res)", f"end function {pname}"
+            body.append(f"call {raw}({', '.join(args)})")
+            for f, t in fields:
+                body.append(f"res%{f} = " + {"bool": f"qtf_logical(r_{f})", "double": f"r_{f}"}.get(t, f"int(r_{f})"))
         elif rk == "object":
             decls.append(f"type({sig.ret}) :: res")
             if sig.ret in handle_types:
@@ -493,7 +583,7 @@ def f_procedure(cls, sig, handle_types, ctor=False, suffix="", variant=None, han
     lines = [f"    !> {line}" if line else "    !>" for line in sig.doc.splitlines()]
     lines.append(f"    {head}")
     lines += [f"        {d}" for d in decls + locals_]
-    lines += [f"        {s}" for s in setup + body]
+    lines += [f"        {s}" for s in setup + body + post]
     lines.append(f"    {end}")
     return "\n".join(wrap_line(l) for l in lines), pname
 
@@ -554,7 +644,7 @@ def generate(spec):
     VALUE_TYPES.clear()
     for name, vt in spec.get("value_types", {}).items():
         fields = [tuple(x.strip() for x in f.split(":")) for f in vt["fields"]]
-        VALUE_TYPES[name] = {"fields": fields, "cpp": vt["cpp"]}
+        VALUE_TYPES[name] = {"fields": fields, "cpp": vt["cpp"], "out": vt.get("out")}
     next_id = spec.get("signal_base", 0)
 
     cpp_funcs, cpp_ids, cpp_regs = [], [], []
@@ -578,6 +668,9 @@ def generate(spec):
             m = re.fullmatch(r"\s*(\w+)\s*:\s*(\w+)\s*", body)
             if not m or m.group(2) not in SIGNAL_TYPES:
                 fail(f"bad signal '{text}' in {where}")
+            ftype = table.get("fortran_type", SIGNAL_TYPES[m.group(2)])
+            if not ftype:
+                fail(f"custom signal '{text}' in {where} needs `fortran_type`")
             if not doc:
                 fail(f"signal {cls}::{m.group(1)} has no doc")
             name, k = m.groups()
@@ -585,8 +678,8 @@ def generate(spec):
             cpp_ids.append(f"    {sid} = {next_id},")
             next_id += 1
             cpp_regs.append(f"    qtf_register_connector({sid}, {cpp_connector(cls, name, k, table)});")
-            components.append(f"        type({SIGNAL_TYPES[k]}) :: {name}   !! {doc.strip()}")
-            attach.append(f"        self%{name} = {SIGNAL_TYPES[k]}(ptr, {sid})")
+            components.append(f"        type({ftype}) :: {name}   !! {doc.strip()}")
+            attach.append(f"        self%{name} = {ftype}(ptr, {sid})")
         if attach:
             bindings.append(f"        procedure :: attach => {cl}_attach")
             f_procs.append("\n".join([

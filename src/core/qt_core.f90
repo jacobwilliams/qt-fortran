@@ -83,6 +83,42 @@ module qt_core
     end interface
     public :: qt_slot, qt_slot_string, qt_slot_bool, qt_slot_int, qt_slot_double
 
+    abstract interface
+        !> Slot for signals with two integer arguments (e.g. row, column).
+        subroutine qt_slot_int2(a, b, data)
+            implicit none
+            integer, intent(in) :: a, b
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_int2
+        !> Slot for signals with three integer arguments (e.g. year, month, day).
+        subroutine qt_slot_int3(a, b, c, data)
+            implicit none
+            integer, intent(in) :: a, b, c
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_int3
+        !> Slot for signals with four integer arguments (e.g. current and previous row, column).
+        subroutine qt_slot_int4(a, b, c, d, data)
+            implicit none
+            integer, intent(in) :: a, b, c, d
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_int4
+    end interface
+    public :: qt_slot_int2, qt_slot_int3, qt_slot_int4
+
+    !> A calendar date (QDate as a value type).
+    type, public :: QDate
+        integer :: year = 2000   !! year (e.g. 2026)
+        integer :: month = 1     !! month, 1..12
+        integer :: day = 1       !! day of the month, 1..31
+    end type QDate
+
+    !> A time of day (QTime as a value type).
+    type, public :: QTime
+        integer :: hour = 0      !! 0..23
+        integer :: minute = 0    !! 0..59
+        integer :: second = 0    !! 0..59
+    end type QTime
+
     !> Base for slot kinds defined outside this module (e.g. event and painter
     !> slots in qt_gui). An extension stores a typed procedure pointer and
     !> converts the raw `qtf_args` in `invoke`.
@@ -133,6 +169,30 @@ module qt_core
     contains
         procedure :: connect => qsignalint_connect
     end type QSignalInt
+
+    !> A signal with two integer arguments.
+    type, public :: QSignalInt2
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignalint2_connect
+    end type QSignalInt2
+
+    !> A signal with three integer arguments.
+    type, public :: QSignalInt3
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignalint3_connect
+    end type QSignalInt3
+
+    !> A signal with four integer arguments.
+    type, public :: QSignalInt4
+        type(c_ptr) :: sender = c_null_ptr
+        integer(c_int) :: id = 0
+    contains
+        procedure :: connect => qsignalint4_connect
+    end type QSignalInt4
 
     !> A signal with a single real argument.
     type, public :: QSignalDouble
@@ -193,6 +253,27 @@ module qt_core
         procedure :: isAccepted => qevent_isAccepted
         procedure :: delete => qevent_delete
     end type QEvent
+
+    !> Slot handler for QSignalInt2.
+    type, extends(qt_slot_handler) :: int2_handler
+        procedure(qt_slot_int2), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => int2_handler_invoke
+    end type int2_handler
+
+    !> Slot handler for QSignalInt3.
+    type, extends(qt_slot_handler) :: int3_handler
+        procedure(qt_slot_int3), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => int3_handler_invoke
+    end type int3_handler
+
+    !> Slot handler for QSignalInt4.
+    type, extends(qt_slot_handler) :: int4_handler
+        procedure(qt_slot_int4), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => int4_handler_invoke
+    end type int4_handler
 
     public :: QTimer_singleShot, QCoreApplication_sendEvent
     public :: qtf_ptr, qt_slot_count, qt_connect_handler
@@ -401,6 +482,72 @@ contains
         if (present(data)) slots(id)%data => data
         call connect_slot(sender, signal, id)
     end subroutine qt_connect_handler
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalint2_connect(self, slot, data)
+        class(QSignalInt2), intent(in) :: self
+        procedure(qt_slot_int2) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(int2_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self%sender, self%id, h, data)
+    end subroutine qsignalint2_connect
+
+    !> Call the slot with the first two integer arguments.
+    subroutine int2_handler_invoke(self, args, data)
+        class(int2_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        if (associated(data)) then
+            call self%f(int(args%i(1)), int(args%i(2)), data)
+        else
+            call self%f(int(args%i(1)), int(args%i(2)))
+        end if
+    end subroutine int2_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalint3_connect(self, slot, data)
+        class(QSignalInt3), intent(in) :: self
+        procedure(qt_slot_int3) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(int3_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self%sender, self%id, h, data)
+    end subroutine qsignalint3_connect
+
+    !> Call the slot with the first three integer arguments.
+    subroutine int3_handler_invoke(self, args, data)
+        class(int3_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        if (associated(data)) then
+            call self%f(int(args%i(1)), int(args%i(2)), int(args%i(3)), data)
+        else
+            call self%f(int(args%i(1)), int(args%i(2)), int(args%i(3)))
+        end if
+    end subroutine int3_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalint4_connect(self, slot, data)
+        class(QSignalInt4), intent(in) :: self
+        procedure(qt_slot_int4) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(int4_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self%sender, self%id, h, data)
+    end subroutine qsignalint4_connect
+
+    !> Call the slot with the four integer arguments.
+    subroutine int4_handler_invoke(self, args, data)
+        class(int4_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        if (associated(data)) then
+            call self%f(int(args%i(1)), int(args%i(2)), int(args%i(3)), int(args%i(4)), data)
+        else
+            call self%f(int(args%i(1)), int(args%i(2)), int(args%i(3)), int(args%i(4)))
+        end if
+    end subroutine int4_handler_invoke
 
     ! ------------------------------------------------------------------
     ! QEvent

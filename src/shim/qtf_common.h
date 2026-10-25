@@ -5,6 +5,7 @@
 #include <QStringList>
 
 #include <cstdint>
+#include <initializer_list>
 #include <memory>
 
 // Every shim function is exported from the qtf shared library.
@@ -59,6 +60,9 @@ void qtf_emit_bool(const qtf_slot &slot, bool b);
 void qtf_emit_int(const qtf_slot &slot, int i);
 void qtf_emit_double(const qtf_slot &slot, double d);
 void qtf_emit_ptr(const qtf_slot &slot, void *p);  // event or painter, borrowed
+void qtf_emit_ints(const qtf_slot &slot, std::initializer_list<int> ints);   // up to 4
+void qtf_emit_ptr_ints(const qtf_slot &slot, void *p, std::initializer_list<int> ints);
+void qtf_emit_ints_string(const qtf_slot &slot, std::initializer_list<int> ints, const QString &s);
 
 // Connect `signal` of `sender` to Fortran slot `slot`; returns false on failure.
 typedef bool (*qtf_connector_fn)(void *sender, const qtf_slot &slot);
@@ -69,6 +73,16 @@ char *qtf_to_c(const QString &s, int *len);
 
 // String lists are returned as one malloc'd buffer of NUL-terminated strings.
 char *qtf_list_to_c(const QStringList &list, int *len);
+
+// Integer lists are returned as a malloc'd array of `len` ints, released by qtf_free.
+int *qtf_ints_to_c(const QList<int> &list, int *len);
+
+// A Fortran character array (n items of `itemlen` bytes, blank padded) as a
+// string list, with trailing blanks removed from each item.
+QStringList qtf_qstringlist(const char *s, int itemlen, int n);
+
+// A Fortran integer array as a list.
+QList<int> qtf_intlist(const int *v, int n);
 
 inline QString qtf_qstring(const char *s, int len) { return QString::fromUtf8(s, len); }
 

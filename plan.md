@@ -338,18 +338,27 @@ them by value to Fortran (scientific) users. Most widget and dialog items are
 spec-only work now; items marked *(design)* need new machinery.
 
 ### Inside the bound modules
-- **Widgets**
-  - Item-based views: `QTableWidget`, `QListWidget`, `QTreeWidget`.
-  - Model/view: `QTableView` with a Fortran-implemented model. *(design)* The
-    model's virtuals must be forwarded, like `QtfWidget`.
-  - Text: `QTextEdit`, `QPlainTextEdit` (log console, editor).
+- **Widgets: done** (all with tests). Item views:
+  - `QTableWidget` (+`QTableWidgetItem`), `QListWidget`, `QTreeWidget`
+    (+`QTreeWidgetItem`), with a shared `QAbstractItemView` base.
+  - Model/view: `QTableView` with **`QtfTableModel`**. Its cells are provided on
+    demand by a Fortran `dataRequested(row, column, request)` slot, so large
+    arrays are not copied; edits arrive at `dataEdited(row, column, text)`.
+  - Text: `QTextEdit`, `QPlainTextEdit`.
   - Containers: `QTabWidget`, `QSplitter`, `QScrollArea`, `QGroupBox`,
-    `QStackedWidget`, `QDockWidget`, `QFrame`.
+    `QStackedWidget`, `QDockWidget` (+`QMainWindow%addDockWidget`), and `QFrame`
+    (now the base of `QLabel`).
   - Controls: `QProgressBar`, `QToolButton`, `QButtonGroup`, `QDial`,
-    `QDateEdit`/`QTimeEdit`, `QCalendarWidget`, `QLCDNumber`.
-  - Dialogs: `QInputDialog`, `QColorDialog`, `QFontDialog`, `QProgressDialog`.
-  - Layout: `QFormLayout`, size policies, `setMaximumSize`, widget stretch.
-  - `QGraphicsView`/`QGraphicsScene` (2D scene graph).
+    `QDateEdit`, `QTimeEdit`, `QCalendarWidget`, `QLCDNumber`.
+  - Dialogs: `QInputDialog` (getText, getMultiLineText, getInt, getDouble,
+    getItem, each with an optional `ok`), `QColorDialog`, `QFontDialog`,
+    `QProgressDialog`.
+  - Layout: `QFormLayout`, `setSizePolicy`, min/max/fixed width/height,
+    `QBoxLayout%setStretchFactor`.
+  - Value types `QDate` and `QTime` (in qt_core).
+  - **Deferred:** `QGraphicsView` / `QGraphicsScene` (2D scene graph).
+  - Not yet: a model for `QTreeView`/`QListView` (only the table model exists),
+    item icons and check states.
 - **Gui**
   - `QIcon` (icons on actions and buttons).
   - **`QImage` from Fortran arrays** (bulk pixel data) plus colormaps, for
@@ -368,8 +377,16 @@ spec-only work now; items marked *(design)* need new machinery.
 ### Binding machinery *(design)*
 - Signals defined in Fortran (custom signals).
 - `disconnect` (connections currently live until the sender is destroyed).
-- Signals with several arguments, e.g. `cellChanged(row, column)`.
+- **Done:** signals with several integer arguments (`QSignalInt2/3/4`, e.g.
+  `cellChanged(row, column)`, `dateChanged(year, month, day)`), and custom
+  signal kinds (tree items, model requests).
 - Use-after-delete detection for handles (`QPointer`-backed).
+
+Generator features added for the widgets: `strings` arguments (character array
+→ QStringList), `bool&` optional output flags, `int[]` results, value-type
+results through per-field `out` templates (`QColor`, `QDate`, `QTime`),
+value-type arguments with defaults, and `custom` signals (`fortran_type` plus
+a C++ `lambda`/`emit`, with the sender as `s`).
 
 ### Other Qt modules
 - **Available in the env, not bound:** QtSvg (SVG export and icons),
@@ -382,9 +399,8 @@ spec-only work now; items marked *(design)* need new machinery.
 1. `QImage` from Fortran arrays, plus colormaps.
 2. Background computation (`QThread`-style worker, or a documented
    `processEvents` pattern with `QProgressBar`).
-3. `QTableWidget`, then model/view.
-4. Layout and polish widgets: `QTabWidget`, `QSplitter`, `QGroupBox`,
-   `QDockWidget`, `QPlainTextEdit`, `QProgressBar`, `QIcon` on actions.
+3. ~~`QTableWidget`, then model/view.~~ Done.
+4. ~~Layout and polish widgets.~~ Done, except `QIcon` on actions (Gui).
 5. Close event and `QSettings`.
 6. Fortran-defined signals and `disconnect`.
 7. Qt Charts / Qt Graphs.
