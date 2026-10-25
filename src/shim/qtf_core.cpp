@@ -9,6 +9,7 @@
 #include <QCoreApplication>
 #include <QEvent>
 #include <QObject>
+#include <QThread>
 #include <QTimer>
 
 #include <cstdlib>
@@ -293,15 +294,27 @@ QTF_API void *qtf_qtfsignal_new(void *parent) { return new QtfSignalSource(obj(p
 
 // Call the slots of a Fortran-defined signal with the given arguments (integers,
 // one real, a string). Returns 0 if `source` is not a Fortran-defined signal.
+// Emitted from another thread (a worker), the call is queued to the thread the
+// signal belongs to, so slots always run there (normally the GUI thread).
 QTF_API int qtf_qtfsignal_emit(void *source, const int *ints, double d, const char *s, int slen) {
     auto *src = dynamic_cast<QtfSignalSource *>(obj(source));
     if (!src) return 0;
     qtf_args a{};
     for (int k = 0; k < 4; ++k) a.i[k] = ints[k];
     a.d[0] = d;
-    a.s = s;
-    a.slen = slen;
-    qtf_emit_all(src->handlers, a);
+    if (QThread::currentThread() == src->thread()) {
+        a.s = s;
+        a.slen = slen;
+        qtf_emit_all(src->handlers, a);
+    } else {
+        const QByteArray text(s, slen);   // the caller's string does not outlive this call
+        QMetaObject::invokeMethod(src, [src, a, text]() {
+            qtf_args b = a;
+            b.s = text.constData();
+            b.slen = static_cast<int32_t>(text.size());
+            qtf_emit_all(src->handlers, b);
+        }, Qt::QueuedConnection);
+    }
     return 1;
 }
 

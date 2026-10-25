@@ -93,7 +93,7 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 
 | Area | Classes |
 |------|---------|
-| Core | `QObject`, `QTimer`, `QEvent`, `QSettings` (persistent preferences, window geometry and layout) |
+| Core | `QObject`, `QTimer`, `QEvent`, `QSettings` (persistent preferences, window geometry and layout), `QThread` (run Fortran work in a worker thread) |
 | Application | `QApplication` (command-line arguments, organization/application names) |
 | Widgets | `QWidget`, `QFrame`, `QLabel`, `QPushButton`, `QToolButton`, `QCheckBox`, `QRadioButton`, `QButtonGroup`, `QLineEdit`, `QSpinBox`, `QDoubleSpinBox`, `QSlider`, `QDial`, `QComboBox`, `QProgressBar`, `QLCDNumber`, `QDateEdit`, `QTimeEdit`, `QCalendarWidget`, `QtfWidget` (custom painting/events) |
 | Text | `QTextEdit`, `QPlainTextEdit` |
@@ -144,7 +144,7 @@ Examples:
 | [form](example/form.f90) | input widgets, layouts, validation, a message box |
 | [plot](example/plot.f90) | a live scrolling plot with `QtfWidget` and `QPainter` |
 | [explorer](example/explorer.f90) | a tour of nearly everything: menus, toolbar, all control types, custom painting, mouse/keyboard/wheel input, animation, file and message dialogs |
-| [timeseries](example/timeseries.f90) | a simulation workbench: a dock of parameters (group boxes, form layouts, dial + LCD, radio group), cancellable chunked runs with a progress bar, tabs with a splitter, a million-row table served from Fortran arrays (`QtfTableModel`), a statistics tree, a log console, a tool-button preset menu, input and color dialogs, a plot context menu, settings remembered between sessions, confirmation before quitting |
+| [timeseries](example/timeseries.f90) | a simulation workbench: a dock of parameters (group boxes, form layouts, dial + LCD, radio group), cancellable runs in a worker thread with a progress bar, tabs with a splitter, a million-row table served from Fortran arrays (`QtfTableModel`), a statistics tree, a log console, a tool-button preset menu, input and color dialogs, a plot context menu, settings remembered between sessions, confirmation before quitting |
 | [fieldviewer](example/fieldviewer.f90) | 2D fields computed in Fortran shown with `QImage_fromArray`: interference, masked peaks (NaN), Mandelbrot, and an interactive heat-diffusion solver; colormaps, colorbar, hover readout, standard icons |
 | [surface3d](example/surface3d.f90) | an interactive 3D surface plot with modern OpenGL: GLSL shaders, an indexed mesh with lighting, orbit/zoom with the mouse, auto-rotation, PNG export |
 | [orbit3d](example/orbit3d.f90) | a spacecraft orbit viewer: Kepler propagation, orbital elements and presets in a side panel, a rotating lit planet, time warp, live readouts, OpenGL 3D view |
@@ -310,6 +310,37 @@ A few conventions to know (the full list is in [plan.md](plan.md)):
 
   Slots run immediately, in connection order. Only signals created this way
   can be emitted. A signal without a parent lives until the program ends.
+- **Long computations** freeze the window if they run in a slot. There are
+  two ways to keep it responsive.
+  - *Chunks*: call `QApplication_processEvents()` every so often inside the
+    loop. This is simple, but the computation still runs on the GUI thread.
+  - *A worker thread*: `QThread_create(work, data, parent)` runs `work(data)`
+    on another thread when you call `start`.
+
+    ```fortran
+    job%progress = QSignalInt(window)            ! created on the GUI thread
+    call job%progress%connect(on_progress, ui)   ! runs on the GUI thread
+    worker = QThread_create(simulate, job, window)
+    call worker%finished%connect(on_finished, ui)
+    call worker%start()
+
+    subroutine simulate(data)                    ! runs on the worker thread
+        ...
+        call job%progress%emit(percent)
+        if (QThread_isInterruptionRequested()) return   ! after worker%requestInterruption()
+    ```
+
+    Rules for the worker:
+    - Never touch widgets from the worker.
+    - Copy its inputs into `data` before `start`.
+    - Report through signals defined in Fortran: emitted from a worker, their
+      slots run later on the GUI thread.
+    - Read the results in the `finished` slot.
+    - Don't change `data` while the thread runs.
+
+    Deleting a running thread (for example with its parent window) asks it to
+    stop and waits. A finished thread can be started again. Time Series Lab
+    uses this pattern.
 - **Closing and settings**: every widget has `closeEvent` and `contextMenuEvent`
   signals. A close slot can keep the window open:
 
@@ -436,7 +467,7 @@ on macOS (the only runner with a window server).
 ## Roadmap
 
 - Smoother packaging: a conda-forge package, and Homebrew (framework) Qt support.
-- More of Qt: background computation, and Qt Charts / Qt Graphs. See the roadmap in [plan.md](plan.md).
+- More of Qt: Qt Charts / Qt Graphs (deferred for now). See the roadmap in [plan.md](plan.md).
 - Seeding specs from PySide6's type-system XML files to cover more of the API
   faster.
 

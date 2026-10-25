@@ -378,7 +378,19 @@ spec-only work now; items marked *(design)* need new machinery.
   - Painting: `QPainterPath` (curves), gradients, `QTransform`, standalone font metrics.
   - System: clipboard, cursors, drag and drop, screens/DPI.
 - **Core**
-  - **`QThread` / QtConcurrent**: long computations without freezing the UI. *(design)*
+  - **Done:** `QThread_create(work, data, parent)` (like Qt's QThread::create):
+    a `QtfThread` whose run() calls the Fortran procedure. The worker never
+    touches the slot registry (which is not thread-safe): it starts through a
+    heap-allocated task record (procedure pointer + data), passed to C++ as a
+    `c_ptr` and run/freed through `qtf_thread_task`. Signals defined in Fortran
+    are thread-safe to emit: from another thread the shim queues the call to
+    the signal's thread (`QMetaObject::invokeMethod`, the string copied).
+    `started`/`finished` arrive on the GUI thread; `QThread_isInterruptionRequested`,
+    `QThread_currentThread`, `QThread_msleep`, `QThread_idealThreadCount`. The
+    destructor interrupts and waits, so deleting a running thread is safe.
+    gfortran's `random_number` keeps per-thread state, so a worker seeds its own.
+  - QtConcurrent (parallel map over an array) is not bound; OpenMP / `do
+    concurrent` inside a worker serve the same purpose from Fortran.
   - **Done:** `QSettings` (native store or INI file; generic `setValue`, typed
     getters with defaults, groups, key lists) in a generated module
     (spec/core_classes.toml → src/core/qt_core_classes.f90; the generator's
@@ -432,11 +444,12 @@ a C++ `lambda`/`emit`, with the sender as `s`).
 
 ### Priorities (for Fortran users)
 1. ~~`QImage` from Fortran arrays, plus colormaps.~~ Done (fieldviewer example).
-2. Background computation (`QThread`-style worker, or a documented
-   `processEvents` pattern with `QProgressBar`).
+2. ~~Background computation.~~ Done: `QThread_create` workers with
+   thread-safe Fortran signals (timeseries example, test_threads); the
+   `processEvents` pattern is documented as the simple alternative.
 3. ~~`QTableWidget`, then model/view.~~ Done.
 4. ~~Layout and polish widgets.~~ Done, including icons.
 5. ~~Close event and `QSettings`.~~ Done (timeseries example: remembers the
    layout and parameters, asks before quitting, plot context menu).
 6. ~~Fortran-defined signals and `disconnect`.~~ Done (test_signals).
-7. Qt Charts / Qt Graphs.
+7. Qt Charts / Qt Graphs. *(deferred)*

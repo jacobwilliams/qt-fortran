@@ -5,8 +5,9 @@
 !> * Left dock: model, number of samples, noise, spike rate (injected glitches
 !>   for the detector to find), outlier detection (rolling
 !>   window and threshold, in a checkable group), random seed (dial + LCD),
-!>   plot style, Run / Cancel and a progress bar. Runs are computed in chunks
-!>   so the window stays responsive and can be cancelled.
+!>   plot style, Run / Cancel and a progress bar. Runs are computed in a worker
+!>   thread (QThread_create) that reports progress through a Fortran-defined
+!>   signal, so the window stays responsive and the run can be cancelled.
 !> * Tabs: Data (a table of millions of rows served straight from the Fortran
 !>   arrays, next to the list of runs), Plot, Statistics (a tree per run and an
 !>   LCD outlier count) and Log.
@@ -33,6 +34,22 @@ module timeseries_app
         [character(len=24) :: 'Random walk', 'Ornstein-Uhlenbeck', 'Sine + noise']
     character(len=10), parameter :: columns(5) = &
         [character(len=10) :: '#', 'value', 'mean', 'z-score', 'flag']
+
+    !> One simulation, run in a worker thread: inputs copied from the widgets
+    !> before it starts, and the results it leaves behind. The worker touches
+    !> nothing else; it reports progress through `progress`.
+    type :: sim_job
+        ! inputs
+        integer :: n = 0, which = 0, seed = 0, window = 0
+        real(dp) :: sigma = 0, rate = 0, threshold = 0
+        logical :: detect = .true.
+        ! results
+        real(dp), allocatable :: v(:), mean(:), z(:)
+        logical, allocatable :: outlier(:)
+        integer :: noutliers = 0
+        logical :: cancelled = .false.
+        type(QSignalInt) :: progress                      !! percent done
+    end type sim_job
 
     !> Widgets, simulation data and state of the lab.
     type :: lab_t
@@ -67,7 +84,11 @@ module timeseries_app
         real(dp), allocatable :: v(:), mean(:), z(:)
         logical, allocatable :: outlier(:)
         integer :: n = 0, noutliers = 0, nruns = 0
-        logical :: running = .false., cancel = .false.
+        logical :: running = .false.
+        ! the worker thread and its job
+        type(QThread) :: worker
+        type(sim_job) :: job
+        integer(8) :: t0 = 0
         logical :: edited = .false.                      !! table edits not yet exported
         ! --screenshot
         character(len=:), allocatable :: screenshot
@@ -130,78 +151,96 @@ contains
     ! ==================================================================
     ! the simulation
 
-    !> Rolling mean, z-score and outlier flags of the current series.
-    subroutine compute_statistics(s)
-        type(lab_t), intent(inout) :: s
+    !> Rolling mean, z-score and outlier flags of a series (window `w`, flags
+    !> where |z| > `threshold` if `detect`). Plain Fortran: used by the worker
+    !> and by the GUI.
+    subroutine statistics(v, w, detect, threshold, mean, z, outlier, noutliers)
+        real(dp), intent(in) :: v(:)
+        integer, intent(in) :: w
+        logical, intent(in) :: detect
+        real(dp), intent(in) :: threshold
+        real(dp), intent(out) :: mean(:), z(:)
+        logical, intent(out) :: outlier(:)
+        integer, intent(out) :: noutliers
         real(dp), allocatable :: s1(:), s2(:)
         real(dp) :: m, var
-        integer :: i, lo, w
-        w = s%window_size%value()
-        allocate(s1(0:s%n), s2(0:s%n))
+        integer :: i, lo, n
+        n = size(v)
+        allocate(s1(0:n), s2(0:n))
         s1(0) = 0
         s2(0) = 0
-        do i = 1, s%n                       ! prefix sums
-            s1(i) = s1(i - 1) + s%v(i)
-            s2(i) = s2(i - 1) + s%v(i)**2
+        do i = 1, n                         ! prefix sums
+            s1(i) = s1(i - 1) + v(i)
+            s2(i) = s2(i - 1) + v(i)**2
         end do
-        do i = 1, s%n
+        do i = 1, n
             lo = max(0, i - w)
             m = (s1(i) - s1(lo)) / (i - lo)
             var = max((s2(i) - s2(lo)) / (i - lo) - m * m, 0.0_dp)
-            s%mean(i) = m
-            s%z(i) = 0
-            if (var > 0) s%z(i) = (s%v(i) - m) / sqrt(var)
+            mean(i) = m
+            z(i) = 0
+            if (var > 0) z(i) = (v(i) - m) / sqrt(var)
         end do
-        s%outlier = s%detection%isChecked() .and. abs(s%z) > s%threshold%value() .and. [(i > w, i = 1, s%n)]
-        s%noutliers = count(s%outlier)
+        outlier = detect .and. abs(z) > threshold .and. [(i > w, i = 1, n)]
+        noutliers = count(outlier)
+    end subroutine statistics
+
+    !> Recompute the statistics of the current series with the detection settings.
+    subroutine compute_statistics(s)
+        type(lab_t), intent(inout) :: s
+        call statistics(s%v, s%window_size%value(), s%detection%isChecked(), s%threshold%value(), &
+                        s%mean, s%z, s%outlier, s%noutliers)
     end subroutine compute_statistics
 
-    !> Generate a new series in chunks (the UI stays responsive); returns
-    !> .false. if cancelled.
-    logical function simulate(s)
-        type(lab_t), intent(inout) :: s
-        real(dp) :: sigma, rate, x, u, spread
+    !> The worker: generate a series with the job's inputs. Runs in its own
+    !> thread, so it touches only the job; it reports progress through the
+    !> job's signal and stops early if the thread is asked to.
+    subroutine simulate(data)
+        class(*), intent(inout), optional :: data
+        real(dp) :: x, u, spread
         logical, allocatable :: glitch(:)
-        integer :: i, which
-        simulate = .false.
-        s%n = s%samples%value()
-        sigma = s%noise%value()
-        which = s%model%currentIndex()
-        if (allocated(s%v)) deallocate(s%v, s%mean, s%z, s%outlier)
-        allocate(s%v(s%n), s%mean(s%n), s%z(s%n), s%outlier(s%n))
-        rate = s%spikes%value() / 100
-        call set_seed(s%seed%value())
-        x = 0
-        do i = 1, s%n
-            select case (which)
-            case (0)        ! random walk
-                if (i > 1) x = x + sigma * gaussian()
-            case (1)        ! Ornstein-Uhlenbeck: mean-reverting
-                if (i > 1) x = x - 0.02_dp * x + sigma * gaussian()
-            case default    ! sine + noise
-                x = sin(2 * pi * i / 2000.0_dp) + sigma * gaussian()
-            end select
-            s%v(i) = x
-            call random_number(u)
-            s%outlier(i) = u < rate            ! where to put a glitch (below)
-            if (mod(i, chunk) == 0) then
-                call s%progress%setValue(int(100.0_dp * i / s%n))
-                call QApplication_processEvents()     ! keep the UI alive; may set s%cancel
-                if (s%cancel) return
-            end if
-        end do
-        ! glitches: 8 times the spread of the clean series about its rolling mean
-        if (any(s%outlier)) then
-            glitch = s%outlier
-            call compute_statistics(s)
-            spread = sqrt(sum((s%v - s%mean)**2) / s%n)
-            do i = 1, s%n
-                if (glitch(i)) s%v(i) = s%v(i) + sign(8 * spread, gaussian())
+        integer :: i
+        select type (job => data)
+        type is (sim_job)
+            job%cancelled = .false.
+            if (allocated(job%v)) deallocate(job%v, job%mean, job%z, job%outlier)
+            allocate(job%v(job%n), job%mean(job%n), job%z(job%n), job%outlier(job%n))
+            call set_seed(job%seed)      ! (each thread has its own random numbers)
+            x = 0
+            do i = 1, job%n
+                select case (job%which)
+                case (0)        ! random walk
+                    if (i > 1) x = x + job%sigma * gaussian()
+                case (1)        ! Ornstein-Uhlenbeck: mean-reverting
+                    if (i > 1) x = x - 0.02_dp * x + job%sigma * gaussian()
+                case default    ! sine + noise
+                    x = sin(2 * pi * i / 2000.0_dp) + job%sigma * gaussian()
+                end select
+                job%v(i) = x
+                call random_number(u)
+                job%outlier(i) = u < job%rate      ! where to put a glitch (below)
+                if (mod(i, chunk) == 0) then
+                    call job%progress%emit(int(100.0_dp * i / job%n))   ! delivered on the GUI thread
+                    if (QThread_isInterruptionRequested()) then
+                        job%cancelled = .true.
+                        return
+                    end if
+                end if
             end do
-        end if
-        call compute_statistics(s)
-        simulate = .true.
-    end function simulate
+            ! glitches: 8 times the spread of the clean series about its rolling mean
+            if (any(job%outlier)) then
+                glitch = job%outlier
+                call statistics(job%v, job%window, job%detect, job%threshold, job%mean, job%z, &
+                                job%outlier, job%noutliers)
+                spread = sqrt(sum((job%v - job%mean)**2) / job%n)
+                do i = 1, job%n
+                    if (glitch(i)) job%v(i) = job%v(i) + sign(8 * spread, gaussian())
+                end do
+            end if
+            call statistics(job%v, job%window, job%detect, job%threshold, job%mean, job%z, &
+                            job%outlier, job%noutliers)
+        end select
+    end subroutine simulate
 
     ! ==================================================================
     ! presenting a run
@@ -406,19 +445,53 @@ contains
     !> Run a simulation with the current settings.
     subroutine on_run(data)
         class(*), intent(inout), optional :: data
-        integer(8) :: t0, t1, rate
-        character(len=:), allocatable :: name
         select type (s => data)
         type is (lab_t)
             if (s%running) return
             s%running = .true.
-            s%cancel = .false.
             call set_running(s, .true.)
             call log_line(s, 'Running ' // s%model%currentText() // ' with ' // itoa(s%samples%value()) // &
                           ' samples (seed ' // itoa(s%seed%value()) // ')')
-            call system_clock(t0, rate)
-            if (simulate(s)) then
-                call system_clock(t1)
+            ! the worker must not read widgets: copy its inputs now
+            s%job%n = s%samples%value()
+            s%job%which = s%model%currentIndex()
+            s%job%sigma = s%noise%value()
+            s%job%rate = s%spikes%value() / 100
+            s%job%seed = s%seed%value()
+            s%job%window = s%window_size%value()
+            s%job%threshold = s%threshold%value()
+            s%job%detect = s%detection%isChecked()
+            call system_clock(s%t0)
+            call s%worker%start()        ! on_finished runs when it is done
+        end select
+    end subroutine on_run
+
+    !> Progress report from the worker (delivered on the GUI thread).
+    subroutine on_progress(percent, data)
+        integer, intent(in) :: percent
+        class(*), intent(inout), optional :: data
+        select type (s => data)
+        type is (lab_t)
+            call s%progress%setValue(percent)
+        end select
+    end subroutine on_progress
+
+    !> The worker returned: show the new series, or keep the old one if cancelled.
+    subroutine on_finished(data)
+        class(*), intent(inout), optional :: data
+        integer(8) :: t1, rate
+        character(len=:), allocatable :: name
+        select type (s => data)
+        type is (lab_t)
+            if (.not. s%job%cancelled) then
+                call system_clock(t1, rate)
+                ! take over the results (the job is not running, so this is safe)
+                call move_alloc(s%job%v, s%v)
+                call move_alloc(s%job%mean, s%mean)
+                call move_alloc(s%job%z, s%z)
+                call move_alloc(s%job%outlier, s%outlier)
+                s%n = s%job%n
+                s%noutliers = s%job%noutliers
                 s%nruns = s%nruns + 1
                 name = 'Run ' // itoa(s%nruns) // ': ' // s%model%currentText()
                 call s%runs%addItem(name // ' (' // itoa(s%n) // ', ' // itoa(s%noutliers) // ' outliers)')
@@ -426,12 +499,10 @@ contains
                 call add_stats(s, name)
                 s%edited = .false.
                 call show_data(s)
-                call log_line(s, 'Done in ' // rtoa(real(t1 - t0, dp) / rate, 3) // ' s: ' // &
+                call log_line(s, 'Done in ' // rtoa(real(t1 - s%t0, dp) / rate, 3) // ' s: ' // &
                               itoa(s%noutliers) // ' outliers')
                 call s%status%showMessage(name // ' finished', 4000)
             else
-                s%n = 0
-                call show_data(s)
                 call log_line(s, 'Cancelled')
                 call s%status%showMessage('Cancelled', 3000)
             end if
@@ -439,7 +510,7 @@ contains
             s%running = .false.
             if (allocated(s%screenshot)) call QTimer_singleShot(400, on_screenshot, s)
         end select
-    end subroutine on_run
+    end subroutine on_finished
 
     !> Enable or disable the controls while a run is in progress.
     subroutine set_running(s, running)
@@ -457,7 +528,7 @@ contains
         class(*), intent(inout), optional :: data
         select type (s => data)
         type is (lab_t)
-            s%cancel = .true.
+            call s%worker%requestInterruption()
         end select
     end subroutine on_cancel
 
@@ -745,7 +816,7 @@ contains
                     return
                 end if
             end if
-            s%cancel = .true.
+            call s%worker%requestInterruption()   ! the window waits for it when deleted
             call save_settings(s)
         end select
     end subroutine on_close
@@ -1097,6 +1168,12 @@ contains
         call s%plot%contextMenuEvent%connect(on_plot_menu, s)
 
         call s%window%closeEvent%connect(on_close, s)
+
+        ! the worker thread: runs `simulate` on s%job, reports progress, then `finished`
+        s%job%progress = QSignalInt(s%window)
+        call s%job%progress%connect(on_progress, s)
+        s%worker = QThread_create(simulate, s%job, s%window)
+        call s%worker%finished%connect(on_finished, s)
     end subroutine build
 
 end module timeseries_app

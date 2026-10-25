@@ -7,7 +7,31 @@ module qt_c_core_classes
     implicit none
     private
 
+    ! Signal ids: must match `enum qtf_signal` in src/shim/qtf_common.h.
+    integer(c_int), parameter, public :: QTF_SIG_QTHREAD_STARTED = 4000
+    integer(c_int), parameter, public :: QTF_SIG_QTHREAD_FINISHED = 4001
+
     interface
+
+        !> Set the Fortran procedure that runs and frees thread tasks.
+        !>
+        !> C: `void qtf_set_task_runner(qtf_task_fn fn)`
+        subroutine qtf_set_task_runner(fn) bind(C, name='qtf_set_task_runner')
+            import :: c_funptr
+            implicit none
+            type(c_funptr), value :: fn
+        end subroutine qtf_set_task_runner
+
+        !> A new thread that will run the Fortran task `task`, owned by `parent` if given.
+        !>
+        !> C: `void *qtf_qthread_create(void *task, void *parent)`
+        function qtf_qthread_create(task, parent) result(res) bind(C, name='qtf_qthread_create')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: task
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qthread_create
 
         !> Settings in the native store, for the application's organization and application names.
         !>
@@ -290,14 +314,102 @@ module qt_c_core_classes
             integer(c_int) :: res
         end function qtf_qsettings_isWritable
 
+        !> Start running the work in the new thread (does nothing if it is running).
+        !>
+        !> C: `void qtf_qthread_start(void *self)`
+        subroutine qtf_qthread_start(self) bind(C, name='qtf_qthread_start')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qthread_start
+
+        !> Block until the work has returned, or for at most `msecs` milliseconds (check `isFinished`).
+        !>
+        !> C: `void qtf_qthread_wait(void *self, int msecs)`
+        subroutine qtf_qthread_wait(self, msecs) bind(C, name='qtf_qthread_wait')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: msecs
+        end subroutine qtf_qthread_wait
+
+        !> True while the work runs.
+        !>
+        !> C: `int qtf_qthread_isRunning(void *self)`
+        function qtf_qthread_isRunning(self) result(res) bind(C, name='qtf_qthread_isRunning')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qthread_isRunning
+
+        !> True once the work has returned.
+        !>
+        !> C: `int qtf_qthread_isFinished(void *self)`
+        function qtf_qthread_isFinished(self) result(res) bind(C, name='qtf_qthread_isFinished')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qthread_isFinished
+
+        !> Ask the work to stop (it should check `QThread_isInterruptionRequested()`).
+        !>
+        !> C: `void qtf_qthread_requestInterruption(void *self)`
+        subroutine qtf_qthread_requestInterruption(self) bind(C, name='qtf_qthread_requestInterruption')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qthread_requestInterruption
+
+        !> From inside the work: true if the thread running it was asked to stop.
+        !>
+        !> C: `int qtf_qthread_isInterruptionRequested(void)`
+        function qtf_qthread_isInterruptionRequested() result(res) bind(C, name='qtf_qthread_isInterruptionRequested')
+            import :: c_int
+            implicit none
+            integer(c_int) :: res
+        end function qtf_qthread_isInterruptionRequested
+
+        !> The thread that is running the caller (the GUI thread outside workers).
+        !>
+        !> C: `void *qtf_qthread_currentThread(void)`
+        function qtf_qthread_currentThread() result(res) bind(C, name='qtf_qthread_currentThread')
+            import :: c_ptr
+            implicit none
+            type(c_ptr) :: res
+        end function qtf_qthread_currentThread
+
+        !> The number of processor cores (logical) available.
+        !>
+        !> C: `int qtf_qthread_idealThreadCount(void)`
+        function qtf_qthread_idealThreadCount() result(res) bind(C, name='qtf_qthread_idealThreadCount')
+            import :: c_int
+            implicit none
+            integer(c_int) :: res
+        end function qtf_qthread_idealThreadCount
+
+        !> Sleep the calling thread for `msecs` milliseconds.
+        !>
+        !> C: `void qtf_qthread_msleep(int msecs)`
+        subroutine qtf_qthread_msleep(msecs) bind(C, name='qtf_qthread_msleep')
+            import :: c_int
+            implicit none
+            integer(c_int), value :: msecs
+        end subroutine qtf_qthread_msleep
+
     end interface
 
-    public :: qtf_qsettings_new, qtf_qsettings_fromFile, qtf_qsettings_forApplication
-    public :: qtf_qsettings_setString, qtf_qsettings_setInt, qtf_qsettings_setDouble, qtf_qsettings_setBool
-    public :: qtf_qsettings_stringValue, qtf_qsettings_intValue, qtf_qsettings_doubleValue
-    public :: qtf_qsettings_boolValue, qtf_qsettings_contains, qtf_qsettings_remove, qtf_qsettings_clear
-    public :: qtf_qsettings_allKeys, qtf_qsettings_childKeys, qtf_qsettings_childGroups
-    public :: qtf_qsettings_beginGroup, qtf_qsettings_endGroup, qtf_qsettings_group, qtf_qsettings_sync
-    public :: qtf_qsettings_fileName, qtf_qsettings_status, qtf_qsettings_isWritable
+    public :: qtf_set_task_runner, qtf_qthread_create, qtf_qsettings_new, qtf_qsettings_fromFile
+    public :: qtf_qsettings_forApplication, qtf_qsettings_setString, qtf_qsettings_setInt
+    public :: qtf_qsettings_setDouble, qtf_qsettings_setBool, qtf_qsettings_stringValue
+    public :: qtf_qsettings_intValue, qtf_qsettings_doubleValue, qtf_qsettings_boolValue
+    public :: qtf_qsettings_contains, qtf_qsettings_remove, qtf_qsettings_clear, qtf_qsettings_allKeys
+    public :: qtf_qsettings_childKeys, qtf_qsettings_childGroups, qtf_qsettings_beginGroup
+    public :: qtf_qsettings_endGroup, qtf_qsettings_group, qtf_qsettings_sync, qtf_qsettings_fileName
+    public :: qtf_qsettings_status, qtf_qsettings_isWritable, qtf_qthread_start, qtf_qthread_wait
+    public :: qtf_qthread_isRunning, qtf_qthread_isFinished, qtf_qthread_requestInterruption
+    public :: qtf_qthread_isInterruptionRequested, qtf_qthread_currentThread, qtf_qthread_idealThreadCount
+    public :: qtf_qthread_msleep
 
 end module qt_c_core_classes

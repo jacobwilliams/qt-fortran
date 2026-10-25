@@ -6,14 +6,65 @@ module = "core_classes"
 src_dir = "core"
 signal_base = 4000
 doc = """
-QtCore classes: persistent application settings (QSettings).
+QtCore classes: persistent application settings (QSettings) and worker
+threads (QThread).
 """
 uses = [
     "use qt_c_util",
     "use qt_c_core_classes",
     "use qt_core",
 ]
-cpp_includes = ["QSettings", "QStringList", "QVariant"]
+cpp_includes = ["QSettings", "QStringList", "QThread", "QVariant"]
+
+cpp_prelude = """
+// Runs (op 0) or frees (op 1) the Fortran task of a thread.
+typedef void (*qtf_task_fn)(void *task, int op);
+static qtf_task_fn qtf_task_runner = nullptr;
+
+// Set the Fortran procedure that runs and frees thread tasks.
+QTF_API void qtf_set_task_runner(qtf_task_fn fn) { qtf_task_runner = fn; }
+
+// A thread whose run() calls a Fortran procedure (QThread_create). Destroying
+// it while it runs requests interruption and waits, instead of aborting.
+class QtfThread : public QThread {
+  public:
+    QtfThread(void *task, QObject *parent) : QThread(parent), task(task) {}
+    ~QtfThread() override {
+        requestInterruption();
+        wait();
+        if (qtf_task_runner) qtf_task_runner(task, 1);
+    }
+
+  protected:
+    void run() override {
+        if (qtf_task_runner) qtf_task_runner(task, 0);
+    }
+
+  private:
+    void *task;
+};
+
+// Wait for the thread to finish; msecs < 0 waits without a time limit.
+static void qtf_thread_wait(QThread *t, int msecs) {
+    if (msecs < 0) t->wait();
+    else t->wait(QDeadlineTimer(msecs));
+}
+
+// A new thread that will run the Fortran task `task`, owned by `parent` if given.
+QTF_API void *qtf_qthread_create(void *task, void *parent) {
+    return new QtfThread(task, static_cast<QObject *>(parent));
+}
+"""
+
+fortran_decls = '''
+    !> The work of a QThread_create thread: a slot and its data.
+    type :: thread_task
+        procedure(qt_slot), pointer, nopass :: work => null()
+        class(*), pointer :: data => null()
+    end type thread_task
+
+    public :: QThread_create
+'''
 
 [[enum]]
 doc = "QSettings::Status"
@@ -64,3 +115,69 @@ methods = [
     "status() -> QSettings::Status -- QSettings_NoError, or the first error of the last `sync`.",
     "isWritable() -> bool -- True if the settings can be saved.",
 ]
+
+[[class]]
+name = "QThread"
+doc = """
+A thread. `QThread_create(work, data, parent)` makes one that runs the
+Fortran procedure `work(data)` (a `qt_slot`) when started, like Qt's
+QThread::create; use it for long computations that would freeze the user
+interface.
+
+The worker must not touch widgets: it reads its inputs from `data`, reports
+through signals defined in Fortran (e.g. a `QSignalInt` created on the GUI
+thread), whose slots then run on the GUI thread, and leaves its results in
+`data`, for a `finished` slot to show. The GUI must not change `data` while
+the thread runs. To support cancelling, the worker checks
+`QThread_isInterruptionRequested()` now and then.
+
+`finished` is delivered on the GUI thread after `work` returns; the thread can
+then be started again. Deleting a running thread (e.g. with its parent)
+requests interruption and waits for it."""
+signals = [
+    "started: void -- The thread started (delivered on the GUI thread).",
+    "finished: void -- The work returned (delivered on the GUI thread); its results can be used now.",
+]
+methods = [
+    "start() -- Start running the work in the new thread (does nothing if it is running).",
+    { sig = "wait(msecs: int = -1)", cpp = "qtf_thread_wait({self}, {msecs})", doc = "Block until the work has returned, or for at most `msecs` milliseconds (check `isFinished`)." },
+    "isRunning() -> bool -- True while the work runs.",
+    "isFinished() -> bool -- True once the work has returned.",
+    "requestInterruption() -- Ask the work to stop (it should check `QThread_isInterruptionRequested()`).",
+    { sig = "static isInterruptionRequested() -> bool", cpp = "QThread::currentThread()->isInterruptionRequested()", doc = "From inside the work: true if the thread running it was asked to stop." },
+    "static currentThread() -> QThread -- The thread that is running the caller (the GUI thread outside workers).",
+    "static idealThreadCount() -> int -- The number of processor cores (logical) available.",
+    "static msleep(msecs: int) -- Sleep the calling thread for `msecs` milliseconds.",
+]
+fortran_procedures = '''
+    !> A thread that runs `work(data)` when started (Qt's QThread::create). `data`
+    !> is stored by reference: it needs the TARGET attribute and must outlive the
+    !> thread. Give the thread a parent (e.g. the main window), or delete it.
+    function QThread_create(work, data, parent) result(thread)
+        procedure(qt_slot) :: work
+        class(*), intent(inout), target, optional :: data
+        class(QObject), intent(in), optional :: parent
+        type(QThread) :: thread
+        type(thread_task), pointer :: task
+        allocate(task)
+        task%work => work
+        if (present(data)) task%data => data
+        call qtf_set_task_runner(c_funloc(qtf_thread_task))
+        call thread%attach(qtf_qthread_create(c_loc(task), qtf_ptr(parent)))
+    end function QThread_create
+
+    !> Called by the shim: run (op 0, in the worker thread) or free (op 1) a task.
+    subroutine qtf_thread_task(ptr, op) bind(C)
+        type(c_ptr), value :: ptr
+        integer(c_int), value :: op
+        type(thread_task), pointer :: task
+        call c_f_pointer(ptr, task)
+        if (op == 1) then
+            deallocate(task)
+        else if (associated(task%data)) then
+            call task%work(task%data)
+        else
+            call task%work()
+        end if
+    end subroutine qtf_thread_task
+'''

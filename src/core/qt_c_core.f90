@@ -260,6 +260,8 @@ module qt_c_core
 
         !> Call the slots of a Fortran-defined signal with the given arguments (integers,
         !> one real, a string). Returns 0 if `source` is not a Fortran-defined signal.
+        !> Emitted from another thread (a worker), the call is queued to the thread the
+        !> signal belongs to, so slots always run there (normally the GUI thread).
         !>
         !> C: `int qtf_qtfsignal_emit(void *source, const int *ints, double d, const char *s, int slen)`
         function qtf_qtfsignal_emit(source, ints, d, s, slen) result(res) bind(C, name='qtf_qtfsignal_emit')

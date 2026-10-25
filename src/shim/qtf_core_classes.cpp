@@ -10,11 +10,54 @@
 
 #include <QSettings>
 #include <QStringList>
+#include <QThread>
 #include <QVariant>
 
 template <typename T> static T *as(void *p) { return static_cast<T *>(p); }
 
+// Signal ids (shared with Fortran through the generated raw module).
+enum : int {
+    QTF_SIG_QTHREAD_STARTED = 4000,
+    QTF_SIG_QTHREAD_FINISHED = 4001,
+};
 
+// Runs (op 0) or frees (op 1) the Fortran task of a thread.
+typedef void (*qtf_task_fn)(void *task, int op);
+static qtf_task_fn qtf_task_runner = nullptr;
+
+// Set the Fortran procedure that runs and frees thread tasks.
+QTF_API void qtf_set_task_runner(qtf_task_fn fn) { qtf_task_runner = fn; }
+
+// A thread whose run() calls a Fortran procedure (QThread_create). Destroying
+// it while it runs requests interruption and waits, instead of aborting.
+class QtfThread : public QThread {
+  public:
+    QtfThread(void *task, QObject *parent) : QThread(parent), task(task) {}
+    ~QtfThread() override {
+        requestInterruption();
+        wait();
+        if (qtf_task_runner) qtf_task_runner(task, 1);
+    }
+
+  protected:
+    void run() override {
+        if (qtf_task_runner) qtf_task_runner(task, 0);
+    }
+
+  private:
+    void *task;
+};
+
+// Wait for the thread to finish; msecs < 0 waits without a time limit.
+static void qtf_thread_wait(QThread *t, int msecs) {
+    if (msecs < 0) t->wait();
+    else t->wait(QDeadlineTimer(msecs));
+}
+
+// A new thread that will run the Fortran task `task`, owned by `parent` if given.
+QTF_API void *qtf_qthread_create(void *task, void *parent) {
+    return new QtfThread(task, static_cast<QObject *>(parent));
+}
 
 // ---------------------------------------------------------------------------
 // QSettings
@@ -127,5 +170,49 @@ QTF_API int qtf_qsettings_status(void *self) { return int(as<QSettings>(self)->s
 // True if the settings can be saved.
 QTF_API int qtf_qsettings_isWritable(void *self) { return qtf_bool(as<QSettings>(self)->isWritable()); }
 
+// ---------------------------------------------------------------------------
+// QThread
+
+// Start running the work in the new thread (does nothing if it is running).
+QTF_API void qtf_qthread_start(void *self) { as<QThread>(self)->start(); }
+
+// Block until the work has returned, or for at most `msecs` milliseconds (check `isFinished`).
+QTF_API void qtf_qthread_wait(void *self, int msecs) { qtf_thread_wait(as<QThread>(self), msecs); }
+
+// True while the work runs.
+QTF_API int qtf_qthread_isRunning(void *self) { return qtf_bool(as<QThread>(self)->isRunning()); }
+
+// True once the work has returned.
+QTF_API int qtf_qthread_isFinished(void *self) { return qtf_bool(as<QThread>(self)->isFinished()); }
+
+// Ask the work to stop (it should check `QThread_isInterruptionRequested()`).
+QTF_API void qtf_qthread_requestInterruption(void *self) { as<QThread>(self)->requestInterruption(); }
+
+// From inside the work: true if the thread running it was asked to stop.
+QTF_API int qtf_qthread_isInterruptionRequested(void) {
+    return qtf_bool(QThread::currentThread()->isInterruptionRequested());
+}
+
+// The thread that is running the caller (the GUI thread outside workers).
+QTF_API void *qtf_qthread_currentThread(void) { return QThread::currentThread(); }
+
+// The number of processor cores (logical) available.
+QTF_API int qtf_qthread_idealThreadCount(void) { return QThread::idealThreadCount(); }
+
+// Sleep the calling thread for `msecs` milliseconds.
+QTF_API void qtf_qthread_msleep(int msecs) { QThread::msleep(msecs); }
+
+// ---------------------------------------------------------------------------
+// signal connectors
+
+static const bool qtf_core_classes_registered = [] {
+    qtf_register_connector(QTF_SIG_QTHREAD_STARTED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QThread>(s), &QThread::started, as<QThread>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QTHREAD_FINISHED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QThread>(s), &QThread::finished, as<QThread>(s), [ref]() { qtf_emit(ref); }));
+    });
+    return true;
+}();
 
 #endif // QTF_EXTERNAL_SHIM
