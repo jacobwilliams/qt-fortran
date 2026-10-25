@@ -1055,6 +1055,10 @@ doc = "QTabWidget::TabPosition"
 values = ["QTabWidget_North = 0", "QTabWidget_South = 1", "QTabWidget_West = 2", "QTabWidget_East = 3"]
 
 [[enum]]
+doc = "Qt::CaseSensitivity"
+values = ["Qt_CaseInsensitive = 0", "Qt_CaseSensitive = 1"]
+
+[[enum]]
 doc = "QLineEdit::EchoMode"
 values = ["QLineEdit_Normal = 0", "QLineEdit_NoEcho = 1", "QLineEdit_Password = 2", "QLineEdit_PasswordEchoOnEdit = 3"]
 
@@ -1200,6 +1204,8 @@ methods = [
     "hasFocus() -> bool -- True if the widget has keyboard focus.",
     { sig = "grab() -> QPixmap", cpp = "new QPixmap({self}->grab())", doc = "Render the widget (and children) into a new pixmap; delete it when done." },
     "addAction(action: QAction) -- Add an action (to a menu or toolbar, or to a widget for its shortcut).",
+    "insertAction(before: QAction, action: QAction) -- Insert an action before another one.",
+    "removeAction(action: QAction) -- Remove an action (it is not deleted).",
     "setMaximumSize(width: int, height: int) -- Set the largest allowed size.",
     "setMinimumWidth(width: int) -- Set the smallest allowed width.",
     "setMinimumHeight(height: int) -- Set the smallest allowed height.",
@@ -1571,6 +1577,7 @@ base = "QWidget"
 doc = "A horizontal menu bar."
 methods = [
     "addMenu(title: string) -> QMenu -- Create a menu with the given title (e.g. '&File') and append it.",
+    { sig = "insertMenu(before: QAction, menu: QMenu)", cpp = "{self}->insertMenu({before}, {menu})", doc = "Insert a menu before another menu (`other%menuAction()`) or action." },
 ]
 
 [[class]]

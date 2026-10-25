@@ -1009,6 +1009,16 @@ QTF_API void qtf_qwidget_addAction(void *self, void *action) {
     as<QWidget>(self)->addAction(as<QAction>(action));
 }
 
+// Insert an action before another one.
+QTF_API void qtf_qwidget_insertAction(void *self, void *before, void *action) {
+    as<QWidget>(self)->insertAction(as<QAction>(before), as<QAction>(action));
+}
+
+// Remove an action (it is not deleted).
+QTF_API void qtf_qwidget_removeAction(void *self, void *action) {
+    as<QWidget>(self)->removeAction(as<QAction>(action));
+}
+
 // Set the largest allowed size.
 QTF_API void qtf_qwidget_setMaximumSize(void *self, int width, int height) {
     as<QWidget>(self)->setMaximumSize(width, height);
@@ -1716,6 +1726,11 @@ QTF_API int qtf_qmenu_isEmpty(void *self) { return qtf_bool(as<QMenu>(self)->isE
 // Create a menu with the given title (e.g. '&File') and append it.
 QTF_API void *qtf_qmenubar_addMenu(void *self, const char *title, int title_len) {
     return as<QMenuBar>(self)->addMenu(qtf_qstring(title, title_len));
+}
+
+// Insert a menu before another menu (`other%menuAction()`) or action.
+QTF_API void qtf_qmenubar_insertMenu(void *self, void *before, void *menu) {
+    as<QMenuBar>(self)->insertMenu(as<QAction>(before), as<QMenu>(menu));
 }
 
 // ---------------------------------------------------------------------------

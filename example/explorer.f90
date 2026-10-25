@@ -7,6 +7,18 @@
 !>   nearest marker, the wheel zooms, arrow keys pan, Escape resets the view.
 !> * Menus and toolbar: export PNG, clear markers, animate the phase, zoom,
 !>   about box.
+!> * Undo/redo (QUndoStack) of every marker change: Edit menu, toolbar, and a
+!>   History tab (QUndoView).
+!> * Markers dock: a table of the markers (QtfTableModel). The x column is
+!>   edited with a spin box (QtfItemDelegate), and a click on a column title
+!>   sorts the markers (sortRequested).
+!> * Function library dock: a tree (QtfTreeModel) kept in sync with the
+!>   function box, filtered by a search field (QSortFilterProxyModel, with a
+!>   QCompleter).
+!> * File > New plot: a wizard (QWizard) with a validated amplitude
+!>   (QDoubleValidator) and a mandatory title. View > Set range: a dialog with
+!>   validated fields and OK / Cancel / Restore Defaults (QDialogButtonBox).
+!>   Help > Contents: linked help (QTextBrowser). View > Full screen.
 !>
 !> `explorer --screenshot out.png` renders a few animated frames, saves the
 !> window and exits (useful headless, with QT_QPA_PLATFORM=offscreen).
@@ -29,6 +41,15 @@ module explorer_app
     character(len=8), parameter :: color_names(5) = &
         [character(len=8) :: 'Blue', 'Red', 'Green', 'Purple', 'Orange']
 
+    ! the function library tree: node i's name, formula, parent and function (0-based; -1: a group)
+    integer, parameter :: nnodes = 7
+    character(len=12), parameter :: node_names(nnodes) = [character(len=12) :: &
+        'Periodic', 'Sine', 'Square', 'Sawtooth', 'Decaying', 'Damped sine', 'Sinc']
+    character(len=24), parameter :: node_formulas(nnodes) = [character(len=24) :: &
+        '', 'A sin(t)', 'A sgn(sin(t))', 'A saw(t)', '', 'A exp(-0.15|x|) sin(t)', 'A sin(t)/t']
+    integer, parameter :: node_parents(nnodes) = [0, 1, 1, 1, 0, 5, 5]
+    integer, parameter :: node_function(nnodes) = [-1, 0, 1, 2, -1, 3, 4]
+
     !> All widgets and view state of the explorer.
     type :: explorer_state
         ! main window
@@ -47,6 +68,27 @@ module explorer_app
         type(QRadioButton) :: solid, dashed, dotted
         type(QCheckBox) :: grid, fill
         type(QLineEdit) :: title
+        ! docks: function library (tree + search) and markers (table + undo history)
+        type(QtfTreeModel) :: library
+        type(QSortFilterProxyModel) :: library_filter
+        type(QTreeView) :: library_view
+        type(QLineEdit) :: library_search
+        type(QtfTableModel) :: marker_model
+        type(QTableView) :: marker_table
+        type(QtfItemDelegate) :: x_delegate
+        type(QAction) :: fullscreen
+        ! undo: the marker sets before and after each command (command id = column)
+        type(QUndoStack) :: undo
+        integer :: ncommands = 0
+        integer, allocatable :: nbefore(:), nafter(:)
+        real(dp), allocatable :: before(:, :), after(:, :)
+        ! the dialogs (alive while shown)
+        type(QDialog) :: range_dialog
+        type(QLineEdit) :: range_center, range_span
+        type(QDialogButtonBox) :: range_buttons
+        type(QWizardPage) :: wizard_parameters
+        type(QLineEdit) :: wizard_amplitude
+        type(QDialog) :: help
         ! view
         real(dp) :: x0 = 0.0_dp                 !! center of the visible x range
         real(dp) :: span = default_span         !! half width of the visible x range
@@ -280,6 +322,7 @@ contains
         select type (s => data)
         type is (explorer_state)
             call s%canvas%update()
+            if (.not. s%marker_model%isNull()) call s%marker_model%refresh()   ! the f(x) column
         end select
     end subroutine repaint
 
@@ -359,24 +402,28 @@ contains
     subroutine on_press(event, data)
         type(QMouseEvent), intent(in) :: event
         class(*), intent(inout), optional :: data
-        real(dp) :: x
-        integer :: i
+        real(dp) :: x, xs(max_markers)
+        integer :: i, n
         select type (s => data)
         type is (explorer_state)
             x = data_x(s, event%x())
+            n = s%nmarkers
+            xs = s%marker_x
             if (event%button() == Qt_LeftButton) then
-                if (s%nmarkers == max_markers) then
+                if (n == max_markers) then
                     call s%status%showMessage('Marker limit reached', 2000)
                     return
                 end if
-                s%nmarkers = s%nmarkers + 1
-                s%marker_x(s%nmarkers) = x
-            else if (event%button() == Qt_RightButton .and. s%nmarkers > 0) then
-                i = minloc(abs(s%marker_x(1:s%nmarkers) - x), dim=1)
-                s%marker_x(i:s%nmarkers - 1) = s%marker_x(i + 1:s%nmarkers)
-                s%nmarkers = s%nmarkers - 1
+                n = n + 1
+                xs(n) = x
+                call change_markers(s, 'Add marker at x = ' // fixed(x), n, xs)
+            else if (event%button() == Qt_RightButton .and. n > 0) then
+                i = minloc(abs(xs(1:n) - x), dim=1)
+                x = xs(i)
+                xs(i:n - 1) = xs(i + 1:n)
+                n = n - 1
+                call change_markers(s, 'Remove marker at x = ' // fixed(x), n, xs)
             end if
-            call s%canvas%update()
         end select
     end subroutine on_press
 
@@ -524,9 +571,9 @@ contains
                 return
             end if
             write(question, '(A,I0,A)') 'Remove all ', s%nmarkers, ' markers?'
-            if (QMessageBox_question('Clear markers', trim(question), parent=s%window) == QMessageBox_Yes) then
-                s%nmarkers = 0
-                call s%canvas%update()
+            if (QMessageBox_question('Clear markers', trim(question) // ' (Edit > Undo restores them.)', &
+                                     parent=s%window) == QMessageBox_Yes) then
+                call change_markers(s, 'Clear markers', 0, s%marker_x)
             end if
         end select
     end subroutine on_clear_markers
@@ -578,6 +625,427 @@ contains
         class(*), intent(inout), optional :: data
         call QApplication_quit()
     end subroutine on_quit
+
+    ! ------------------------------------------------------------------
+    ! markers: every change is an undoable command (QUndoStack)
+
+    !> Record a change of the marker set (to `n` markers at `xs`) as a command
+    !> named `text`, and perform it.
+    subroutine change_markers(s, text, n, xs)
+        type(explorer_state), intent(inout) :: s
+        character(len=*), intent(in) :: text
+        integer, intent(in) :: n
+        real(dp), intent(in) :: xs(:)
+        integer :: id
+        integer, allocatable :: ntmp(:)
+        real(dp), allocatable :: xtmp(:, :)
+        if (.not. allocated(s%nbefore)) then
+            allocate(s%nbefore(16), s%nafter(16), s%before(max_markers, 16), s%after(max_markers, 16))
+        else if (s%ncommands == size(s%nbefore)) then      ! grow the history
+            allocate(ntmp(2 * s%ncommands)); ntmp(1:s%ncommands) = s%nbefore; call move_alloc(ntmp, s%nbefore)
+            allocate(ntmp(2 * s%ncommands)); ntmp(1:s%ncommands) = s%nafter; call move_alloc(ntmp, s%nafter)
+            allocate(xtmp(max_markers, 2 * s%ncommands)); xtmp(:, 1:s%ncommands) = s%before
+            call move_alloc(xtmp, s%before)
+            allocate(xtmp(max_markers, 2 * s%ncommands)); xtmp(:, 1:s%ncommands) = s%after
+            call move_alloc(xtmp, s%after)
+        end if
+        s%ncommands = s%ncommands + 1
+        id = s%ncommands
+        s%nbefore(id) = s%nmarkers
+        s%before(:, id) = s%marker_x
+        s%nafter(id) = n
+        s%after(:, id) = 0
+        s%after(1:n, id) = xs(1:n)
+        call s%undo%push(text, id)        ! calls on_redo(id): performs the change
+    end subroutine change_markers
+
+    !> Show a marker set: the plot and the marker table.
+    subroutine apply_markers(s, n, xs)
+        type(explorer_state), intent(inout) :: s
+        integer, intent(in) :: n
+        real(dp), intent(in) :: xs(:)
+        s%nmarkers = n
+        s%marker_x = xs
+        if (s%marker_model%rowCount() /= n) then
+            call s%marker_model%setRowCount(n)
+        else
+            call s%marker_model%refresh()
+        end if
+        call s%canvas%update()
+    end subroutine apply_markers
+
+    !> Perform (or redo) command `id`.
+    subroutine on_redo(id, data)
+        integer, intent(in) :: id
+        class(*), intent(inout), optional :: data
+        select type (s => data)
+        type is (explorer_state)
+            call apply_markers(s, s%nafter(id), s%after(:, id))
+        end select
+    end subroutine on_redo
+
+    !> Undo command `id`.
+    subroutine on_undo(id, data)
+        integer, intent(in) :: id
+        class(*), intent(inout), optional :: data
+        select type (s => data)
+        type is (explorer_state)
+            call apply_markers(s, s%nbefore(id), s%before(:, id))
+        end select
+    end subroutine on_undo
+
+    !> A cell of the marker table: number, x (editable), f(x).
+    subroutine on_marker_cell(row, column, request, data)
+        integer, intent(in) :: row, column
+        type(QtfModelRequest), intent(inout) :: request
+        class(*), intent(inout), optional :: data
+        select type (s => data)
+        type is (explorer_state)
+            if (row >= s%nmarkers) return
+            select case (column)
+            case (0)
+                call request%setInt(row + 1)
+            case (1)
+                call request%setText(fixed(s%marker_x(row + 1)))
+            case default
+                call request%setText(fixed(f(s, s%marker_x(row + 1))))
+            end select
+        end select
+    end subroutine on_marker_cell
+
+    !> The x of a marker was edited in the table: move it (undoable).
+    subroutine on_marker_edited(row, column, text, data)
+        integer, intent(in) :: row, column
+        character(len=*), intent(in) :: text
+        class(*), intent(inout), optional :: data
+        real(dp) :: x, xs(max_markers)
+        integer :: ios
+        character(len=8) :: number
+        select type (s => data)
+        type is (explorer_state)
+            if (column /= 1 .or. row >= s%nmarkers) return
+            read(text, *, iostat=ios) x
+            if (ios /= 0) return
+            xs = s%marker_x
+            xs(row + 1) = x
+            write(number, '(I0)') row + 1
+            call change_markers(s, 'Move marker ' // trim(number) // ' to x = ' // fixed(x), s%nmarkers, xs)
+        end select
+    end subroutine on_marker_edited
+
+    !> A column title of the marker table was clicked: sort the markers by x
+    !> (columns # and x) or by f(x) (undoable).
+    subroutine on_marker_sort(column, order, data)
+        integer, intent(in) :: column, order
+        class(*), intent(inout), optional :: data
+        real(dp) :: key(max_markers), xs(max_markers), k, x
+        integer :: i, j, n
+        select type (s => data)
+        type is (explorer_state)
+            n = s%nmarkers
+            if (n < 2) return
+            xs = s%marker_x
+            do i = 1, n
+                key(i) = merge(f(s, xs(i)), xs(i), column == 2)
+            end do
+            if (order == Qt_DescendingOrder) key(1:n) = -key(1:n)
+            do i = 2, n                       ! insertion sort (at most max_markers)
+                k = key(i)
+                x = xs(i)
+                j = i - 1
+                do while (j >= 1)
+                    if (key(j) <= k) exit
+                    key(j + 1) = key(j)
+                    xs(j + 1) = xs(j)
+                    j = j - 1
+                end do
+                key(j + 1) = k
+                xs(j + 1) = x
+            end do
+            if (all(xs(1:n) == s%marker_x(1:n))) return
+            call change_markers(s, 'Sort markers by ' // trim(merge('f(x)', 'x   ', column == 2)), n, xs)
+        end select
+    end subroutine on_marker_sort
+
+    ! ------------------------------------------------------------------
+    ! function library (a tree model, filtered by a proxy model)
+
+    !> A cell of the library tree: name, formula.
+    subroutine on_library_cell(node, column, request, data)
+        integer, intent(in) :: node, column
+        type(QtfModelRequest), intent(inout) :: request
+        class(*), intent(inout), optional :: data
+        if (column == 0) then
+            call request%setText(trim(node_names(node)))
+        else
+            call request%setText(trim(node_formulas(node)))
+        end if
+    end subroutine on_library_cell
+
+    !> A function was chosen in the library: select it in the panel.
+    subroutine on_library_node(node, data)
+        integer, intent(in) :: node
+        class(*), intent(inout), optional :: data
+        select type (s => data)
+        type is (explorer_state)
+            if (node < 1) return
+            if (node_function(node) >= 0) call s%func%setCurrentIndex(node_function(node))
+        end select
+    end subroutine on_library_node
+
+    !> The function box changed: show the function in the library.
+    subroutine on_function_changed(index, data)
+        integer, intent(in) :: index
+        class(*), intent(inout), optional :: data
+        integer :: node
+        select type (s => data)
+        type is (explorer_state)
+            node = findloc(node_function, index, dim=1)
+            if (node > 0 .and. s%library_view%currentNode() /= node) call s%library_view%setCurrentNode(node)
+        end select
+    end subroutine on_function_changed
+
+    !> Filter the library by the search text (groups with a match stay).
+    subroutine on_library_search(text, data)
+        character(len=*), intent(in) :: text
+        class(*), intent(inout), optional :: data
+        select type (s => data)
+        type is (explorer_state)
+            call s%library_filter%setFilterFixedString(text)
+            call s%library_view%expandAll()
+        end select
+    end subroutine on_library_search
+
+    ! ------------------------------------------------------------------
+    ! View > Set range: a dialog with validated fields and a button box
+
+    !> Show the range dialog; apply the values if accepted.
+    subroutine on_set_range(data)
+        class(*), intent(inout), optional :: data
+        type(QFormLayout) :: form
+        type(QVBoxLayout) :: vbox
+        real(dp) :: center, span
+        integer :: ios1, ios2
+        character(len=:), allocatable :: text
+        select type (s => data)
+        type is (explorer_state)
+            s%range_dialog = QDialog(s%window)
+            call s%range_dialog%setWindowTitle('Plot range')
+            vbox = QVBoxLayout(s%range_dialog)
+            form = QFormLayout()
+            s%range_center = QLineEdit(fixed(s%x0))
+            call s%range_center%setValidator(QDoubleValidator(-1.0e6_dp, 1.0e6_dp, 3, s%range_dialog))
+            s%range_span = QLineEdit(fixed(s%span))
+            call s%range_span%setValidator(QDoubleValidator(0.1_dp, 1.0e6_dp, 3, s%range_dialog))
+            call s%range_span%setToolTip('Half the width of the visible x range (at least 0.1)')
+            call form%addRow('Center x', s%range_center)
+            call form%addRow('Half width', s%range_span)
+            call vbox%addLayout(form)
+            s%range_buttons = QDialogButtonBox(ior(ior(QDialogButtonBox_Ok, QDialogButtonBox_Cancel), &
+                                                   QDialogButtonBox_RestoreDefaults))
+            call vbox%addWidget(s%range_buttons)
+            call s%range_center%textChanged%connect(on_range_text, s)
+            call s%range_span%textChanged%connect(on_range_text, s)
+            call s%range_buttons%clicked%connect(on_range_button, s)
+            if (s%range_dialog%exec() == QDialog_Accepted) then
+                text = s%range_center%text()
+                read(text, *, iostat=ios1) center
+                text = s%range_span%text()
+                read(text, *, iostat=ios2) span
+                if (ios1 == 0 .and. ios2 == 0) then
+                    s%x0 = center
+                    s%span = span
+                    call s%canvas%update()
+                end if
+            end if
+            call s%range_dialog%delete()
+        end select
+    end subroutine on_set_range
+
+    !> Enable OK only while both fields hold acceptable numbers.
+    subroutine on_range_text(text, data)
+        character(len=*), intent(in) :: text
+        class(*), intent(inout), optional :: data
+        type(QPushButton) :: ok
+        select type (s => data)
+        type is (explorer_state)
+            ok = s%range_buttons%button(QDialogButtonBox_Ok)
+            call ok%setEnabled(s%range_center%hasAcceptableInput() .and. s%range_span%hasAcceptableInput())
+        end select
+    end subroutine on_range_text
+
+    !> A button of the range dialog: OK, Cancel or Restore Defaults.
+    subroutine on_range_button(button, data)
+        integer, intent(in) :: button
+        class(*), intent(inout), optional :: data
+        select type (s => data)
+        type is (explorer_state)
+            select case (button)
+            case (QDialogButtonBox_Ok)
+                call s%range_dialog%accept()
+            case (QDialogButtonBox_Cancel)
+                call s%range_dialog%reject()
+            case (QDialogButtonBox_RestoreDefaults)
+                call s%range_center%setText(fixed(0.0_dp))
+                call s%range_span%setText(fixed(default_span))
+            end select
+        end select
+    end subroutine on_range_button
+
+    ! ------------------------------------------------------------------
+    ! File > New plot: a wizard
+
+    !> Lead through function, parameters and title; apply them on Finish.
+    subroutine on_new_plot(data)
+        class(*), intent(inout), optional :: data
+        type(QWizard) :: wizard
+        type(QWizardPage) :: page1, page3
+        type(QVBoxLayout) :: box1, box3
+        type(QFormLayout) :: form
+        type(QComboBox) :: choice
+        type(QDoubleSpinBox) :: frequency
+        type(QLineEdit) :: title
+        type(QCheckBox) :: clear
+        real(dp) :: amplitude
+        integer :: ios
+        character(len=:), allocatable :: text
+        select type (s => data)
+        type is (explorer_state)
+            wizard = QWizard(s%window)
+            call wizard%setWindowTitle('New plot')
+
+            page1 = QWizardPage()
+            call page1%setTitle('Function')
+            call page1%setSubTitle('Which function do you want to plot?')
+            box1 = QVBoxLayout(page1)
+            choice = QComboBox()
+            call choice%addItems(function_names)
+            call choice%setCurrentIndex(s%func%currentIndex())
+            call box1%addWidget(choice)
+            call page1%registerField('function', choice)
+
+            s%wizard_parameters = QWizardPage()
+            call s%wizard_parameters%setTitle('Parameters')
+            call s%wizard_parameters%setSubTitle('The amplitude must be between 0.1 and 2.')
+            form = QFormLayout(s%wizard_parameters)
+            s%wizard_amplitude = QLineEdit(fixed(s%amplitude%value()))
+            call s%wizard_amplitude%setValidator(QDoubleValidator(0.1_dp, 2.0_dp, 2, s%wizard_parameters))
+            call s%wizard_amplitude%textChanged%connect(on_wizard_amplitude, s)
+            frequency = QDoubleSpinBox()
+            call frequency%setRange(0.1_dp, 5.0_dp)
+            call frequency%setSingleStep(0.1_dp)
+            call frequency%setValue(s%frequency%value() / 10.0_dp)
+            call form%addRow('Amplitude', s%wizard_amplitude)
+            call form%addRow('Frequency', frequency)
+            call s%wizard_parameters%registerField('amplitude', s%wizard_amplitude)
+            call s%wizard_parameters%registerField('frequency', frequency)
+
+            page3 = QWizardPage()
+            call page3%setTitle('Title')
+            call page3%setSubTitle('A title is required.')
+            call page3%setFinalPage(.true.)
+            box3 = QVBoxLayout(page3)
+            title = QLineEdit(s%title%text())
+            call title%setPlaceholderText('Plot title')
+            clear = QCheckBox('Clear the markers')
+            call box3%addWidget(title)
+            call box3%addWidget(clear)
+            call page3%registerField('title*', title)      ! '*': mandatory
+            call page3%registerField('clear', clear)
+
+            call wizard%addPage(page1)
+            call wizard%addPage(s%wizard_parameters)
+            call wizard%addPage(page3)
+            if (wizard%exec() == QDialog_Accepted) then
+                call s%func%setCurrentIndex(wizard%intField('function'))
+                text = wizard%stringField('amplitude')
+                read(text, *, iostat=ios) amplitude
+                if (ios == 0) call s%amplitude%setValue(amplitude)
+                call s%frequency%setValue(nint(10 * wizard%doubleField('frequency')))
+                call s%title%setText(wizard%stringField('title'))
+                if (wizard%boolField('clear') .and. s%nmarkers > 0) &
+                    call change_markers(s, 'Clear markers', 0, s%marker_x)
+                call s%status%showMessage('New plot: ' // wizard%stringField('title'), 3000)
+            end if
+            call wizard%delete()
+        end select
+    end subroutine on_new_plot
+
+    !> The wizard's Next waits for an acceptable amplitude.
+    subroutine on_wizard_amplitude(text, data)
+        character(len=*), intent(in) :: text
+        class(*), intent(inout), optional :: data
+        select type (s => data)
+        type is (explorer_state)
+            call s%wizard_parameters%setComplete(s%wizard_amplitude%hasAcceptableInput())
+        end select
+    end subroutine on_wizard_amplitude
+
+    ! ------------------------------------------------------------------
+    ! Help > Contents, View > Full screen
+
+    !> Show the help in a text browser (links jump within the page); the
+    !> window is created once and then shown again.
+    subroutine on_help(data)
+        class(*), intent(inout), optional :: data
+        type(QVBoxLayout) :: vbox
+        type(QTextBrowser) :: browser
+        type(QDialogButtonBox) :: buttons
+        select type (s => data)
+        type is (explorer_state)
+            if (.not. s%help%isNull()) then
+                call s%help%show()
+                call s%help%raise()
+                return
+            end if
+            s%help = QDialog(s%window)
+            call s%help%setWindowTitle('Function Explorer help')
+            call s%help%resize(520, 420)
+            vbox = QVBoxLayout(s%help)
+            browser = QTextBrowser()
+            call browser%setHtml( &
+                '<h2>Function Explorer</h2>' // &
+                '<p>Contents: <a href="#plot">the plot</a> | <a href="#markers">markers</a> | ' // &
+                '<a href="#library">function library</a></p>' // &
+                '<h3><a name="plot"></a>The plot</h3>' // &
+                '<p>Change the function and its style in the left panel. The wheel zooms, the arrow keys ' // &
+                'pan and Escape resets the view; View &gt; Set range sets it exactly.</p>' // &
+                '<h3><a name="markers"></a>Markers</h3>' // &
+                '<p>Left click adds a marker, right click removes the nearest one. The Markers dock lists ' // &
+                'them: double-click an x value to edit it, click a column title to sort. ' // &
+                'Every change can be undone (Edit &gt; Undo, or the History tab).</p>' // &
+                '<h3><a name="library"></a>Function library</h3>' // &
+                '<p>Pick a function from the tree; type in the search field to filter it.</p>')
+            call vbox%addWidget(browser)
+            buttons = QDialogButtonBox(QDialogButtonBox_Close)
+            call vbox%addWidget(buttons)
+            call buttons%rejected%connect(on_close_help, s)
+            call s%help%show()
+        end select
+    end subroutine on_help
+
+    !> Hide the help window (Close button).
+    subroutine on_close_help(data)
+        class(*), intent(inout), optional :: data
+        select type (s => data)
+        type is (explorer_state)
+            call s%help%hide()
+        end select
+    end subroutine on_close_help
+
+    !> Switch full screen on or off.
+    subroutine on_fullscreen(checked, data)
+        logical, intent(in) :: checked
+        class(*), intent(inout), optional :: data
+        select type (s => data)
+        type is (explorer_state)
+            if (checked) then
+                call s%window%showFullScreen()
+            else
+                call s%window%showNormal()
+            end if
+        end select
+    end subroutine on_fullscreen
 
     ! ------------------------------------------------------------------
     ! construction
@@ -707,6 +1175,13 @@ contains
         type(QMenu) :: file_menu, view_menu, zoom_menu, help_menu
         type(QToolBar) :: tools
         type(QAction) :: export, clear, quit, zoom_in, zoom_out, zoom_reset, about
+        type(QAction) :: new_plot, undo, redo, set_range, help
+        type(QMenu) :: edit_menu
+        type(QDockWidget) :: library_dock, marker_dock
+        type(QWidget) :: library_panel
+        type(QVBoxLayout) :: library_box
+        type(QTabWidget) :: marker_tabs
+        type(QCompleter) :: completer
 
         s%window = QMainWindow()
         call s%window%setWindowTitle('Function Explorer - qt-fortran')
@@ -774,6 +1249,100 @@ contains
 
         s%timer = QTimer()
         call s%timer%timeout%connect(on_tick, s)
+
+        ! undo stack: commands are performed / reversed by on_redo / on_undo
+        s%undo = QUndoStack(s%window)
+        call s%undo%redoRequested%connect(on_redo, s)
+        call s%undo%undoRequested%connect(on_undo, s)
+        undo = s%undo%createUndoAction(s%window)
+        call undo%setShortcut('Ctrl+Z')
+        redo = s%undo%createRedoAction(s%window)
+        call redo%setShortcut('Ctrl+Shift+Z')
+
+        ! function library dock: a tree model behind a filter proxy
+        s%library = QtfTreeModel(2, s%window)
+        call s%library%setHeaderLabels(['Function', 'Formula '])
+        call s%library%dataRequested%connect(on_library_cell, s)
+        call s%library%setParents(node_parents)
+        s%library_filter = QSortFilterProxyModel(s%window)
+        call s%library_filter%setSourceModel(s%library)
+        call s%library_filter%setRecursiveFilteringEnabled(.true.)
+        call s%library_filter%setFilterCaseSensitivity(Qt_CaseInsensitive)
+        s%library_view = QTreeView()
+        call s%library_view%setModel(s%library_filter)
+        call s%library_view%expandAll()
+        call s%library_view%resizeColumnToContents(0)
+        call s%library_view%currentNodeChanged%connect(on_library_node, s)
+        call s%func%currentIndexChanged%connect(on_function_changed, s)
+        s%library_search = QLineEdit()
+        call s%library_search%setPlaceholderText('Search functions')
+        call s%library_search%setClearButtonEnabled(.true.)
+        completer = QCompleter(function_names, s%window)
+        call completer%setCaseSensitivity(Qt_CaseInsensitive)
+        call completer%setFilterMode(Qt_MatchContains)
+        call s%library_search%setCompleter(completer)
+        call s%library_search%textChanged%connect(on_library_search, s)
+        library_panel = QWidget()
+        library_box = QVBoxLayout(library_panel)
+        call library_box%setContentsMargins(0, 0, 0, 0)
+        call library_box%addWidget(s%library_search)
+        call library_box%addWidget(s%library_view)
+        library_dock = QDockWidget('Function library', s%window)
+        call library_dock%setObjectName('library')
+        call library_dock%setWidget(library_panel)
+        call s%window%addDockWidget(Qt_LeftDockWidgetArea, library_dock)
+
+        ! markers dock: the marker table and the undo history
+        s%marker_model = QtfTableModel(0, 3, s%window)
+        call s%marker_model%setHorizontalHeaderLabels(['#   ', 'x   ', 'f(x)'])
+        call s%marker_model%setEditable(.true.)
+        call s%marker_model%dataRequested%connect(on_marker_cell, s)
+        call s%marker_model%dataEdited%connect(on_marker_edited, s)
+        call s%marker_model%sortRequested%connect(on_marker_sort, s)
+        s%marker_table = QTableView()
+        call s%marker_table%setModel(s%marker_model)
+        call s%marker_table%setVerticalHeaderVisible(.false.)
+        call s%marker_table%setStretchLastSection(.true.)
+        call s%marker_table%setSortingEnabled(.true.)
+        call s%marker_table%sortByColumn(1, Qt_AscendingOrder)    ! (the indicator; nothing to sort yet)
+        call s%marker_table%setColumnWidth(0, 36)
+        call s%marker_table%setColumnWidth(1, 80)
+        call s%marker_table%setEditTriggers(ior(QAbstractItemView_DoubleClicked, QAbstractItemView_EditKeyPressed))
+        s%x_delegate = QtfItemDelegate(s%marker_table)
+        call s%x_delegate%setRange(-1000.0_dp, 1000.0_dp, 2)
+        call s%marker_table%setItemDelegateForColumn(1, s%x_delegate)
+        marker_tabs = QTabWidget()
+        call marker_tabs%addTab(s%marker_table, 'Markers')
+        call marker_tabs%addTab(QUndoView(s%undo), 'History')
+        marker_dock = QDockWidget('Markers', s%window)
+        call marker_dock%setObjectName('markers')
+        call marker_dock%setWidget(marker_tabs)
+        call marker_dock%setMinimumWidth(230)
+        call s%window%addDockWidget(Qt_RightDockWidgetArea, marker_dock)
+
+        ! more actions and menus
+        new_plot = new_action(s, '&New plot...', 'Ctrl+N', 'Set up a plot step by step', on_new_plot)
+        set_range = new_action(s, 'Set &range...', 'Ctrl+R', 'Set the visible x range', on_set_range)
+        help = new_action(s, '&Contents', 'F1', 'Show the help', on_help)
+        s%fullscreen = QAction('&Full screen', s%window)
+        call s%fullscreen%setCheckable(.true.)
+        call s%fullscreen%setShortcut('F11')
+        call s%fullscreen%toggled%connect(on_fullscreen, s)
+        call file_menu%insertAction(export, new_plot)
+        edit_menu = QMenu('&Edit', s%window)
+        call bar%insertMenu(view_menu%menuAction(), edit_menu)
+        call edit_menu%addAction(undo)
+        call edit_menu%addAction(redo)
+        call view_menu%addAction(set_range)
+        call view_menu%addAction(s%fullscreen)
+        call view_menu%addSeparator()
+        call view_menu%addAction(library_dock%toggleViewAction())
+        call view_menu%addAction(marker_dock%toggleViewAction())
+        call help_menu%insertAction(about, help)
+        call tools%insertAction(export, new_plot)
+        call tools%addSeparator()
+        call tools%addAction(undo)
+        call tools%addAction(redo)
     end subroutine build_window
 
 end module explorer_app
@@ -803,13 +1372,12 @@ program explorer
         call s%fill%setChecked(.true.)
         call s%color%setCurrentIndex(3)
         call s%title%setText('Damped oscillation')
-        s%nmarkers = 2
-        s%marker_x(1:2) = [-4.5_dp, 2.0_dp]
+        call change_markers(s, 'Add markers', 3, [-4.5_dp, 2.0_dp, 6.3_dp])
         call s%animate%setChecked(.true.)
     end if
 
     call s%status%showMessage('Ready - click the plot to add markers')
-    call s%window%resize(980, 600)
+    call s%window%resize(1360, 640)
     call s%window%show()
     call s%canvas%setFocus()
     ierr = app%exec()

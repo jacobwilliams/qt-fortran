@@ -11,7 +11,7 @@ compiler extensions, and you never write C++.
 
 ![Function Explorer example](media/explorer.png)
 
-*The [Function Explorer](example/explorer.f90) example, written in about 800 lines of Fortran.*
+*The [Function Explorer](example/explorer.f90) example, written in about 1350 lines of Fortran.*
 
 > **Status: early development.** The API covers QtCore, QtGui, QtWidgets
 > and modern OpenGL essentials and is tested on Linux, macOS and Windows, but it may still change.
@@ -145,7 +145,7 @@ Examples:
 | [timer](example/timer.f90) | `QTimer` and slots with user data |
 | [form](example/form.f90) | input widgets, layouts, validation, a message box |
 | [plot](example/plot.f90) | a live scrolling plot with `QtfWidget` and `QPainter` |
-| [explorer](example/explorer.f90) | a tour of nearly everything: menus, toolbar, all control types, custom painting, mouse/keyboard/wheel input, animation, file and message dialogs |
+| [explorer](example/explorer.f90) | a tour of nearly everything: menus, toolbar, all control types, custom painting, mouse/keyboard/wheel input, animation, file and message dialogs; undo/redo of markers with a history view, a marker table with a spin-box cell editor and sorting, a searchable function-library tree, a new-plot wizard, a validated range dialog, linked help |
 | [timeseries](example/timeseries.f90) | a simulation workbench: a dock of parameters (group boxes, form layouts, dial + LCD, radio group), cancellable runs in a worker thread with a progress bar, tabs with a splitter, a million-row table served from Fortran arrays (`QtfTableModel`), a statistics tree, a log console, a tool-button preset menu, input and color dialogs, a plot context menu, settings remembered between sessions, confirmation before quitting |
 | [fieldviewer](example/fieldviewer.f90) | 2D fields computed in Fortran shown with `QImage_fromArray`: interference, masked peaks (NaN), Mandelbrot, and an interactive heat-diffusion solver; colormaps, colorbar, hover readout, standard icons |
 | [surface3d](example/surface3d.f90) | an interactive 3D surface plot with modern OpenGL: GLSL shaders, an indexed mesh with lighting, orbit/zoom with the mouse, auto-rotation, PNG export |

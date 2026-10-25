@@ -527,6 +527,27 @@ module qt_c_widgets
             type(c_ptr), value :: action
         end subroutine qtf_qwidget_addAction
 
+        !> Insert an action before another one.
+        !>
+        !> C: `void qtf_qwidget_insertAction(void *self, void *before, void *action)`
+        subroutine qtf_qwidget_insertAction(self, before, action) bind(C, name='qtf_qwidget_insertAction')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: before
+            type(c_ptr), value :: action
+        end subroutine qtf_qwidget_insertAction
+
+        !> Remove an action (it is not deleted).
+        !>
+        !> C: `void qtf_qwidget_removeAction(void *self, void *action)`
+        subroutine qtf_qwidget_removeAction(self, action) bind(C, name='qtf_qwidget_removeAction')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: action
+        end subroutine qtf_qwidget_removeAction
+
         !> Set the largest allowed size.
         !>
         !> C: `void qtf_qwidget_setMaximumSize(void *self, int width, int height)`
@@ -2181,6 +2202,17 @@ module qt_c_widgets
             integer(c_int), value :: title_len
             type(c_ptr) :: res
         end function qtf_qmenubar_addMenu
+
+        !> Insert a menu before another menu (`other%menuAction()`) or action.
+        !>
+        !> C: `void qtf_qmenubar_insertMenu(void *self, void *before, void *menu)`
+        subroutine qtf_qmenubar_insertMenu(self, before, menu) bind(C, name='qtf_qmenubar_insertMenu')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: before
+            type(c_ptr), value :: menu
+        end subroutine qtf_qmenubar_insertMenu
 
         !> Append a separator.
         !>
@@ -8050,19 +8082,19 @@ module qt_c_widgets
     public :: qtf_qwidget_setFocus, qtf_qwidget_setLayout, qtf_qwidget_layout, qtf_qwidget_update
     public :: qtf_qwidget_repaint, qtf_qwidget_setMouseTracking, qtf_qwidget_hasMouseTracking
     public :: qtf_qwidget_setFocusPolicy, qtf_qwidget_hasFocus, qtf_qwidget_grab, qtf_qwidget_addAction
-    public :: qtf_qwidget_setMaximumSize, qtf_qwidget_setMinimumWidth, qtf_qwidget_setMinimumHeight
-    public :: qtf_qwidget_setMaximumWidth, qtf_qwidget_setMaximumHeight, qtf_qwidget_setFixedWidth
-    public :: qtf_qwidget_setFixedHeight, qtf_qwidget_setSizePolicy, qtf_qwidget_setContentsMargins
-    public :: qtf_qwidget_setWindowIcon, qtf_qwidget_saveGeometry, qtf_qwidget_restoreGeometry
-    public :: qtf_qwidget_isWindow, qtf_qwidget_showMaximized, qtf_qwidget_showMinimized
-    public :: qtf_qwidget_showNormal, qtf_qwidget_showFullScreen, qtf_qwidget_isMaximized
-    public :: qtf_qwidget_isMinimized, qtf_qwidget_activateWindow, qtf_qwidget_raise, qtf_qwidget_repolish
-    public :: qtf_qwidget_x, qtf_qwidget_y, qtf_qwidget_move, qtf_qtfwidget_new, qtf_qframe_new
-    public :: qtf_qframe_setFrameShape, qtf_qframe_frameShape, qtf_qframe_setFrameShadow
-    public :: qtf_qframe_setLineWidth, qtf_qlabel_new, qtf_qlabel_setText, qtf_qlabel_text
-    public :: qtf_qlabel_setAlignment, qtf_qlabel_setWordWrap, qtf_qlabel_setPixmap
-    public :: qtf_qlabel_setScaledContents, qtf_qabstractbutton_setText, qtf_qabstractbutton_text
-    public :: qtf_qabstractbutton_setCheckable, qtf_qabstractbutton_isCheckable
+    public :: qtf_qwidget_insertAction, qtf_qwidget_removeAction, qtf_qwidget_setMaximumSize
+    public :: qtf_qwidget_setMinimumWidth, qtf_qwidget_setMinimumHeight, qtf_qwidget_setMaximumWidth
+    public :: qtf_qwidget_setMaximumHeight, qtf_qwidget_setFixedWidth, qtf_qwidget_setFixedHeight
+    public :: qtf_qwidget_setSizePolicy, qtf_qwidget_setContentsMargins, qtf_qwidget_setWindowIcon
+    public :: qtf_qwidget_saveGeometry, qtf_qwidget_restoreGeometry, qtf_qwidget_isWindow
+    public :: qtf_qwidget_showMaximized, qtf_qwidget_showMinimized, qtf_qwidget_showNormal
+    public :: qtf_qwidget_showFullScreen, qtf_qwidget_isMaximized, qtf_qwidget_isMinimized
+    public :: qtf_qwidget_activateWindow, qtf_qwidget_raise, qtf_qwidget_repolish, qtf_qwidget_x
+    public :: qtf_qwidget_y, qtf_qwidget_move, qtf_qtfwidget_new, qtf_qframe_new, qtf_qframe_setFrameShape
+    public :: qtf_qframe_frameShape, qtf_qframe_setFrameShadow, qtf_qframe_setLineWidth, qtf_qlabel_new
+    public :: qtf_qlabel_setText, qtf_qlabel_text, qtf_qlabel_setAlignment, qtf_qlabel_setWordWrap
+    public :: qtf_qlabel_setPixmap, qtf_qlabel_setScaledContents, qtf_qabstractbutton_setText
+    public :: qtf_qabstractbutton_text, qtf_qabstractbutton_setCheckable, qtf_qabstractbutton_isCheckable
     public :: qtf_qabstractbutton_setChecked, qtf_qabstractbutton_isChecked, qtf_qabstractbutton_click
     public :: qtf_qabstractbutton_toggle, qtf_qabstractbutton_setIcon, qtf_qabstractbutton_setIconSize
     public :: qtf_qpushbutton_new, qtf_qpushbutton_setDefault, qtf_qcheckbox_new, qtf_qradiobutton_new
@@ -8098,9 +8130,9 @@ module qt_c_widgets
     public :: qtf_qmainwindow_tabifyDockWidget, qtf_qmainwindow_saveState, qtf_qmainwindow_restoreState
     public :: qtf_qmenu_new, qtf_qmenu_addMenu, qtf_qmenu_addSeparator, qtf_qmenu_title, qtf_qmenu_menuAction
     public :: qtf_qmenu_popup, qtf_qmenu_exec, qtf_qmenu_clear, qtf_qmenu_isEmpty, qtf_qmenubar_addMenu
-    public :: qtf_qtoolbar_addSeparator, qtf_qtoolbar_addWidget, qtf_qtoolbar_setIconSize
-    public :: qtf_qtoolbar_setToolButtonStyle, qtf_qdialog_new, qtf_qdialog_exec, qtf_qdialog_open
-    public :: qtf_qdialog_accept, qtf_qdialog_reject, qtf_qdialog_done, qtf_qdialog_result
+    public :: qtf_qmenubar_insertMenu, qtf_qtoolbar_addSeparator, qtf_qtoolbar_addWidget
+    public :: qtf_qtoolbar_setIconSize, qtf_qtoolbar_setToolButtonStyle, qtf_qdialog_new, qtf_qdialog_exec
+    public :: qtf_qdialog_open, qtf_qdialog_accept, qtf_qdialog_reject, qtf_qdialog_done, qtf_qdialog_result
     public :: qtf_qdialog_setModal, qtf_qmessagebox_new, qtf_qmessagebox_setText, qtf_qmessagebox_text
     public :: qtf_qmessagebox_setInformativeText, qtf_qmessagebox_informativeText, qtf_qmessagebox_setIcon
     public :: qtf_qmessagebox_setStandardButtons, qtf_qmessagebox_setDefaultButton, qtf_qmessagebox_button

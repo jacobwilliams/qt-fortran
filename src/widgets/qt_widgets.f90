@@ -141,6 +141,10 @@ module qt_widgets
     integer(c_int), parameter, public :: QTabWidget_West = 2
     integer(c_int), parameter, public :: QTabWidget_East = 3
 
+    ! Qt::CaseSensitivity
+    integer(c_int), parameter, public :: Qt_CaseInsensitive = 0
+    integer(c_int), parameter, public :: Qt_CaseSensitive = 1
+
     ! QLineEdit::EchoMode
     integer(c_int), parameter, public :: QLineEdit_Normal = 0
     integer(c_int), parameter, public :: QLineEdit_NoEcho = 1
@@ -322,6 +326,8 @@ module qt_widgets
         procedure :: hasFocus => qwidget_hasFocus
         procedure :: grab => qwidget_grab
         procedure :: addAction => qwidget_addAction
+        procedure :: insertAction => qwidget_insertAction
+        procedure :: removeAction => qwidget_removeAction
         procedure :: setMaximumSize => qwidget_setMaximumSize
         procedure :: setMinimumWidth => qwidget_setMinimumWidth
         procedure :: setMinimumHeight => qwidget_setMinimumHeight
@@ -680,6 +686,7 @@ module qt_widgets
     type, extends(QWidget), public :: QMenuBar
     contains
         procedure :: addMenu => qmenubar_addMenu
+        procedure :: insertMenu => qmenubar_insertMenu
     end type QMenuBar
 
     !> A tool bar. Add actions with the inherited `addAction`.
@@ -2144,6 +2151,22 @@ contains
         call qtf_qwidget_addAction(qtf_live(self, 'QWidget%addAction'), qtf_live(action, 'QWidget%addAction'))
     end subroutine qwidget_addAction
 
+    !> Insert an action before another one.
+    subroutine qwidget_insertAction(self, before, action)
+        class(QWidget), intent(in) :: self
+        class(QAction), intent(in) :: before
+        class(QAction), intent(in) :: action
+        call qtf_qwidget_insertAction(qtf_live(self, 'QWidget%insertAction'), qtf_live(before, &
+                'QWidget%insertAction'), qtf_live(action, 'QWidget%insertAction'))
+    end subroutine qwidget_insertAction
+
+    !> Remove an action (it is not deleted).
+    subroutine qwidget_removeAction(self, action)
+        class(QWidget), intent(in) :: self
+        class(QAction), intent(in) :: action
+        call qtf_qwidget_removeAction(qtf_live(self, 'QWidget%removeAction'), qtf_live(action, 'QWidget%removeAction'))
+    end subroutine qwidget_removeAction
+
     !> Set the largest allowed size.
     subroutine qwidget_setMaximumSize(self, width, height)
         class(QWidget), intent(in) :: self
@@ -3466,6 +3489,15 @@ contains
         type(QMenu) :: res
         call res%attach(qtf_qmenubar_addMenu(qtf_live(self, 'QMenuBar%addMenu'), title, len(title, c_int)))
     end function qmenubar_addMenu
+
+    !> Insert a menu before another menu (`other%menuAction()`) or action.
+    subroutine qmenubar_insertMenu(self, before, menu)
+        class(QMenuBar), intent(in) :: self
+        class(QAction), intent(in) :: before
+        class(QMenu), intent(in) :: menu
+        call qtf_qmenubar_insertMenu(qtf_live(self, 'QMenuBar%insertMenu'), qtf_live(before, 'QMenuBar%insertMenu'), &
+                qtf_live(menu, 'QMenuBar%insertMenu'))
+    end subroutine qmenubar_insertMenu
 
     !> Append a separator.
     subroutine qtoolbar_addSeparator(self)
