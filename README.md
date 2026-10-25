@@ -233,7 +233,7 @@ minimal project; CI builds and runs it on all three platforms.
 
 ## Programming guide
 
-A few conventions to know (the full list is in [plan.md](plan.md)):
+A few conventions to know (the full list is in [plans/plan.md](plans/plan.md)):
 
 - **Slots** are module procedures with a final optional `data` argument:
 
@@ -468,7 +468,8 @@ ci/consumer a separate fpm project that depends on qt-fortran (CI check and temp
 tools/      fpm_qt.py, gen_bindings.py, gen_c_interfaces.py, check_fortran.py
 test/       headless test programs (one per area)
 example/    example applications
-plan.md     design decisions, conventions and project history
+plans/      plan.md: design decisions, conventions and project history;
+            plan-vibefpmgui.md: side project, porting VibeFPMGUI to qt-fortran
 ```
 
 ### Adding to the API
@@ -528,11 +529,11 @@ on macOS (the only runner with a window server).
 ## Roadmap
 
 - Smoother packaging: a conda-forge package, and Homebrew (framework) Qt support.
-- More of Qt: Qt Charts / Qt Graphs (deferred for now). See the roadmap in [plan.md](plan.md).
+- More of Qt: Qt Charts / Qt Graphs (deferred for now). See the roadmap in [plans/plan.md](plans/plan.md).
 - Seeding specs from PySide6's type-system XML files to cover more of the API
   faster.
 
-See [plan.md](plan.md) for the design history and the reasoning behind the
+See [plans/plan.md](plans/plan.md) for the design history and the reasoning behind the
 decisions above.
 
 ## License
