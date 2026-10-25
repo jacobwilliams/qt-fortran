@@ -202,7 +202,7 @@ flowchart TD
     app["Your program<br/>use qt"]
     api["<b>qt_core, qt_gui, qt_widgets</b><br/>Modern Fortran API: derived types, type-bound procedures"]
     raw["<b>qt_c_* modules</b><br/>raw bind(C) interfaces (iso_c_binding only)"]
-    shim["<b>libqtf</b> (shim/)<br/>thin extern &quot;C&quot; C++ layer over Qt"]
+    shim["<b>libqtf</b> (shim/)<br/>thin C++ layer over Qt, with a C interface"]
     qt["<b>Qt 6</b><br/>Core, Gui, Widgets"]
 
     app --> api --> raw
