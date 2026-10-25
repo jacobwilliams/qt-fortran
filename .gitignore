@@ -3,3 +3,5 @@ build/
 !.pixi/config.toml
 .DS_Store
 __pycache__/
+doc/
+

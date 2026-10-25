@@ -12,6 +12,7 @@ module qt_core
 
     use iso_c_binding
     use qt_c_core
+    use qt_c_util
     implicit none
     private
 
@@ -24,6 +25,25 @@ module qt_core
     integer(c_int), parameter, public :: Qt_AlignBottom  = int(z'0040', c_int)
     integer(c_int), parameter, public :: Qt_AlignVCenter = int(z'0080', c_int)
     integer(c_int), parameter, public :: Qt_AlignCenter  = ior(Qt_AlignHCenter, Qt_AlignVCenter)
+
+    ! QEvent::Type (subset)
+    integer(c_int), parameter, public :: QEvent_MouseButtonPress    = 2
+    integer(c_int), parameter, public :: QEvent_MouseButtonRelease  = 3
+    integer(c_int), parameter, public :: QEvent_MouseButtonDblClick = 4
+    integer(c_int), parameter, public :: QEvent_MouseMove           = 5
+    integer(c_int), parameter, public :: QEvent_KeyPress            = 6
+    integer(c_int), parameter, public :: QEvent_KeyRelease          = 7
+    integer(c_int), parameter, public :: QEvent_Paint               = 12
+    integer(c_int), parameter, public :: QEvent_Resize              = 14
+    integer(c_int), parameter, public :: QEvent_Close               = 19
+    integer(c_int), parameter, public :: QEvent_Wheel               = 31
+
+    ! Qt::FocusPolicy
+    integer(c_int), parameter, public :: Qt_NoFocus     = 0
+    integer(c_int), parameter, public :: Qt_TabFocus    = 1
+    integer(c_int), parameter, public :: Qt_ClickFocus  = 2
+    integer(c_int), parameter, public :: Qt_StrongFocus = 11
+    integer(c_int), parameter, public :: Qt_WheelFocus  = 15
 
     ! Qt::Orientation
     integer(c_int), parameter, public :: Qt_Horizontal = 1
@@ -57,6 +77,23 @@ module qt_core
         end subroutine qt_slot_double
     end interface
     public :: qt_slot, qt_slot_string, qt_slot_bool, qt_slot_int, qt_slot_double
+
+    !> Base for slot kinds defined outside this module (e.g. event and painter
+    !> slots in qt_gui). An extension stores a typed procedure pointer and
+    !> converts the raw `qtf_args` in `invoke`.
+    type, abstract, public :: qt_slot_handler
+    contains
+        procedure(qt_handler_invoke), deferred :: invoke
+    end type qt_slot_handler
+
+    abstract interface
+        subroutine qt_handler_invoke(self, args, data)
+            import :: qt_slot_handler, qtf_args
+            class(qt_slot_handler), intent(in) :: self
+            type(qtf_args), intent(in) :: args
+            class(*), pointer, intent(in) :: data   !! null if no data was given
+        end subroutine qt_handler_invoke
+    end interface
 
     !> A signal without arguments.
     type, public :: QSignal
@@ -134,13 +171,26 @@ module qt_core
         module procedure :: qtimer_new
     end interface QTimer
 
-    public :: QTimer_singleShot
-    public :: qtf_ptr, qt_slot_count
+    !> Base of all events. Events received in slots are owned by Qt; events
+    !> created from Fortran (e.g. QMouseEvent(...)) must be released with `delete`.
+    type, public :: QEvent
+        type(c_ptr) :: ptr = c_null_ptr
+    contains
+        procedure :: type => qevent_type
+        procedure :: accept => qevent_accept
+        procedure :: ignore => qevent_ignore
+        procedure :: isAccepted => qevent_isAccepted
+        procedure :: delete => qevent_delete
+    end type QEvent
+
+    public :: QTimer_singleShot, QCoreApplication_sendEvent
+    public :: qtf_ptr, qt_slot_count, qt_connect_handler
 
     ! ------------------------------------------------------------------
     ! slot registry: the shim refers to Fortran slots by index into `slots`
 
-    integer, parameter :: SLOT_VOID = 1, SLOT_STRING = 2, SLOT_BOOL = 3, SLOT_INT = 4, SLOT_DOUBLE = 5
+    integer, parameter :: SLOT_VOID = 1, SLOT_STRING = 2, SLOT_BOOL = 3, SLOT_INT = 4, SLOT_DOUBLE = 5, &
+                          SLOT_HANDLER = 6
 
     type :: slot_entry
         integer :: kind = 0     !! 0 = free
@@ -149,6 +199,7 @@ module qt_core
         procedure(qt_slot_bool), pointer, nopass :: bool => null()
         procedure(qt_slot_int), pointer, nopass :: int => null()
         procedure(qt_slot_double), pointer, nopass :: double => null()
+        class(qt_slot_handler), allocatable :: handler
         class(*), pointer :: data => null()
     end type slot_entry
 
@@ -206,6 +257,7 @@ contains
         procedure(qt_slot_bool), pointer :: f_bool
         procedure(qt_slot_int), pointer :: f_int
         procedure(qt_slot_double), pointer :: f_double
+        class(qt_slot_handler), allocatable :: handler
         class(*), pointer :: data
         ! copy out first: the slot may connect (reallocating `slots`) or release itself
         f_void => slots(id)%void
@@ -214,6 +266,7 @@ contains
         f_int => slots(id)%int
         f_double => slots(id)%double
         data => slots(id)%data
+        if (slots(id)%kind == SLOT_HANDLER) allocate(handler, source=slots(id)%handler)
         select case (slots(id)%kind)
         case (SLOT_VOID)
             if (associated(data)) then
@@ -245,6 +298,8 @@ contains
             else
                 call f_double(args%d(1))
             end if
+        case (SLOT_HANDLER)
+            call handler%invoke(args, data)
         end select
     end subroutine qtf_dispatch
 
@@ -315,6 +370,57 @@ contains
         if (present(data)) slots(id)%data => data
         call connect_slot(self%sender, self%id, id)
     end subroutine qsignaldouble_connect
+
+    !> Connect `signal` of `sender` to a handler (a slot kind defined outside
+    !> this module). The handler is copied.
+    subroutine qt_connect_handler(sender, signal, handler, data)
+        type(c_ptr), intent(in) :: sender
+        integer(c_int), intent(in) :: signal
+        class(qt_slot_handler), intent(in) :: handler
+        class(*), intent(inout), target, optional :: data
+        integer :: id
+        id = new_slot(SLOT_HANDLER)
+        allocate(slots(id)%handler, source=handler)
+        if (present(data)) slots(id)%data => data
+        call connect_slot(sender, signal, id)
+    end subroutine qt_connect_handler
+
+    ! ------------------------------------------------------------------
+    ! QEvent
+
+    integer function qevent_type(self)
+        class(QEvent), intent(in) :: self
+        qevent_type = qtf_qevent_type(self%ptr)
+    end function qevent_type
+
+    subroutine qevent_accept(self)
+        class(QEvent), intent(in) :: self
+        call qtf_qevent_accept(self%ptr)
+    end subroutine qevent_accept
+
+    subroutine qevent_ignore(self)
+        class(QEvent), intent(in) :: self
+        call qtf_qevent_ignore(self%ptr)
+    end subroutine qevent_ignore
+
+    logical function qevent_isAccepted(self)
+        class(QEvent), intent(in) :: self
+        qevent_isAccepted = qtf_logical(qtf_qevent_isAccepted(self%ptr))
+    end function qevent_isAccepted
+
+    !> Delete an event created from Fortran (never one received in a slot).
+    subroutine qevent_delete(self)
+        class(QEvent), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qevent_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qevent_delete
+
+    !> Deliver `event` to `receiver` synchronously; returns whether it was handled.
+    logical function QCoreApplication_sendEvent(receiver, event)
+        class(QObject), intent(in) :: receiver
+        class(QEvent), intent(in) :: event
+        QCoreApplication_sendEvent = qtf_logical(qtf_qcoreapplication_sendEvent(receiver%ptr, event%ptr))
+    end function QCoreApplication_sendEvent
 
     ! ------------------------------------------------------------------
     ! QObject

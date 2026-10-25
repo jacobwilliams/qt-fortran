@@ -20,8 +20,9 @@ environment.
 
 ```
 user code   ->  use qt                      Modern Fortran OO API
-                qt.f90 -> qt_core, qt_widgets (qt_gui in phase 3)
-            ->  qt_c_*.f90                  raw bind(C) interfaces (iso_c_binding only)
+                qt.f90 -> qt_core, qt_gui, qt_widgets
+            ->  qt_c_*.f90                  raw bind(C) interfaces (GENERATED from the shim)
+                qt_c_util.f90               hand-written: qtf_args, string/bool conversion
             ->  shim/qtf_*.cpp  (libqtf)    extern "C" shim over Qt C++
             ->  libQt6Core / Gui / Widgets
 ```
@@ -29,6 +30,9 @@ user code   ->  use qt                      Modern Fortran OO API
 - **C++ shim**: flat `extern "C"` functions (`qtf_<class>_<method>`). Qt objects
   are passed as opaque `void*`, and only C types are used.
 - **Raw Fortran layer**: one interface per shim function. No logic.
+  `tools/gen_c_interfaces.py` generates these modules (and the `QTF_SIG_*` ids)
+  from the `QTF_API` declarations, so don't edit them by hand: change the shim,
+  then run `pixi run gen`. CI runs `pixi run gen-check` (Linux job) to catch drift.
 - **High-level layer**: derived types follow the Qt class hierarchy
   (`QObject -> QWidget -> QLabel ...`). Each one holds a `type(c_ptr)`.
   Constructors are generic interfaces named after the type
@@ -42,9 +46,10 @@ user code   ->  use qt                      Modern Fortran OO API
   Fortran copies it into `character(len=:), allocatable` and calls `qtf_free`.
 - **Signals & slots**: signals are components of the emitting object, as in PySide:
   `call timer%timeout%connect(on_tick, state)`. There is one signal type per
-  argument shape (`QSignal` with no args, `QSignalString`; int/bool/double
-  arrive in phase 2), each with a matching slot interface (`qt_slot`,
-  `qt_slot_string`, ...).
+  argument shape, each with a matching slot interface: `QSignal`/`qt_slot`
+  (no argument), `QSignalBool`, `QSignalInt`, `QSignalDouble`, `QSignalString`,
+  and, in qt_gui, `QSignalPainter`, `QSignalMouseEvent`, `QSignalKeyEvent`,
+  `QSignalWheelEvent`, `QSignalResizeEvent`.
   - **Slots** are ordinary Fortran procedures (no `bind(C)`) with a final
     `class(*), intent(inout), optional :: data` argument.
   - **`data`** is stored by reference. It must have TARGET/POINTER and outlive
@@ -57,6 +62,10 @@ user code   ->  use qt                      Modern Fortran OO API
   - **Connectors**: signal ids (`QTF_SIG_*`) are shared between
     `shim/qtf_common.h` and `src/core/qt_c_core.f90`. Each shim file registers
     its connectors at load time.
+  - **Extension point**: slot kinds defined outside qt_core (the gui event and
+    painter slots) extend the abstract `qt_slot_handler` with a typed procedure
+    pointer and an `invoke` that converts the raw `qtf_args` (an event or painter
+    pointer arrives in `args%p`). They connect through `qt_connect_handler`.
   - **Avoid host association in slots**: put slots in modules and pass state
     through `data`. Internal procedures that use host variables need gfortran
     trampolines, which aren't portable.
@@ -90,6 +99,29 @@ user code   ->  use qt                      Modern Fortran OO API
   concrete base (`QBoxLayout`, `QGridLayout`), not on `QLayout`.
 - **Casting**: `call box%attach(w%ptr)` rebinds a handle as a more derived type
   (check `w%inherits('QMessageBox')` first). Used for `activeModalWidget()` etc.
+- **Value types**: `QColor`, `QPen`, `QBrush`, `QFont` are plain Fortran types
+  (as Qt treats them as values), built with structure constructors, e.g.
+  `QPen(Qt_red, 2.0_c_double)`, `QFont(pointSize=9d0, bold=.true.)`, with fields
+  passed to the shim as scalars. No C++ allocation, nothing to free.
+  `QColor('steelblue')` parses names. `Qt_red` etc. are `QColor` parameters.
+- **C++-backed non-QObjects** (`QImage`, `QPixmap`, a `QPainter` on an image,
+  synthetic events built with `QMouseEvent(...)` etc.) are owned by Fortran:
+  release them with `delete` (or `end` for painters). Events and painters
+  received in slots are borrowed: never delete or end them.
+- **Overriding virtual functions**: `QtfWidget` (a `Qtf` prefix marks a
+  qt-fortran class, not a Qt one) forwards `paintEvent`, mouse, wheel, key and
+  resize handlers to signals, e.g. `canvas%paintEvent%connect(on_paint, s)`.
+  An event without slots gets Qt's default handling. This departs from PySide:
+  paint slots receive a painter that is already active and is ended by Qt
+  afterwards, so the "forgot `painter.end()`" bug can't happen.
+- **Integer or real coordinates**: drawing methods are generics over default
+  `integer` and `real(c_double)` (`drawLine(0, 0, 10, 10)` or with reals).
+- **String lists** are returned as `type(qt_string)` arrays (`files(i)%s`). The
+  shim sends them as one buffer of NUL-terminated strings.
+- **Qt functions that return a rarely used pointer** (`QMenu::addSeparator`,
+  `QToolBar::addWidget` return a `QAction*`) are subroutines.
+- **C++ pitfall**: `slots`, `signals` and `emit` are Qt macros; don't use them as
+  identifiers in the shim.
 
 ## Platforms & toolchains
 
@@ -141,22 +173,31 @@ Portability rules for sources:
 ```sh
 pixi run build             # fpm build with Qt flags
 pixi run test              # headless (QT_QPA_PLATFORM=offscreen)
-pixi run example hello     # run an example
+pixi run example hello     # run an example (hello, timer, form, plot)
+pixi run gen               # regenerate src/*/qt_c_*.f90 after changing the shim
+pixi run gen-check         # fail if the generated modules are stale (CI)
 ```
 
-## Layout (target)
+`plot --screenshot out.png` renders the live plot headlessly to a PNG (with
+`QT_QPA_PLATFORM=offscreen`). This is useful for docs and visual checks.
+
+## Layout
 
 ```
 src/
   qt.f90                    umbrella module: use qt
-  core/    qt_c_core.f90    qt_core.f90      QObject, QTimer, signals/slots, strings, Qt_* constants
-  gui/     qt_c_gui.f90     qt_gui.f90       QColor, QFont, QPainter, QPixmap...
-  widgets/ qt_c_widgets.f90 qt_widgets.f90   QApplication, QWidget, buttons, layouts...
+  core/    qt_c_core.f90*   qt_c_util.f90  qt_core.f90   QObject, QTimer, QEvent, signals/slots, Qt_* constants
+  gui/     qt_c_gui.f90*    qt_gui.f90                   QColor/QPen/QBrush/QFont, QPainter, QImage, QPixmap,
+                                                         input events, QAction
+  widgets/ qt_c_widgets.f90* qt_widgets.f90              QApplication, widgets, layouts, QtfWidget, menus,
+                                                         dialogs, QFileDialog
+           (* generated by tools/gen_c_interfaces.py)
 shim/      qtf_common.h qtf_core.cpp qtf_gui.cpp qtf_widgets.cpp   (built into libqtf)
-tools/     fpm_qt.py  (builds shim, drives fpm)
-example/   hello, timer, form (later: painter)
-test/      testing.f90 (check helper), test_core, test_widgets, test_controls,
-           test_layouts, test_dialogs
+tools/     fpm_qt.py           builds the shim, drives fpm
+           gen_c_interfaces.py generates the raw bind(C) modules from the shim
+example/   hello, timer, form, plot
+test/      testing.f90 (check helper), test_core, test_widgets, test_controls, test_layouts,
+           test_dialogs, test_gui, test_events, test_menus, test_filedialog
 ```
 
 ## Phases
@@ -167,14 +208,13 @@ test/      testing.f90 (check helper), test_core, test_widgets, test_controls,
 | 0b. Cross-platform | Shim as shared library, gfortran everywhere, `tools/fpm_qt.py` driver, GitHub Actions matrix (ubuntu/macos/windows, offscreen tests) | CI green on all three | **done**: CI green on ubuntu, macos, windows |
 | 1. Core infra | String helpers, callback dispatcher, `QApplication`/`exec`, `QObject` base (`objectName`, `deleteLater`, `setParent`), `QTimer` | Unit tests pass offscreen; a timer fires a Fortran procedure with `class(*)` user data | **done** on macOS (CI pending) |
 | 2. Basic widgets | `QWidget`, `QMainWindow`, `QLabel`, `QPushButton`, `QLineEdit`, `QCheckBox`, `QSpinBox`, `QSlider`, `QComboBox`, box/grid layouts, `QMessageBox`, plus their main signals | A "form" example works | **done** on macOS (CI pending). Also: `QRadioButton`, `QDoubleSpinBox`, `QStatusBar`, `QDialog`, and bool/int/double signal types. |
-| 3. GUI & extensibility | `QAction`/`QMenuBar`, `QFileDialog`, `QPainter`/`QColor`/`QPen`, a custom widget with a Fortran `paintEvent`, mouse/key events | A live-plot painter example driven by `QTimer` | |
-| 4. Binding generator | A Python script that generates the shim, raw interfaces and type-bound methods from a spec. It can mine PySide6's `share/PySide6/typesystems/*.xml` for signatures. | Phase 2 classes regenerate identically | |
+| 3. GUI & extensibility | `QAction`/`QMenuBar`, `QFileDialog`, `QPainter`/`QColor`/`QPen`, a custom widget with a Fortran `paintEvent`, mouse/key events | A live-plot painter example driven by `QTimer` | **done** on macOS (CI pending). Also: `QMenu`/`QToolBar`, `QImage`/`QPixmap`, `QBrush`/`QFont`, wheel/resize events, synthetic events + `QCoreApplication_sendEvent`, the raw-interface generator with its CI check. |
+| 4. Binding generator | Stage 1 (done): raw `bind(C)` modules generated from the shim. Stage 2: generate the shim functions and the high-level type-bound wrappers from a compact spec, possibly mining PySide6's `share/PySide6/typesystems/*.xml` for signatures. | Phase 2-3 classes regenerate equivalently | stage 1 done |
 | 5. Polish | FORD docs, README, Windows packaging notes | Docs published | |
 
 Phases 0-3 are hand-written to settle the patterns. Phase 4 then automates them.
-In phase 2, the raw interfaces in `src/widgets/qt_c_widgets.f90` were already
-generated, by a throwaway script that parses the `QTF_API` signatures in the
-shim. Parsing the shim is a natural first stage for the phase 4 generator.
+Its first stage already exists: `tools/gen_c_interfaces.py` turns the `QTF_API`
+declarations into the raw interface modules.
 
 ## Spike results (phase 0)
 

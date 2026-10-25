@@ -20,6 +20,10 @@ jobs:
         with:
           cache: true
 
+      - name: Raw interfaces match the shim
+        if: runner.os == 'Linux'
+        run: pixi run gen-check
+
       - name: Build library and examples
         run: pixi run build
 

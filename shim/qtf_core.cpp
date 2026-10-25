@@ -2,6 +2,8 @@
 
 #include "qtf_common.h"
 
+#include <QCoreApplication>
+#include <QEvent>
 #include <QObject>
 #include <QTimer>
 
@@ -72,6 +74,12 @@ void qtf_emit_double(const qtf_slot &slot, double d) {
     qtf_emit(slot, a);
 }
 
+void qtf_emit_ptr(const qtf_slot &slot, void *p) {
+    qtf_args a{};
+    a.p = p;
+    qtf_emit(slot, a);
+}
+
 // function-local static: safe to use from other translation units' static init
 static std::unordered_map<int, qtf_connector_fn> &qtf_connectors() {
     static std::unordered_map<int, qtf_connector_fn> m;
@@ -121,6 +129,25 @@ QTF_API char *qtf_qobject_className(void *o, int *len) {
 
 QTF_API int qtf_qobject_inherits(void *o, const char *s, int len) {
     return qtf_bool(obj(o)->inherits(QByteArray(s, len).constData()));
+}
+
+// ---------------------------------------------------------------------------
+// QEvent
+
+static QEvent *event(void *p) { return static_cast<QEvent *>(p); }
+
+QTF_API int qtf_qevent_type(void *e) { return int(event(e)->type()); }
+
+QTF_API void qtf_qevent_accept(void *e) { event(e)->accept(); }
+
+QTF_API void qtf_qevent_ignore(void *e) { event(e)->ignore(); }
+
+QTF_API int qtf_qevent_isAccepted(void *e) { return qtf_bool(event(e)->isAccepted()); }
+
+QTF_API void qtf_qevent_delete(void *e) { delete event(e); }
+
+QTF_API int qtf_qcoreapplication_sendEvent(void *receiver, void *e) {
+    return qtf_bool(QCoreApplication::sendEvent(obj(receiver), event(e)));
 }
 
 // ---------------------------------------------------------------------------

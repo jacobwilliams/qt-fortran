@@ -4,9 +4,10 @@
 module qt_widgets
 
     use iso_c_binding
-    use qt_c_core, only: qtf_take_string, qtf_logical, qtf_int
+    use qt_c_util, only: qtf_take_string, qtf_take_string_list, qtf_logical, qtf_int, qt_string
     use qt_c_widgets
     use qt_core
+    use qt_gui
     implicit none
     private
 
@@ -43,6 +44,24 @@ module qt_widgets
     integer(c_int), parameter, public :: QMessageBox_Icon_Critical    = 3
     integer(c_int), parameter, public :: QMessageBox_Icon_Question    = 4
 
+    ! QFileDialog::FileMode
+    integer(c_int), parameter, public :: QFileDialog_AnyFile       = 0
+    integer(c_int), parameter, public :: QFileDialog_ExistingFile  = 1
+    integer(c_int), parameter, public :: QFileDialog_Directory     = 2
+    integer(c_int), parameter, public :: QFileDialog_ExistingFiles = 3
+
+    ! QFileDialog::AcceptMode
+    integer(c_int), parameter, public :: QFileDialog_AcceptOpen = 0
+    integer(c_int), parameter, public :: QFileDialog_AcceptSave = 1
+
+    ! QFileDialog::Option
+    integer(c_int), parameter, public :: QFileDialog_ShowDirsOnly          = int(z'01', c_int)
+    integer(c_int), parameter, public :: QFileDialog_DontResolveSymlinks   = int(z'02', c_int)
+    integer(c_int), parameter, public :: QFileDialog_DontConfirmOverwrite  = int(z'04', c_int)
+    integer(c_int), parameter, public :: QFileDialog_DontUseNativeDialog   = int(z'10', c_int)
+    integer(c_int), parameter, public :: QFileDialog_ReadOnly              = int(z'20', c_int)
+    integer(c_int), parameter, public :: QFileDialog_HideNameFilterDetails = int(z'40', c_int)
+
     ! ------------------------------------------------------------------
 
     !> The application object. Create exactly one, before any widget.
@@ -78,10 +97,43 @@ module qt_widgets
         procedure :: setFocus => qwidget_setFocus
         procedure :: setLayout => qwidget_setLayout
         procedure :: layout => qwidget_layout
+        procedure :: update => qwidget_update
+        procedure :: repaint => qwidget_repaint
+        procedure :: setMouseTracking => qwidget_setMouseTracking
+        procedure :: hasMouseTracking => qwidget_hasMouseTracking
+        procedure :: setFocusPolicy => qwidget_setFocusPolicy
+        procedure :: hasFocus => qwidget_hasFocus
+        procedure :: grab => qwidget_grab
+        procedure :: addAction => qwidget_addAction
     end type QWidget
     interface QWidget
         module procedure :: qwidget_new
     end interface QWidget
+
+    !> A widget whose event handlers are delivered to Fortran slots, the
+    !> qt-fortran counterpart of subclassing QWidget and overriding paintEvent,
+    !> mousePressEvent, ... (`Qtf` marks it as a qt-fortran class, not a Qt one).
+    !>
+    !> Paint slots receive a painter already active on the widget; do not `end`
+    !> it. Events with no connected slot get Qt's default handling. The widget
+    !> accepts keyboard focus (Qt_StrongFocus); mouse moves without a pressed
+    !> button arrive only after `setMouseTracking(.true.)`.
+    type, extends(QWidget), public :: QtfWidget
+        type(QSignalPainter) :: paintEvent
+        type(QSignalMouseEvent) :: mousePressEvent
+        type(QSignalMouseEvent) :: mouseReleaseEvent
+        type(QSignalMouseEvent) :: mouseMoveEvent
+        type(QSignalMouseEvent) :: mouseDoubleClickEvent
+        type(QSignalWheelEvent) :: wheelEvent
+        type(QSignalKeyEvent) :: keyPressEvent
+        type(QSignalKeyEvent) :: keyReleaseEvent
+        type(QSignalResizeEvent) :: resizeEvent
+    contains
+        procedure :: attach => qtfwidget_attach
+    end type QtfWidget
+    interface QtfWidget
+        module procedure :: qtfwidget_new
+    end interface QtfWidget
 
     type, extends(QWidget), public :: QLabel
     contains
@@ -296,10 +348,36 @@ module qt_widgets
         procedure :: setCentralWidget => qmainwindow_setCentralWidget
         procedure :: centralWidget => qmainwindow_centralWidget
         procedure :: statusBar => qmainwindow_statusBar
+        procedure :: menuBar => qmainwindow_menuBar
+        procedure :: addToolBar => qmainwindow_addToolBar
     end type QMainWindow
     interface QMainWindow
         module procedure :: qmainwindow_new
     end interface QMainWindow
+
+    !> Add actions with the inherited `addAction`.
+    type, extends(QWidget), public :: QMenu
+    contains
+        procedure :: addMenu => qmenu_addMenu
+        procedure :: addSeparator => qmenu_addSeparator
+        procedure :: title => qmenu_title
+        procedure :: menuAction => qmenu_menuAction
+    end type QMenu
+    interface QMenu
+        module procedure :: qmenu_new
+    end interface QMenu
+
+    type, extends(QWidget), public :: QMenuBar
+    contains
+        procedure :: addMenu => qmenubar_addMenu
+    end type QMenuBar
+
+    !> Add actions with the inherited `addAction`.
+    type, extends(QWidget), public :: QToolBar
+    contains
+        procedure :: addSeparator => qtoolbar_addSeparator
+        procedure :: addWidget => qtoolbar_addWidget
+    end type QToolBar
 
     type, extends(QWidget), public :: QDialog
         type(QSignal) :: accepted
@@ -334,10 +412,27 @@ module qt_widgets
         module procedure :: qmessagebox_new
     end interface QMessageBox
 
+    type, extends(QDialog), public :: QFileDialog
+    contains
+        procedure :: setFileMode => qfiledialog_setFileMode
+        procedure :: setAcceptMode => qfiledialog_setAcceptMode
+        procedure :: setOption => qfiledialog_setOption
+        procedure :: setNameFilter => qfiledialog_setNameFilter
+        procedure :: setDirectory => qfiledialog_setDirectory
+        procedure :: setDefaultSuffix => qfiledialog_setDefaultSuffix
+        procedure :: selectFile => qfiledialog_selectFile
+        procedure :: selectedFiles => qfiledialog_selectedFiles
+    end type QFileDialog
+    interface QFileDialog
+        module procedure :: qfiledialog_new
+    end interface QFileDialog
+
     public :: QApplication_exec, QApplication_quit, QApplication_processEvents
     public :: QApplication_activeModalWidget
     public :: QMessageBox_information, QMessageBox_warning, QMessageBox_critical
     public :: QMessageBox_question
+    public :: QFileDialog_getOpenFileName, QFileDialog_getOpenFileNames
+    public :: QFileDialog_getSaveFileName, QFileDialog_getExistingDirectory
 
 contains
 
@@ -495,6 +590,78 @@ contains
         type(QLayout) :: layout
         call layout%attach(qtf_qwidget_layout(self%ptr))
     end function qwidget_layout
+
+    !> Schedule a repaint (coalesced; happens when control returns to the event loop).
+    subroutine qwidget_update(self)
+        class(QWidget), intent(in) :: self
+        call qtf_qwidget_update(self%ptr)
+    end subroutine qwidget_update
+
+    !> Repaint immediately.
+    subroutine qwidget_repaint(self)
+        class(QWidget), intent(in) :: self
+        call qtf_qwidget_repaint(self%ptr)
+    end subroutine qwidget_repaint
+
+    subroutine qwidget_setMouseTracking(self, enable)
+        class(QWidget), intent(in) :: self
+        logical, intent(in) :: enable
+        call qtf_qwidget_setMouseTracking(self%ptr, qtf_int(enable))
+    end subroutine qwidget_setMouseTracking
+
+    logical function qwidget_hasMouseTracking(self)
+        class(QWidget), intent(in) :: self
+        qwidget_hasMouseTracking = qtf_logical(qtf_qwidget_hasMouseTracking(self%ptr))
+    end function qwidget_hasMouseTracking
+
+    subroutine qwidget_setFocusPolicy(self, policy)
+        class(QWidget), intent(in) :: self
+        integer, intent(in) :: policy
+        call qtf_qwidget_setFocusPolicy(self%ptr, int(policy, c_int))
+    end subroutine qwidget_setFocusPolicy
+
+    logical function qwidget_hasFocus(self)
+        class(QWidget), intent(in) :: self
+        qwidget_hasFocus = qtf_logical(qtf_qwidget_hasFocus(self%ptr))
+    end function qwidget_hasFocus
+
+    !> Render the widget (and children) into a new pixmap; delete it when done.
+    function qwidget_grab(self) result(pixmap)
+        class(QWidget), intent(in) :: self
+        type(QPixmap) :: pixmap
+        pixmap%ptr = qtf_qwidget_grab(self%ptr)
+    end function qwidget_grab
+
+    !> Add an action (to a menu or toolbar, or to a widget for its shortcut).
+    subroutine qwidget_addAction(self, action)
+        class(QWidget), intent(in) :: self
+        class(QAction), intent(in) :: action
+        call qtf_qwidget_addAction(self%ptr, action%ptr)
+    end subroutine qwidget_addAction
+
+    ! ------------------------------------------------------------------
+    ! QtfWidget
+
+    function qtfwidget_new(parent) result(w)
+        class(QWidget), intent(in), optional :: parent
+        type(QtfWidget) :: w
+        call w%attach(qtf_qtfwidget_new(qtf_ptr(parent)))
+    end function qtfwidget_new
+
+    subroutine qtfwidget_attach(self, ptr)
+        class(QtfWidget), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QWidget%attach(ptr)
+        self%paintEvent = QSignalPainter(ptr, QTF_SIG_QTFWIDGET_PAINT)
+        self%mousePressEvent = QSignalMouseEvent(ptr, QTF_SIG_QTFWIDGET_MOUSEPRESS)
+        self%mouseReleaseEvent = QSignalMouseEvent(ptr, QTF_SIG_QTFWIDGET_MOUSERELEASE)
+        self%mouseMoveEvent = QSignalMouseEvent(ptr, QTF_SIG_QTFWIDGET_MOUSEMOVE)
+        self%mouseDoubleClickEvent = QSignalMouseEvent(ptr, QTF_SIG_QTFWIDGET_MOUSEDOUBLECLICK)
+        self%wheelEvent = QSignalWheelEvent(ptr, QTF_SIG_QTFWIDGET_WHEEL)
+        self%keyPressEvent = QSignalKeyEvent(ptr, QTF_SIG_QTFWIDGET_KEYPRESS)
+        self%keyReleaseEvent = QSignalKeyEvent(ptr, QTF_SIG_QTFWIDGET_KEYRELEASE)
+        self%resizeEvent = QSignalResizeEvent(ptr, QTF_SIG_QTFWIDGET_RESIZE)
+    end subroutine qtfwidget_attach
 
     ! ------------------------------------------------------------------
     ! QLabel
@@ -1234,6 +1401,83 @@ contains
         call bar%attach(qtf_qmainwindow_statusBar(self%ptr))
     end function qmainwindow_statusBar
 
+    !> The window's menu bar (created on first use).
+    function qmainwindow_menuBar(self) result(bar)
+        class(QMainWindow), intent(in) :: self
+        type(QMenuBar) :: bar
+        call bar%attach(qtf_qmainwindow_menuBar(self%ptr))
+    end function qmainwindow_menuBar
+
+    !> Create a tool bar with the given title and add it to the window.
+    function qmainwindow_addToolBar(self, title) result(bar)
+        class(QMainWindow), intent(in) :: self
+        character(len=*), intent(in) :: title
+        type(QToolBar) :: bar
+        call bar%attach(qtf_qmainwindow_addToolBar(self%ptr, title, len(title, c_int)))
+    end function qmainwindow_addToolBar
+
+    ! ------------------------------------------------------------------
+    ! QMenuBar, QMenu, QToolBar
+
+    !> Create a menu with the given title (e.g. '&File') and append it.
+    function qmenubar_addMenu(self, title) result(menu)
+        class(QMenuBar), intent(in) :: self
+        character(len=*), intent(in) :: title
+        type(QMenu) :: menu
+        call menu%attach(qtf_qmenubar_addMenu(self%ptr, title, len(title, c_int)))
+    end function qmenubar_addMenu
+
+    !> A stand-alone menu (e.g. a context menu).
+    function qmenu_new(title, parent) result(menu)
+        character(len=*), intent(in) :: title
+        class(QWidget), intent(in), optional :: parent
+        type(QMenu) :: menu
+        call menu%attach(qtf_qmenu_new(title, len(title, c_int), qtf_ptr(parent)))
+    end function qmenu_new
+
+    !> Create a submenu with the given title and append it.
+    function qmenu_addMenu(self, title) result(menu)
+        class(QMenu), intent(in) :: self
+        character(len=*), intent(in) :: title
+        type(QMenu) :: menu
+        call menu%attach(qtf_qmenu_addMenu(self%ptr, title, len(title, c_int)))
+    end function qmenu_addMenu
+
+    subroutine qmenu_addSeparator(self)
+        class(QMenu), intent(in) :: self
+        type(c_ptr) :: sep
+        sep = qtf_qmenu_addSeparator(self%ptr)
+    end subroutine qmenu_addSeparator
+
+    function qmenu_title(self) result(title)
+        class(QMenu), intent(in) :: self
+        character(len=:), allocatable :: title
+        integer(c_int) :: n
+        type(c_ptr) :: p
+        p = qtf_qmenu_title(self%ptr, n)
+        title = qtf_take_string(p, n)
+    end function qmenu_title
+
+    !> The action that represents this menu in its parent menu or menu bar.
+    function qmenu_menuAction(self) result(action)
+        class(QMenu), intent(in) :: self
+        type(QAction) :: action
+        call action%attach(qtf_qmenu_menuAction(self%ptr))
+    end function qmenu_menuAction
+
+    subroutine qtoolbar_addSeparator(self)
+        class(QToolBar), intent(in) :: self
+        type(c_ptr) :: sep
+        sep = qtf_qtoolbar_addSeparator(self%ptr)
+    end subroutine qtoolbar_addSeparator
+
+    subroutine qtoolbar_addWidget(self, widget)
+        class(QToolBar), intent(in) :: self
+        class(QWidget), intent(in) :: widget
+        type(c_ptr) :: action
+        action = qtf_qtoolbar_addWidget(self%ptr, widget%ptr)
+    end subroutine qtoolbar_addWidget
+
     ! ------------------------------------------------------------------
     ! QDialog
 
@@ -1414,5 +1658,154 @@ contains
         if (present(buttons)) b = buttons
         QMessageBox_question = messagebox_static(4_c_int, title, text, b, defaultButton, parent)
     end function QMessageBox_question
+
+    ! ------------------------------------------------------------------
+    ! QFileDialog
+
+    !> A file dialog (configure, then `exec`). Arguments are optional.
+    function qfiledialog_new(caption, directory, filter, parent) result(d)
+        character(len=*), intent(in), optional :: caption, directory, filter
+        class(QWidget), intent(in), optional :: parent
+        type(QFileDialog) :: d
+        character(len=:), allocatable :: c, dir, f
+        c = opt_string(caption)
+        dir = opt_string(directory)
+        f = opt_string(filter)
+        call d%attach(qtf_qfiledialog_new(qtf_ptr(parent), c, len(c, c_int), dir, len(dir, c_int), &
+                                          f, len(f, c_int)))
+    end function qfiledialog_new
+
+    pure function opt_string(s) result(r)
+        character(len=*), intent(in), optional :: s
+        character(len=:), allocatable :: r
+        r = ''
+        if (present(s)) r = s
+    end function opt_string
+
+    subroutine qfiledialog_setFileMode(self, mode)
+        class(QFileDialog), intent(in) :: self
+        integer, intent(in) :: mode
+        call qtf_qfiledialog_setFileMode(self%ptr, int(mode, c_int))
+    end subroutine qfiledialog_setFileMode
+
+    subroutine qfiledialog_setAcceptMode(self, mode)
+        class(QFileDialog), intent(in) :: self
+        integer, intent(in) :: mode
+        call qtf_qfiledialog_setAcceptMode(self%ptr, int(mode, c_int))
+    end subroutine qfiledialog_setAcceptMode
+
+    subroutine qfiledialog_setOption(self, option, on)
+        class(QFileDialog), intent(in) :: self
+        integer, intent(in) :: option
+        logical, intent(in), optional :: on
+        logical :: o
+        o = .true.
+        if (present(on)) o = on
+        call qtf_qfiledialog_setOption(self%ptr, int(option, c_int), qtf_int(o))
+    end subroutine qfiledialog_setOption
+
+    !> e.g. 'Images (*.png *.jpg)'
+    subroutine qfiledialog_setNameFilter(self, filter)
+        class(QFileDialog), intent(in) :: self
+        character(len=*), intent(in) :: filter
+        call qtf_qfiledialog_setNameFilter(self%ptr, filter, len(filter, c_int))
+    end subroutine qfiledialog_setNameFilter
+
+    subroutine qfiledialog_setDirectory(self, directory)
+        class(QFileDialog), intent(in) :: self
+        character(len=*), intent(in) :: directory
+        call qtf_qfiledialog_setDirectory(self%ptr, directory, len(directory, c_int))
+    end subroutine qfiledialog_setDirectory
+
+    subroutine qfiledialog_setDefaultSuffix(self, suffix)
+        class(QFileDialog), intent(in) :: self
+        character(len=*), intent(in) :: suffix
+        call qtf_qfiledialog_setDefaultSuffix(self%ptr, suffix, len(suffix, c_int))
+    end subroutine qfiledialog_setDefaultSuffix
+
+    subroutine qfiledialog_selectFile(self, filename)
+        class(QFileDialog), intent(in) :: self
+        character(len=*), intent(in) :: filename
+        call qtf_qfiledialog_selectFile(self%ptr, filename, len(filename, c_int))
+    end subroutine qfiledialog_selectFile
+
+    !> The selected files (absolute paths); `files(i)%s` is the i-th name.
+    function qfiledialog_selectedFiles(self) result(files)
+        class(QFileDialog), intent(in) :: self
+        type(qt_string), allocatable :: files(:)
+        integer(c_int) :: n
+        type(c_ptr) :: p
+        p = qtf_qfiledialog_selectedFiles(self%ptr, n)
+        files = qtf_take_string_list(p, n)
+    end function qfiledialog_selectedFiles
+
+    !> Shared implementation of the static single-path QFileDialog functions.
+    function filedialog_static(which, caption, dir, filter, parent, options) result(path)
+        integer(c_int), intent(in) :: which
+        character(len=*), intent(in), optional :: caption, dir, filter
+        class(QWidget), intent(in), optional :: parent
+        integer, intent(in), optional :: options
+        character(len=:), allocatable :: path
+        character(len=:), allocatable :: c, d, f
+        integer(c_int) :: o, n
+        type(c_ptr) :: p
+        c = opt_string(caption)
+        d = opt_string(dir)
+        f = opt_string(filter)
+        o = 0
+        if (present(options)) o = int(options, c_int)
+        p = qtf_qfiledialog_static(which, qtf_ptr(parent), c, len(c, c_int), d, len(d, c_int), &
+                                   f, len(f, c_int), o, n)
+        path = qtf_take_string(p, n)
+    end function filedialog_static
+
+    !> Modal "open file" dialog; returns the chosen path, or '' if cancelled.
+    function QFileDialog_getOpenFileName(caption, dir, filter, parent, options) result(path)
+        character(len=*), intent(in), optional :: caption, dir, filter
+        class(QWidget), intent(in), optional :: parent
+        integer, intent(in), optional :: options
+        character(len=:), allocatable :: path
+        path = filedialog_static(1_c_int, caption, dir, filter, parent, options)
+    end function QFileDialog_getOpenFileName
+
+    !> Modal "save file" dialog; returns the chosen path, or '' if cancelled.
+    function QFileDialog_getSaveFileName(caption, dir, filter, parent, options) result(path)
+        character(len=*), intent(in), optional :: caption, dir, filter
+        class(QWidget), intent(in), optional :: parent
+        integer, intent(in), optional :: options
+        character(len=:), allocatable :: path
+        path = filedialog_static(2_c_int, caption, dir, filter, parent, options)
+    end function QFileDialog_getSaveFileName
+
+    !> Modal directory chooser; returns the chosen directory, or '' if cancelled.
+    function QFileDialog_getExistingDirectory(caption, dir, parent, options) result(path)
+        character(len=*), intent(in), optional :: caption, dir
+        class(QWidget), intent(in), optional :: parent
+        integer, intent(in), optional :: options
+        character(len=:), allocatable :: path
+        integer :: o
+        o = QFileDialog_ShowDirsOnly
+        if (present(options)) o = options
+        path = filedialog_static(3_c_int, caption, dir, parent=parent, options=o)
+    end function QFileDialog_getExistingDirectory
+
+    !> Modal "open files" dialog; returns the chosen paths (empty if cancelled).
+    function QFileDialog_getOpenFileNames(caption, dir, filter, parent, options) result(files)
+        character(len=*), intent(in), optional :: caption, dir, filter
+        class(QWidget), intent(in), optional :: parent
+        integer, intent(in), optional :: options
+        type(qt_string), allocatable :: files(:)
+        character(len=:), allocatable :: c, d, f
+        integer(c_int) :: o, n
+        type(c_ptr) :: p
+        c = opt_string(caption)
+        d = opt_string(dir)
+        f = opt_string(filter)
+        o = 0
+        if (present(options)) o = int(options, c_int)
+        p = qtf_qfiledialog_getOpenFileNames(qtf_ptr(parent), c, len(c, c_int), d, len(d, c_int), &
+                                             f, len(f, c_int), o, n)
+        files = qtf_take_string_list(p, n)
+    end function QFileDialog_getOpenFileNames
 
 end module qt_widgets

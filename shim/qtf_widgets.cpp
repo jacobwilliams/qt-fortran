@@ -8,17 +8,27 @@
 #include <QComboBox>
 #include <QDialog>
 #include <QDoubleSpinBox>
+#include <QFileDialog>
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMainWindow>
+#include <QMenu>
+#include <QMenuBar>
 #include <QMessageBox>
+#include <QPainter>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSlider>
 #include <QSpinBox>
 #include <QStatusBar>
+#include <QToolBar>
 #include <QWidget>
+
+#include <array>
+#include <cstdlib>
+#include <cstring>
+#include <vector>
 
 template <typename T> static T *as(void *p) { return static_cast<T *>(p); }
 
@@ -101,6 +111,98 @@ QTF_API void qtf_qwidget_setFocus(void *w) { widget(w)->setFocus(); }
 QTF_API void qtf_qwidget_setLayout(void *w, void *layout) { widget(w)->setLayout(as<QLayout>(layout)); }
 
 QTF_API void *qtf_qwidget_layout(void *w) { return widget(w)->layout(); }
+
+QTF_API void qtf_qwidget_update(void *w) { widget(w)->update(); }
+
+QTF_API void qtf_qwidget_repaint(void *w) { widget(w)->repaint(); }
+
+QTF_API void qtf_qwidget_setMouseTracking(void *w, int b) { widget(w)->setMouseTracking(b != 0); }
+
+QTF_API int qtf_qwidget_hasMouseTracking(void *w) { return qtf_bool(widget(w)->hasMouseTracking()); }
+
+QTF_API void qtf_qwidget_setFocusPolicy(void *w, int policy) { widget(w)->setFocusPolicy(Qt::FocusPolicy(policy)); }
+
+QTF_API int qtf_qwidget_hasFocus(void *w) { return qtf_bool(widget(w)->hasFocus()); }
+
+// Render the widget into a new pixmap (works for hidden widgets too).
+QTF_API void *qtf_qwidget_grab(void *w) { return new QPixmap(widget(w)->grab()); }
+
+QTF_API void qtf_qwidget_addAction(void *w, void *action) { widget(w)->addAction(as<QAction>(action)); }
+
+// ---------------------------------------------------------------------------
+// QtfWidget: a QWidget whose event handlers (virtual functions) are forwarded
+// to Fortran slots. An event with no connected slot gets Qt's default handling.
+
+enum qtf_widget_event {
+    QTF_EV_PAINT,
+    QTF_EV_MOUSEPRESS,
+    QTF_EV_MOUSERELEASE,
+    QTF_EV_MOUSEMOVE,
+    QTF_EV_MOUSEDOUBLECLICK,
+    QTF_EV_WHEEL,
+    QTF_EV_KEYPRESS,
+    QTF_EV_KEYRELEASE,
+    QTF_EV_RESIZE,
+    QTF_EV_COUNT
+};
+
+class QtfWidget : public QWidget {
+  public:
+    explicit QtfWidget(QWidget *parent) : QWidget(parent) { setFocusPolicy(Qt::StrongFocus); }
+
+    // (not named `slots`: that is a Qt macro)
+    std::array<std::vector<qtf_slot>, QTF_EV_COUNT> handlers;
+
+  protected:
+    // Emit to a copy: a slot may connect more slots while we iterate.
+    bool forward(qtf_widget_event ev, void *p) {
+        const std::vector<qtf_slot> targets = handlers[ev];
+        for (const qtf_slot &s : targets) qtf_emit_ptr(s, p);
+        return !targets.empty();
+    }
+
+    void paintEvent(QPaintEvent *e) override {
+        if (handlers[QTF_EV_PAINT].empty()) return QWidget::paintEvent(e);
+        QPainter painter(this);
+        forward(QTF_EV_PAINT, &painter);
+    }
+    void mousePressEvent(QMouseEvent *e) override {
+        if (!forward(QTF_EV_MOUSEPRESS, e)) QWidget::mousePressEvent(e);
+    }
+    void mouseReleaseEvent(QMouseEvent *e) override {
+        if (!forward(QTF_EV_MOUSERELEASE, e)) QWidget::mouseReleaseEvent(e);
+    }
+    void mouseMoveEvent(QMouseEvent *e) override {
+        if (!forward(QTF_EV_MOUSEMOVE, e)) QWidget::mouseMoveEvent(e);
+    }
+    void mouseDoubleClickEvent(QMouseEvent *e) override {
+        if (!forward(QTF_EV_MOUSEDOUBLECLICK, e)) QWidget::mouseDoubleClickEvent(e);
+    }
+    void wheelEvent(QWheelEvent *e) override {
+        if (!forward(QTF_EV_WHEEL, e)) QWidget::wheelEvent(e);
+    }
+    void keyPressEvent(QKeyEvent *e) override {
+        if (!forward(QTF_EV_KEYPRESS, e)) QWidget::keyPressEvent(e);
+    }
+    void keyReleaseEvent(QKeyEvent *e) override {
+        if (!forward(QTF_EV_KEYRELEASE, e)) QWidget::keyReleaseEvent(e);
+    }
+    void resizeEvent(QResizeEvent *e) override {
+        QWidget::resizeEvent(e);
+        forward(QTF_EV_RESIZE, e);
+    }
+};
+
+QTF_API void *qtf_qtfwidget_new(void *parent) { return new QtfWidget(widget(parent)); }
+
+// Attach a slot to one of the QtfWidget's event handlers. The slots are owned
+// by the widget, so they are released when it is destroyed.
+template <qtf_widget_event EV> static bool connect_event(void *s, const qtf_slot &ref) {
+    auto *w = dynamic_cast<QtfWidget *>(widget(s));
+    if (!w) return false;
+    w->handlers[EV].push_back(ref);
+    return true;
+}
 
 // ---------------------------------------------------------------------------
 // QLabel
@@ -372,6 +474,35 @@ QTF_API void *qtf_qmainwindow_centralWidget(void *m) { return as<QMainWindow>(m)
 
 QTF_API void *qtf_qmainwindow_statusBar(void *m) { return as<QMainWindow>(m)->statusBar(); }
 
+QTF_API void *qtf_qmainwindow_menuBar(void *m) { return as<QMainWindow>(m)->menuBar(); }
+
+QTF_API void *qtf_qmainwindow_addToolBar(void *m, const char *s, int len) {
+    return as<QMainWindow>(m)->addToolBar(qtf_qstring(s, len));
+}
+
+// ---------------------------------------------------------------------------
+// QMenuBar, QMenu, QToolBar
+
+QTF_API void *qtf_qmenubar_addMenu(void *b, const char *s, int len) {
+    return as<QMenuBar>(b)->addMenu(qtf_qstring(s, len));
+}
+
+QTF_API void *qtf_qmenu_new(const char *s, int len, void *parent) {
+    return new QMenu(qtf_qstring(s, len), widget(parent));
+}
+
+QTF_API void *qtf_qmenu_addMenu(void *m, const char *s, int len) { return as<QMenu>(m)->addMenu(qtf_qstring(s, len)); }
+
+QTF_API void *qtf_qmenu_addSeparator(void *m) { return as<QMenu>(m)->addSeparator(); }
+
+QTF_API char *qtf_qmenu_title(void *m, int *len) { return qtf_to_c(as<QMenu>(m)->title(), len); }
+
+QTF_API void *qtf_qmenu_menuAction(void *m) { return as<QMenu>(m)->menuAction(); }
+
+QTF_API void *qtf_qtoolbar_addSeparator(void *t) { return as<QToolBar>(t)->addSeparator(); }
+
+QTF_API void *qtf_qtoolbar_addWidget(void *t, void *w) { return as<QToolBar>(t)->addWidget(widget(w)); }
+
 QTF_API void qtf_qstatusbar_showMessage(void *b, const char *s, int len, int timeout) {
     as<QStatusBar>(b)->showMessage(qtf_qstring(s, len), timeout);
 }
@@ -448,6 +579,82 @@ QTF_API int qtf_qmessagebox_static(int which, void *parent, const char *title, i
 }
 
 // ---------------------------------------------------------------------------
+// QFileDialog
+
+static QFileDialog *filedialog(void *p) { return as<QFileDialog>(p); }
+
+// String lists are returned as one malloc'd buffer of NUL-terminated strings.
+static char *qtf_list_to_c(const QStringList &list, int *len) {
+    QByteArray b;
+    for (const QString &s : list) {
+        b += s.toUtf8();
+        b += '\0';
+    }
+    *len = static_cast<int>(b.size());
+    char *p = static_cast<char *>(std::malloc(b.size() + 1));
+    std::memcpy(p, b.constData(), b.size() + 1);
+    return p;
+}
+
+QTF_API void *qtf_qfiledialog_new(void *parent, const char *caption, int clen, const char *dir, int dlen,
+                                  const char *filter, int flen) {
+    return new QFileDialog(widget(parent), qtf_qstring(caption, clen), qtf_qstring(dir, dlen),
+                           qtf_qstring(filter, flen));
+}
+
+QTF_API void qtf_qfiledialog_setFileMode(void *d, int mode) { filedialog(d)->setFileMode(QFileDialog::FileMode(mode)); }
+
+QTF_API void qtf_qfiledialog_setAcceptMode(void *d, int mode) {
+    filedialog(d)->setAcceptMode(QFileDialog::AcceptMode(mode));
+}
+
+QTF_API void qtf_qfiledialog_setOption(void *d, int option, int on) {
+    filedialog(d)->setOption(QFileDialog::Option(option), on != 0);
+}
+
+QTF_API void qtf_qfiledialog_setNameFilter(void *d, const char *s, int len) {
+    filedialog(d)->setNameFilter(qtf_qstring(s, len));
+}
+
+QTF_API void qtf_qfiledialog_setDirectory(void *d, const char *s, int len) {
+    filedialog(d)->setDirectory(qtf_qstring(s, len));
+}
+
+QTF_API void qtf_qfiledialog_setDefaultSuffix(void *d, const char *s, int len) {
+    filedialog(d)->setDefaultSuffix(qtf_qstring(s, len));
+}
+
+QTF_API void qtf_qfiledialog_selectFile(void *d, const char *s, int len) {
+    filedialog(d)->selectFile(qtf_qstring(s, len));
+}
+
+QTF_API char *qtf_qfiledialog_selectedFiles(void *d, int *len) {
+    return qtf_list_to_c(filedialog(d)->selectedFiles(), len);
+}
+
+// static dialogs; `which`: 1 getOpenFileName, 2 getSaveFileName, 3 getExistingDirectory
+QTF_API char *qtf_qfiledialog_static(int which, void *parent, const char *caption, int clen, const char *dir,
+                                     int dlen, const char *filter, int flen, int options, int *len) {
+    const QString c = qtf_qstring(caption, clen), d = qtf_qstring(dir, dlen), f = qtf_qstring(filter, flen);
+    const auto o = QFileDialog::Options(options);
+    QString result;
+    switch (which) {
+    case 1: result = QFileDialog::getOpenFileName(widget(parent), c, d, f, nullptr, o); break;
+    case 2: result = QFileDialog::getSaveFileName(widget(parent), c, d, f, nullptr, o); break;
+    case 3: result = QFileDialog::getExistingDirectory(widget(parent), c, d, o); break;
+    }
+    return qtf_to_c(result, len);
+}
+
+QTF_API char *qtf_qfiledialog_getOpenFileNames(void *parent, const char *caption, int clen, const char *dir,
+                                               int dlen, const char *filter, int flen, int options, int *len) {
+    return qtf_list_to_c(QFileDialog::getOpenFileNames(widget(parent), qtf_qstring(caption, clen),
+                                                       qtf_qstring(dir, dlen), qtf_qstring(filter, flen), nullptr,
+                                                       QFileDialog::Options(options)),
+                         len);
+}
+
+// ---------------------------------------------------------------------------
 // signal connectors
 
 template <typename T, typename Signal> static bool connect_void(void *s, Signal sig, const qtf_slot &ref) {
@@ -519,5 +726,14 @@ static const bool qtf_widgets_registered = [] {
                            [](void *s, const qtf_slot &r) { return connect_void<D>(s, &D::rejected, r); });
     qtf_register_connector(QTF_SIG_QDIALOG_FINISHED,
                            [](void *s, const qtf_slot &r) { return connect_int<D>(s, &D::finished, r); });
+    qtf_register_connector(QTF_SIG_QTFWIDGET_PAINT, connect_event<QTF_EV_PAINT>);
+    qtf_register_connector(QTF_SIG_QTFWIDGET_MOUSEPRESS, connect_event<QTF_EV_MOUSEPRESS>);
+    qtf_register_connector(QTF_SIG_QTFWIDGET_MOUSERELEASE, connect_event<QTF_EV_MOUSERELEASE>);
+    qtf_register_connector(QTF_SIG_QTFWIDGET_MOUSEMOVE, connect_event<QTF_EV_MOUSEMOVE>);
+    qtf_register_connector(QTF_SIG_QTFWIDGET_MOUSEDOUBLECLICK, connect_event<QTF_EV_MOUSEDOUBLECLICK>);
+    qtf_register_connector(QTF_SIG_QTFWIDGET_WHEEL, connect_event<QTF_EV_WHEEL>);
+    qtf_register_connector(QTF_SIG_QTFWIDGET_KEYPRESS, connect_event<QTF_EV_KEYPRESS>);
+    qtf_register_connector(QTF_SIG_QTFWIDGET_KEYRELEASE, connect_event<QTF_EV_KEYRELEASE>);
+    qtf_register_connector(QTF_SIG_QTFWIDGET_RESIZE, connect_event<QTF_EV_RESIZE>);
     return true;
 }();

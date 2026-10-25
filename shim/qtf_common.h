@@ -40,14 +40,29 @@ enum qtf_signal : int {
     QTF_SIG_QDIALOG_ACCEPTED = 1050,
     QTF_SIG_QDIALOG_REJECTED = 1051,
     QTF_SIG_QDIALOG_FINISHED = 1052,
+    // QtfWidget virtual-function overrides, delivered like signals
+    QTF_SIG_QTFWIDGET_PAINT = 1100,
+    QTF_SIG_QTFWIDGET_MOUSEPRESS = 1101,
+    QTF_SIG_QTFWIDGET_MOUSERELEASE = 1102,
+    QTF_SIG_QTFWIDGET_MOUSEMOVE = 1103,
+    QTF_SIG_QTFWIDGET_MOUSEDOUBLECLICK = 1104,
+    QTF_SIG_QTFWIDGET_WHEEL = 1105,
+    QTF_SIG_QTFWIDGET_KEYPRESS = 1106,
+    QTF_SIG_QTFWIDGET_KEYRELEASE = 1107,
+    QTF_SIG_QTFWIDGET_RESIZE = 1108,
+    // gui (2000..2999)
+    QTF_SIG_QACTION_TRIGGERED = 2000,
+    QTF_SIG_QACTION_TOGGLED = 2001,
 };
 
-// Signal arguments passed to the Fortran dispatcher (mirrors type(qtf_args)).
-// Strings are borrowed: valid only for the duration of the call.
+// Signal arguments passed to the Fortran dispatcher (mirrors type(qtf_args) in
+// src/core/qt_c_util.f90). `s` and `p` (an event or painter) are borrowed:
+// valid only for the duration of the call.
 struct qtf_args {
     int64_t i[4];
     double d[4];
     const char *s;
+    void *p;
     int32_t slen;
 };
 
@@ -74,6 +89,7 @@ void qtf_emit(const qtf_slot &slot, const QString &s);
 void qtf_emit_bool(const qtf_slot &slot, bool b);
 void qtf_emit_int(const qtf_slot &slot, int i);
 void qtf_emit_double(const qtf_slot &slot, double d);
+void qtf_emit_ptr(const qtf_slot &slot, void *p);  // event or painter, borrowed
 
 // Connect `signal` of `sender` to Fortran slot `slot`; returns false on failure.
 typedef bool (*qtf_connector_fn)(void *sender, const qtf_slot &slot);
