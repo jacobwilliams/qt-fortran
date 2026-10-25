@@ -13,6 +13,7 @@ program test_gui
     type(QPixmap) :: pix
     type(QIcon) :: icon
     type(QPainter) :: p
+    type(QWindow) :: win
     real(c_double) :: values(4, 3)
     integer :: i
     character(len=*), parameter :: png = 'build/test_gui.png'
@@ -122,6 +123,11 @@ program test_gui
     call img%delete()
     call field%delete()
     call bar%delete()
+
+    ! the native handle of a window (for engines that render into it, e.g. Vulkan)
+    win = QWindow()
+    call win%create()
+    call check(win%winId() /= 0, 'QWindow winId after create')
 
     write(*,'(A)') 'test_gui: all checks passed'
 

@@ -50,6 +50,8 @@ Fortran expression).
 
 Argument and result types:
     int  bool  double  string
+    int64                  a 64-bit integer (integer(c_long_long); long long in C++),
+                           e.g. a native window handle
     strings                a string list: a character array argument (trailing
                            blanks trimmed; count passed as `{n}`), or a result
                            (type(qt_string) array)
@@ -146,7 +148,7 @@ VALUE_TYPES = {}   # name -> {"fields": [(name, type)], "cpp": template}; set pe
 
 
 def kind(typ, where=""):
-    if typ in ("int", "bool", "double", "string", "strings", "num"):
+    if typ in ("int", "int64", "bool", "double", "string", "strings", "num"):
         return typ
     if typ == "num[]":
         return "numarray"
@@ -286,6 +288,8 @@ def cpp_params(sig, has_self):
             params.append(f"void *{n}")
         elif k in ("double", "num"):
             params.append(f"double {n}")
+        elif k == "int64":
+            params.append(f"long long {n}")
         elif k in ("numarray", "doublearray"):
             params.append(f"const double *{n}")
         elif k == "intarray":
@@ -344,7 +348,7 @@ def cpp_function(cls, sig, template, ctor=False):
     cfunc = f"qtf_{sig.name}" if cls is None else f"qtf_{cls.lower()}_{sig.name}"
     call = cpp_call(cls, sig, template, ctor)
     ret = "void *" if ctor else {
-        None: "void ", "int": "int ", "bool": "int ", "double": "double ", "enum": "int ",
+        None: "void ", "int": "int ", "int64": "long long ", "bool": "int ", "double": "double ", "enum": "int ",
         "string": "char *", "strings": "char *", "object": "void *", "intarray": "int *", "value": "void ",
     }[kind(sig.ret) if sig.ret else None]
     rk = kind(sig.ret) if sig.ret else None
@@ -360,6 +364,7 @@ def cpp_function(cls, sig, template, ctor=False):
         return {
             "bool": f"qtf_bool({expr})",
             "enum": f"int({expr})",
+            "int64": f"static_cast<long long>({expr})",
             "string": f"qtf_to_c({expr}, len)",
             "strings": f"qtf_list_to_c({expr}, len)",
             "intarray": f"qtf_ints_to_c({expr}, len)",
@@ -412,7 +417,7 @@ def f_dummy(a, handle_types, variant=None):
     k = kind(a.type)
     opt = ", optional" if a.optional else ""
     decl = {
-        "int": "integer", "enum": "integer", "bool": "logical", "double": "real(c_double)",
+        "int": "integer", "int64": "integer(c_long_long)", "enum": "integer", "bool": "logical", "double": "real(c_double)",
         "string": "character(len=*)", "strings": "character(len=*)",
     }.get(k)
     dims = "(:)" if k in ARRAY_KINDS else ""
@@ -478,6 +483,7 @@ def f_locals_and_args(sig, handle_types, variant=None, post=None, where="qt"):
                 "string": [n, f"len({n}, c_int)"],
                 "bool": [f"qtf_int({n})"],
                 "double": [n],
+                "int64": [f"int({n}, c_long_long)"],
             }.get(k, [f"int({n}, c_int)"])
             continue
         # optional with a default: copy into a local
@@ -493,6 +499,10 @@ def f_locals_and_args(sig, handle_types, variant=None, post=None, where="qt"):
         elif k == "double":
             decls.append(f"real(c_double) :: {local}")
             setup += [f"{local} = {a.default}", f"if (present({n})) {local} = {n}"]
+            args.append(local)
+        elif k == "int64":
+            decls.append(f"integer(c_long_long) :: {local}")
+            setup += [f"{local} = {a.default}", f"if (present({n})) {local} = int({n}, c_long_long)"]
             args.append(local)
         else:
             decls.append(f"integer(c_int) :: {local}")
@@ -557,6 +567,9 @@ def f_procedure(cls, sig, handle_types, ctor=False, suffix="", variant=None, han
             body.append(f"res = qtf_logical({raw}({', '.join(args)}))")
         elif rk == "double":
             decls.append("real(c_double) :: res")
+            body.append(f"res = {raw}({', '.join(args)})")
+        elif rk == "int64":
+            decls.append("integer(c_long_long) :: res")
             body.append(f"res = {raw}({', '.join(args)})")
         elif rk in ("string", "strings"):
             decls.append("character(len=:), allocatable :: res" if rk == "string"

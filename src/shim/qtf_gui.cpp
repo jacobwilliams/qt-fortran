@@ -690,6 +690,9 @@ QTF_API int qtf_qwindow_height(void *self) { return as<QWindow>(self)->height();
 // Physical pixels per logical pixel (2 on a typical HiDPI display).
 QTF_API double qtf_qwindow_devicePixelRatio(void *self) { return as<QWindow>(self)->devicePixelRatio(); }
 
+// The native window handle (an NSView* on macOS, an HWND on Windows, an X11/xcb window id on Linux), for rendering engines that draw into the window themselves (e.g. Vulkan). Creates the native window if needed.
+QTF_API long long qtf_qwindow_winId(void *self) { return static_cast<long long>(as<QWindow>(self)->winId()); }
+
 // The window title (for a top-level window).
 QTF_API void qtf_qwindow_setTitle(void *self, const char *title, int title_len) {
     as<QWindow>(self)->setTitle(qtf_qstring(title, title_len));

@@ -1073,6 +1073,7 @@ methods = [
     "width() -> int -- Width in logical pixels.",
     "height() -> int -- Height in logical pixels.",
     "devicePixelRatio() -> double -- Physical pixels per logical pixel (2 on a typical HiDPI display).",
+    "winId() -> int64 -- The native window handle (an NSView* on macOS, an HWND on Windows, an X11/xcb window id on Linux), for rendering engines that draw into the window themselves (e.g. Vulkan). Creates the native window if needed.",
     "setTitle(title: string) -- The window title (for a top-level window).",
     "title() -> string -- The window title.",
     "requestUpdate() -- Ask for an UpdateRequest event (a QtfEventFilter's `updateRequest`) at the next frame, for render loops on the GUI thread.",

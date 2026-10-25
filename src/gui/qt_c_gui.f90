@@ -1449,6 +1449,16 @@ module qt_c_gui
             real(c_double) :: res
         end function qtf_qwindow_devicePixelRatio
 
+        !> The native window handle (an NSView* on macOS, an HWND on Windows, an X11/xcb window id on Linux), for rendering engines that draw into the window themselves (e.g. Vulkan). Creates the native window if needed.
+        !>
+        !> C: `long long qtf_qwindow_winId(void *self)`
+        function qtf_qwindow_winId(self) result(res) bind(C, name='qtf_qwindow_winId')
+            import :: c_long_long, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_long_long) :: res
+        end function qtf_qwindow_winId
+
         !> The window title (for a top-level window).
         !>
         !> C: `void qtf_qwindow_setTitle(void *self, const char *title, int title_len)`
@@ -1518,6 +1528,6 @@ module qt_c_gui
     public :: qtf_qwindow_new, qtf_qwindow_setSurfaceType, qtf_qwindow_surfaceType, qtf_qwindow_create
     public :: qtf_qwindow_show, qtf_qwindow_hide, qtf_qwindow_isVisible, qtf_qwindow_isExposed
     public :: qtf_qwindow_resize, qtf_qwindow_width, qtf_qwindow_height, qtf_qwindow_devicePixelRatio
-    public :: qtf_qwindow_setTitle, qtf_qwindow_title, qtf_qwindow_requestUpdate
+    public :: qtf_qwindow_winId, qtf_qwindow_setTitle, qtf_qwindow_title, qtf_qwindow_requestUpdate
 
 end module qt_c_gui

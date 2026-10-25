@@ -397,6 +397,7 @@ module qt_gui
         procedure :: width => qwindow_width
         procedure :: height => qwindow_height
         procedure :: devicePixelRatio => qwindow_devicePixelRatio
+        procedure :: winId => qwindow_winId
         procedure :: setTitle => qwindow_setTitle
         procedure :: title => qwindow_title
         procedure :: requestUpdate => qwindow_requestUpdate
@@ -1748,6 +1749,13 @@ contains
         real(c_double) :: res
         res = qtf_qwindow_devicePixelRatio(qtf_live(self, 'QWindow%devicePixelRatio'))
     end function qwindow_devicePixelRatio
+
+    !> The native window handle (an NSView* on macOS, an HWND on Windows, an X11/xcb window id on Linux), for rendering engines that draw into the window themselves (e.g. Vulkan). Creates the native window if needed.
+    function qwindow_winId(self) result(res)
+        class(QWindow), intent(in) :: self
+        integer(c_long_long) :: res
+        res = qtf_qwindow_winId(qtf_live(self, 'QWindow%winId'))
+    end function qwindow_winId
 
     !> The window title (for a top-level window).
     subroutine qwindow_setTitle(self, title)
