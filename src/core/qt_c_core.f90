@@ -54,6 +54,27 @@ module qt_c_core
             integer(c_int) :: res
         end function qtf_connect
 
+        !> The serial number of a live object, registering it on first use (0 for null).
+        !>
+        !> C: `int qtf_object_serial(void *p)`
+        function qtf_object_serial(p) result(res) bind(C, name='qtf_object_serial')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: p
+            integer(c_int) :: res
+        end function qtf_object_serial
+
+        !> 1 if `p` is still the live object registered with `serial`.
+        !>
+        !> C: `int qtf_object_alive(void *p, int serial)`
+        function qtf_object_alive(p, serial) result(res) bind(C, name='qtf_object_alive')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: p
+            integer(c_int), value :: serial
+            integer(c_int) :: res
+        end function qtf_object_alive
+
         !> C: `void *qtf_qobject_new(void *parent)`
         function qtf_qobject_new(parent) result(res) bind(C, name='qtf_qobject_new')
             import :: c_ptr
@@ -129,6 +150,120 @@ module qt_c_core
             integer(c_int) :: res
         end function qtf_qobject_inherits
 
+        !> C: `void qtf_qobject_setPropertyString(void *o, const char *name, int nlen, const char *v, int vlen)`
+        subroutine qtf_qobject_setPropertyString(o, name, nlen, v, vlen) bind(C, name='qtf_qobject_setPropertyString')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: o
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: nlen
+            character(kind=c_char), dimension(*), intent(in) :: v
+            integer(c_int), value :: vlen
+        end subroutine qtf_qobject_setPropertyString
+
+        !> C: `void qtf_qobject_setPropertyInt(void *o, const char *name, int nlen, int v)`
+        subroutine qtf_qobject_setPropertyInt(o, name, nlen, v) bind(C, name='qtf_qobject_setPropertyInt')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: o
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: nlen
+            integer(c_int), value :: v
+        end subroutine qtf_qobject_setPropertyInt
+
+        !> C: `void qtf_qobject_setPropertyDouble(void *o, const char *name, int nlen, double v)`
+        subroutine qtf_qobject_setPropertyDouble(o, name, nlen, v) bind(C, name='qtf_qobject_setPropertyDouble')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: o
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: nlen
+            real(c_double), value :: v
+        end subroutine qtf_qobject_setPropertyDouble
+
+        !> C: `void qtf_qobject_setPropertyBool(void *o, const char *name, int nlen, int v)`
+        subroutine qtf_qobject_setPropertyBool(o, name, nlen, v) bind(C, name='qtf_qobject_setPropertyBool')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: o
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: nlen
+            integer(c_int), value :: v
+        end subroutine qtf_qobject_setPropertyBool
+
+        !> The property as a string (`def` if it is not set).
+        !>
+        !> C: `char *qtf_qobject_propertyString(void *o, const char *name, int nlen, const char *def, int dlen, int *len)`
+        function qtf_qobject_propertyString(o, name, nlen, def, dlen, len) &
+                result(res) bind(C, name='qtf_qobject_propertyString')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: o
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: nlen
+            character(kind=c_char), dimension(*), intent(in) :: def
+            integer(c_int), value :: dlen
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qobject_propertyString
+
+        !> C: `int qtf_qobject_propertyInt(void *o, const char *name, int nlen, int def)`
+        function qtf_qobject_propertyInt(o, name, nlen, def) result(res) bind(C, name='qtf_qobject_propertyInt')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: o
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: nlen
+            integer(c_int), value :: def
+            integer(c_int) :: res
+        end function qtf_qobject_propertyInt
+
+        !> C: `double qtf_qobject_propertyDouble(void *o, const char *name, int nlen, double def)`
+        function qtf_qobject_propertyDouble(o, name, nlen, def) result(res) bind(C, name='qtf_qobject_propertyDouble')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: o
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: nlen
+            real(c_double), value :: def
+            real(c_double) :: res
+        end function qtf_qobject_propertyDouble
+
+        !> C: `int qtf_qobject_propertyBool(void *o, const char *name, int nlen, int def)`
+        function qtf_qobject_propertyBool(o, name, nlen, def) result(res) bind(C, name='qtf_qobject_propertyBool')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: o
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: nlen
+            integer(c_int), value :: def
+            integer(c_int) :: res
+        end function qtf_qobject_propertyBool
+
+        !> 1 if the object has the property (set dynamically or a Qt property).
+        !>
+        !> C: `int qtf_qobject_hasProperty(void *o, const char *name, int nlen)`
+        function qtf_qobject_hasProperty(o, name, nlen) result(res) bind(C, name='qtf_qobject_hasProperty')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: o
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: nlen
+            integer(c_int) :: res
+        end function qtf_qobject_hasProperty
+
+        !> The first descendant (searched recursively) with this object name, or null.
+        !>
+        !> C: `void *qtf_qobject_findChild(void *o, const char *name, int nlen)`
+        function qtf_qobject_findChild(o, name, nlen) result(res) bind(C, name='qtf_qobject_findChild')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: o
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: nlen
+            type(c_ptr) :: res
+        end function qtf_qobject_findChild
+
         !> C: `int qtf_qevent_type(void *e)`
         function qtf_qevent_type(e) result(res) bind(C, name='qtf_qevent_type')
             import :: c_int, c_ptr
@@ -165,6 +300,161 @@ module qt_c_core
             implicit none
             type(c_ptr), value :: e
         end subroutine qtf_qevent_delete
+
+        !> A synthetic event of the given type, of the right class for focus, enter,
+        !> show and hide events (so the receiving widget can use it safely).
+        !>
+        !> C: `void *qtf_qevent_new(int type)`
+        function qtf_qevent_new(type) result(res) bind(C, name='qtf_qevent_new')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), value :: type
+            type(c_ptr) :: res
+        end function qtf_qevent_new
+
+        !> The current local date and time.
+        !>
+        !> C: `void qtf_qdatetime_current(int *y, int *mo, int *d, int *h, int *mi, int *s, int *ms)`
+        subroutine qtf_qdatetime_current(y, mo, d, h, mi, s, ms) bind(C, name='qtf_qdatetime_current')
+            import :: c_int
+            implicit none
+            integer(c_int), intent(out) :: y
+            integer(c_int), intent(out) :: mo
+            integer(c_int), intent(out) :: d
+            integer(c_int), intent(out) :: h
+            integer(c_int), intent(out) :: mi
+            integer(c_int), intent(out) :: s
+            integer(c_int), intent(out) :: ms
+        end subroutine qtf_qdatetime_current
+
+        !> 1 if the fields form a valid date and time.
+        !>
+        !> C: `int qtf_qdatetime_isValid(int y, int mo, int d, int h, int mi, int s, int ms)`
+        function qtf_qdatetime_isValid(y, mo, d, h, mi, s, ms) result(res) bind(C, name='qtf_qdatetime_isValid')
+            import :: c_int
+            implicit none
+            integer(c_int), value :: y
+            integer(c_int), value :: mo
+            integer(c_int), value :: d
+            integer(c_int), value :: h
+            integer(c_int), value :: mi
+            integer(c_int), value :: s
+            integer(c_int), value :: ms
+            integer(c_int) :: res
+        end function qtf_qdatetime_isValid
+
+        !> The date-time as text with a Qt format (e.g. "yyyy-MM-dd HH:mm:ss"); ISO 8601 if the format is empty.
+        !>
+        !> C: `char *qtf_qdatetime_toString(int y, int mo, int d, int h, int mi, int s, int ms, const char *fmt, int flen, int *len)`
+        function qtf_qdatetime_toString(y, mo, d, h, mi, s, ms, fmt, flen, len) &
+                result(res) bind(C, name='qtf_qdatetime_toString')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            integer(c_int), value :: y
+            integer(c_int), value :: mo
+            integer(c_int), value :: d
+            integer(c_int), value :: h
+            integer(c_int), value :: mi
+            integer(c_int), value :: s
+            integer(c_int), value :: ms
+            character(kind=c_char), dimension(*), intent(in) :: fmt
+            integer(c_int), value :: flen
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qdatetime_toString
+
+        !> Parse text with a Qt format (ISO 8601 if the format is empty); all zeros if it does not parse.
+        !>
+        !> C: `void qtf_qdatetime_fromString(const char *text, int tlen, const char *fmt, int flen, int *y, int *mo, int *d, int *h, int *mi, int *s, int *ms)`
+        subroutine qtf_qdatetime_fromString(text, tlen, fmt, flen, y, mo, d, h, mi, s, ms) &
+                bind(C, name='qtf_qdatetime_fromString')
+            import :: c_char, c_int
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: tlen
+            character(kind=c_char), dimension(*), intent(in) :: fmt
+            integer(c_int), value :: flen
+            integer(c_int), intent(out) :: y
+            integer(c_int), intent(out) :: mo
+            integer(c_int), intent(out) :: d
+            integer(c_int), intent(out) :: h
+            integer(c_int), intent(out) :: mi
+            integer(c_int), intent(out) :: s
+            integer(c_int), intent(out) :: ms
+        end subroutine qtf_qdatetime_fromString
+
+        !> Add years, months, days (calendar arithmetic) and then milliseconds.
+        !>
+        !> C: `void qtf_qdatetime_add(int y, int mo, int d, int h, int mi, int s, int ms, int years, int months, int days, long long msecs, int *oy, int *omo, int *od, int *oh, int *omi, int *os, int *oms)`
+        subroutine qtf_qdatetime_add(y, mo, d, h, mi, s, ms, years, months, days, msecs, oy, omo, od, oh, omi, os, oms) &
+                bind(C, name='qtf_qdatetime_add')
+            import :: c_int, c_long_long
+            implicit none
+            integer(c_int), value :: y
+            integer(c_int), value :: mo
+            integer(c_int), value :: d
+            integer(c_int), value :: h
+            integer(c_int), value :: mi
+            integer(c_int), value :: s
+            integer(c_int), value :: ms
+            integer(c_int), value :: years
+            integer(c_int), value :: months
+            integer(c_int), value :: days
+            integer(c_long_long), value :: msecs
+            integer(c_int), intent(out) :: oy
+            integer(c_int), intent(out) :: omo
+            integer(c_int), intent(out) :: od
+            integer(c_int), intent(out) :: oh
+            integer(c_int), intent(out) :: omi
+            integer(c_int), intent(out) :: os
+            integer(c_int), intent(out) :: oms
+        end subroutine qtf_qdatetime_add
+
+        !> Milliseconds since 1970-01-01T00:00:00 UTC.
+        !>
+        !> C: `long long qtf_qdatetime_toMSecsSinceEpoch(int y, int mo, int d, int h, int mi, int s, int ms)`
+        function qtf_qdatetime_toMSecsSinceEpoch(y, mo, d, h, mi, s, ms) &
+                result(res) bind(C, name='qtf_qdatetime_toMSecsSinceEpoch')
+            import :: c_int, c_long_long
+            implicit none
+            integer(c_int), value :: y
+            integer(c_int), value :: mo
+            integer(c_int), value :: d
+            integer(c_int), value :: h
+            integer(c_int), value :: mi
+            integer(c_int), value :: s
+            integer(c_int), value :: ms
+            integer(c_long_long) :: res
+        end function qtf_qdatetime_toMSecsSinceEpoch
+
+        !> The local date-time `msecs` milliseconds after 1970-01-01T00:00:00 UTC.
+        !>
+        !> C: `void qtf_qdatetime_fromMSecsSinceEpoch(long long msecs, int *y, int *mo, int *d, int *h, int *mi, int *s, int *ms)`
+        subroutine qtf_qdatetime_fromMSecsSinceEpoch(msecs, y, mo, d, h, mi, s, ms) &
+                bind(C, name='qtf_qdatetime_fromMSecsSinceEpoch')
+            import :: c_int, c_long_long
+            implicit none
+            integer(c_long_long), value :: msecs
+            integer(c_int), intent(out) :: y
+            integer(c_int), intent(out) :: mo
+            integer(c_int), intent(out) :: d
+            integer(c_int), intent(out) :: h
+            integer(c_int), intent(out) :: mi
+            integer(c_int), intent(out) :: s
+            integer(c_int), intent(out) :: ms
+        end subroutine qtf_qdatetime_fromMSecsSinceEpoch
+
+        !> Day of the week, 1 (Monday) to 7 (Sunday); 0 if invalid.
+        !>
+        !> C: `int qtf_qdatetime_dayOfWeek(int y, int mo, int d)`
+        function qtf_qdatetime_dayOfWeek(y, mo, d) result(res) bind(C, name='qtf_qdatetime_dayOfWeek')
+            import :: c_int
+            implicit none
+            integer(c_int), value :: y
+            integer(c_int), value :: mo
+            integer(c_int), value :: d
+            integer(c_int) :: res
+        end function qtf_qdatetime_dayOfWeek
 
         !> C: `int qtf_qcoreapplication_sendEvent(void *receiver, void *e)`
         function qtf_qcoreapplication_sendEvent(receiver, e) result(res) bind(C, name='qtf_qcoreapplication_sendEvent')
@@ -277,12 +567,19 @@ module qt_c_core
 
     end interface
 
-    public :: qtf_free, qtf_set_dispatcher, qtf_disconnect, qtf_connect, qtf_qobject_new, qtf_qobject_delete
-    public :: qtf_qobject_deleteLater, qtf_qobject_objectName, qtf_qobject_setObjectName
-    public :: qtf_qobject_setParent, qtf_qobject_parent, qtf_qobject_className, qtf_qobject_inherits
-    public :: qtf_qevent_type, qtf_qevent_accept, qtf_qevent_ignore, qtf_qevent_isAccepted, qtf_qevent_delete
-    public :: qtf_qcoreapplication_sendEvent, qtf_qtimer_new, qtf_qtimer_start, qtf_qtimer_stop
-    public :: qtf_qtimer_setInterval, qtf_qtimer_interval, qtf_qtimer_isActive, qtf_qtimer_setSingleShot
-    public :: qtf_qtimer_isSingleShot, qtf_qtimer_singleShot, qtf_qtfsignal_new, qtf_qtfsignal_emit
+    public :: qtf_free, qtf_set_dispatcher, qtf_disconnect, qtf_connect, qtf_object_serial, qtf_object_alive
+    public :: qtf_qobject_new, qtf_qobject_delete, qtf_qobject_deleteLater, qtf_qobject_objectName
+    public :: qtf_qobject_setObjectName, qtf_qobject_setParent, qtf_qobject_parent, qtf_qobject_className
+    public :: qtf_qobject_inherits, qtf_qobject_setPropertyString, qtf_qobject_setPropertyInt
+    public :: qtf_qobject_setPropertyDouble, qtf_qobject_setPropertyBool, qtf_qobject_propertyString
+    public :: qtf_qobject_propertyInt, qtf_qobject_propertyDouble, qtf_qobject_propertyBool
+    public :: qtf_qobject_hasProperty, qtf_qobject_findChild, qtf_qevent_type, qtf_qevent_accept
+    public :: qtf_qevent_ignore, qtf_qevent_isAccepted, qtf_qevent_delete, qtf_qevent_new
+    public :: qtf_qdatetime_current, qtf_qdatetime_isValid, qtf_qdatetime_toString, qtf_qdatetime_fromString
+    public :: qtf_qdatetime_add, qtf_qdatetime_toMSecsSinceEpoch, qtf_qdatetime_fromMSecsSinceEpoch
+    public :: qtf_qdatetime_dayOfWeek, qtf_qcoreapplication_sendEvent, qtf_qtimer_new, qtf_qtimer_start
+    public :: qtf_qtimer_stop, qtf_qtimer_setInterval, qtf_qtimer_interval, qtf_qtimer_isActive
+    public :: qtf_qtimer_setSingleShot, qtf_qtimer_isSingleShot, qtf_qtimer_singleShot, qtf_qtfsignal_new
+    public :: qtf_qtfsignal_emit
 
 end module qt_c_core

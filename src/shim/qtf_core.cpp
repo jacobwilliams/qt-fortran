@@ -7,7 +7,14 @@
 #include "qtf_common.h"
 
 #include <QCoreApplication>
+#include <QDateTime>
+#include <QEnterEvent>
 #include <QEvent>
+#include <QFocusEvent>
+#include <QShowEvent>
+#include <QHideEvent>
+#include <QVariant>
+#include <QMutex>
 #include <QObject>
 #include <QThread>
 #include <QTimer>
@@ -203,6 +210,49 @@ QTF_API int qtf_connect(void *sender, int signal, int slot) {
 
 static QObject *obj(void *p) { return static_cast<QObject *>(p); }
 
+// ---------------------------------------------------------------------------
+// live-object registry: Fortran handles record an object's serial number, and
+// a handle is valid only while the registry maps its pointer to that serial
+// (so a deleted object, or a new one at the same address, is detected).
+
+static QMutex &qtf_registry_mutex() {
+    static QMutex *m = new QMutex;   // never destroyed: objects may die at exit
+    return *m;
+}
+
+static std::unordered_map<const QObject *, int> &qtf_registry() {
+    static auto *m = new std::unordered_map<const QObject *, int>;
+    return *m;
+}
+
+// The serial number of a live object, registering it on first use (0 for null).
+QTF_API int qtf_object_serial(void *p) {
+    if (!p) return 0;
+    QObject *o = obj(p);
+    static int last = 0;
+    int serial;
+    {
+        QMutexLocker lock(&qtf_registry_mutex());
+        auto it = qtf_registry().find(o);
+        if (it != qtf_registry().end()) return it->second;
+        serial = ++last;
+        qtf_registry()[o] = serial;
+    }
+    QObject::connect(o, &QObject::destroyed, [o]() {
+        QMutexLocker lock(&qtf_registry_mutex());
+        qtf_registry().erase(o);
+    });
+    return serial;
+}
+
+// 1 if `p` is still the live object registered with `serial`.
+QTF_API int qtf_object_alive(void *p, int serial) {
+    if (!p) return 0;
+    QMutexLocker lock(&qtf_registry_mutex());
+    auto it = qtf_registry().find(obj(p));
+    return qtf_bool(it != qtf_registry().end() && it->second == serial);
+}
+
 QTF_API void *qtf_qobject_new(void *parent) { return new QObject(obj(parent)); }
 
 QTF_API void qtf_qobject_delete(void *o) { delete obj(o); }
@@ -229,6 +279,57 @@ QTF_API int qtf_qobject_inherits(void *o, const char *s, int len) {
     return qtf_bool(obj(o)->inherits(QByteArray(s, len).constData()));
 }
 
+// Dynamic properties (also usable in style sheet selectors, e.g. *[warning="true"]).
+
+static QByteArray qtf_name(const char *s, int len) { return QByteArray(s, len); }
+
+QTF_API void qtf_qobject_setPropertyString(void *o, const char *name, int nlen, const char *v, int vlen) {
+    obj(o)->setProperty(qtf_name(name, nlen), qtf_qstring(v, vlen));
+}
+
+QTF_API void qtf_qobject_setPropertyInt(void *o, const char *name, int nlen, int v) {
+    obj(o)->setProperty(qtf_name(name, nlen), v);
+}
+
+QTF_API void qtf_qobject_setPropertyDouble(void *o, const char *name, int nlen, double v) {
+    obj(o)->setProperty(qtf_name(name, nlen), v);
+}
+
+QTF_API void qtf_qobject_setPropertyBool(void *o, const char *name, int nlen, int v) {
+    obj(o)->setProperty(qtf_name(name, nlen), v != 0);
+}
+
+// The property as a string (`def` if it is not set).
+QTF_API char *qtf_qobject_propertyString(void *o, const char *name, int nlen, const char *def, int dlen, int *len) {
+    const QVariant v = obj(o)->property(qtf_name(name, nlen));
+    return qtf_to_c(v.isValid() ? v.toString() : qtf_qstring(def, dlen), len);
+}
+
+QTF_API int qtf_qobject_propertyInt(void *o, const char *name, int nlen, int def) {
+    const QVariant v = obj(o)->property(qtf_name(name, nlen));
+    return v.isValid() ? v.toInt() : def;
+}
+
+QTF_API double qtf_qobject_propertyDouble(void *o, const char *name, int nlen, double def) {
+    const QVariant v = obj(o)->property(qtf_name(name, nlen));
+    return v.isValid() ? v.toDouble() : def;
+}
+
+QTF_API int qtf_qobject_propertyBool(void *o, const char *name, int nlen, int def) {
+    const QVariant v = obj(o)->property(qtf_name(name, nlen));
+    return qtf_bool(v.isValid() ? v.toBool() : def != 0);
+}
+
+// 1 if the object has the property (set dynamically or a Qt property).
+QTF_API int qtf_qobject_hasProperty(void *o, const char *name, int nlen) {
+    return qtf_bool(obj(o)->property(qtf_name(name, nlen)).isValid());
+}
+
+// The first descendant (searched recursively) with this object name, or null.
+QTF_API void *qtf_qobject_findChild(void *o, const char *name, int nlen) {
+    return obj(o)->findChild<QObject *>(qtf_qstring(name, nlen));
+}
+
 // ---------------------------------------------------------------------------
 // QEvent
 
@@ -243,6 +344,85 @@ QTF_API void qtf_qevent_ignore(void *e) { event(e)->ignore(); }
 QTF_API int qtf_qevent_isAccepted(void *e) { return qtf_bool(event(e)->isAccepted()); }
 
 QTF_API void qtf_qevent_delete(void *e) { delete event(e); }
+
+// A synthetic event of the given type, of the right class for focus, enter,
+// show and hide events (so the receiving widget can use it safely).
+QTF_API void *qtf_qevent_new(int type) {
+    switch (QEvent::Type(type)) {
+    case QEvent::FocusIn:
+    case QEvent::FocusOut: return new QFocusEvent(QEvent::Type(type), Qt::OtherFocusReason);
+    case QEvent::Enter: return new QEnterEvent(QPointF(), QPointF(), QPointF());
+    case QEvent::Show: return new QShowEvent();
+    case QEvent::Hide: return new QHideEvent();
+    default: return new QEvent(QEvent::Type(type));
+    }
+}
+
+// ---------------------------------------------------------------------------
+// QDateTime: passed as (year, month, day, hour, minute, second, msec) in local
+// time; an invalid date-time is all zeros.
+
+static QDateTime qtf_dt(int y, int mo, int d, int h, int mi, int s, int ms) {
+    return QDateTime(QDate(y, mo, d), QTime(h, mi, s, ms));
+}
+
+static void qtf_dt_out(const QDateTime &t, int *y, int *mo, int *d, int *h, int *mi, int *s, int *ms) {
+    const bool ok = t.isValid();
+    *y = ok ? t.date().year() : 0;
+    *mo = ok ? t.date().month() : 0;
+    *d = ok ? t.date().day() : 0;
+    *h = ok ? t.time().hour() : 0;
+    *mi = ok ? t.time().minute() : 0;
+    *s = ok ? t.time().second() : 0;
+    *ms = ok ? t.time().msec() : 0;
+}
+
+// The current local date and time.
+QTF_API void qtf_qdatetime_current(int *y, int *mo, int *d, int *h, int *mi, int *s, int *ms) {
+    qtf_dt_out(QDateTime::currentDateTime(), y, mo, d, h, mi, s, ms);
+}
+
+// 1 if the fields form a valid date and time.
+QTF_API int qtf_qdatetime_isValid(int y, int mo, int d, int h, int mi, int s, int ms) {
+    return qtf_bool(qtf_dt(y, mo, d, h, mi, s, ms).isValid());
+}
+
+// The date-time as text with a Qt format (e.g. "yyyy-MM-dd HH:mm:ss"); ISO 8601 if the format is empty.
+QTF_API char *qtf_qdatetime_toString(int y, int mo, int d, int h, int mi, int s, int ms, const char *fmt, int flen,
+                                     int *len) {
+    const QDateTime t = qtf_dt(y, mo, d, h, mi, s, ms);
+    return qtf_to_c(flen > 0 ? t.toString(qtf_qstring(fmt, flen)) : t.toString(Qt::ISODateWithMs), len);
+}
+
+// Parse text with a Qt format (ISO 8601 if the format is empty); all zeros if it does not parse.
+QTF_API void qtf_qdatetime_fromString(const char *text, int tlen, const char *fmt, int flen, int *y, int *mo, int *d,
+                                      int *h, int *mi, int *s, int *ms) {
+    const QString str = qtf_qstring(text, tlen);
+    const QDateTime t = flen > 0 ? QDateTime::fromString(str, qtf_qstring(fmt, flen))
+                                 : QDateTime::fromString(str, Qt::ISODateWithMs);
+    qtf_dt_out(t, y, mo, d, h, mi, s, ms);
+}
+
+// Add years, months, days (calendar arithmetic) and then milliseconds.
+QTF_API void qtf_qdatetime_add(int y, int mo, int d, int h, int mi, int s, int ms, int years, int months, int days,
+                               long long msecs, int *oy, int *omo, int *od, int *oh, int *omi, int *os, int *oms) {
+    const QDateTime t = qtf_dt(y, mo, d, h, mi, s, ms).addYears(years).addMonths(months).addDays(days).addMSecs(msecs);
+    qtf_dt_out(t, oy, omo, od, oh, omi, os, oms);
+}
+
+// Milliseconds since 1970-01-01T00:00:00 UTC.
+QTF_API long long qtf_qdatetime_toMSecsSinceEpoch(int y, int mo, int d, int h, int mi, int s, int ms) {
+    return qtf_dt(y, mo, d, h, mi, s, ms).toMSecsSinceEpoch();
+}
+
+// The local date-time `msecs` milliseconds after 1970-01-01T00:00:00 UTC.
+QTF_API void qtf_qdatetime_fromMSecsSinceEpoch(long long msecs, int *y, int *mo, int *d, int *h, int *mi, int *s,
+                                               int *ms) {
+    qtf_dt_out(QDateTime::fromMSecsSinceEpoch(msecs), y, mo, d, h, mi, s, ms);
+}
+
+// Day of the week, 1 (Monday) to 7 (Sunday); 0 if invalid.
+QTF_API int qtf_qdatetime_dayOfWeek(int y, int mo, int d) { return QDate(y, mo, d).dayOfWeek(); }
 
 QTF_API int qtf_qcoreapplication_sendEvent(void *receiver, void *e) {
     return qtf_bool(QCoreApplication::sendEvent(obj(receiver), event(e)));

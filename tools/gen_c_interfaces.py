@@ -48,6 +48,8 @@ PARAMS = [
     (r"const int \*", "integer(c_int), dimension(*), intent(in)", "c_int"),
     (r"int \*", "integer(c_int), intent(out)", "c_int"),
     (r"double \*", "real(c_double), intent(out)", "c_double"),
+    (r"long long \*", "integer(c_long_long), intent(out)", "c_long_long"),
+    (r"long long ", "integer(c_long_long), value", "c_long_long"),
     (r"int ", "integer(c_int), value", "c_int"),
     (r"double ", "real(c_double), value", "c_double"),
     (r"qtf_\w+_fn ", "type(c_funptr), value", "c_funptr"),
@@ -60,6 +62,7 @@ RETURNS = {
     "int *": ("type(c_ptr)", "c_ptr"),
     "int": ("integer(c_int)", "c_int"),
     "double": ("real(c_double)", "c_double"),
+    "long long": ("integer(c_long_long)", "c_long_long"),
 }
 
 DECL = re.compile(r"QTF_API\s+([\w\s\*]+?)\s*\b(qtf_\w+)\s*\(([^)]*)\)", re.S)

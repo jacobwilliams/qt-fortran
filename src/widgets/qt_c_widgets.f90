@@ -10,73 +10,79 @@ module qt_c_widgets
     ! Signal ids: must match `enum qtf_signal` in src/shim/qtf_common.h.
     integer(c_int), parameter, public :: QTF_SIG_QWIDGET_CLOSEEVENT = 1000
     integer(c_int), parameter, public :: QTF_SIG_QWIDGET_CONTEXTMENUEVENT = 1001
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_PAINTEVENT = 1002
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEPRESSEVENT = 1003
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSERELEASEEVENT = 1004
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEMOVEEVENT = 1005
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEDOUBLECLICKEVENT = 1006
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_WHEELEVENT = 1007
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_KEYPRESSEVENT = 1008
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_KEYRELEASEEVENT = 1009
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_RESIZEEVENT = 1010
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_CLICKED = 1011
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_TOGGLED = 1012
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_PRESSED = 1013
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_RELEASED = 1014
-    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_TEXTCHANGED = 1015
-    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_TEXTEDITED = 1016
-    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_RETURNPRESSED = 1017
-    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1018
-    integer(c_int), parameter, public :: QTF_SIG_QSPINBOX_VALUECHANGED = 1019
-    integer(c_int), parameter, public :: QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1020
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1021
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1022
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1023
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1024
-    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1025
-    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1026
-    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_ACTIVATED = 1027
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_ACCEPTED = 1028
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_REJECTED = 1029
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_FINISHED = 1030
-    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1031
-    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1032
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1033
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1034
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1035
-    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1036
-    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1037
-    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1038
-    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1039
-    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1040
-    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1041
-    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1042
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1043
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1044
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1045
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1046
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1047
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1048
-    integer(c_int), parameter, public :: QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1049
-    integer(c_int), parameter, public :: QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1050
-    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1051
-    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1052
-    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABBARCLICKED = 1053
-    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1054
-    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1055
-    integer(c_int), parameter, public :: QTF_SIG_QSPLITTER_SPLITTERMOVED = 1056
-    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_TOGGLED = 1057
-    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_CLICKED = 1058
-    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1059
-    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1060
-    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1061
-    integer(c_int), parameter, public :: QTF_SIG_QBUTTONGROUP_IDCLICKED = 1062
-    integer(c_int), parameter, public :: QTF_SIG_QDATEEDIT_DATECHANGED = 1063
-    integer(c_int), parameter, public :: QTF_SIG_QTIMEEDIT_TIMECHANGED = 1064
-    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1065
-    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_CLICKED = 1066
-    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1067
-    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSDIALOG_CANCELED = 1068
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_ENTEREVENT = 1002
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_LEAVEEVENT = 1003
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_FOCUSINEVENT = 1004
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_FOCUSOUTEVENT = 1005
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_SHOWEVENT = 1006
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_HIDEEVENT = 1007
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_PAINTEVENT = 1008
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEPRESSEVENT = 1009
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSERELEASEEVENT = 1010
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEMOVEEVENT = 1011
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEDOUBLECLICKEVENT = 1012
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_WHEELEVENT = 1013
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_KEYPRESSEVENT = 1014
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_KEYRELEASEEVENT = 1015
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_RESIZEEVENT = 1016
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_CLICKED = 1017
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_TOGGLED = 1018
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_PRESSED = 1019
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_RELEASED = 1020
+    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_TEXTCHANGED = 1021
+    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_TEXTEDITED = 1022
+    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_RETURNPRESSED = 1023
+    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1024
+    integer(c_int), parameter, public :: QTF_SIG_QSPINBOX_VALUECHANGED = 1025
+    integer(c_int), parameter, public :: QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1026
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1027
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1028
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1029
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1030
+    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1031
+    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1032
+    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_ACTIVATED = 1033
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_ACCEPTED = 1034
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_REJECTED = 1035
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_FINISHED = 1036
+    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1037
+    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1038
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1039
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1040
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1041
+    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1042
+    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1043
+    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1044
+    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1045
+    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1046
+    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1047
+    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1048
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1049
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1050
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1051
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1052
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1053
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1054
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1055
+    integer(c_int), parameter, public :: QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1056
+    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1057
+    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1058
+    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABBARCLICKED = 1059
+    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1060
+    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1061
+    integer(c_int), parameter, public :: QTF_SIG_QSPLITTER_SPLITTERMOVED = 1062
+    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_TOGGLED = 1063
+    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_CLICKED = 1064
+    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1065
+    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1066
+    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1067
+    integer(c_int), parameter, public :: QTF_SIG_QBUTTONGROUP_IDCLICKED = 1068
+    integer(c_int), parameter, public :: QTF_SIG_QDATEEDIT_DATECHANGED = 1069
+    integer(c_int), parameter, public :: QTF_SIG_QTIMEEDIT_TIMECHANGED = 1070
+    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1071
+    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_CLICKED = 1072
+    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1073
+    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSDIALOG_CANCELED = 1074
 
     interface
 
@@ -620,6 +626,15 @@ module qt_c_widgets
             type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qwidget_isWindow
+
+        !> Re-apply the style sheet, e.g. after changing a property that a style rule selects on (`*[state="error"]`).
+        !>
+        !> C: `void qtf_qwidget_repolish(void *self)`
+        subroutine qtf_qwidget_repolish(self) bind(C, name='qtf_qwidget_repolish')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qwidget_repolish
 
         !> Horizontal position (relative to the parent, or on the screen for a window).
         !>
@@ -5746,10 +5761,10 @@ module qt_c_widgets
     public :: qtf_qwidget_setMaximumWidth, qtf_qwidget_setMaximumHeight, qtf_qwidget_setFixedWidth
     public :: qtf_qwidget_setFixedHeight, qtf_qwidget_setSizePolicy, qtf_qwidget_setContentsMargins
     public :: qtf_qwidget_setWindowIcon, qtf_qwidget_saveGeometry, qtf_qwidget_restoreGeometry
-    public :: qtf_qwidget_isWindow, qtf_qwidget_x, qtf_qwidget_y, qtf_qwidget_move, qtf_qtfwidget_new
-    public :: qtf_qframe_new, qtf_qframe_setFrameShape, qtf_qframe_frameShape, qtf_qframe_setFrameShadow
-    public :: qtf_qframe_setLineWidth, qtf_qlabel_new, qtf_qlabel_setText, qtf_qlabel_text
-    public :: qtf_qlabel_setAlignment, qtf_qlabel_setWordWrap, qtf_qlabel_setPixmap
+    public :: qtf_qwidget_isWindow, qtf_qwidget_repolish, qtf_qwidget_x, qtf_qwidget_y, qtf_qwidget_move
+    public :: qtf_qtfwidget_new, qtf_qframe_new, qtf_qframe_setFrameShape, qtf_qframe_frameShape
+    public :: qtf_qframe_setFrameShadow, qtf_qframe_setLineWidth, qtf_qlabel_new, qtf_qlabel_setText
+    public :: qtf_qlabel_text, qtf_qlabel_setAlignment, qtf_qlabel_setWordWrap, qtf_qlabel_setPixmap
     public :: qtf_qlabel_setScaledContents, qtf_qabstractbutton_setText, qtf_qabstractbutton_text
     public :: qtf_qabstractbutton_setCheckable, qtf_qabstractbutton_isCheckable
     public :: qtf_qabstractbutton_setChecked, qtf_qabstractbutton_isChecked, qtf_qabstractbutton_click

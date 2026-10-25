@@ -28,6 +28,7 @@
 #include <QDockWidget>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
+#include <QFocusEvent>
 #include <QFontDialog>
 #include <QFormLayout>
 #include <QFrame>
@@ -80,73 +81,79 @@ template <typename T> static T *as(void *p) { return static_cast<T *>(p); }
 enum : int {
     QTF_SIG_QWIDGET_CLOSEEVENT = 1000,
     QTF_SIG_QWIDGET_CONTEXTMENUEVENT = 1001,
-    QTF_SIG_QTFWIDGET_PAINTEVENT = 1002,
-    QTF_SIG_QTFWIDGET_MOUSEPRESSEVENT = 1003,
-    QTF_SIG_QTFWIDGET_MOUSERELEASEEVENT = 1004,
-    QTF_SIG_QTFWIDGET_MOUSEMOVEEVENT = 1005,
-    QTF_SIG_QTFWIDGET_MOUSEDOUBLECLICKEVENT = 1006,
-    QTF_SIG_QTFWIDGET_WHEELEVENT = 1007,
-    QTF_SIG_QTFWIDGET_KEYPRESSEVENT = 1008,
-    QTF_SIG_QTFWIDGET_KEYRELEASEEVENT = 1009,
-    QTF_SIG_QTFWIDGET_RESIZEEVENT = 1010,
-    QTF_SIG_QABSTRACTBUTTON_CLICKED = 1011,
-    QTF_SIG_QABSTRACTBUTTON_TOGGLED = 1012,
-    QTF_SIG_QABSTRACTBUTTON_PRESSED = 1013,
-    QTF_SIG_QABSTRACTBUTTON_RELEASED = 1014,
-    QTF_SIG_QLINEEDIT_TEXTCHANGED = 1015,
-    QTF_SIG_QLINEEDIT_TEXTEDITED = 1016,
-    QTF_SIG_QLINEEDIT_RETURNPRESSED = 1017,
-    QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1018,
-    QTF_SIG_QSPINBOX_VALUECHANGED = 1019,
-    QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1020,
-    QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1021,
-    QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1022,
-    QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1023,
-    QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1024,
-    QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1025,
-    QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1026,
-    QTF_SIG_QCOMBOBOX_ACTIVATED = 1027,
-    QTF_SIG_QDIALOG_ACCEPTED = 1028,
-    QTF_SIG_QDIALOG_REJECTED = 1029,
-    QTF_SIG_QDIALOG_FINISHED = 1030,
-    QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1031,
-    QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1032,
-    QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1033,
-    QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1034,
-    QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1035,
-    QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1036,
-    QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1037,
-    QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1038,
-    QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1039,
-    QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1040,
-    QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1041,
-    QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1042,
-    QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1043,
-    QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1044,
-    QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1045,
-    QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1046,
-    QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1047,
-    QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1048,
-    QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1049,
-    QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1050,
-    QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1051,
-    QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1052,
-    QTF_SIG_QTABWIDGET_TABBARCLICKED = 1053,
-    QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1054,
-    QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1055,
-    QTF_SIG_QSPLITTER_SPLITTERMOVED = 1056,
-    QTF_SIG_QGROUPBOX_TOGGLED = 1057,
-    QTF_SIG_QGROUPBOX_CLICKED = 1058,
-    QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1059,
-    QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1060,
-    QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1061,
-    QTF_SIG_QBUTTONGROUP_IDCLICKED = 1062,
-    QTF_SIG_QDATEEDIT_DATECHANGED = 1063,
-    QTF_SIG_QTIMEEDIT_TIMECHANGED = 1064,
-    QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1065,
-    QTF_SIG_QCALENDARWIDGET_CLICKED = 1066,
-    QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1067,
-    QTF_SIG_QPROGRESSDIALOG_CANCELED = 1068,
+    QTF_SIG_QWIDGET_ENTEREVENT = 1002,
+    QTF_SIG_QWIDGET_LEAVEEVENT = 1003,
+    QTF_SIG_QWIDGET_FOCUSINEVENT = 1004,
+    QTF_SIG_QWIDGET_FOCUSOUTEVENT = 1005,
+    QTF_SIG_QWIDGET_SHOWEVENT = 1006,
+    QTF_SIG_QWIDGET_HIDEEVENT = 1007,
+    QTF_SIG_QTFWIDGET_PAINTEVENT = 1008,
+    QTF_SIG_QTFWIDGET_MOUSEPRESSEVENT = 1009,
+    QTF_SIG_QTFWIDGET_MOUSERELEASEEVENT = 1010,
+    QTF_SIG_QTFWIDGET_MOUSEMOVEEVENT = 1011,
+    QTF_SIG_QTFWIDGET_MOUSEDOUBLECLICKEVENT = 1012,
+    QTF_SIG_QTFWIDGET_WHEELEVENT = 1013,
+    QTF_SIG_QTFWIDGET_KEYPRESSEVENT = 1014,
+    QTF_SIG_QTFWIDGET_KEYRELEASEEVENT = 1015,
+    QTF_SIG_QTFWIDGET_RESIZEEVENT = 1016,
+    QTF_SIG_QABSTRACTBUTTON_CLICKED = 1017,
+    QTF_SIG_QABSTRACTBUTTON_TOGGLED = 1018,
+    QTF_SIG_QABSTRACTBUTTON_PRESSED = 1019,
+    QTF_SIG_QABSTRACTBUTTON_RELEASED = 1020,
+    QTF_SIG_QLINEEDIT_TEXTCHANGED = 1021,
+    QTF_SIG_QLINEEDIT_TEXTEDITED = 1022,
+    QTF_SIG_QLINEEDIT_RETURNPRESSED = 1023,
+    QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1024,
+    QTF_SIG_QSPINBOX_VALUECHANGED = 1025,
+    QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1026,
+    QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1027,
+    QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1028,
+    QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1029,
+    QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1030,
+    QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1031,
+    QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1032,
+    QTF_SIG_QCOMBOBOX_ACTIVATED = 1033,
+    QTF_SIG_QDIALOG_ACCEPTED = 1034,
+    QTF_SIG_QDIALOG_REJECTED = 1035,
+    QTF_SIG_QDIALOG_FINISHED = 1036,
+    QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1037,
+    QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1038,
+    QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1039,
+    QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1040,
+    QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1041,
+    QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1042,
+    QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1043,
+    QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1044,
+    QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1045,
+    QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1046,
+    QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1047,
+    QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1048,
+    QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1049,
+    QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1050,
+    QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1051,
+    QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1052,
+    QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1053,
+    QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1054,
+    QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1055,
+    QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1056,
+    QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1057,
+    QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1058,
+    QTF_SIG_QTABWIDGET_TABBARCLICKED = 1059,
+    QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1060,
+    QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1061,
+    QTF_SIG_QSPLITTER_SPLITTERMOVED = 1062,
+    QTF_SIG_QGROUPBOX_TOGGLED = 1063,
+    QTF_SIG_QGROUPBOX_CLICKED = 1064,
+    QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1065,
+    QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1066,
+    QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1067,
+    QTF_SIG_QBUTTONGROUP_IDCLICKED = 1068,
+    QTF_SIG_QDATEEDIT_DATECHANGED = 1069,
+    QTF_SIG_QTIMEEDIT_TIMECHANGED = 1070,
+    QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1071,
+    QTF_SIG_QCALENDARWIDGET_CLICKED = 1072,
+    QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1073,
+    QTF_SIG_QPROGRESSDIALOG_CANCELED = 1074,
 };
 
 // QApplication keeps references to argc/argv, so they must outlive it.
@@ -169,6 +176,13 @@ QTF_API void *qtf_qapplication_new_args(const char *s, int itemlen, int n) {
     return new QApplication(qtf_argc, qtf_argv.data());
 }
 
+// Re-apply the style (sheet) to a widget, e.g. after a dynamic property changed.
+static void qtf_repolish(QWidget *w) {
+    w->style()->unpolish(w);
+    w->style()->polish(w);
+    w->update();
+}
+
 // One of the style's standard icons by enum name (e.g. "SP_MediaPlay"); a null
 // icon if the name is unknown.
 static QIcon *qtf_standard_icon(const QString &name) {
@@ -178,14 +192,28 @@ static QIcon *qtf_standard_icon(const QString &name) {
     return new QIcon(ok ? QApplication::style()->standardIcon(QStyle::StandardPixmap(v)) : QIcon());
 }
 
-// Forwards a widget's close and context-menu events to Fortran slots. One is
-// created per widget when the first such slot is connected; as a child of the
-// widget it (and the slots it holds) is destroyed with the widget.
+// Events every widget forwards to Fortran slots through a QtfEventFilter.
+enum qtf_filter_event {
+    QTF_FILTER_CLOSE,
+    QTF_FILTER_CONTEXTMENU,
+    QTF_FILTER_ENTER,
+    QTF_FILTER_LEAVE,
+    QTF_FILTER_FOCUSIN,
+    QTF_FILTER_FOCUSOUT,
+    QTF_FILTER_SHOW,
+    QTF_FILTER_HIDE,
+    QTF_FILTER_COUNT
+};
+
+// Forwards a widget's close, context-menu, enter/leave, focus and show/hide
+// events to Fortran slots. One is created per widget when the first such slot
+// is connected; as a child of the widget it (and the slots it holds) is
+// destroyed with the widget.
 class QtfEventFilter : public QObject {
   public:
     explicit QtfEventFilter(QWidget *w) : QObject(w) { w->installEventFilter(this); }
 
-    std::vector<qtf_slot> close_handlers, context_menu_handlers;
+    std::array<std::vector<qtf_slot>, QTF_FILTER_COUNT> handlers;
 
     // The widget's filter, created on first use.
     static QtfEventFilter *of(QWidget *w) {
@@ -196,24 +224,42 @@ class QtfEventFilter : public QObject {
 
   protected:
     bool eventFilter(QObject *o, QEvent *e) override {
+        // only events of the widget itself (not of other objects it may filter)
+        if (o != parent()) return QObject::eventFilter(o, e);
         qtf_args a{};
         a.p = e;
-        if (e->type() == QEvent::Close) {
+        switch (e->type()) {
+        case QEvent::Close:
             // Vetoed: stop here, since the widget's own closeEvent would accept it again.
-            if (qtf_emit_all(close_handlers, a) > 0) return !e->isAccepted();
-        } else if (e->type() == QEvent::ContextMenu) {
+            if (qtf_emit_all(handlers[QTF_FILTER_CLOSE], a) > 0) return !e->isAccepted();
+            break;
+        case QEvent::ContextMenu:
             e->accept();
             // ignored by the slots: let it propagate to the parent
-            if (qtf_emit_all(context_menu_handlers, a) > 0) return e->isAccepted();
+            if (qtf_emit_all(handlers[QTF_FILTER_CONTEXTMENU], a) > 0) return e->isAccepted();
+            break;
+        // the rest are only observed: the widget still gets them
+        case QEvent::Enter: qtf_emit_all(handlers[QTF_FILTER_ENTER], a); break;
+        case QEvent::Leave: qtf_emit_all(handlers[QTF_FILTER_LEAVE], a); break;
+        case QEvent::FocusIn:
+            a.i[0] = static_cast<QFocusEvent *>(e)->reason();
+            qtf_emit_all(handlers[QTF_FILTER_FOCUSIN], a);
+            break;
+        case QEvent::FocusOut:
+            a.i[0] = static_cast<QFocusEvent *>(e)->reason();
+            qtf_emit_all(handlers[QTF_FILTER_FOCUSOUT], a);
+            break;
+        case QEvent::Show: qtf_emit_all(handlers[QTF_FILTER_SHOW], a); break;
+        case QEvent::Hide: qtf_emit_all(handlers[QTF_FILTER_HIDE], a); break;
+        default: break;
         }
         return QObject::eventFilter(o, e);
     }
 };
 
-// Attach a slot to a widget's close (CLOSE = true) or context-menu events.
-template <bool CLOSE> static bool connect_filter(void *s, const qtf_slot &ref) {
-    QtfEventFilter *f = QtfEventFilter::of(static_cast<QWidget *>(s));
-    (CLOSE ? f->close_handlers : f->context_menu_handlers).push_back(ref);
+// Attach a slot to one of the events a widget forwards through its QtfEventFilter.
+template <qtf_filter_event EV> static bool connect_filter(void *s, const qtf_slot &ref) {
+    QtfEventFilter::of(static_cast<QWidget *>(s))->handlers[EV].push_back(ref);
     return true;
 }
 
@@ -582,6 +628,9 @@ QTF_API int qtf_qwidget_restoreGeometry(void *self, const char *geometry, int ge
 
 // True if the widget is a top-level window.
 QTF_API int qtf_qwidget_isWindow(void *self) { return qtf_bool(as<QWidget>(self)->isWindow()); }
+
+// Re-apply the style sheet, e.g. after changing a property that a style rule selects on (`*[state="error"]`).
+QTF_API void qtf_qwidget_repolish(void *self) { qtf_repolish(as<QWidget>(self)); }
 
 // Horizontal position (relative to the parent, or on the screen for a window).
 QTF_API int qtf_qwidget_x(void *self) { return as<QWidget>(self)->x(); }
@@ -2816,8 +2865,14 @@ QTF_API void *qtf_qstyle_standardIcon(const char *name, int name_len) {
 // signal connectors
 
 static const bool qtf_widgets_registered = [] {
-    qtf_register_connector(QTF_SIG_QWIDGET_CLOSEEVENT, connect_filter<true>);
-    qtf_register_connector(QTF_SIG_QWIDGET_CONTEXTMENUEVENT, connect_filter<false>);
+    qtf_register_connector(QTF_SIG_QWIDGET_CLOSEEVENT, connect_filter<QTF_FILTER_CLOSE>);
+    qtf_register_connector(QTF_SIG_QWIDGET_CONTEXTMENUEVENT, connect_filter<QTF_FILTER_CONTEXTMENU>);
+    qtf_register_connector(QTF_SIG_QWIDGET_ENTEREVENT, connect_filter<QTF_FILTER_ENTER>);
+    qtf_register_connector(QTF_SIG_QWIDGET_LEAVEEVENT, connect_filter<QTF_FILTER_LEAVE>);
+    qtf_register_connector(QTF_SIG_QWIDGET_FOCUSINEVENT, connect_filter<QTF_FILTER_FOCUSIN>);
+    qtf_register_connector(QTF_SIG_QWIDGET_FOCUSOUTEVENT, connect_filter<QTF_FILTER_FOCUSOUT>);
+    qtf_register_connector(QTF_SIG_QWIDGET_SHOWEVENT, connect_filter<QTF_FILTER_SHOW>);
+    qtf_register_connector(QTF_SIG_QWIDGET_HIDEEVENT, connect_filter<QTF_FILTER_HIDE>);
     qtf_register_connector(QTF_SIG_QTFWIDGET_PAINTEVENT, connect_event<QTF_EV_PAINT>);
     qtf_register_connector(QTF_SIG_QTFWIDGET_MOUSEPRESSEVENT, connect_event<QTF_EV_MOUSEPRESS>);
     qtf_register_connector(QTF_SIG_QTFWIDGET_MOUSERELEASEEVENT, connect_event<QTF_EV_MOUSERELEASE>);

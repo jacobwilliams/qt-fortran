@@ -94,7 +94,19 @@ user code   ->  use qt                      Modern Fortran OO API
   bindings (`app%exec()`).
 - **Ownership**: follows Qt's parent/child model. No finalizers. Parented
   objects belong to Qt, and top-level objects use an explicit `%delete()`.
-  A `QPointer`-backed handle may be added later to detect use after delete.
+  Use after delete is detected (see below).
+- **Handle validity**: every QObject handle carries a serial number from a
+  registry in the shim (`qtf_object_serial`: assigned on first `attach`, the
+  entry dropped on `destroyed`; mutex-protected, and a leaked singleton so
+  objects destroyed at exit are safe). A handle is live only while the registry
+  maps its pointer to its serial (`qtf_object_alive`), so a new object at a
+  reused address is told apart. Generated methods pass `self` and object
+  arguments through `qtf_live(obj, 'QClass%method')`, which stops with a message
+  for a null or deleted handle; optional object arguments go through `qtf_ptr`
+  (null still means "none"). Signals carry the sender's serial, checked by
+  connect and emit. `isNull` means "not live" (like QPointer), and `delete`
+  skips objects already gone. Cost: about 70 ns per checked call. Non-QObject
+  handles (images, items, painters) are not checked.
 - **Enums/flags**: `integer(c_int), parameter` constants. Qt namespace values are
   `Qt_<Value>` (e.g. `Qt_AlignCenter`), and class enums are `QClass_<Value>`
   (e.g. `QMessageBox_Yes`, `QDialog_Accepted`). Flags combine with `ior`.
@@ -400,8 +412,18 @@ spec-only work now; items marked *(design)* need new machinery.
     `setApplicationName` choose the store.
   - **Done:** `QApplication()` passes the program's command-line arguments to Qt
     (so -style, -platform, ... work); `QApplication_arguments()` returns the rest.
-  - `QDateTime`, `QObject` properties, `findChild`.
-- **Events**: enter/leave, focus, show/hide, drag/drop.
+  - **Done:** `QDateTime` (a value type in qt_core: local time, format/parse,
+    calendar arithmetic, epoch ms as `integer(c_long_long)`, comparisons),
+    `QObject` dynamic properties (generic `setProperty`, typed getters with
+    defaults, `hasProperty`; `QWidget%repolish` for property-driven style
+    sheets), `findChild(name, child)` (binds a handle of the caller's type).
+    gen_c_interfaces gained `long long`.
+- **Events**: drag/drop (with desktop integration).
+  - **Done:** `enterEvent`, `leaveEvent`, `focusInEvent(reason)`,
+    `focusOutEvent(reason)`, `showEvent`, `hideEvent` on every QWidget, through
+    the same `QtfEventFilter` as close/context-menu (one handler list per event;
+    these are observed, not consumed). `QEvent(type)` makes synthetic events of
+    the right subclass for tests.
   - **Done:** `closeEvent` (a slot vetoes with `event%ignore()`) and
     `contextMenuEvent` on every `QWidget`, plus `QMenu%popup` / `exec` at a
     screen position. They are delivered by an event filter (`QtfEventFilter`,
@@ -427,7 +449,7 @@ spec-only work now; items marked *(design)* need new machinery.
 - **Done:** signals with several integer arguments (`QSignalInt2/3/4`, e.g.
   `cellChanged(row, column)`, `dateChanged(year, month, day)`), and custom
   signal kinds (tree items, model requests).
-- Use-after-delete detection for handles (`QPointer`-backed).
+- **Done:** use-after-delete detection for QObject handles (see Handle validity).
 
 Generator features added for the widgets: `strings` arguments (character array
 → QStringList), `bool&` optional output flags, `int[]` results, value-type

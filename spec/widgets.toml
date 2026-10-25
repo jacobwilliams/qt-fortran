@@ -26,7 +26,7 @@ cpp_includes = [
     "QInputDialog", "QLCDNumber", "QListWidget", "QPlainTextEdit", "QProgressBar", "QProgressDialog",
     "QScrollArea", "QSplitter", "QStackedWidget", "QTabWidget", "QTableView", "QTableWidget", "QTextEdit",
     "QTime", "QTimeEdit", "QToolButton", "QTreeWidget", "QVariant", "QIcon", "QMetaEnum", "QStyle", "string",
-    "QCloseEvent", "QContextMenuEvent", "QByteArray",
+    "QCloseEvent", "QContextMenuEvent", "QByteArray", "QFocusEvent",
 ]
 
 cpp_prelude = """
@@ -50,6 +50,13 @@ QTF_API void *qtf_qapplication_new_args(const char *s, int itemlen, int n) {
     return new QApplication(qtf_argc, qtf_argv.data());
 }
 
+// Re-apply the style (sheet) to a widget, e.g. after a dynamic property changed.
+static void qtf_repolish(QWidget *w) {
+    w->style()->unpolish(w);
+    w->style()->polish(w);
+    w->update();
+}
+
 // One of the style's standard icons by enum name (e.g. "SP_MediaPlay"); a null
 // icon if the name is unknown.
 static QIcon *qtf_standard_icon(const QString &name) {
@@ -59,14 +66,28 @@ static QIcon *qtf_standard_icon(const QString &name) {
     return new QIcon(ok ? QApplication::style()->standardIcon(QStyle::StandardPixmap(v)) : QIcon());
 }
 
-// Forwards a widget's close and context-menu events to Fortran slots. One is
-// created per widget when the first such slot is connected; as a child of the
-// widget it (and the slots it holds) is destroyed with the widget.
+// Events every widget forwards to Fortran slots through a QtfEventFilter.
+enum qtf_filter_event {
+    QTF_FILTER_CLOSE,
+    QTF_FILTER_CONTEXTMENU,
+    QTF_FILTER_ENTER,
+    QTF_FILTER_LEAVE,
+    QTF_FILTER_FOCUSIN,
+    QTF_FILTER_FOCUSOUT,
+    QTF_FILTER_SHOW,
+    QTF_FILTER_HIDE,
+    QTF_FILTER_COUNT
+};
+
+// Forwards a widget's close, context-menu, enter/leave, focus and show/hide
+// events to Fortran slots. One is created per widget when the first such slot
+// is connected; as a child of the widget it (and the slots it holds) is
+// destroyed with the widget.
 class QtfEventFilter : public QObject {
   public:
     explicit QtfEventFilter(QWidget *w) : QObject(w) { w->installEventFilter(this); }
 
-    std::vector<qtf_slot> close_handlers, context_menu_handlers;
+    std::array<std::vector<qtf_slot>, QTF_FILTER_COUNT> handlers;
 
     // The widget's filter, created on first use.
     static QtfEventFilter *of(QWidget *w) {
@@ -77,24 +98,42 @@ class QtfEventFilter : public QObject {
 
   protected:
     bool eventFilter(QObject *o, QEvent *e) override {
+        // only events of the widget itself (not of other objects it may filter)
+        if (o != parent()) return QObject::eventFilter(o, e);
         qtf_args a{};
         a.p = e;
-        if (e->type() == QEvent::Close) {
+        switch (e->type()) {
+        case QEvent::Close:
             // Vetoed: stop here, since the widget's own closeEvent would accept it again.
-            if (qtf_emit_all(close_handlers, a) > 0) return !e->isAccepted();
-        } else if (e->type() == QEvent::ContextMenu) {
+            if (qtf_emit_all(handlers[QTF_FILTER_CLOSE], a) > 0) return !e->isAccepted();
+            break;
+        case QEvent::ContextMenu:
             e->accept();
             // ignored by the slots: let it propagate to the parent
-            if (qtf_emit_all(context_menu_handlers, a) > 0) return e->isAccepted();
+            if (qtf_emit_all(handlers[QTF_FILTER_CONTEXTMENU], a) > 0) return e->isAccepted();
+            break;
+        // the rest are only observed: the widget still gets them
+        case QEvent::Enter: qtf_emit_all(handlers[QTF_FILTER_ENTER], a); break;
+        case QEvent::Leave: qtf_emit_all(handlers[QTF_FILTER_LEAVE], a); break;
+        case QEvent::FocusIn:
+            a.i[0] = static_cast<QFocusEvent *>(e)->reason();
+            qtf_emit_all(handlers[QTF_FILTER_FOCUSIN], a);
+            break;
+        case QEvent::FocusOut:
+            a.i[0] = static_cast<QFocusEvent *>(e)->reason();
+            qtf_emit_all(handlers[QTF_FILTER_FOCUSOUT], a);
+            break;
+        case QEvent::Show: qtf_emit_all(handlers[QTF_FILTER_SHOW], a); break;
+        case QEvent::Hide: qtf_emit_all(handlers[QTF_FILTER_HIDE], a); break;
+        default: break;
         }
         return QObject::eventFilter(o, e);
     }
 };
 
-// Attach a slot to a widget's close (CLOSE = true) or context-menu events.
-template <bool CLOSE> static bool connect_filter(void *s, const qtf_slot &ref) {
-    QtfEventFilter *f = QtfEventFilter::of(static_cast<QWidget *>(s));
-    (CLOSE ? f->close_handlers : f->context_menu_handlers).push_back(ref);
+// Attach a slot to one of the events a widget forwards through its QtfEventFilter.
+template <qtf_filter_event EV> static bool connect_filter(void *s, const qtf_slot &ref) {
+    QtfEventFilter::of(static_cast<QWidget *>(s))->handlers[EV].push_back(ref);
     return true;
 }
 
@@ -373,7 +412,7 @@ fortran_procedures = '''
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(model_data_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalmodeldata_connect
 
     !> Call the slot with (row, column, request).
@@ -398,7 +437,7 @@ fortran_procedures = '''
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(model_edit_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalmodeledit_connect
 
     !> Call the slot with (row, column, text).
@@ -421,7 +460,7 @@ fortran_procedures = '''
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(tree_item_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignaltreeitem_connect
 
     !> Call the slot with the item (null if none).
@@ -446,7 +485,7 @@ fortran_procedures = '''
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(tree_item_int_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignaltreeitemint_connect
 
     !> Call the slot with the item and column.
@@ -635,6 +674,14 @@ doc = "QTabWidget::TabPosition"
 values = ["QTabWidget_North = 0", "QTabWidget_South = 1", "QTabWidget_West = 2", "QTabWidget_East = 3"]
 
 [[enum]]
+doc = "Qt::FocusReason"
+values = [
+    "Qt_MouseFocusReason = 0", "Qt_TabFocusReason = 1", "Qt_BacktabFocusReason = 2",
+    "Qt_ActiveWindowFocusReason = 3", "Qt_PopupFocusReason = 4", "Qt_ShortcutFocusReason = 5",
+    "Qt_MenuBarFocusReason = 6", "Qt_OtherFocusReason = 7",
+]
+
+[[enum]]
 doc = "QDockWidget::DockWidgetFeature"
 values = [
     "QDockWidget_NoDockWidgetFeatures = 0", "QDockWidget_DockWidgetClosable = 1",
@@ -686,8 +733,14 @@ name = "QWidget"
 doc = "Base of all user interface objects; a widget without a parent is a window."
 ctor = "(parent: QWidget?) -- Create a widget; without a parent it is a top-level window."
 signals = [
-    { sig = "closeEvent: custom", fortran_type = "QSignalCloseEvent", connector = "connect_filter<true>", doc = "The window is about to close; a slot can keep it open with `event%ignore()`." },
-    { sig = "contextMenuEvent: custom", fortran_type = "QSignalContextMenuEvent", connector = "connect_filter<false>", doc = "A context menu was requested (right click); show one with `menu%popup(event%globalX(), event%globalY())`." },
+    { sig = "closeEvent: custom", fortran_type = "QSignalCloseEvent", connector = "connect_filter<QTF_FILTER_CLOSE>", doc = "The window is about to close; a slot can keep it open with `event%ignore()`." },
+    { sig = "contextMenuEvent: custom", fortran_type = "QSignalContextMenuEvent", connector = "connect_filter<QTF_FILTER_CONTEXTMENU>", doc = "A context menu was requested (right click); show one with `menu%popup(event%globalX(), event%globalY())`." },
+    { sig = "enterEvent: void", connector = "connect_filter<QTF_FILTER_ENTER>", doc = "The mouse entered the widget." },
+    { sig = "leaveEvent: void", connector = "connect_filter<QTF_FILTER_LEAVE>", doc = "The mouse left the widget." },
+    { sig = "focusInEvent: int", connector = "connect_filter<QTF_FILTER_FOCUSIN>", doc = "The widget got keyboard focus; the slot gets the reason (a Qt_*FocusReason constant)." },
+    { sig = "focusOutEvent: int", connector = "connect_filter<QTF_FILTER_FOCUSOUT>", doc = "The widget lost keyboard focus; the slot gets the reason (a Qt_*FocusReason constant)." },
+    { sig = "showEvent: void", connector = "connect_filter<QTF_FILTER_SHOW>", doc = "The widget was shown." },
+    { sig = "hideEvent: void", connector = "connect_filter<QTF_FILTER_HIDE>", doc = "The widget was hidden." },
 ]
 methods = [
     "show() -- Show the widget and its children.",
@@ -731,6 +784,7 @@ methods = [
     { sig = "saveGeometry() -> string", cpp = "QString::fromLatin1({self}->saveGeometry().toBase64())", doc = "The window's position and size as text (base64), e.g. to store with QSettings." },
     { sig = "restoreGeometry(geometry: string) -> bool", cpp = "{self}->restoreGeometry(QByteArray::fromBase64({geometry}.toLatin1()))", doc = "Restore a geometry from `saveGeometry`; false (and no change) if it is invalid." },
     "isWindow() -> bool -- True if the widget is a top-level window.",
+    { sig = "repolish()", cpp = "qtf_repolish({self})", doc = "Re-apply the style sheet, e.g. after changing a property that a style rule selects on (`*[state=\"error\"]`)." },
     "x() -> int -- Horizontal position (relative to the parent, or on the screen for a window).",
     "y() -> int -- Vertical position (relative to the parent, or on the screen for a window).",
     "move(x: int, y: int) -- Move the widget (a window: on the screen).",

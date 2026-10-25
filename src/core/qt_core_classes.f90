@@ -129,7 +129,8 @@ contains
         class(QSettings), intent(in) :: self
         character(len=*), intent(in) :: key
         character(len=*), intent(in) :: value
-        call qtf_qsettings_setString(self%ptr, key, len(key, c_int), value, len(value, c_int))
+        call qtf_qsettings_setString(qtf_live(self, 'QSettings%setString'), key, len(key, c_int), value, len(value, &
+                c_int))
     end subroutine qsettings_setString
 
     !> Store an integer.
@@ -137,7 +138,7 @@ contains
         class(QSettings), intent(in) :: self
         character(len=*), intent(in) :: key
         integer, intent(in) :: value
-        call qtf_qsettings_setInt(self%ptr, key, len(key, c_int), int(value, c_int))
+        call qtf_qsettings_setInt(qtf_live(self, 'QSettings%setInt'), key, len(key, c_int), int(value, c_int))
     end subroutine qsettings_setInt
 
     !> Store a real number.
@@ -145,7 +146,7 @@ contains
         class(QSettings), intent(in) :: self
         character(len=*), intent(in) :: key
         real(c_double), intent(in) :: value
-        call qtf_qsettings_setDouble(self%ptr, key, len(key, c_int), value)
+        call qtf_qsettings_setDouble(qtf_live(self, 'QSettings%setDouble'), key, len(key, c_int), value)
     end subroutine qsettings_setDouble
 
     !> Store a logical.
@@ -153,7 +154,7 @@ contains
         class(QSettings), intent(in) :: self
         character(len=*), intent(in) :: key
         logical, intent(in) :: value
-        call qtf_qsettings_setBool(self%ptr, key, len(key, c_int), qtf_int(value))
+        call qtf_qsettings_setBool(qtf_live(self, 'QSettings%setBool'), key, len(key, c_int), qtf_int(value))
     end subroutine qsettings_setBool
 
     !> The string stored under `key` (`defaultValue` if missing).
@@ -167,7 +168,8 @@ contains
         type(c_ptr) :: p_
         defaultValue_ = ''
         if (present(defaultValue)) defaultValue_ = defaultValue
-        p_ = qtf_qsettings_stringValue(self%ptr, key, len(key, c_int), defaultValue_, len(defaultValue_, c_int), n_)
+        p_ = qtf_qsettings_stringValue(qtf_live(self, 'QSettings%stringValue'), key, len(key, c_int), defaultValue_, &
+                len(defaultValue_, c_int), n_)
         res = qtf_take_string(p_, n_)
     end function qsettings_stringValue
 
@@ -180,7 +182,7 @@ contains
         integer(c_int) :: defaultValue_
         defaultValue_ = 0
         if (present(defaultValue)) defaultValue_ = int(defaultValue, c_int)
-        res = qtf_qsettings_intValue(self%ptr, key, len(key, c_int), defaultValue_)
+        res = qtf_qsettings_intValue(qtf_live(self, 'QSettings%intValue'), key, len(key, c_int), defaultValue_)
     end function qsettings_intValue
 
     !> The real number stored under `key` (`defaultValue` if missing).
@@ -192,7 +194,7 @@ contains
         real(c_double) :: defaultValue_
         defaultValue_ = 0.0_c_double
         if (present(defaultValue)) defaultValue_ = defaultValue
-        res = qtf_qsettings_doubleValue(self%ptr, key, len(key, c_int), defaultValue_)
+        res = qtf_qsettings_doubleValue(qtf_live(self, 'QSettings%doubleValue'), key, len(key, c_int), defaultValue_)
     end function qsettings_doubleValue
 
     !> The logical stored under `key` (`defaultValue` if missing).
@@ -204,7 +206,8 @@ contains
         logical :: defaultValue_
         defaultValue_ = .false.
         if (present(defaultValue)) defaultValue_ = defaultValue
-        res = qtf_logical(qtf_qsettings_boolValue(self%ptr, key, len(key, c_int), qtf_int(defaultValue_)))
+        res = qtf_logical(qtf_qsettings_boolValue(qtf_live(self, 'QSettings%boolValue'), key, len(key, c_int), &
+                qtf_int(defaultValue_)))
     end function qsettings_boolValue
 
     !> True if `key` has a value.
@@ -212,20 +215,20 @@ contains
         class(QSettings), intent(in) :: self
         character(len=*), intent(in) :: key
         logical :: res
-        res = qtf_logical(qtf_qsettings_contains(self%ptr, key, len(key, c_int)))
+        res = qtf_logical(qtf_qsettings_contains(qtf_live(self, 'QSettings%contains'), key, len(key, c_int)))
     end function qsettings_contains
 
     !> Remove `key` (and, for a group name, everything under it).
     subroutine qsettings_remove(self, key)
         class(QSettings), intent(in) :: self
         character(len=*), intent(in) :: key
-        call qtf_qsettings_remove(self%ptr, key, len(key, c_int))
+        call qtf_qsettings_remove(qtf_live(self, 'QSettings%remove'), key, len(key, c_int))
     end subroutine qsettings_remove
 
     !> Remove all keys (of the current group).
     subroutine qsettings_clear(self)
         class(QSettings), intent(in) :: self
-        call qtf_qsettings_clear(self%ptr)
+        call qtf_qsettings_clear(qtf_live(self, 'QSettings%clear'))
     end subroutine qsettings_clear
 
     !> All keys, including those in subgroups (relative to the current group).
@@ -234,7 +237,7 @@ contains
         type(qt_string), allocatable :: res(:)
         integer(c_int) :: n_
         type(c_ptr) :: p_
-        p_ = qtf_qsettings_allKeys(self%ptr, n_)
+        p_ = qtf_qsettings_allKeys(qtf_live(self, 'QSettings%allKeys'), n_)
         res = qtf_take_string_list(p_, n_)
     end function qsettings_allKeys
 
@@ -244,7 +247,7 @@ contains
         type(qt_string), allocatable :: res(:)
         integer(c_int) :: n_
         type(c_ptr) :: p_
-        p_ = qtf_qsettings_childKeys(self%ptr, n_)
+        p_ = qtf_qsettings_childKeys(qtf_live(self, 'QSettings%childKeys'), n_)
         res = qtf_take_string_list(p_, n_)
     end function qsettings_childKeys
 
@@ -254,7 +257,7 @@ contains
         type(qt_string), allocatable :: res(:)
         integer(c_int) :: n_
         type(c_ptr) :: p_
-        p_ = qtf_qsettings_childGroups(self%ptr, n_)
+        p_ = qtf_qsettings_childGroups(qtf_live(self, 'QSettings%childGroups'), n_)
         res = qtf_take_string_list(p_, n_)
     end function qsettings_childGroups
 
@@ -262,13 +265,13 @@ contains
     subroutine qsettings_beginGroup(self, prefix)
         class(QSettings), intent(in) :: self
         character(len=*), intent(in) :: prefix
-        call qtf_qsettings_beginGroup(self%ptr, prefix, len(prefix, c_int))
+        call qtf_qsettings_beginGroup(qtf_live(self, 'QSettings%beginGroup'), prefix, len(prefix, c_int))
     end subroutine qsettings_beginGroup
 
     !> End the group begun last.
     subroutine qsettings_endGroup(self)
         class(QSettings), intent(in) :: self
-        call qtf_qsettings_endGroup(self%ptr)
+        call qtf_qsettings_endGroup(qtf_live(self, 'QSettings%endGroup'))
     end subroutine qsettings_endGroup
 
     !> The current group prefix.
@@ -277,14 +280,14 @@ contains
         character(len=:), allocatable :: res
         integer(c_int) :: n_
         type(c_ptr) :: p_
-        p_ = qtf_qsettings_group(self%ptr, n_)
+        p_ = qtf_qsettings_group(qtf_live(self, 'QSettings%group'), n_)
         res = qtf_take_string(p_, n_)
     end function qsettings_group
 
     !> Write unsaved changes and re-read changes made elsewhere.
     subroutine qsettings_sync(self)
         class(QSettings), intent(in) :: self
-        call qtf_qsettings_sync(self%ptr)
+        call qtf_qsettings_sync(qtf_live(self, 'QSettings%sync'))
     end subroutine qsettings_sync
 
     !> Where the settings are stored (a path, or a registry key on Windows).
@@ -293,7 +296,7 @@ contains
         character(len=:), allocatable :: res
         integer(c_int) :: n_
         type(c_ptr) :: p_
-        p_ = qtf_qsettings_fileName(self%ptr, n_)
+        p_ = qtf_qsettings_fileName(qtf_live(self, 'QSettings%fileName'), n_)
         res = qtf_take_string(p_, n_)
     end function qsettings_fileName
 
@@ -301,14 +304,14 @@ contains
     function qsettings_status(self) result(res)
         class(QSettings), intent(in) :: self
         integer :: res
-        res = qtf_qsettings_status(self%ptr)
+        res = qtf_qsettings_status(qtf_live(self, 'QSettings%status'))
     end function qsettings_status
 
     !> True if the settings can be saved.
     function qsettings_isWritable(self) result(res)
         class(QSettings), intent(in) :: self
         logical :: res
-        res = qtf_logical(qtf_qsettings_isWritable(self%ptr))
+        res = qtf_logical(qtf_qsettings_isWritable(qtf_live(self, 'QSettings%isWritable')))
     end function qsettings_isWritable
 
     !> Bind to a C++ QThread and its signals.
@@ -316,14 +319,14 @@ contains
         class(QThread), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
         call self%QObject%attach(ptr)
-        self%started = QSignal(ptr, QTF_SIG_QTHREAD_STARTED)
-        self%finished = QSignal(ptr, QTF_SIG_QTHREAD_FINISHED)
+        self%started = QSignal(ptr, QTF_SIG_QTHREAD_STARTED, self%serial)
+        self%finished = QSignal(ptr, QTF_SIG_QTHREAD_FINISHED, self%serial)
     end subroutine qthread_attach
 
     !> Start running the work in the new thread (does nothing if it is running).
     subroutine qthread_start(self)
         class(QThread), intent(in) :: self
-        call qtf_qthread_start(self%ptr)
+        call qtf_qthread_start(qtf_live(self, 'QThread%start'))
     end subroutine qthread_start
 
     !> Block until the work has returned, or for at most `msecs` milliseconds (check `isFinished`).
@@ -333,27 +336,27 @@ contains
         integer(c_int) :: msecs_
         msecs_ = -1
         if (present(msecs)) msecs_ = int(msecs, c_int)
-        call qtf_qthread_wait(self%ptr, msecs_)
+        call qtf_qthread_wait(qtf_live(self, 'QThread%wait'), msecs_)
     end subroutine qthread_wait
 
     !> True while the work runs.
     function qthread_isRunning(self) result(res)
         class(QThread), intent(in) :: self
         logical :: res
-        res = qtf_logical(qtf_qthread_isRunning(self%ptr))
+        res = qtf_logical(qtf_qthread_isRunning(qtf_live(self, 'QThread%isRunning')))
     end function qthread_isRunning
 
     !> True once the work has returned.
     function qthread_isFinished(self) result(res)
         class(QThread), intent(in) :: self
         logical :: res
-        res = qtf_logical(qtf_qthread_isFinished(self%ptr))
+        res = qtf_logical(qtf_qthread_isFinished(qtf_live(self, 'QThread%isFinished')))
     end function qthread_isFinished
 
     !> Ask the work to stop (it should check `QThread_isInterruptionRequested()`).
     subroutine qthread_requestInterruption(self)
         class(QThread), intent(in) :: self
-        call qtf_qthread_requestInterruption(self%ptr)
+        call qtf_qthread_requestInterruption(qtf_live(self, 'QThread%requestInterruption'))
     end subroutine qthread_requestInterruption
 
     !> From inside the work: true if the thread running it was asked to stop.

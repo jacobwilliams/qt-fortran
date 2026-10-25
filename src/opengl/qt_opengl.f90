@@ -314,16 +314,16 @@ contains
         class(QtfOpenGLWidget), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
         call self%QWidget%attach(ptr)
-        self%initializeGL = QSignal(ptr, QTF_SIG_QTFOPENGLWIDGET_INITIALIZEGL)
-        self%resizeGL = QSignal(ptr, QTF_SIG_QTFOPENGLWIDGET_RESIZEGL)
-        self%paintGL = QSignal(ptr, QTF_SIG_QTFOPENGLWIDGET_PAINTGL)
-        self%mousePressEvent = QSignalMouseEvent(ptr, QTF_SIG_QTFOPENGLWIDGET_MOUSEPRESSEVENT)
-        self%mouseReleaseEvent = QSignalMouseEvent(ptr, QTF_SIG_QTFOPENGLWIDGET_MOUSERELEASEEVENT)
-        self%mouseMoveEvent = QSignalMouseEvent(ptr, QTF_SIG_QTFOPENGLWIDGET_MOUSEMOVEEVENT)
-        self%mouseDoubleClickEvent = QSignalMouseEvent(ptr, QTF_SIG_QTFOPENGLWIDGET_MOUSEDOUBLECLICKEVENT)
-        self%wheelEvent = QSignalWheelEvent(ptr, QTF_SIG_QTFOPENGLWIDGET_WHEELEVENT)
-        self%keyPressEvent = QSignalKeyEvent(ptr, QTF_SIG_QTFOPENGLWIDGET_KEYPRESSEVENT)
-        self%keyReleaseEvent = QSignalKeyEvent(ptr, QTF_SIG_QTFOPENGLWIDGET_KEYRELEASEEVENT)
+        self%initializeGL = QSignal(ptr, QTF_SIG_QTFOPENGLWIDGET_INITIALIZEGL, self%serial)
+        self%resizeGL = QSignal(ptr, QTF_SIG_QTFOPENGLWIDGET_RESIZEGL, self%serial)
+        self%paintGL = QSignal(ptr, QTF_SIG_QTFOPENGLWIDGET_PAINTGL, self%serial)
+        self%mousePressEvent = QSignalMouseEvent(ptr, QTF_SIG_QTFOPENGLWIDGET_MOUSEPRESSEVENT, self%serial)
+        self%mouseReleaseEvent = QSignalMouseEvent(ptr, QTF_SIG_QTFOPENGLWIDGET_MOUSERELEASEEVENT, self%serial)
+        self%mouseMoveEvent = QSignalMouseEvent(ptr, QTF_SIG_QTFOPENGLWIDGET_MOUSEMOVEEVENT, self%serial)
+        self%mouseDoubleClickEvent = QSignalMouseEvent(ptr, QTF_SIG_QTFOPENGLWIDGET_MOUSEDOUBLECLICKEVENT, self%serial)
+        self%wheelEvent = QSignalWheelEvent(ptr, QTF_SIG_QTFOPENGLWIDGET_WHEELEVENT, self%serial)
+        self%keyPressEvent = QSignalKeyEvent(ptr, QTF_SIG_QTFOPENGLWIDGET_KEYPRESSEVENT, self%serial)
+        self%keyReleaseEvent = QSignalKeyEvent(ptr, QTF_SIG_QTFOPENGLWIDGET_KEYRELEASEEVENT, self%serial)
     end subroutine qtfopenglwidget_attach
 
     !> Create an OpenGL widget; without a parent it is a top-level window.
@@ -336,34 +336,34 @@ contains
     !> Make the widget's context current (for GL calls outside its slots).
     subroutine qtfopenglwidget_makeCurrent(self)
         class(QtfOpenGLWidget), intent(in) :: self
-        call qtf_qtfopenglwidget_makeCurrent(self%ptr)
+        call qtf_qtfopenglwidget_makeCurrent(qtf_live(self, 'QtfOpenGLWidget%makeCurrent'))
     end subroutine qtfopenglwidget_makeCurrent
 
     !> Release the widget's context.
     subroutine qtfopenglwidget_doneCurrent(self)
         class(QtfOpenGLWidget), intent(in) :: self
-        call qtf_qtfopenglwidget_doneCurrent(self%ptr)
+        call qtf_qtfopenglwidget_doneCurrent(qtf_live(self, 'QtfOpenGLWidget%doneCurrent'))
     end subroutine qtfopenglwidget_doneCurrent
 
     !> True once the widget has a working OpenGL context.
     function qtfopenglwidget_isValid(self) result(res)
         class(QtfOpenGLWidget), intent(in) :: self
         logical :: res
-        res = qtf_logical(qtf_qtfopenglwidget_isValid(self%ptr))
+        res = qtf_logical(qtf_qtfopenglwidget_isValid(qtf_live(self, 'QtfOpenGLWidget%isValid')))
     end function qtfopenglwidget_isValid
 
     !> The format of the actual context (version, profile, ...); delete it when done.
     function qtfopenglwidget_format(self) result(res)
         class(QtfOpenGLWidget), intent(in) :: self
         type(QSurfaceFormat) :: res
-        res%ptr = qtf_qtfopenglwidget_format(self%ptr)
+        res%ptr = qtf_qtfopenglwidget_format(qtf_live(self, 'QtfOpenGLWidget%format'))
     end function qtfopenglwidget_format
 
     !> Render the scene into a new image (e.g. for screenshots); delete it when done.
     function qtfopenglwidget_grabFramebuffer(self) result(res)
         class(QtfOpenGLWidget), intent(in) :: self
         type(QImage) :: res
-        res%ptr = qtf_qtfopenglwidget_grabFramebuffer(self%ptr)
+        res%ptr = qtf_qtfopenglwidget_grabFramebuffer(qtf_live(self, 'QtfOpenGLWidget%grabFramebuffer'))
     end function qtfopenglwidget_grabFramebuffer
 
     !> Create an empty shader program.
@@ -379,35 +379,35 @@ contains
         integer, intent(in) :: type
         character(len=*), intent(in) :: source
         logical :: res
-        res = qtf_logical(qtf_qopenglshaderprogram_addShaderFromSourceCode(self%ptr, int(type, c_int), source, &
-                len(source, c_int)))
+        res = qtf_logical(qtf_qopenglshaderprogram_addShaderFromSourceCode(qtf_live(self, &
+                'QOpenGLShaderProgram%addShaderFromSourceCode'), int(type, c_int), source, len(source, c_int)))
     end function qopenglshaderprogram_addShaderFromSourceCode
 
     !> Link the shaders; false on error (see `log`).
     function qopenglshaderprogram_link(self) result(res)
         class(QOpenGLShaderProgram), intent(in) :: self
         logical :: res
-        res = qtf_logical(qtf_qopenglshaderprogram_link(self%ptr))
+        res = qtf_logical(qtf_qopenglshaderprogram_link(qtf_live(self, 'QOpenGLShaderProgram%link')))
     end function qopenglshaderprogram_link
 
     !> True if the program is linked.
     function qopenglshaderprogram_isLinked(self) result(res)
         class(QOpenGLShaderProgram), intent(in) :: self
         logical :: res
-        res = qtf_logical(qtf_qopenglshaderprogram_isLinked(self%ptr))
+        res = qtf_logical(qtf_qopenglshaderprogram_isLinked(qtf_live(self, 'QOpenGLShaderProgram%isLinked')))
     end function qopenglshaderprogram_isLinked
 
     !> Use this program for drawing.
     function qopenglshaderprogram_bind(self) result(res)
         class(QOpenGLShaderProgram), intent(in) :: self
         logical :: res
-        res = qtf_logical(qtf_qopenglshaderprogram_bind(self%ptr))
+        res = qtf_logical(qtf_qopenglshaderprogram_bind(qtf_live(self, 'QOpenGLShaderProgram%bind')))
     end function qopenglshaderprogram_bind
 
     !> Stop using this program.
     subroutine qopenglshaderprogram_release(self)
         class(QOpenGLShaderProgram), intent(in) :: self
-        call qtf_qopenglshaderprogram_release(self%ptr)
+        call qtf_qopenglshaderprogram_release(qtf_live(self, 'QOpenGLShaderProgram%release'))
     end subroutine qopenglshaderprogram_release
 
     !> Compiler / linker messages from the last operation.
@@ -416,7 +416,7 @@ contains
         character(len=:), allocatable :: res
         integer(c_int) :: n_
         type(c_ptr) :: p_
-        p_ = qtf_qopenglshaderprogram_log(self%ptr, n_)
+        p_ = qtf_qopenglshaderprogram_log(qtf_live(self, 'QOpenGLShaderProgram%log'), n_)
         res = qtf_take_string(p_, n_)
     end function qopenglshaderprogram_log
 
@@ -424,7 +424,7 @@ contains
     function qopenglshaderprogram_programId(self) result(res)
         class(QOpenGLShaderProgram), intent(in) :: self
         integer :: res
-        res = qtf_qopenglshaderprogram_programId(self%ptr)
+        res = qtf_qopenglshaderprogram_programId(qtf_live(self, 'QOpenGLShaderProgram%programId'))
     end function qopenglshaderprogram_programId
 
     !> Location of a vertex attribute (-1 if not found).
@@ -432,7 +432,8 @@ contains
         class(QOpenGLShaderProgram), intent(in) :: self
         character(len=*), intent(in) :: name
         integer :: res
-        res = qtf_qopenglshaderprogram_attributeLocation(self%ptr, name, len(name, c_int))
+        res = qtf_qopenglshaderprogram_attributeLocation(qtf_live(self, 'QOpenGLShaderProgram%attributeLocation'), &
+                name, len(name, c_int))
     end function qopenglshaderprogram_attributeLocation
 
     !> Location of a uniform (-1 if not found).
@@ -440,7 +441,8 @@ contains
         class(QOpenGLShaderProgram), intent(in) :: self
         character(len=*), intent(in) :: name
         integer :: res
-        res = qtf_qopenglshaderprogram_uniformLocation(self%ptr, name, len(name, c_int))
+        res = qtf_qopenglshaderprogram_uniformLocation(qtf_live(self, 'QOpenGLShaderProgram%uniformLocation'), name, &
+                len(name, c_int))
     end function qopenglshaderprogram_uniformLocation
 
     !> Assign an attribute location (before `link`).
@@ -448,21 +450,24 @@ contains
         class(QOpenGLShaderProgram), intent(in) :: self
         character(len=*), intent(in) :: name
         integer, intent(in) :: location
-        call qtf_qopenglshaderprogram_bindAttributeLocation(self%ptr, name, len(name, c_int), int(location, c_int))
+        call qtf_qopenglshaderprogram_bindAttributeLocation(qtf_live(self, &
+                'QOpenGLShaderProgram%bindAttributeLocation'), name, len(name, c_int), int(location, c_int))
     end subroutine qopenglshaderprogram_bindAttributeLocation
 
     !> Read the attribute from the bound buffer.
     subroutine qopenglshaderprogram_enableAttributeArray(self, location)
         class(QOpenGLShaderProgram), intent(in) :: self
         integer, intent(in) :: location
-        call qtf_qopenglshaderprogram_enableAttributeArray(self%ptr, int(location, c_int))
+        call qtf_qopenglshaderprogram_enableAttributeArray(qtf_live(self, &
+                'QOpenGLShaderProgram%enableAttributeArray'), int(location, c_int))
     end subroutine qopenglshaderprogram_enableAttributeArray
 
     !> Stop reading the attribute from a buffer.
     subroutine qopenglshaderprogram_disableAttributeArray(self, location)
         class(QOpenGLShaderProgram), intent(in) :: self
         integer, intent(in) :: location
-        call qtf_qopenglshaderprogram_disableAttributeArray(self%ptr, int(location, c_int))
+        call qtf_qopenglshaderprogram_disableAttributeArray(qtf_live(self, &
+                'QOpenGLShaderProgram%disableAttributeArray'), int(location, c_int))
     end subroutine qopenglshaderprogram_disableAttributeArray
 
     !> Describe an attribute in the bound vertex buffer: `tupleSize` values of `type` (GL_FLOAT) starting `offset` bytes in, `stride` bytes apart (0: tightly packed).
@@ -476,8 +481,8 @@ contains
         integer(c_int) :: stride_
         stride_ = 0
         if (present(stride)) stride_ = int(stride, c_int)
-        call qtf_qopenglshaderprogram_setAttributeBuffer(self%ptr, int(location, c_int), int(type, c_int), &
-                int(offset, c_int), int(tupleSize, c_int), stride_)
+        call qtf_qopenglshaderprogram_setAttributeBuffer(qtf_live(self, 'QOpenGLShaderProgram%setAttributeBuffer'), &
+                int(location, c_int), int(type, c_int), int(offset, c_int), int(tupleSize, c_int), stride_)
     end subroutine qopenglshaderprogram_setAttributeBuffer
 
     !> Set a float uniform.
@@ -485,7 +490,8 @@ contains
         class(QOpenGLShaderProgram), intent(in) :: self
         character(len=*), intent(in) :: name
         real(c_double), intent(in) :: value
-        call qtf_qopenglshaderprogram_setUniformValueFloat(self%ptr, name, len(name, c_int), value)
+        call qtf_qopenglshaderprogram_setUniformValueFloat(qtf_live(self, &
+                'QOpenGLShaderProgram%setUniformValueFloat'), name, len(name, c_int), value)
     end subroutine qopenglshaderprogram_setUniformValueFloat
 
     !> Set an int (or sampler) uniform.
@@ -493,7 +499,8 @@ contains
         class(QOpenGLShaderProgram), intent(in) :: self
         character(len=*), intent(in) :: name
         integer, intent(in) :: value
-        call qtf_qopenglshaderprogram_setUniformValueInt(self%ptr, name, len(name, c_int), int(value, c_int))
+        call qtf_qopenglshaderprogram_setUniformValueInt(qtf_live(self, 'QOpenGLShaderProgram%setUniformValueInt'), &
+                name, len(name, c_int), int(value, c_int))
     end subroutine qopenglshaderprogram_setUniformValueInt
 
     !> Set a vec3 uniform.
@@ -503,7 +510,8 @@ contains
         real(c_double), intent(in) :: x
         real(c_double), intent(in) :: y
         real(c_double), intent(in) :: z
-        call qtf_qopenglshaderprogram_setUniformValueVec3(self%ptr, name, len(name, c_int), x, y, z)
+        call qtf_qopenglshaderprogram_setUniformValueVec3(qtf_live(self, 'QOpenGLShaderProgram%setUniformValueVec3'), &
+                name, len(name, c_int), x, y, z)
     end subroutine qopenglshaderprogram_setUniformValueVec3
 
     !> Set a vec4 uniform.
@@ -514,7 +522,8 @@ contains
         real(c_double), intent(in) :: y
         real(c_double), intent(in) :: z
         real(c_double), intent(in) :: w
-        call qtf_qopenglshaderprogram_setUniformValueVec4(self%ptr, name, len(name, c_int), x, y, z, w)
+        call qtf_qopenglshaderprogram_setUniformValueVec4(qtf_live(self, 'QOpenGLShaderProgram%setUniformValueVec4'), &
+                name, len(name, c_int), x, y, z, w)
     end subroutine qopenglshaderprogram_setUniformValueVec4
 
     !> Set a vec4 uniform from a color (components scaled to 0..1).
@@ -522,8 +531,9 @@ contains
         class(QOpenGLShaderProgram), intent(in) :: self
         character(len=*), intent(in) :: name
         type(QColor), intent(in) :: color
-        call qtf_qopenglshaderprogram_setUniformValueColor(self%ptr, name, len(name, c_int), int(color%r, c_int), &
-                int(color%g, c_int), int(color%b, c_int), int(color%a, c_int))
+        call qtf_qopenglshaderprogram_setUniformValueColor(qtf_live(self, &
+                'QOpenGLShaderProgram%setUniformValueColor'), name, len(name, c_int), int(color%r, c_int), &
+                        int(color%g, c_int), int(color%b, c_int), int(color%a, c_int))
     end subroutine qopenglshaderprogram_setUniformValueColor
 
     !> Set a mat4 uniform.
@@ -531,7 +541,8 @@ contains
         class(QOpenGLShaderProgram), intent(in) :: self
         character(len=*), intent(in) :: name
         type(QMatrix4x4), intent(in) :: value
-        call qtf_qopenglshaderprogram_setUniformValueMat4(self%ptr, name, len(name, c_int), value%m)
+        call qtf_qopenglshaderprogram_setUniformValueMat4(qtf_live(self, 'QOpenGLShaderProgram%setUniformValueMat4'), &
+                name, len(name, c_int), value%m)
     end subroutine qopenglshaderprogram_setUniformValueMat4
 
     !> Set a mat3 uniform from a 3x3 array (e.g. `QMatrix4x4%normalMatrix()`), passed as 9 values in column-major order.
@@ -539,8 +550,8 @@ contains
         class(QOpenGLShaderProgram), intent(in) :: self
         character(len=*), intent(in) :: name
         real(c_double), intent(in) :: value(:)
-        call qtf_qopenglshaderprogram_setUniformValueMat3(self%ptr, name, len(name, c_int), value, int(size(value), &
-                c_int))
+        call qtf_qopenglshaderprogram_setUniformValueMat3(qtf_live(self, 'QOpenGLShaderProgram%setUniformValueMat3'), &
+                name, len(name, c_int), value, int(size(value), c_int))
     end subroutine qopenglshaderprogram_setUniformValueMat3
 
     !> A vertex (default) or index buffer; call `create` before use.
@@ -632,32 +643,32 @@ contains
     function qopenglvertexarrayobject_create(self) result(res)
         class(QOpenGLVertexArrayObject), intent(in) :: self
         logical :: res
-        res = qtf_logical(qtf_qopenglvertexarrayobject_create(self%ptr))
+        res = qtf_logical(qtf_qopenglvertexarrayobject_create(qtf_live(self, 'QOpenGLVertexArrayObject%create')))
     end function qopenglvertexarrayobject_create
 
     !> True after a successful `create`.
     function qopenglvertexarrayobject_isCreated(self) result(res)
         class(QOpenGLVertexArrayObject), intent(in) :: self
         logical :: res
-        res = qtf_logical(qtf_qopenglvertexarrayobject_isCreated(self%ptr))
+        res = qtf_logical(qtf_qopenglvertexarrayobject_isCreated(qtf_live(self, 'QOpenGLVertexArrayObject%isCreated')))
     end function qopenglvertexarrayobject_isCreated
 
     !> Bind it (attribute setup is recorded / restored).
     subroutine qopenglvertexarrayobject_bind(self)
         class(QOpenGLVertexArrayObject), intent(in) :: self
-        call qtf_qopenglvertexarrayobject_bind(self%ptr)
+        call qtf_qopenglvertexarrayobject_bind(qtf_live(self, 'QOpenGLVertexArrayObject%bind'))
     end subroutine qopenglvertexarrayobject_bind
 
     !> Unbind it.
     subroutine qopenglvertexarrayobject_release(self)
         class(QOpenGLVertexArrayObject), intent(in) :: self
-        call qtf_qopenglvertexarrayobject_release(self%ptr)
+        call qtf_qopenglvertexarrayobject_release(qtf_live(self, 'QOpenGLVertexArrayObject%release'))
     end subroutine qopenglvertexarrayobject_release
 
     !> Destroy the object (with the context current).
     subroutine qopenglvertexarrayobject_destroy(self)
         class(QOpenGLVertexArrayObject), intent(in) :: self
-        call qtf_qopenglvertexarrayobject_destroy(self%ptr)
+        call qtf_qopenglvertexarrayobject_destroy(qtf_live(self, 'QOpenGLVertexArrayObject%destroy'))
     end subroutine qopenglvertexarrayobject_destroy
 
     !> Set the color used by glClear for the color buffer (components 0..1).

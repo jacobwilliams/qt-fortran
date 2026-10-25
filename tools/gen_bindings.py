@@ -431,9 +431,10 @@ def f_dummy(a, handle_types, variant=None):
     return f"{decl}, intent(in){opt} :: {a.name}{dims}"
 
 
-def f_locals_and_args(sig, handle_types, variant=None, post=None):
+def f_locals_and_args(sig, handle_types, variant=None, post=None, where="qt"):
     """Local declarations, default assignments, and the raw-call argument list.
-    Statements to run after the call are appended to `post`."""
+    Statements to run after the call are appended to `post`. QObject arguments
+    are checked (qtf_live / qtf_ptr); `where` names the procedure in messages."""
     decls, setup, args = [], [], []
     post = [] if post is None else post
     for a in sig.args:
@@ -465,10 +466,12 @@ def f_locals_and_args(sig, handle_types, variant=None, post=None):
                 args += value_f_args(a.type, n)
             continue
         if k == "object":
-            if a.nullable:
-                args.append(f"qtf_ptr({n})" if a.type not in handle_types else f"{n}%ptr")
-            else:
+            if a.type in handle_types:
                 args.append(f"{n}%ptr")
+            elif a.nullable:
+                args.append(f"qtf_ptr({n})")
+            else:
+                args.append(f"qtf_live({n}, '{where}')")
             continue
         if not a.optional:
             args += {
@@ -527,9 +530,11 @@ def f_procedure(cls, sig, handle_types, ctor=False, suffix="", variant=None, han
     decls = [f"class({cls}), intent(in) :: self"] if has_self else []
     decls += [f_dummy(a, handle_types, variant) for a in sig.args]
     post = []
-    locals_, setup, args = f_locals_and_args(sig, handle_types, variant, post)
+    where = f"{cls}%{sig.name}" if cls else sig.name
+    locals_, setup, args = f_locals_and_args(sig, handle_types, variant, post, where)
     if has_self:
-        args.insert(0, "self%ptr")
+        # QObject handles are checked (null or deleted objects stop with a message)
+        args.insert(0, "self%ptr" if handle else f"qtf_live(self, '{where}')")
     rk = "ctor" if ctor else (kind(sig.ret) if sig.ret else None)
     body = []
     if rk is None:
@@ -680,7 +685,7 @@ def generate(spec):
             next_id += 1
             cpp_regs.append(f"    qtf_register_connector({sid}, {cpp_connector(cls, name, k, table)});")
             components.append(f"        type({ftype}) :: {name}   !! {doc.strip()}")
-            attach.append(f"        self%{name} = {ftype}(ptr, {sid})")
+            attach.append(f"        self%{name} = {ftype}(ptr, {sid}, self%serial)")
         if attach:
             bindings.append(f"        procedure :: attach => {cl}_attach")
             f_procs.append("\n".join([
@@ -725,7 +730,7 @@ def generate(spec):
             src, _ = cpp_function(cls, sig, table.get("cpp"))
             cpp_class.append(src)
             for suffix, variant in variants(sig):
-                proc, pname = f_procedure(cls, sig, handle_types, suffix=suffix, variant=variant)
+                proc, pname = f_procedure(cls, sig, handle_types, suffix=suffix, variant=variant, handle=handle)
                 f_procs.append(proc)
                 if sig.static:
                     publics.append(pname)

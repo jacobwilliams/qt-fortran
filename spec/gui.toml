@@ -281,7 +281,7 @@ fortran_procedures = '''
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(painter_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalpainter_connect
 
     !> Call the slot with the raw pointer wrapped as a QPainter (borrowed: not ended by Fortran).
@@ -306,7 +306,7 @@ fortran_procedures = '''
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(mouse_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalmouseevent_connect
 
     !> Call the slot with the raw pointer wrapped as a QMouseEvent.
@@ -331,7 +331,7 @@ fortran_procedures = '''
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(key_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalkeyevent_connect
 
     !> Call the slot with the raw pointer wrapped as a QKeyEvent.
@@ -356,7 +356,7 @@ fortran_procedures = '''
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(wheel_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalwheelevent_connect
 
     !> Call the slot with the raw pointer wrapped as a QWheelEvent.
@@ -381,7 +381,7 @@ fortran_procedures = '''
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(resize_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalresizeevent_connect
 
     !> Call the slot with the raw pointer wrapped as a QResizeEvent.
@@ -406,7 +406,7 @@ fortran_procedures = '''
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(close_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalcloseevent_connect
 
     !> Call the slot with the raw pointer wrapped as a QCloseEvent.
@@ -431,7 +431,7 @@ fortran_procedures = '''
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(context_menu_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalcontextmenuevent_connect
 
     !> Call the slot with the raw pointer wrapped as a QContextMenuEvent.

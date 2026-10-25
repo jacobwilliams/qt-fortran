@@ -93,7 +93,7 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 
 | Area | Classes |
 |------|---------|
-| Core | `QObject`, `QTimer`, `QEvent`, `QSettings` (persistent preferences, window geometry and layout), `QThread` (run Fortran work in a worker thread) |
+| Core | `QObject` (with dynamic properties and `findChild`), `QTimer`, `QEvent`, `QDateTime`, `QSettings` (persistent preferences, window geometry and layout), `QThread` (run Fortran work in a worker thread) |
 | Application | `QApplication` (command-line arguments, organization/application names) |
 | Widgets | `QWidget`, `QFrame`, `QLabel`, `QPushButton`, `QToolButton`, `QCheckBox`, `QRadioButton`, `QButtonGroup`, `QLineEdit`, `QSpinBox`, `QDoubleSpinBox`, `QSlider`, `QDial`, `QComboBox`, `QProgressBar`, `QLCDNumber`, `QDateEdit`, `QTimeEdit`, `QCalendarWidget`, `QtfWidget` (custom painting/events) |
 | Text | `QTextEdit`, `QPlainTextEdit` |
@@ -105,7 +105,7 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 | Painting | `QPainter`, `QImage`, `QPixmap`, `QColor`, `QPen`, `QBrush`, `QFont` |
 | Arrays as images | `QImage_fromArray` (a 2D Fortran array through a colormap: viridis, magma, inferno, plasma, coolwarm, gray; NaN transparent), `QImage_colorbar` |
 | Icons | `QIcon` (files or generated images), `QStyle_standardIcon`, icons on actions, buttons, tabs, items and windows |
-| Events | `QMouseEvent`, `QKeyEvent`, `QWheelEvent`, `QResizeEvent`; `QCloseEvent` (veto closing) and `QContextMenuEvent` on any widget |
+| Events | `QMouseEvent`, `QKeyEvent`, `QWheelEvent`, `QResizeEvent`; on any widget: `QCloseEvent` (veto closing), `QContextMenuEvent`, enter/leave, focus in/out, show/hide |
 | OpenGL | `QtfOpenGLWidget`, `QOpenGLShaderProgram`, `QOpenGLBuffer`, `QOpenGLVertexArrayObject`, `QSurfaceFormat`, `QMatrix4x4`, and `glClear`, `glDrawArrays`, `glDrawElements`, ... |
 
 ## Getting started
@@ -256,6 +256,18 @@ A few conventions to know (the full list is in [plan.md](plan.md)):
   - Delete top-level objects with `%delete()`.
   - Images, pixmaps, painters on images and synthetic events created from
     Fortran are also released with `delete` / `end`.
+  - **Deleted objects are detected.** A handle can outlive its object, for
+    example a label deleted together with its window, or a copy of a handle
+    deleted through another copy. Then `isNull()` returns `.true.`, as with
+    Qt's `QPointer`.
+    - Calling a method on such a handle, or passing it as an argument, stops
+      with a message such as `qt: QLabel%setText: the object has been deleted`.
+      Without the check you would get a crash.
+    - Connecting to or emitting a signal of a deleted object is caught the
+      same way.
+    - Deleting a handle whose object is already gone does nothing.
+    - Items of table/tree widgets and non-QObject handles (images, pixmaps,
+      painters) are not checked.
 - **Enums** are integer constants:
   - Qt namespace values are `Qt_AlignCenter`, `Qt_Key_A`, ….
   - Class enums are `QMessageBox_Yes`, `QDialog_Accepted`, …. Combine flags with `ior`.
@@ -341,6 +353,24 @@ A few conventions to know (the full list is in [plan.md](plan.md)):
     Deleting a running thread (for example with its parent window) asks it to
     stop and waits. A finished thread can be started again. Time Series Lab
     uses this pattern.
+- **Dates and times**: `QDateTime` is a value type with fields `year` …
+  `msec`, in local time.
+
+  ```fortran
+  t = QDateTime_currentDateTime()
+  print *, t%toString('yyyy-MM-dd HH:mm:ss')
+  deadline = t%addDays(7)
+  if (t < deadline) print *, t%secsTo(deadline), ' s left'
+  ```
+
+  It also has `QDateTime_fromString` (a Qt format, or ISO 8601),
+  `addSecs/addMonths/...`, epoch milliseconds, `dayOfWeek`, and comparisons.
+- **Properties**: `call w%setProperty('state', 'error')` attaches a value to
+  any object. Read it back with `stringProperty`, `intProperty`, … .
+  - Style sheets can select on properties, e.g. `*[state="error"] { color: red }`.
+    Call `w%repolish()` after changing one.
+  - `call window%findChild('okButton', button)` finds a descendant by
+    `objectName`.
 - **Closing and settings**: every widget has `closeEvent` and `contextMenuEvent`
   signals. A close slot can keep the window open:
 

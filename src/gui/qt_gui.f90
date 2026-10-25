@@ -1327,8 +1327,8 @@ contains
         class(QAction), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
         call self%QObject%attach(ptr)
-        self%triggered = QSignal(ptr, QTF_SIG_QACTION_TRIGGERED)
-        self%toggled = QSignalBool(ptr, QTF_SIG_QACTION_TOGGLED)
+        self%triggered = QSignal(ptr, QTF_SIG_QACTION_TRIGGERED, self%serial)
+        self%toggled = QSignalBool(ptr, QTF_SIG_QACTION_TOGGLED, self%serial)
     end subroutine qaction_attach
 
     !> Create an action with `text`, owned by `parent` if given.
@@ -1343,7 +1343,7 @@ contains
     subroutine qaction_setText(self, text)
         class(QAction), intent(in) :: self
         character(len=*), intent(in) :: text
-        call qtf_qaction_setText(self%ptr, text, len(text, c_int))
+        call qtf_qaction_setText(qtf_live(self, 'QAction%setText'), text, len(text, c_int))
     end subroutine qaction_setText
 
     !> The action's text.
@@ -1352,7 +1352,7 @@ contains
         character(len=:), allocatable :: res
         integer(c_int) :: n_
         type(c_ptr) :: p_
-        p_ = qtf_qaction_text(self%ptr, n_)
+        p_ = qtf_qaction_text(qtf_live(self, 'QAction%text'), n_)
         res = qtf_take_string(p_, n_)
     end function qaction_text
 
@@ -1360,7 +1360,7 @@ contains
     subroutine qaction_setShortcut(self, shortcut)
         class(QAction), intent(in) :: self
         character(len=*), intent(in) :: shortcut
-        call qtf_qaction_setShortcut(self%ptr, shortcut, len(shortcut, c_int))
+        call qtf_qaction_setShortcut(qtf_live(self, 'QAction%setShortcut'), shortcut, len(shortcut, c_int))
     end subroutine qaction_setShortcut
 
     !> The shortcut in portable text form, e.g. 'Ctrl+O'.
@@ -1369,7 +1369,7 @@ contains
         character(len=:), allocatable :: res
         integer(c_int) :: n_
         type(c_ptr) :: p_
-        p_ = qtf_qaction_shortcut(self%ptr, n_)
+        p_ = qtf_qaction_shortcut(qtf_live(self, 'QAction%shortcut'), n_)
         res = qtf_take_string(p_, n_)
     end function qaction_shortcut
 
@@ -1377,69 +1377,69 @@ contains
     subroutine qaction_setCheckable(self, checkable)
         class(QAction), intent(in) :: self
         logical, intent(in) :: checkable
-        call qtf_qaction_setCheckable(self%ptr, qtf_int(checkable))
+        call qtf_qaction_setCheckable(qtf_live(self, 'QAction%setCheckable'), qtf_int(checkable))
     end subroutine qaction_setCheckable
 
     !> True if the action is a toggle.
     function qaction_isCheckable(self) result(res)
         class(QAction), intent(in) :: self
         logical :: res
-        res = qtf_logical(qtf_qaction_isCheckable(self%ptr))
+        res = qtf_logical(qtf_qaction_isCheckable(qtf_live(self, 'QAction%isCheckable')))
     end function qaction_isCheckable
 
     !> Check or uncheck the action (emits toggled).
     subroutine qaction_setChecked(self, checked)
         class(QAction), intent(in) :: self
         logical, intent(in) :: checked
-        call qtf_qaction_setChecked(self%ptr, qtf_int(checked))
+        call qtf_qaction_setChecked(qtf_live(self, 'QAction%setChecked'), qtf_int(checked))
     end subroutine qaction_setChecked
 
     !> True if the action is checked.
     function qaction_isChecked(self) result(res)
         class(QAction), intent(in) :: self
         logical :: res
-        res = qtf_logical(qtf_qaction_isChecked(self%ptr))
+        res = qtf_logical(qtf_qaction_isChecked(qtf_live(self, 'QAction%isChecked')))
     end function qaction_isChecked
 
     !> Enable or disable the action (disabled actions do not trigger).
     subroutine qaction_setEnabled(self, enabled)
         class(QAction), intent(in) :: self
         logical, intent(in) :: enabled
-        call qtf_qaction_setEnabled(self%ptr, qtf_int(enabled))
+        call qtf_qaction_setEnabled(qtf_live(self, 'QAction%setEnabled'), qtf_int(enabled))
     end subroutine qaction_setEnabled
 
     !> True if the action is enabled.
     function qaction_isEnabled(self) result(res)
         class(QAction), intent(in) :: self
         logical :: res
-        res = qtf_logical(qtf_qaction_isEnabled(self%ptr))
+        res = qtf_logical(qtf_qaction_isEnabled(qtf_live(self, 'QAction%isEnabled')))
     end function qaction_isEnabled
 
     !> Text shown in the status bar while the action is hovered.
     subroutine qaction_setStatusTip(self, tip)
         class(QAction), intent(in) :: self
         character(len=*), intent(in) :: tip
-        call qtf_qaction_setStatusTip(self%ptr, tip, len(tip, c_int))
+        call qtf_qaction_setStatusTip(qtf_live(self, 'QAction%setStatusTip'), tip, len(tip, c_int))
     end subroutine qaction_setStatusTip
 
     !> Tool tip shown for the action (e.g. on tool bar buttons).
     subroutine qaction_setToolTip(self, tip)
         class(QAction), intent(in) :: self
         character(len=*), intent(in) :: tip
-        call qtf_qaction_setToolTip(self%ptr, tip, len(tip, c_int))
+        call qtf_qaction_setToolTip(qtf_live(self, 'QAction%setToolTip'), tip, len(tip, c_int))
     end subroutine qaction_setToolTip
 
     !> Activate the action (emits triggered, and toggled if checkable).
     subroutine qaction_trigger(self)
         class(QAction), intent(in) :: self
-        call qtf_qaction_trigger(self%ptr)
+        call qtf_qaction_trigger(qtf_live(self, 'QAction%trigger'))
     end subroutine qaction_trigger
 
     !> Set the icon shown in menus and tool bars (the icon is copied).
     subroutine qaction_setIcon(self, icon)
         class(QAction), intent(in) :: self
         type(QIcon), intent(in) :: icon
-        call qtf_qaction_setIcon(self%ptr, icon%ptr)
+        call qtf_qaction_setIcon(qtf_live(self, 'QAction%setIcon'), icon%ptr)
     end subroutine qaction_setIcon
 
     !> Connect a slot (with optional user data) to this signal.
@@ -1450,7 +1450,7 @@ contains
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(painter_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalpainter_connect
 
     !> Call the slot with the raw pointer wrapped as a QPainter (borrowed: not ended by Fortran).
@@ -1475,7 +1475,7 @@ contains
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(mouse_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalmouseevent_connect
 
     !> Call the slot with the raw pointer wrapped as a QMouseEvent.
@@ -1500,7 +1500,7 @@ contains
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(key_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalkeyevent_connect
 
     !> Call the slot with the raw pointer wrapped as a QKeyEvent.
@@ -1525,7 +1525,7 @@ contains
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(wheel_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalwheelevent_connect
 
     !> Call the slot with the raw pointer wrapped as a QWheelEvent.
@@ -1550,7 +1550,7 @@ contains
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(resize_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalresizeevent_connect
 
     !> Call the slot with the raw pointer wrapped as a QResizeEvent.
@@ -1575,7 +1575,7 @@ contains
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(close_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalcloseevent_connect
 
     !> Call the slot with the raw pointer wrapped as a QCloseEvent.
@@ -1600,7 +1600,7 @@ contains
         type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
         type(context_menu_handler) :: h
         h%f => slot
-        call qt_connect_handler(self%sender, self%id, h, data, connection)
+        call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalcontextmenuevent_connect
 
     !> Call the slot with the raw pointer wrapped as a QContextMenuEvent.
