@@ -198,6 +198,7 @@ A few conventions to know (the full list is in [plan.md](plan.md)):
 ## How it works
 
 ```mermaid
+%%{init: {"flowchart": {"htmlLabels": false}}}%%
 flowchart TD
     app["Your program<br/>(use qt)"]
     api["qt_core / qt_gui / qt_widgets<br/>Fortran API: derived types,<br/>type-bound procedures"]
