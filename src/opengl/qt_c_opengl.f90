@@ -131,6 +131,26 @@ module qt_c_opengl
             integer(c_int) :: res
         end function qtf_qsurfaceformat_samples
 
+        !> Frames to wait between buffer swaps: 1 (the default) waits for the display's refresh (vsync), 0 swaps at once (no vsync, e.g. to measure frame times). Some platforms ignore it.
+        !>
+        !> C: `void qtf_qsurfaceformat_setSwapInterval(void *self, int interval)`
+        subroutine qtf_qsurfaceformat_setSwapInterval(self, interval) bind(C, name='qtf_qsurfaceformat_setSwapInterval')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: interval
+        end subroutine qtf_qsurfaceformat_setSwapInterval
+
+        !> Frames between buffer swaps (see setSwapInterval).
+        !>
+        !> C: `int qtf_qsurfaceformat_swapInterval(void *self)`
+        function qtf_qsurfaceformat_swapInterval(self) result(res) bind(C, name='qtf_qsurfaceformat_swapInterval')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qsurfaceformat_swapInterval
+
         !> Use `format` for all OpenGL widgets; call before creating the application.
         !>
         !> C: `void qtf_qsurfaceformat_setDefaultFormat(void *format)`
@@ -930,6 +950,7 @@ module qt_c_opengl
     public :: qtf_qsurfaceformat_majorVersion, qtf_qsurfaceformat_minorVersion, qtf_qsurfaceformat_setProfile
     public :: qtf_qsurfaceformat_profile, qtf_qsurfaceformat_setDepthBufferSize
     public :: qtf_qsurfaceformat_depthBufferSize, qtf_qsurfaceformat_setSamples, qtf_qsurfaceformat_samples
+    public :: qtf_qsurfaceformat_setSwapInterval, qtf_qsurfaceformat_swapInterval
     public :: qtf_qsurfaceformat_setDefaultFormat, qtf_qtfopenglwidget_new, qtf_qtfopenglwidget_makeCurrent
     public :: qtf_qtfopenglwidget_doneCurrent, qtf_qtfopenglwidget_isValid, qtf_qtfopenglwidget_format
     public :: qtf_qtfopenglwidget_grabFramebuffer, qtf_qopenglshaderprogram_new

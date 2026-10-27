@@ -122,6 +122,13 @@ program test_opengl
     call QSurfaceFormat_setDefaultFormat(fmt)
     call check(fmt%majorVersion() == 3 .and. fmt%profile() == QSurfaceFormat_CoreProfile, 'QSurfaceFormat')
     call fmt%delete()
+    ! the swap interval (vsync), on a format of its own (the default is left as set above)
+    fmt = QSurfaceFormat()
+    call fmt%setSwapInterval(0)
+    call check(fmt%swapInterval() == 0, 'QSurfaceFormat swap interval 0')
+    call fmt%setSwapInterval(1)
+    call check(fmt%swapInterval() == 1, 'QSurfaceFormat swap interval 1')
+    call fmt%delete()
 
     app = QApplication()
 

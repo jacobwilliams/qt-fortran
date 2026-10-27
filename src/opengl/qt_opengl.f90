@@ -103,6 +103,8 @@ module qt_opengl
         procedure :: depthBufferSize => qsurfaceformat_depthBufferSize
         procedure :: setSamples => qsurfaceformat_setSamples
         procedure :: samples => qsurfaceformat_samples
+        procedure :: setSwapInterval => qsurfaceformat_setSwapInterval
+        procedure :: swapInterval => qsurfaceformat_swapInterval
         procedure :: delete => qsurfaceformat_delete
     end type QSurfaceFormat
     !> Constructor: `QSurfaceFormat()`.
@@ -330,6 +332,20 @@ contains
         integer :: res
         res = qtf_qsurfaceformat_samples(self%ptr)
     end function qsurfaceformat_samples
+
+    !> Frames to wait between buffer swaps: 1 (the default) waits for the display's refresh (vsync), 0 swaps at once (no vsync, e.g. to measure frame times). Some platforms ignore it.
+    subroutine qsurfaceformat_setSwapInterval(self, interval)
+        class(QSurfaceFormat), intent(in) :: self
+        integer, intent(in) :: interval
+        call qtf_qsurfaceformat_setSwapInterval(self%ptr, int(interval, c_int))
+    end subroutine qsurfaceformat_setSwapInterval
+
+    !> Frames between buffer swaps (see setSwapInterval).
+    function qsurfaceformat_swapInterval(self) result(res)
+        class(QSurfaceFormat), intent(in) :: self
+        integer :: res
+        res = qtf_qsurfaceformat_swapInterval(self%ptr)
+    end function qsurfaceformat_swapInterval
 
     !> Use `format` for all OpenGL widgets; call before creating the application.
     subroutine QSurfaceFormat_setDefaultFormat(format)

@@ -274,6 +274,8 @@ methods = [
     "depthBufferSize() -> int -- Bits of depth buffer.",
     "setSamples(numSamples: int) -- Samples per pixel for multisample antialiasing (e.g. 4).",
     "samples() -> int -- Samples per pixel.",
+    "setSwapInterval(interval: int) -- Frames to wait between buffer swaps: 1 (the default) waits for the display's refresh (vsync), 0 swaps at once (no vsync, e.g. to measure frame times). Some platforms ignore it.",
+    "swapInterval() -> int -- Frames between buffer swaps (see setSwapInterval).",
     { sig = "static setDefaultFormat(format: QSurfaceFormat)", cpp = "QSurfaceFormat::setDefaultFormat(*{format})", doc = "Use `format` for all OpenGL widgets; call before creating the application." },
 ]
 cpp = '''

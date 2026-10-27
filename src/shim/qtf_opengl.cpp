@@ -204,6 +204,14 @@ QTF_API void qtf_qsurfaceformat_setSamples(void *self, int numSamples) {
 // Samples per pixel.
 QTF_API int qtf_qsurfaceformat_samples(void *self) { return as<QSurfaceFormat>(self)->samples(); }
 
+// Frames to wait between buffer swaps: 1 (the default) waits for the display's refresh (vsync), 0 swaps at once (no vsync, e.g. to measure frame times). Some platforms ignore it.
+QTF_API void qtf_qsurfaceformat_setSwapInterval(void *self, int interval) {
+    as<QSurfaceFormat>(self)->setSwapInterval(interval);
+}
+
+// Frames between buffer swaps (see setSwapInterval).
+QTF_API int qtf_qsurfaceformat_swapInterval(void *self) { return as<QSurfaceFormat>(self)->swapInterval(); }
+
 // Use `format` for all OpenGL widgets; call before creating the application.
 QTF_API void qtf_qsurfaceformat_setDefaultFormat(void *format) {
     QSurfaceFormat::setDefaultFormat(*as<QSurfaceFormat>(format));
