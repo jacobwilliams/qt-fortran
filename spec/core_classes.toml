@@ -6,15 +6,16 @@ module = "core_classes"
 src_dir = "core"
 signal_base = 4000
 doc = """
-QtCore classes: persistent application settings (QSettings) and worker
-threads (QThread).
+QtCore classes: persistent application settings (QSettings), worker
+threads (QThread), and portable directory functions (QDir_*), which standard
+Fortran lacks.
 """
 uses = [
     "use qt_c_util",
     "use qt_c_core_classes",
     "use qt_core",
 ]
-cpp_includes = ["QSettings", "QStringList", "QThread", "QVariant"]
+cpp_includes = ["QDir", "QSettings", "QStringList", "QThread", "QVariant"]
 
 cpp_prelude = """
 // Runs (op 0) or frees (op 1) the Fortran task of a thread.
@@ -65,6 +66,15 @@ fortran_decls = '''
 
     public :: QThread_create
 '''
+
+functions = [
+    { sig = "QDir_mkpath(path: string) -> bool", cpp = "QDir().mkpath({path})", doc = "Create a directory and any missing parents (like `mkdir -p`); true if it exists afterwards. `/` works as the separator on every platform." },
+    { sig = "QDir_exists(path: string) -> bool", cpp = "QDir({path}).exists()", doc = "True if the directory exists." },
+    { sig = "QDir_removeRecursively(path: string) -> bool", cpp = "QDir({path}).removeRecursively()", doc = "Delete a directory with everything in it; true on success (also if it did not exist)." },
+    { sig = "QDir_currentPath() -> string", cpp = "QDir::currentPath()", doc = "The current working directory (with `/` separators)." },
+    { sig = "QDir_homePath() -> string", cpp = "QDir::homePath()", doc = "The user's home directory." },
+    { sig = "QDir_tempPath() -> string", cpp = "QDir::tempPath()", doc = "The system's directory for temporary files." },
+]
 
 [[enum]]
 doc = "QSettings::Status"

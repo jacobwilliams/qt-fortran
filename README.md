@@ -93,7 +93,7 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 
 | Area | Classes |
 |------|---------|
-| Core | `QObject` (with dynamic properties and `findChild`), `QTimer`, `QEvent`, `QDateTime`, `QSettings` (persistent preferences, window geometry and layout), `QThread` (run Fortran work in a worker thread) |
+| Core | `QObject` (with dynamic properties and `findChild`), `QTimer`, `QEvent`, `QDateTime`, `QSettings` (persistent preferences, window geometry and layout), `QThread` (run Fortran work in a worker thread), `QDir_mkpath`/`exists`/`removeRecursively` and standard paths (portable directory handling, which standard Fortran lacks) |
 | Application | `QApplication` (command-line arguments, organization/application names) |
 | Widgets | `QWidget`, `QFrame`, `QLabel`, `QPushButton`, `QToolButton`, `QCheckBox`, `QRadioButton`, `QButtonGroup`, `QLineEdit`, `QSpinBox`, `QDoubleSpinBox`, `QSlider`, `QDial`, `QComboBox`, `QProgressBar`, `QLCDNumber`, `QDateEdit`, `QTimeEdit`, `QCalendarWidget`, `QtfWidget` (custom painting/events) |
 | Input helpers | `QDateTimeEdit`, validators (`QIntValidator`, `QDoubleValidator`, `QRegularExpressionValidator`), `QCompleter` |

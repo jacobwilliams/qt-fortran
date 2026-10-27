@@ -8,6 +8,7 @@
 
 #include "qtf_common.h"
 
+#include <QDir>
 #include <QSettings>
 #include <QStringList>
 #include <QThread>
@@ -201,6 +202,33 @@ QTF_API int qtf_qthread_idealThreadCount(void) { return QThread::idealThreadCoun
 
 // Sleep the calling thread for `msecs` milliseconds.
 QTF_API void qtf_qthread_msleep(int msecs) { QThread::msleep(msecs); }
+
+// ---------------------------------------------------------------------------
+// functions
+
+// Create a directory and any missing parents (like `mkdir -p`); true if it exists afterwards. `/` works as the separator on every platform.
+QTF_API int qtf_QDir_mkpath(const char *path, int path_len) {
+    return qtf_bool(QDir().mkpath(qtf_qstring(path, path_len)));
+}
+
+// True if the directory exists.
+QTF_API int qtf_QDir_exists(const char *path, int path_len) {
+    return qtf_bool(QDir(qtf_qstring(path, path_len)).exists());
+}
+
+// Delete a directory with everything in it; true on success (also if it did not exist).
+QTF_API int qtf_QDir_removeRecursively(const char *path, int path_len) {
+    return qtf_bool(QDir(qtf_qstring(path, path_len)).removeRecursively());
+}
+
+// The current working directory (with `/` separators).
+QTF_API char *qtf_QDir_currentPath(int *len) { return qtf_to_c(QDir::currentPath(), len); }
+
+// The user's home directory.
+QTF_API char *qtf_QDir_homePath(int *len) { return qtf_to_c(QDir::homePath(), len); }
+
+// The system's directory for temporary files.
+QTF_API char *qtf_QDir_tempPath(int *len) { return qtf_to_c(QDir::tempPath(), len); }
 
 // ---------------------------------------------------------------------------
 // signal connectors

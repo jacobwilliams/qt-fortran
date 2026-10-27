@@ -202,7 +202,10 @@ program test_models
     call check(.true., 'delegates set')
 
     ! --- QFileSystemModel
-    call execute_command_line('mkdir -p ' // dir, exitstat=ierr)
+    call check(QDir_removeRecursively(dir) .and. .not. QDir_exists(dir), 'QDir_removeRecursively')
+    call check(QDir_mkpath(dir) .and. QDir_exists(dir), 'QDir_mkpath (portable mkdir -p)')
+    call check(len(QDir_currentPath()) > 0 .and. QDir_exists(QDir_tempPath()) .and. QDir_exists(QDir_homePath()), &
+               'QDir_currentPath, tempPath, homePath')
     open(newunit=u, file=dir // '/a.dat', status='replace')
     close(u)
     open(newunit=u, file=dir // '/b.csv', status='replace')

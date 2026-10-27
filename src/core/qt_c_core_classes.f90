@@ -398,6 +398,69 @@ module qt_c_core_classes
             integer(c_int), value :: msecs
         end subroutine qtf_qthread_msleep
 
+        !> Create a directory and any missing parents (like `mkdir -p`); true if it exists afterwards. `/` works as the separator on every platform.
+        !>
+        !> C: `int qtf_QDir_mkpath(const char *path, int path_len)`
+        function qtf_QDir_mkpath(path, path_len) result(res) bind(C, name='qtf_QDir_mkpath')
+            import :: c_char, c_int
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: path
+            integer(c_int), value :: path_len
+            integer(c_int) :: res
+        end function qtf_QDir_mkpath
+
+        !> True if the directory exists.
+        !>
+        !> C: `int qtf_QDir_exists(const char *path, int path_len)`
+        function qtf_QDir_exists(path, path_len) result(res) bind(C, name='qtf_QDir_exists')
+            import :: c_char, c_int
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: path
+            integer(c_int), value :: path_len
+            integer(c_int) :: res
+        end function qtf_QDir_exists
+
+        !> Delete a directory with everything in it; true on success (also if it did not exist).
+        !>
+        !> C: `int qtf_QDir_removeRecursively(const char *path, int path_len)`
+        function qtf_QDir_removeRecursively(path, path_len) result(res) bind(C, name='qtf_QDir_removeRecursively')
+            import :: c_char, c_int
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: path
+            integer(c_int), value :: path_len
+            integer(c_int) :: res
+        end function qtf_QDir_removeRecursively
+
+        !> The current working directory (with `/` separators).
+        !>
+        !> C: `char *qtf_QDir_currentPath(int *len)`
+        function qtf_QDir_currentPath(len) result(res) bind(C, name='qtf_QDir_currentPath')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_QDir_currentPath
+
+        !> The user's home directory.
+        !>
+        !> C: `char *qtf_QDir_homePath(int *len)`
+        function qtf_QDir_homePath(len) result(res) bind(C, name='qtf_QDir_homePath')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_QDir_homePath
+
+        !> The system's directory for temporary files.
+        !>
+        !> C: `char *qtf_QDir_tempPath(int *len)`
+        function qtf_QDir_tempPath(len) result(res) bind(C, name='qtf_QDir_tempPath')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_QDir_tempPath
+
     end interface
 
     public :: qtf_set_task_runner, qtf_qthread_create, qtf_qsettings_new, qtf_qsettings_fromFile
@@ -410,6 +473,7 @@ module qt_c_core_classes
     public :: qtf_qsettings_status, qtf_qsettings_isWritable, qtf_qthread_start, qtf_qthread_wait
     public :: qtf_qthread_isRunning, qtf_qthread_isFinished, qtf_qthread_requestInterruption
     public :: qtf_qthread_isInterruptionRequested, qtf_qthread_currentThread, qtf_qthread_idealThreadCount
-    public :: qtf_qthread_msleep
+    public :: qtf_qthread_msleep, qtf_QDir_mkpath, qtf_QDir_exists, qtf_QDir_removeRecursively
+    public :: qtf_QDir_currentPath, qtf_QDir_homePath, qtf_QDir_tempPath
 
 end module qt_c_core_classes
