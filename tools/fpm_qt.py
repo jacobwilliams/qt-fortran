@@ -129,7 +129,7 @@ def dll_settings(lib):
     env = {
         "FPM_CXX": os.environ.get("FPM_CXX") or which("clang++"),
         "FPM_CXXFLAGS": "-DQTF_EXTERNAL_SHIM",
-        "FPM_LDFLAGS": f"-L{os.path.join(lib, 'lib')} {dll}",
+        "FPM_LDFLAGS": f"-L{os.path.join(lib, 'lib')} {dll.replace(os.sep, '/')}",
     }
     return env, os.path.dirname(dll)
 
