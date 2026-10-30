@@ -139,6 +139,8 @@ module qt_c_widgets
     integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1128
     integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1129
     integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1130
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_SURFACECREATED = 1131
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED = 1132
 
     interface
 

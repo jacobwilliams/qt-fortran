@@ -664,6 +664,9 @@ QTF_API int qtf_qwindow_surfaceType(void *self) { return int(as<QWindow>(self)->
 // Create the native window now (normally done when it is first shown).
 QTF_API void qtf_qwindow_create(void *self) { as<QWindow>(self)->create(); }
 
+// Destroy the native window (and its children's), releasing its native resources; it is made again when the window is next shown or created. A QtfEventFilter's `surfaceAboutToBeDestroyed` is emitted first.
+QTF_API void qtf_qwindow_destroy(void *self) { as<QWindow>(self)->destroy(); }
+
 // Show the window.
 QTF_API void qtf_qwindow_show(void *self) { as<QWindow>(self)->show(); }
 

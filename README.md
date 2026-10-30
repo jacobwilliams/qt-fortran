@@ -416,6 +416,11 @@ A few conventions to know (the full list is in [plans/plan.md](plans/plan.md)):
     `QOpenGLContext`.
   - *Events*: `QtfEventFilter(window)` forwards the window's expose, resize,
     mouse and key events to your slots. Start the engine on the first expose.
+  - *Native surface*: an engine drawing into the window's native handle
+    (`winId`, e.g. Vulkan) stops and releases it in a
+    `surfaceAboutToBeDestroyed` slot, sent while the surface still exists
+    (`destroy`, re-parenting, the window deleted); `surfaceCreated` says it
+    exists again.
   - *Threads*: on Windows and Linux the context can be created and used on
     the render thread. macOS (`QOpenGLContext_supportsThreadedOpenGL()` is
     false) needs AppKit's updates on the main thread, as OpenFrames does it:

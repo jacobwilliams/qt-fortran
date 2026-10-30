@@ -59,6 +59,7 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QPlainTextEdit>
+#include <QPlatformSurfaceEvent>
 #include <QProgressBar>
 #include <QProgressDialog>
 #include <QPushButton>
@@ -235,6 +236,8 @@ enum : int {
     QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1128,
     QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1129,
     QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1130,
+    QTF_SIG_QTFEVENTFILTER_SURFACECREATED = 1131,
+    QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED = 1132,
 };
 
 // QApplication keeps references to argc/argv, so they must outlive it.
@@ -362,6 +365,8 @@ enum qtf_any_event {
     QTF_ANY_FOCUSOUT,
     QTF_ANY_SHOW,
     QTF_ANY_HIDE,
+    QTF_ANY_SURFACECREATED,
+    QTF_ANY_SURFACEDESTROYED,
     QTF_ANY_COUNT
 };
 
@@ -393,8 +398,16 @@ class QtfEventFilter : public QObject {
         }
     }
 
+    // A window's native surface: created, or about to be destroyed (one event type for both).
+    static int kind(QEvent *e) {
+        if (e->type() != QEvent::PlatformSurface) return kind(e->type());
+        return static_cast<QPlatformSurfaceEvent *>(e)->surfaceEventType() == QPlatformSurfaceEvent::SurfaceCreated
+                   ? QTF_ANY_SURFACECREATED
+                   : QTF_ANY_SURFACEDESTROYED;
+    }
+
     bool eventFilter(QObject *o, QEvent *e) override {
-        const int k = o == parent() ? kind(e->type()) : -1;
+        const int k = o == parent() ? kind(e) : -1;
         if (k < 0 || handlers[k].empty()) return QObject::eventFilter(o, e);
         qtf_args a{};
         a.p = e;
@@ -4717,6 +4730,8 @@ static const bool qtf_widgets_registered = [] {
     qtf_register_connector(QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT, connect_any<QTF_ANY_FOCUSOUT>);
     qtf_register_connector(QTF_SIG_QTFEVENTFILTER_SHOWEVENT, connect_any<QTF_ANY_SHOW>);
     qtf_register_connector(QTF_SIG_QTFEVENTFILTER_HIDEEVENT, connect_any<QTF_ANY_HIDE>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_SURFACECREATED, connect_any<QTF_ANY_SURFACECREATED>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED, connect_any<QTF_ANY_SURFACEDESTROYED>);
     return true;
 }();
 

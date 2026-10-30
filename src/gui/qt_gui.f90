@@ -58,10 +58,16 @@ module qt_gui
     ! Qt::Key (subset)
     integer(c_int), parameter, public :: Qt_Key_Escape = int(z'01000000', c_int)
     integer(c_int), parameter, public :: Qt_Key_Tab = int(z'01000001', c_int)
+    integer(c_int), parameter, public :: Qt_Key_Backtab = int(z'01000002', c_int)
     integer(c_int), parameter, public :: Qt_Key_Backspace = int(z'01000003', c_int)
     integer(c_int), parameter, public :: Qt_Key_Return = int(z'01000004', c_int)
     integer(c_int), parameter, public :: Qt_Key_Enter = int(z'01000005', c_int)
+    integer(c_int), parameter, public :: Qt_Key_Insert = int(z'01000006', c_int)
     integer(c_int), parameter, public :: Qt_Key_Delete = int(z'01000007', c_int)
+    integer(c_int), parameter, public :: Qt_Key_Pause = int(z'01000008', c_int)
+    integer(c_int), parameter, public :: Qt_Key_Print = int(z'01000009', c_int)
+    integer(c_int), parameter, public :: Qt_Key_SysReq = int(z'0100000A', c_int)
+    integer(c_int), parameter, public :: Qt_Key_Clear = int(z'0100000B', c_int)
     integer(c_int), parameter, public :: Qt_Key_Home = int(z'01000010', c_int)
     integer(c_int), parameter, public :: Qt_Key_End = int(z'01000011', c_int)
     integer(c_int), parameter, public :: Qt_Key_Left = int(z'01000012', c_int)
@@ -70,9 +76,29 @@ module qt_gui
     integer(c_int), parameter, public :: Qt_Key_Down = int(z'01000015', c_int)
     integer(c_int), parameter, public :: Qt_Key_PageUp = int(z'01000016', c_int)
     integer(c_int), parameter, public :: Qt_Key_PageDown = int(z'01000017', c_int)
+    integer(c_int), parameter, public :: Qt_Key_Shift = int(z'01000020', c_int)
+    integer(c_int), parameter, public :: Qt_Key_Control = int(z'01000021', c_int)
+    integer(c_int), parameter, public :: Qt_Key_Meta = int(z'01000022', c_int)
+    integer(c_int), parameter, public :: Qt_Key_Alt = int(z'01000023', c_int)
+    integer(c_int), parameter, public :: Qt_Key_CapsLock = int(z'01000024', c_int)
+    integer(c_int), parameter, public :: Qt_Key_NumLock = int(z'01000025', c_int)
+    integer(c_int), parameter, public :: Qt_Key_ScrollLock = int(z'01000026', c_int)
+    integer(c_int), parameter, public :: Qt_Key_Menu = int(z'01000055', c_int)
+    integer(c_int), parameter, public :: Qt_Key_Help = int(z'01000058', c_int)
     integer(c_int), parameter, public :: Qt_Key_Space = 32
+    integer(c_int), parameter, public :: Qt_Key_Apostrophe = 39
+    integer(c_int), parameter, public :: Qt_Key_Asterisk = 42
     integer(c_int), parameter, public :: Qt_Key_Plus = 43
+    integer(c_int), parameter, public :: Qt_Key_Comma = 44
     integer(c_int), parameter, public :: Qt_Key_Minus = 45
+    integer(c_int), parameter, public :: Qt_Key_Period = 46
+    integer(c_int), parameter, public :: Qt_Key_Slash = 47
+    integer(c_int), parameter, public :: Qt_Key_Semicolon = 59
+    integer(c_int), parameter, public :: Qt_Key_Equal = 61
+    integer(c_int), parameter, public :: Qt_Key_BracketLeft = 91
+    integer(c_int), parameter, public :: Qt_Key_Backslash = 92
+    integer(c_int), parameter, public :: Qt_Key_BracketRight = 93
+    integer(c_int), parameter, public :: Qt_Key_QuoteLeft = 96
     integer(c_int), parameter, public :: Qt_Key_A = 65
     integer(c_int), parameter, public :: Qt_Key_B = 66
     integer(c_int), parameter, public :: Qt_Key_C = 67
@@ -121,6 +147,14 @@ module qt_gui
     integer(c_int), parameter, public :: Qt_Key_F10 = int(z'01000039', c_int)
     integer(c_int), parameter, public :: Qt_Key_F11 = int(z'0100003A', c_int)
     integer(c_int), parameter, public :: Qt_Key_F12 = int(z'0100003B', c_int)
+    integer(c_int), parameter, public :: Qt_Key_F13 = int(z'0100003C', c_int)
+    integer(c_int), parameter, public :: Qt_Key_F14 = int(z'0100003D', c_int)
+    integer(c_int), parameter, public :: Qt_Key_F15 = int(z'0100003E', c_int)
+    integer(c_int), parameter, public :: Qt_Key_F16 = int(z'0100003F', c_int)
+    integer(c_int), parameter, public :: Qt_Key_F17 = int(z'01000040', c_int)
+    integer(c_int), parameter, public :: Qt_Key_F18 = int(z'01000041', c_int)
+    integer(c_int), parameter, public :: Qt_Key_F19 = int(z'01000042', c_int)
+    integer(c_int), parameter, public :: Qt_Key_F20 = int(z'01000043', c_int)
 
     public :: QImage_fromArray, QImage_colorbar
 
@@ -389,6 +423,7 @@ module qt_gui
         procedure :: setSurfaceType => qwindow_setSurfaceType
         procedure :: surfaceType => qwindow_surfaceType
         procedure :: create => qwindow_create
+        procedure :: destroy => qwindow_destroy
         procedure :: show => qwindow_show
         procedure :: hide => qwindow_hide
         procedure :: isVisible => qwindow_isVisible
@@ -1694,6 +1729,12 @@ contains
         class(QWindow), intent(in) :: self
         call qtf_qwindow_create(qtf_live(self, 'QWindow%create'))
     end subroutine qwindow_create
+
+    !> Destroy the native window (and its children's), releasing its native resources; it is made again when the window is next shown or created. A QtfEventFilter's `surfaceAboutToBeDestroyed` is emitted first.
+    subroutine qwindow_destroy(self)
+        class(QWindow), intent(in) :: self
+        call qtf_qwindow_destroy(qtf_live(self, 'QWindow%destroy'))
+    end subroutine qwindow_destroy
 
     !> Show the window.
     subroutine qwindow_show(self)

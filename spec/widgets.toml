@@ -28,7 +28,7 @@ cpp_includes = [
     "QTime", "QTimeEdit", "QToolButton", "QTreeWidget", "QVariant", "QIcon", "QMetaEnum", "QStyle", "string",
     "QCloseEvent", "QContextMenuEvent", "QByteArray", "QFocusEvent",
     "QAbstractProxyModel", "QFileSystemModel", "QSortFilterProxyModel", "QStyledItemDelegate", "QTreeView",
-    "QExposeEvent", "QWindow", "QRegularExpression", "QCompleter", "QDialogButtonBox", "QDateTimeEdit", "QTextBrowser", "QToolBox",
+    "QExposeEvent", "QPlatformSurfaceEvent", "QWindow", "QRegularExpression", "QCompleter", "QDialogButtonBox", "QDateTimeEdit", "QTextBrowser", "QToolBox",
     "QSplashScreen", "QMdiArea", "QMdiSubWindow", "QWizard", "QWizardPage", "QUndoStack", "QUndoView",
     "QStringListModel", "QUrl", "QFileInfo", "QValidator", "QDateTime",
 ]
@@ -159,6 +159,8 @@ enum qtf_any_event {
     QTF_ANY_FOCUSOUT,
     QTF_ANY_SHOW,
     QTF_ANY_HIDE,
+    QTF_ANY_SURFACECREATED,
+    QTF_ANY_SURFACEDESTROYED,
     QTF_ANY_COUNT
 };
 
@@ -190,8 +192,16 @@ class QtfEventFilter : public QObject {
         }
     }
 
+    // A window's native surface: created, or about to be destroyed (one event type for both).
+    static int kind(QEvent *e) {
+        if (e->type() != QEvent::PlatformSurface) return kind(e->type());
+        return static_cast<QPlatformSurfaceEvent *>(e)->surfaceEventType() == QPlatformSurfaceEvent::SurfaceCreated
+                   ? QTF_ANY_SURFACECREATED
+                   : QTF_ANY_SURFACEDESTROYED;
+    }
+
     bool eventFilter(QObject *o, QEvent *e) override {
-        const int k = o == parent() ? kind(e->type()) : -1;
+        const int k = o == parent() ? kind(e) : -1;
         if (k < 0 || handlers[k].empty()) return QObject::eventFilter(o, e);
         qtf_args a{};
         a.p = e;
@@ -2884,4 +2894,6 @@ signals = [
     { sig = "focusOutEvent: int", doc = "Keyboard focus lost: the reason.", connector = "connect_any<QTF_ANY_FOCUSOUT>" },
     { sig = "showEvent: void", doc = "Shown.", connector = "connect_any<QTF_ANY_SHOW>" },
     { sig = "hideEvent: void", doc = "Hidden.", connector = "connect_any<QTF_ANY_HIDE>" },
+    { sig = "surfaceCreated: void", doc = "A window's native surface was created (when it is first shown, or created again after `destroy`).", connector = "connect_any<QTF_ANY_SURFACECREATED>" },
+    { sig = "surfaceAboutToBeDestroyed: void", doc = "A window's native surface is about to be destroyed (`destroy`, re-parenting, the window deleted): a renderer drawing into it (e.g. through `winId`) must stop and release it now, before returning. Sent synchronously, while the surface still exists.", connector = "connect_any<QTF_ANY_SURFACEDESTROYED>" },
 ]

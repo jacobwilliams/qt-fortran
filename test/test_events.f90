@@ -17,6 +17,7 @@ module test_events_slots
         integer :: key = -1, delta = 0
         character(len=:), allocatable :: text
         integer :: width = -1, height = -1, oldWidth = -1, oldHeight = -1
+        integer :: surfaces_created = 0, surfaces_destroyed = 0
     end type event_log
 
 contains
@@ -128,6 +129,24 @@ contains
         end select
     end subroutine on_resize
 
+    !> Record a window's native surface created.
+    subroutine on_surface_created(data)
+        class(*), intent(inout), optional :: data
+        select type (data)
+        type is (event_log)
+            data%surfaces_created = data%surfaces_created + 1
+        end select
+    end subroutine on_surface_created
+
+    !> Record a window's native surface about to be destroyed.
+    subroutine on_surface_destroyed(data)
+        class(*), intent(inout), optional :: data
+        select type (data)
+        type is (event_log)
+            data%surfaces_destroyed = data%surfaces_destroyed + 1
+        end select
+    end subroutine on_surface_destroyed
+
 end module test_events_slots
 
 !> Tests QtfWidget painting and input events.
@@ -147,7 +166,9 @@ program test_events
     type(QKeyEvent) :: ke
     type(QWheelEvent) :: we
     type(QResizeEvent) :: re
-    type(event_log), target :: log
+    type(event_log), target :: log, surfaces
+    type(QWindow) :: window
+    type(QtfEventFilter) :: window_events
     logical :: handled
 
     app = QApplication()
@@ -242,6 +263,21 @@ program test_events
     call check(canvas%hasMouseTracking(), 'setMouseTracking')
     call canvas%delete()
     call check(qt_slot_count() == 0, 'event slots released with the widget')
+
+    ! --- a window's native surface: created, about to be destroyed, created again
+    window = QWindow()
+    window_events = QtfEventFilter(window)
+    call window_events%surfaceCreated%connect(on_surface_created, surfaces)
+    call window_events%surfaceAboutToBeDestroyed%connect(on_surface_destroyed, surfaces)
+    call window%create()
+    call check(surfaces%surfaces_created == 1 .and. surfaces%surfaces_destroyed == 0, 'surfaceCreated (create)')
+    call window%destroy()
+    call check(surfaces%surfaces_destroyed == 1, 'surfaceAboutToBeDestroyed (destroy)')
+    call window%create()
+    call check(surfaces%surfaces_created == 2, 'surfaceCreated again')
+    call window%delete()
+    call check(surfaces%surfaces_destroyed == 2, 'surfaceAboutToBeDestroyed (window deleted)')
+    call check(qt_slot_count() == 0, 'window event slots released with the window')
 
     write(*,'(A)') 'test_events: all checks passed'
 

@@ -1810,6 +1810,8 @@ module qt_widgets
         type(QSignalInt) :: focusOutEvent   !! Keyboard focus lost: the reason.
         type(QSignal) :: showEvent   !! Shown.
         type(QSignal) :: hideEvent   !! Hidden.
+        type(QSignal) :: surfaceCreated   !! A window's native surface was created (when it is first shown, or created again after `destroy`).
+        type(QSignal) :: surfaceAboutToBeDestroyed   !! A window's native surface is about to be destroyed (`destroy`, re-parenting, the window deleted): a renderer drawing into it (e.g. through `winId`) must stop and release it now, before returning. Sent synchronously, while the surface still exists.
     contains
         procedure :: attach => qtfeventfilter_attach
     end type QtfEventFilter
@@ -8313,6 +8315,8 @@ contains
         self%focusOutEvent = QSignalInt(ptr, QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT, self%serial)
         self%showEvent = QSignal(ptr, QTF_SIG_QTFEVENTFILTER_SHOWEVENT, self%serial)
         self%hideEvent = QSignal(ptr, QTF_SIG_QTFEVENTFILTER_HIDEEVENT, self%serial)
+        self%surfaceCreated = QSignal(ptr, QTF_SIG_QTFEVENTFILTER_SURFACECREATED, self%serial)
+        self%surfaceAboutToBeDestroyed = QSignal(ptr, QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED, self%serial)
     end subroutine qtfeventfilter_attach
 
     !> Forward the events of `target`.

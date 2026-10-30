@@ -351,6 +351,12 @@ Legacy fixed-function GL and a high-level scene API were the alternatives consid
     consumable by `event%accept()`) forwards them. The per-widget
     conveniences (`closeEvent`, ...) use a separate internal
     `QtfWidgetEventFilter`.
+  - A window's native surface: `QtfEventFilter`'s `surfaceCreated` and
+    `surfaceAboutToBeDestroyed` (Qt's `QPlatformSurfaceEvent`, one event
+    type split in two), synchronous, so an engine rendering into `winId`
+    (e.g. Vulkan, as vsgQt does) can release its swapchain before the
+    native window goes; `QWindow%destroy` to test it (test_events, also on
+    the Cocoa platform).
   - Threads: where `QOpenGLContext::supportsThreadedOpenGL()` is true, create
     and use the context on the render thread. On macOS it is false: making a
     window's context current off the main thread crashes in

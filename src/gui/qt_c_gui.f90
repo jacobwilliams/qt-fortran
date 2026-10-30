@@ -1370,6 +1370,15 @@ module qt_c_gui
             type(c_ptr), value :: self
         end subroutine qtf_qwindow_create
 
+        !> Destroy the native window (and its children's), releasing its native resources; it is made again when the window is next shown or created. A QtfEventFilter's `surfaceAboutToBeDestroyed` is emitted first.
+        !>
+        !> C: `void qtf_qwindow_destroy(void *self)`
+        subroutine qtf_qwindow_destroy(self) bind(C, name='qtf_qwindow_destroy')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qwindow_destroy
+
         !> Show the window.
         !>
         !> C: `void qtf_qwindow_show(void *self)`
@@ -1526,8 +1535,9 @@ module qt_c_gui
     public :: qtf_qdoublevalidator_decimals, qtf_qregularexpressionvalidator_new
     public :: qtf_qregularexpressionvalidator_setPattern, qtf_qregularexpressionvalidator_pattern
     public :: qtf_qwindow_new, qtf_qwindow_setSurfaceType, qtf_qwindow_surfaceType, qtf_qwindow_create
-    public :: qtf_qwindow_show, qtf_qwindow_hide, qtf_qwindow_isVisible, qtf_qwindow_isExposed
-    public :: qtf_qwindow_resize, qtf_qwindow_width, qtf_qwindow_height, qtf_qwindow_devicePixelRatio
-    public :: qtf_qwindow_winId, qtf_qwindow_setTitle, qtf_qwindow_title, qtf_qwindow_requestUpdate
+    public :: qtf_qwindow_destroy, qtf_qwindow_show, qtf_qwindow_hide, qtf_qwindow_isVisible
+    public :: qtf_qwindow_isExposed, qtf_qwindow_resize, qtf_qwindow_width, qtf_qwindow_height
+    public :: qtf_qwindow_devicePixelRatio, qtf_qwindow_winId, qtf_qwindow_setTitle, qtf_qwindow_title
+    public :: qtf_qwindow_requestUpdate
 
 end module qt_c_gui
