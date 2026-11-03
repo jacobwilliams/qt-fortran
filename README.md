@@ -127,7 +127,21 @@ pixi install
 On **Windows**, conda-forge's Qt is built with MSVC, so the
 [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 must be installed. The C++ part of qt-fortran is compiled with clang in MSVC
-mode. Fortran is still gfortran.
+mode. Fortran is still gfortran by default.
+
+**Intel Fortran (ifx/ifort)** is selected with `--compiler`, as with fpm
+(or by setting `FPM_FC`). Run it from a shell where the oneAPI environment is
+active (`setvars.bat`, or the "Intel oneAPI command prompt"):
+
+```sh
+pixi run python tools/fpm_qt.py build --compiler ifx
+pixi run python tools/fpm_qt.py test --compiler ifx
+```
+
+On Windows, the helper script links the C++ part's import library (`qtf.lib`)
+and gives link.exe the library directories through the `LIB` environment
+variable. No paths go on the command line, so paths with spaces
+(e.g. `C:\Program Files\...`) are not a problem.
 
 ### Build, test, run
 
