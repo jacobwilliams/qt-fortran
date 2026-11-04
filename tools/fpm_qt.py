@@ -141,8 +141,16 @@ def dll_settings(lib, intel):
             for d in glob.glob(os.path.join(os.getcwd(), "build", f"{fc}_*")):
                 shutil.rmtree(d)
     dll_dir = os.path.dirname(dll)
+    # fpm compiles C++ as `<cxx> -c x.cpp ... -o x.o`; MSVC's cl ignores -o for
+    # objects (writes x.obj in the current directory), so don't use it here.
+    # (setup-fortran's Intel toolchain sets FPM_CXX=cl.)
+    cxx = os.environ.get("FPM_CXX")
+    if cxx and os.path.splitext(os.path.basename(cxx))[0].lower() == "cl":
+        print(f"fpm_qt: ignoring FPM_CXX={cxx} (cl doesn't accept fpm's -o); using clang++",
+              flush=True)
+        cxx = None
     env = {
-        "FPM_CXX": os.environ.get("FPM_CXX") or which("clang++"),
+        "FPM_CXX": cxx or which("clang++"),
         "FPM_CXXFLAGS": "-DQTF_EXTERNAL_SHIM",
     }
     if intel:
