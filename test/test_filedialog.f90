@@ -22,7 +22,7 @@ contains
     end function active_file_dialog
 
     !> Select the existing test file in the active file dialog and accept it.
-    subroutine choose_existing(data)
+    recursive subroutine choose_existing(data)
         class(*), intent(inout), optional :: data
         type(QFileDialog) :: d
         d = active_file_dialog()
@@ -35,7 +35,7 @@ contains
     end subroutine choose_existing
 
     !> Enter a new file name in the active file dialog and accept it.
-    subroutine choose_new(data)
+    recursive subroutine choose_new(data)
         class(*), intent(inout), optional :: data
         type(QFileDialog) :: d
         d = active_file_dialog()
@@ -48,7 +48,7 @@ contains
     end subroutine choose_new
 
     !> Cancel the active file dialog.
-    subroutine cancel(data)
+    recursive subroutine cancel(data)
         class(*), intent(inout), optional :: data
         type(QFileDialog) :: d
         d = active_file_dialog()
