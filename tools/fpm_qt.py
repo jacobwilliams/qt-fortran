@@ -27,7 +27,8 @@ How the C++ shim (src/shim/*.cpp) is built:
       fpm compiles the shim sources as empty files (-DQTF_EXTERNAL_SHIM) and links
       the DLL; the DLL and Qt are found through PATH at run time.
       With Intel Fortran (ifx/ifort), which links with MSVC's link.exe, the DLL's
-      import library qtf.lib is linked instead. Its directory and Qt's are put in
+      import library qtf.lib is linked instead (plus an empty stdc++.lib: fpm
+      always links "stdc++" when a package has C++ sources). Its directory and Qt's are put in
       the LIB environment variable (link.exe's search path), so no paths, and no
       spaces in paths, appear on fpm's command lines.
 
@@ -131,6 +132,28 @@ def build_shim_dll(lib):
     return dll, True
 
 
+def build_stdcxx_stub(out_dir):
+    """An empty build/qtf/stdc++.lib, for MSVC-style linkers.
+
+    fpm links "stdc++" into every program of a package with C++ sources
+    (stdc++.lib with Intel Fortran on Windows). Here those sources compile to
+    empty objects (the shim is in the DLL), so no C++ runtime is needed, but
+    the library must exist."""
+    stub = os.path.join(out_dir, "stdc++.lib")
+    if os.path.exists(stub):
+        return
+    src = os.path.join(out_dir, "stdcxx_stub.cpp")
+    obj = os.path.join(out_dir, "stdcxx_stub.obj")
+    with open(src, "w") as f:
+        f.write("// stand-in for fpm's stdc++ (see tools/fpm_qt.py)\n"
+                "extern \"C\" int qtf_stdcxx_stub = 0;\n")
+    cxx = os.environ.get("QTF_CXX") or which("clang++")
+    archiver = which("lib", "llvm-lib")
+    if (run([cxx, "--target=x86_64-pc-windows-msvc", "-c", src, "-o", obj]) != 0 or
+            run([archiver, "/NOLOGO", f"/OUT:{stub}", obj]) != 0):
+        sys.exit("fpm_qt: could not create the stdc++.lib stand-in")
+
+
 def dll_settings(lib, intel):
     """Settings for fpm when the shim is the separately built DLL."""
     dll, rebuilt = build_shim_dll(lib)
@@ -156,6 +179,7 @@ def dll_settings(lib, intel):
     if intel:
         # link.exe: link the import library (clang writes qtf.lib next to the
         # DLL) and find it and Qt's *.lib through LIB, not command-line paths
+        build_stdcxx_stub(dll_dir)
         env["FPM_LDFLAGS"] = "qtf.lib"
         env["LIB"] = os.pathsep.join(p for p in (dll_dir, os.path.join(lib, "lib"),
                                                  os.environ.get("LIB")) if p)

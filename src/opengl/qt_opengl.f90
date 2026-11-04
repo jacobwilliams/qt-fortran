@@ -213,12 +213,13 @@ module qt_opengl
     !>
     !> A context can be used from another thread (an engine's render thread).
     !> Where `QOpenGLContext_supportsThreadedOpenGL()` is true (Windows, Linux),
-    !> create and use it on that thread. On macOS it is false: AppKit must attach
-    !> the context to the window on the main thread. There, as OpenFrames does,
-    !> set Qt_AA_DontCheckOpenGLContextThreadAffinity, create the context on the
-    !> GUI thread, and on every expose and resize pause the engine and call
-    !> `makeCurrent(window)` + `doneCurrent()` on the GUI thread before it renders
-    !> again; the engine must release the context (`doneCurrent`) after each frame.
+    !> create and use it on that thread. On macOS it is false: AppKit must update
+    !> the context for its window on the main thread. There, set
+    !> Qt_AA_DontCheckOpenGLContextThreadAffinity and create the context on the GUI
+    !> thread; `makeCurrent` called from the render thread then has the GUI thread
+    !> do that update first and waits for it (so the GUI thread must not be waiting
+    !> for the render thread meanwhile: `makeCurrent` gives up after 2 s and returns
+    !> false). On all platforms, release the context (`doneCurrent`) after each frame.
     !>
     !> Do not connect Fortran slots to Qt signals of objects that live on another
     !> thread: those slots would run on that thread.
@@ -750,7 +751,7 @@ contains
         res = qtf_logical(qtf_qopenglcontext_isValid(qtf_live(self, 'QOpenGLContext%isValid')))
     end function qopenglcontext_isValid
 
-    !> Make the context current on the calling thread, drawing to `window`.
+    !> Make the context current on the calling thread, drawing to `window` (from a render thread on macOS, with the GUI thread's help; see the type's notes).
     function qopenglcontext_makeCurrent(self, window) result(res)
         class(QOpenGLContext), intent(in) :: self
         class(QWindow), intent(in) :: window

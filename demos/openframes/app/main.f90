@@ -11,11 +11,11 @@
 !> * A QtfEventFilter forwards the window's events: the first expose starts
 !>   OpenFrames, resizes go to ofwin_resizewindow, mouse and keys to its
 !>   trackball (coordinates in physical pixels).
-!> * Where Qt reports no threaded OpenGL (macOS), AppKit must attach the
-!>   context to the window on the main thread: the context is created on the
-!>   GUI thread, Qt_AA_DontCheckOpenGLContextThreadAffinity is set, and at each
-!>   expose and resize the GUI thread pauses OpenFrames (ofwin_pauseanimation
-!>   waits for the render thread) and does makeCurrent + doneCurrent.
+!> * Where Qt reports no threaded OpenGL (macOS), AppKit must update the
+!>   context for its window on the main thread: the context is created on the
+!>   GUI thread and Qt_AA_DontCheckOpenGLContextThreadAffinity is set;
+!>   `makeCurrent` from the render thread then has the GUI thread do the
+!>   update first.
 !>
 !> Run with `pixi run run`. Options: `--capture name` saves a rendered frame
 !> (name_0_0.png) after a few seconds, `--quit-after seconds` closes the demo,
@@ -78,20 +78,13 @@ contains
         call context%swapBuffers(window)
     end subroutine swap_buffers
 
-    !> macOS: let AppKit attach the context to the window, on the GUI thread
-    !> with OpenFrames paused (the first time, this creates the context).
-    subroutine update_context()
+    !> macOS: create the context on the GUI thread, before OpenFrames starts.
+    subroutine create_context_on_gui_thread()
         logical :: ok
-        if (.not. gui_thread_updates .or. .not. window%isExposed()) return
-        call ofwin_activate(winid)
-        if (started) call ofwin_pauseanimation(.true.)     ! returns once the render thread is paused
-        if (context%isNull()) then
-            context = QOpenGLContext()
-            ok = context%create()
-        end if
-        if (context%makeCurrent(window)) call context%doneCurrent()
-        if (started) call ofwin_pauseanimation(.false.)
-    end subroutine update_context
+        if (.not. gui_thread_updates .or. .not. context%isNull()) return
+        context = QOpenGLContext()
+        ok = context%create()
+    end subroutine create_context_on_gui_thread
 
     ! ==================================================================
     ! the scene
@@ -202,8 +195,8 @@ contains
     !> The window was exposed or hidden: start OpenFrames the first time.
     subroutine on_expose(data)
         class(*), intent(inout), optional :: data
-        call update_context()
         if (window%isExposed() .and. .not. started) then
+            call create_context_on_gui_thread()
             started = .true.
             call ofwin_activate(winid)
             call ofwin_start()
@@ -215,7 +208,6 @@ contains
         type(QResizeEvent), intent(in) :: event
         class(*), intent(inout), optional :: data
         real(c_double) :: dpr
-        call update_context()
         dpr = window%devicePixelRatio()
         call ofwin_activate(winid)
         call ofwin_resizewindow(0, 0, int(event%width() * dpr, int32), int(event%height() * dpr, int32))

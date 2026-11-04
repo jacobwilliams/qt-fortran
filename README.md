@@ -437,11 +437,14 @@ A few conventions to know (the full list is in [plans/plan.md](plans/plan.md)):
     exists again.
   - *Threads*: on Windows and Linux the context can be created and used on
     the render thread. macOS (`QOpenGLContext_supportsThreadedOpenGL()` is
-    false) needs AppKit's updates on the main thread, as OpenFrames does it:
+    false) needs AppKit's updates on the main thread:
     - set `Qt_AA_DontCheckOpenGLContextThreadAffinity`;
     - create the context on the GUI thread;
-    - on each expose and resize, pause the engine, then do `makeCurrent` and
-      `doneCurrent` on the GUI thread;
+    - call `makeCurrent` from the render thread as usual. It has the GUI
+      thread make the context current first, which applies any update the
+      window needs (after a move, resize or screen change), and waits for
+      that. So don't block the GUI thread waiting for the render thread while
+      it renders: after 2 s, `makeCurrent` gives up and returns false;
     - release the context after every frame.
   - [test/test_render_thread.f90](test/test_render_thread.f90) is a complete,
     engine-free example of both paths.

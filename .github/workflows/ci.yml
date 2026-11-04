@@ -50,13 +50,49 @@ jobs:
   windows-ifx:
     name: windows-latest (ifx)
     runs-on: windows-latest
+    env:
+      ONEAPI_ROOT: C:\Program Files (x86)\Intel\oneAPI
+      IFX_VERSION: '2025.3'
     steps:
       - uses: actions/checkout@v7.0.1
 
-      - uses: fortran-lang/setup-fortran@v1.11.0
+      # setup-fortran caches the oneAPI install under a key that changes daily,
+      # so it reinstalls (~9 min) at least once a day. Cache it under a fixed
+      # key instead, and run setup-fortran only when that misses.
+      - name: Restore oneAPI
+        id: oneapi
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ env.ONEAPI_ROOT }}
+          key: oneapi-ifx-${{ env.IFX_VERSION }}-${{ runner.os }}-v1
+
+      - name: Install ifx
+        if: steps.oneapi.outputs.cache-hit != 'true'
+        uses: fortran-lang/setup-fortran@v1.11.0
         with:
           compiler: intel
-          version: '2025.3'
+          version: ${{ env.IFX_VERSION }}
+
+      - name: Save oneAPI
+        if: steps.oneapi.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ env.ONEAPI_ROOT }}
+          key: ${{ steps.oneapi.outputs.cache-primary-key }}
+
+      # what setup-fortran does after restoring its own cache
+      - name: Activate oneAPI (cached install)
+        if: steps.oneapi.outputs.cache-hit == 'true'
+        shell: cmd
+        run: |
+          call "%ONEAPI_ROOT%\setvars.bat"
+          set | findstr /c:"oneAPI" >> "%GITHUB_ENV%"
+          echo SETVARS_COMPLETED=1>>"%GITHUB_ENV%"
+
+      - name: Hide Git's GNU link (cached install)
+        if: steps.oneapi.outputs.cache-hit == 'true'
+        shell: bash
+        run: mv /usr/bin/link "$RUNNER_TEMP/link"
 
       - uses: prefix-dev/setup-pixi@v0.11.2
         with:
