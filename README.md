@@ -149,7 +149,7 @@ variable. No paths go on the command line, so paths with spaces
 ```sh
 pixi run build                  # build the library and examples
 pixi run test                   # run the test suite (headless)
-pixi run example hello          # run an example: hello, timer, form, plot, explorer, timeseries, fieldviewer, surface3d, orbit3d
+pixi run example hello          # run an example: hello, timer, form, plot, explorer, timeseries, fieldviewer, datasets, surface3d, orbit3d
 ```
 
 Examples:
@@ -164,6 +164,7 @@ Examples:
 | [timeseries](example/timeseries.f90) | a simulation workbench: a dock of parameters (group boxes, form layouts, dial + LCD, radio group), cancellable runs in a worker thread with a progress bar, tabs with a splitter, a million-row table served from Fortran arrays (`QtfTableModel`), a statistics tree, a log console, a tool-button preset menu, input and color dialogs, a plot context menu, settings remembered between sessions, confirmation before quitting |
 | [fieldviewer](example/fieldviewer.f90) | 2D fields computed in Fortran shown with `QImage_fromArray`: interference, masked peaks (NaN), Mandelbrot, and an interactive heat-diffusion solver; colormaps, colorbar, hover readout, standard icons |
 | [surface3d](example/surface3d.f90) | an interactive 3D surface plot with modern OpenGL: GLSL shaders, an indexed mesh with lighting, orbit/zoom with the mouse, auto-rotation, PNG export |
+| [datasets](example/datasets.f90) | a data catalog: datasets in a table with check boxes, color swatches and painted bar cells, a color grid (QListView), a chart of QPainterPath curves with gradient fills; drop files or text to add datasets, drag the chart out as an image, copy and paste through the clipboard |
 | [orbit3d](example/orbit3d.f90) | a spacecraft orbit viewer: Kepler propagation, orbital elements and presets in a side panel, a rotating lit planet, time warp, live readouts, OpenGL 3D view |
 
 A separate project, [demos/openframes](demos/openframes), renders an
@@ -190,6 +191,8 @@ pixi run example surface3d -- --screenshot surface.png
 ![Time series example](media/timeseries.png)
 
 ![Field viewer example](media/fieldviewer.png)
+
+![Datasets example](media/datasets.png)
 
 ![3D surface example](media/surface3d.png)
 
