@@ -9,6 +9,7 @@
 #include "qtf_common.h"
 
 #include <QColor>
+#include <QCoreApplication>
 #include <QGenericMatrix>
 #include <QImage>
 #include <QKeyEvent>
@@ -20,12 +21,18 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLWidget>
+#include <QPointer>
 #include <QSurfaceFormat>
+#include <QThread>
 #include <QVector3D>
 #include <QVector4D>
 #include <QWheelEvent>
 #include <QWindow>
 #include <array>
+#include <chrono>
+#include <condition_variable>
+#include <memory>
+#include <mutex>
 #include <vector>
 
 template <typename T> static T *as(void *p) { return static_cast<T *>(p); }
@@ -43,6 +50,55 @@ enum : int {
     QTF_SIG_QTFOPENGLWIDGET_KEYPRESSEVENT = 3008,
     QTF_SIG_QTFOPENGLWIDGET_KEYRELEASEEVENT = 3009,
 };
+
+// QOpenGLContext::makeCurrent from a thread other than the GUI thread, on a
+// platform without threaded OpenGL (macOS). AppKit must update a context for
+// its view on the main thread, and Qt does that inside makeCurrent whenever
+// the view changed since the last time (moved, resized, other screen; Qt
+// tracks this itself). So the GUI thread makes the context current first,
+// doing any pending update there, then waits while the calling thread takes
+// it. False if that fails, or if the GUI thread doesn't respond within 2 s
+// (e.g. because it is waiting for the calling thread).
+static bool qtf_make_current(QOpenGLContext *ctx, QWindow *window) {
+    QCoreApplication *app = QCoreApplication::instance();
+    if (!app || QThread::currentThread() == app->thread() || QOpenGLContext::supportsThreadedOpenGL())
+        return ctx->makeCurrent(window);
+    struct Handoff {
+        std::mutex m;
+        std::condition_variable cv;
+        int state = 0;   // 0 asked, 1 ready, 2 taken, 3 failed on the GUI thread, -1 given up
+    };
+    const auto timeout = std::chrono::seconds(2);
+    auto h = std::make_shared<Handoff>();
+    QPointer<QOpenGLContext> c(ctx);
+    QPointer<QWindow> w(window);
+    QMetaObject::invokeMethod(app, [h, c, w, timeout]() {
+        {
+            std::lock_guard<std::mutex> lock(h->m);
+            if (h->state < 0) return;
+        }
+        const bool ok = c && w && c->makeCurrent(w);
+        if (ok) c->doneCurrent();
+        std::unique_lock<std::mutex> lock(h->m);
+        if (h->state < 0) return;
+        h->state = ok ? 1 : 3;
+        h->cv.notify_all();
+        if (ok) h->cv.wait_for(lock, timeout, [&] { return h->state == 2; });
+    }, Qt::QueuedConnection);
+    {
+        std::unique_lock<std::mutex> lock(h->m);
+        if (!h->cv.wait_for(lock, timeout, [&] { return h->state > 0; })) {
+            h->state = -1;
+            return false;
+        }
+        if (h->state == 3) return false;
+    }
+    const bool ok = ctx->makeCurrent(window);   // the GUI thread waits meanwhile
+    std::lock_guard<std::mutex> lock(h->m);
+    h->state = 2;
+    h->cv.notify_all();
+    return ok;
+}
 
 // The current context's OpenGL functions (null without a current context).
 static QOpenGLFunctions *qtf_gl() {
@@ -438,9 +494,9 @@ QTF_API int qtf_qopenglcontext_create(void *self) { return qtf_bool(as<QOpenGLCo
 // True after a successful `create`.
 QTF_API int qtf_qopenglcontext_isValid(void *self) { return qtf_bool(as<QOpenGLContext>(self)->isValid()); }
 
-// Make the context current on the calling thread, drawing to `window`.
+// Make the context current on the calling thread, drawing to `window` (from a render thread on macOS, with the GUI thread's help; see the type's notes).
 QTF_API int qtf_qopenglcontext_makeCurrent(void *self, void *window) {
-    return qtf_bool(as<QOpenGLContext>(self)->makeCurrent(as<QWindow>(window)));
+    return qtf_bool(qtf_make_current(as<QOpenGLContext>(self), as<QWindow>(window)));
 }
 
 // Release the context from the calling thread.

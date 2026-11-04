@@ -39,9 +39,59 @@ cpp_includes = [
     "QColor", "QGenericMatrix", "QImage", "QKeyEvent", "QMatrix4x4", "QMouseEvent", "QOpenGLBuffer",
     "QOpenGLContext", "QOpenGLFunctions", "QOpenGLShaderProgram", "QOpenGLVertexArrayObject", "QWindow",
     "QOpenGLWidget", "QSurfaceFormat", "QVector3D", "QVector4D", "QWheelEvent", "array", "vector",
+    "QCoreApplication", "QPointer", "QThread", "chrono", "condition_variable", "memory", "mutex",
 ]
 
 cpp_prelude = """
+// QOpenGLContext::makeCurrent from a thread other than the GUI thread, on a
+// platform without threaded OpenGL (macOS). AppKit must update a context for
+// its view on the main thread, and Qt does that inside makeCurrent whenever
+// the view changed since the last time (moved, resized, other screen; Qt
+// tracks this itself). So the GUI thread makes the context current first,
+// doing any pending update there, then waits while the calling thread takes
+// it. False if that fails, or if the GUI thread doesn't respond within 2 s
+// (e.g. because it is waiting for the calling thread).
+static bool qtf_make_current(QOpenGLContext *ctx, QWindow *window) {
+    QCoreApplication *app = QCoreApplication::instance();
+    if (!app || QThread::currentThread() == app->thread() || QOpenGLContext::supportsThreadedOpenGL())
+        return ctx->makeCurrent(window);
+    struct Handoff {
+        std::mutex m;
+        std::condition_variable cv;
+        int state = 0;   // 0 asked, 1 ready, 2 taken, 3 failed on the GUI thread, -1 given up
+    };
+    const auto timeout = std::chrono::seconds(2);
+    auto h = std::make_shared<Handoff>();
+    QPointer<QOpenGLContext> c(ctx);
+    QPointer<QWindow> w(window);
+    QMetaObject::invokeMethod(app, [h, c, w, timeout]() {
+        {
+            std::lock_guard<std::mutex> lock(h->m);
+            if (h->state < 0) return;
+        }
+        const bool ok = c && w && c->makeCurrent(w);
+        if (ok) c->doneCurrent();
+        std::unique_lock<std::mutex> lock(h->m);
+        if (h->state < 0) return;
+        h->state = ok ? 1 : 3;
+        h->cv.notify_all();
+        if (ok) h->cv.wait_for(lock, timeout, [&] { return h->state == 2; });
+    }, Qt::QueuedConnection);
+    {
+        std::unique_lock<std::mutex> lock(h->m);
+        if (!h->cv.wait_for(lock, timeout, [&] { return h->state > 0; })) {
+            h->state = -1;
+            return false;
+        }
+        if (h->state == 3) return false;
+    }
+    const bool ok = ctx->makeCurrent(window);   // the GUI thread waits meanwhile
+    std::lock_guard<std::mutex> lock(h->m);
+    h->state = 2;
+    h->cv.notify_all();
+    return ok;
+}
+
 // The current context's OpenGL functions (null without a current context).
 static QOpenGLFunctions *qtf_gl() {
     QOpenGLContext *ctx = QOpenGLContext::currentContext();
@@ -411,12 +461,13 @@ engines draw into a Qt window: `makeCurrent(window)`, render, and
 
 A context can be used from another thread (an engine's render thread).
 Where `QOpenGLContext_supportsThreadedOpenGL()` is true (Windows, Linux),
-create and use it on that thread. On macOS it is false: AppKit must attach
-the context to the window on the main thread. There, as OpenFrames does,
-set Qt_AA_DontCheckOpenGLContextThreadAffinity, create the context on the
-GUI thread, and on every expose and resize pause the engine and call
-`makeCurrent(window)` + `doneCurrent()` on the GUI thread before it renders
-again; the engine must release the context (`doneCurrent`) after each frame.
+create and use it on that thread. On macOS it is false: AppKit must update
+the context for its window on the main thread. There, set
+Qt_AA_DontCheckOpenGLContextThreadAffinity and create the context on the GUI
+thread; `makeCurrent` called from the render thread then has the GUI thread
+do that update first and waits for it (so the GUI thread must not be waiting
+for the render thread meanwhile: `makeCurrent` gives up after 2 s and returns
+false). On all platforms, release the context (`doneCurrent`) after each frame.
 
 Do not connect Fortran slots to Qt signals of objects that live on another
 thread: those slots would run on that thread."""
@@ -425,7 +476,7 @@ methods = [
     { sig = "setFormat(format: QSurfaceFormat)", cpp = "{self}->setFormat(*{format})", doc = "Request a format (version, profile, ...) before `create`; by default the QSurfaceFormat default format." },
     "create() -> bool -- Create the native context; false if that fails (e.g. no OpenGL).",
     "isValid() -> bool -- True after a successful `create`.",
-    "makeCurrent(window: QWindow) -> bool -- Make the context current on the calling thread, drawing to `window`.",
+    { sig = "makeCurrent(window: QWindow) -> bool", cpp = "qtf_make_current({self}, {window})", doc = "Make the context current on the calling thread, drawing to `window` (from a render thread on macOS, with the GUI thread's help; see the type's notes)." },
     "doneCurrent() -- Release the context from the calling thread.",
     "swapBuffers(window: QWindow) -- Show the frame rendered into `window`.",
     { sig = "format() -> QSurfaceFormat", cpp = "new QSurfaceFormat({self}->format())", doc = "The format of the actual context; delete it when done." },

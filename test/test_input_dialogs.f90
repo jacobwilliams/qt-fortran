@@ -16,7 +16,7 @@ contains
     end function active_dialog
 
     !> Accept the active dialog (retry until it is shown).
-    subroutine accept_dialog(data)
+    recursive subroutine accept_dialog(data)
         class(*), intent(inout), optional :: data
         type(QDialog) :: d
         d = active_dialog()
@@ -28,7 +28,7 @@ contains
     end subroutine accept_dialog
 
     !> Reject the active dialog (retry until it is shown).
-    subroutine reject_dialog(data)
+    recursive subroutine reject_dialog(data)
         class(*), intent(inout), optional :: data
         type(QDialog) :: d
         d = active_dialog()

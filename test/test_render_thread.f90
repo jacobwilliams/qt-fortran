@@ -9,11 +9,11 @@
 !> Two ways, by platform:
 !> * threaded OpenGL (Windows, Linux): the context is created and used on the
 !>   render thread;
-!> * otherwise (macOS, where AppKit must attach the context to the window on
-!>   the main thread), as OpenFrames does: the context is created on the GUI
-!>   thread, Qt_AA_DontCheckOpenGLContextThreadAffinity is set, and on every
-!>   expose and resize the GUI thread pauses the engine and makes the context
-!>   current once (makeCurrent + doneCurrent) before rendering resumes.
+!> * otherwise (macOS, where AppKit must update the context for its window on
+!>   the main thread): the context is created on the GUI thread and
+!>   Qt_AA_DontCheckOpenGLContextThreadAffinity is set. `makeCurrent` from the
+!>   render thread has the GUI thread do the update first (while the window
+!>   is resized during rendering, too).
 !> In both, the context is released after every frame (in the swap callback).
 module test_render_thread_host
 
@@ -61,9 +61,6 @@ module test_render_thread_host
     type(QWindow), save :: host_window
     type(QOpenGLContext), save :: host_context
     logical, save :: gui_thread_updates = .false.   !! macOS: context updates on the GUI thread
-
-    ! pausing the engine (GUI thread asks, render thread acknowledges)
-    logical, volatile, save :: pause_request = .false., paused = .false.
 
     !> GUI-side state.
     type :: host_t
@@ -120,11 +117,6 @@ contains
             e%on_render_thread = .not. c_associated(me%ptr, e%gui_thread%ptr)
             do k = 1, nframes
                 if (QThread_isInterruptionRequested()) exit
-                do while (pause_request)               ! the GUI thread is updating the context
-                    paused = .true.
-                    call QThread_msleep(1)
-                end do
-                paused = .false.
                 call make_current(0_c_int, ok)
                 if (.not. ok) then
                     e%current_ok = .false.
@@ -145,25 +137,13 @@ contains
         end select
     end subroutine engine_run
 
-    !> macOS: let AppKit attach the context to the window, on the GUI thread
-    !> (the first time this creates the context), with the engine paused.
-    subroutine update_context(h)
-        type(host_t), intent(inout) :: h
+    !> macOS: create the context on the GUI thread, before the engine starts.
+    subroutine create_context_on_gui_thread()
         logical :: ok
-        if (.not. gui_thread_updates .or. .not. host_window%isExposed()) return
-        if (h%started) then
-            pause_request = .true.
-            do while (.not. paused .and. h%render_thread%isRunning())
-                call QThread_msleep(1)
-            end do
-        end if
-        if (host_context%isNull()) then
-            host_context = QOpenGLContext()
-            ok = host_context%create()
-        end if
-        if (host_context%makeCurrent(host_window)) call host_context%doneCurrent()
-        pause_request = .false.
-    end subroutine update_context
+        if (.not. gui_thread_updates .or. .not. host_context%isNull()) return
+        host_context = QOpenGLContext()
+        ok = host_context%create()
+    end subroutine create_context_on_gui_thread
 
     ! ------------------------------------------------------------------
     ! GUI-thread slots
@@ -174,8 +154,8 @@ contains
         select type (h => data)
         type is (host_t)
             h%exposes = h%exposes + 1
-            call update_context(h)
             if (host_window%isExposed() .and. .not. h%started) then
+                call create_context_on_gui_thread()
                 h%started = .true.
                 call h%render_thread%start()
             end if
@@ -191,7 +171,6 @@ contains
             h%resizes = h%resizes + 1
             h%width = event%width()
             h%height = event%height()
-            call update_context(h)
         end select
     end subroutine on_resize
 

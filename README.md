@@ -127,7 +127,21 @@ pixi install
 On **Windows**, conda-forge's Qt is built with MSVC, so the
 [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 must be installed. The C++ part of qt-fortran is compiled with clang in MSVC
-mode. Fortran is still gfortran.
+mode. Fortran is still gfortran by default.
+
+**Intel Fortran (ifx/ifort)** is selected with `--compiler`, as with fpm
+(or by setting `FPM_FC`). Run it from a shell where the oneAPI environment is
+active (`setvars.bat`, or the "Intel oneAPI command prompt"):
+
+```sh
+pixi run python tools/fpm_qt.py build --compiler ifx
+pixi run python tools/fpm_qt.py test --compiler ifx
+```
+
+On Windows, the helper script links the C++ part's import library (`qtf.lib`)
+and gives link.exe the library directories through the `LIB` environment
+variable. No paths go on the command line, so paths with spaces
+(e.g. `C:\Program Files\...`) are not a problem.
 
 ### Build, test, run
 
@@ -423,11 +437,14 @@ A few conventions to know (the full list is in [plans/plan.md](plans/plan.md)):
     exists again.
   - *Threads*: on Windows and Linux the context can be created and used on
     the render thread. macOS (`QOpenGLContext_supportsThreadedOpenGL()` is
-    false) needs AppKit's updates on the main thread, as OpenFrames does it:
+    false) needs AppKit's updates on the main thread:
     - set `Qt_AA_DontCheckOpenGLContextThreadAffinity`;
     - create the context on the GUI thread;
-    - on each expose and resize, pause the engine, then do `makeCurrent` and
-      `doneCurrent` on the GUI thread;
+    - call `makeCurrent` from the render thread as usual. It has the GUI
+      thread make the context current first, which applies any update the
+      window needs (after a move, resize or screen change), and waits for
+      that. So don't block the GUI thread waiting for the render thread while
+      it renders: after 2 s, `makeCurrent` gives up and returns false;
     - release the context after every frame.
   - [test/test_render_thread.f90](test/test_render_thread.f90) is a complete,
     engine-free example of both paths.

@@ -37,6 +37,12 @@ module qt_matrix
         procedure :: normalMatrix => qmatrix4x4_normalMatrix
     end type QMatrix4x4
 
+    !> `QMatrix4x4()`: the identity matrix. (A function rather than the
+    !> structure constructor, whose default component value ifx mishandles.)
+    interface QMatrix4x4
+        module procedure :: qmatrix4x4_new
+    end interface QMatrix4x4
+
     !> Matrix product `a * b` (apply `b` first, then `a`).
     interface operator(*)
         module procedure :: qmatrix4x4_multiply
@@ -44,6 +50,12 @@ module qt_matrix
     public :: operator(*)
 
 contains
+
+    !> The identity matrix.
+    function qmatrix4x4_new() result(mat)
+        type(QMatrix4x4) :: mat
+        mat%m = identity
+    end function qmatrix4x4_new
 
     !> Reset to the identity matrix.
     subroutine qmatrix4x4_setToIdentity(self)

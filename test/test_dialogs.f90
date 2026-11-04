@@ -15,7 +15,7 @@ module test_dialogs_slots
 contains
 
     !> Accept the active modal dialog (retry until it is shown).
-    subroutine accept_modal(data)
+    recursive subroutine accept_modal(data)
         class(*), intent(inout), optional :: data
         type(QWidget) :: w
         type(QDialog) :: d
@@ -29,7 +29,7 @@ contains
     end subroutine accept_modal
 
     !> Click "No" in the active message box (retry until it is shown).
-    subroutine click_no(data)
+    recursive subroutine click_no(data)
         class(*), intent(inout), optional :: data
         type(QWidget) :: w
         type(QMessageBox) :: box

@@ -8,6 +8,9 @@ Usage:
     python fpm_qt.py --env                         print `export ...` lines; then plain
                                                    `fpm build` works in that shell
 
+The Fortran compiler is gfortran unless `--compiler <fc>` is given (anywhere on
+the command line, as with fpm) or FPM_FC is set, e.g. `--compiler ifx`.
+
 How the C++ shim (src/shim/*.cpp) is built:
 
   Linux, macOS, and Windows with a MinGW Qt (e.g. MSYS2):
@@ -23,6 +26,11 @@ How the C++ shim (src/shim/*.cpp) is built:
       clang++ (MSVC target) into build/qtf/qtf.dll, which has a plain C interface.
       fpm compiles the shim sources as empty files (-DQTF_EXTERNAL_SHIM) and links
       the DLL; the DLL and Qt are found through PATH at run time.
+      With Intel Fortran (ifx/ifort), which links with MSVC's link.exe, the DLL's
+      import library qtf.lib is linked instead (plus an empty stdc++.lib: fpm
+      always links "stdc++" when a package has C++ sources). Its directory and Qt's are put in
+      the LIB environment variable (link.exe's search path), so no paths, and no
+      spaces in paths, appear on fpm's command lines.
 
 Override the compilers with FPM_FC / FPM_CXX if needed. FPM_CXXFLAGS and
 FPM_LDFLAGS already set in the environment are kept (appended), e.g. for the
@@ -58,6 +66,12 @@ def pkg_config(*args):
     except (OSError, subprocess.CalledProcessError):
         sys.exit("fpm_qt: pkg-config could not find Qt 6 (Qt6Core, Qt6Widgets, Qt6OpenGLWidgets, ...);\n"
                  "        install Qt 6 development files or set PKG_CONFIG_PATH")
+
+
+def is_intel(fc):
+    """True for Intel Fortran (ifx, ifort), which on Windows links like MSVC."""
+    name = os.path.basename(fc).lower()
+    return name.startswith("ifx") or name.startswith("ifort")
 
 
 def conda_msvc_qt():
@@ -97,16 +111,17 @@ def build_shim_dll(lib):
     """Build build/qtf/qtf.dll from the shim sources if any of them is newer."""
     out_dir = os.path.join(os.getcwd(), "build", "qtf")
     dll = os.path.join(out_dir, "qtf.dll")
+    implib = os.path.join(out_dir, "qtf.lib")    # import library, for MSVC-style linkers
     sources = sorted(glob.glob(os.path.join(SHIM_SRC, "*.cpp")))
     deps = sources + glob.glob(os.path.join(SHIM_SRC, "*.h"))
-    if os.path.exists(dll) and all(os.path.getmtime(d) <= os.path.getmtime(dll) for d in deps):
+    if os.path.exists(dll) and os.path.exists(implib) and all(os.path.getmtime(d) <= os.path.getmtime(dll) for d in deps):
         return dll, False
     os.makedirs(out_dir, exist_ok=True)
     inc = os.path.join(lib, "include", "qt6")
     cxx = os.environ.get("QTF_CXX") or which("clang++")
     cmd = [cxx, "--target=x86_64-pc-windows-msvc", CXX_STD,
            # Qt DLLs use the dynamic CRT (/MD); keep the static one out of the link
-           "-fms-runtime-lib=dll", "-shared", "-o", dll,
+           "-fms-runtime-lib=dll", "-shared", "-o", dll, f"-Wl,/IMPLIB:{implib}",
            *(f"-Wl,/NODEFAULTLIB:{crt}" for crt in ("libcmt", "libucrt", "libvcruntime", "libcpmt")),
            *(f"-DQT_{m.upper()}_LIB" for m in QT_MODULES),
            f"-I{inc}", *(f"-I{os.path.join(inc, 'Qt' + m)}" for m in QT_MODULES),
@@ -117,21 +132,62 @@ def build_shim_dll(lib):
     return dll, True
 
 
-def dll_settings(lib):
+def build_stdcxx_stub(out_dir):
+    """An empty build/qtf/stdc++.lib, for MSVC-style linkers.
+
+    fpm links "stdc++" into every program of a package with C++ sources
+    (stdc++.lib with Intel Fortran on Windows). Here those sources compile to
+    empty objects (the shim is in the DLL), so no C++ runtime is needed, but
+    the library must exist."""
+    stub = os.path.join(out_dir, "stdc++.lib")
+    if os.path.exists(stub):
+        return
+    src = os.path.join(out_dir, "stdcxx_stub.cpp")
+    obj = os.path.join(out_dir, "stdcxx_stub.obj")
+    with open(src, "w") as f:
+        f.write("// stand-in for fpm's stdc++ (see tools/fpm_qt.py)\n"
+                "extern \"C\" int qtf_stdcxx_stub = 0;\n")
+    cxx = os.environ.get("QTF_CXX") or which("clang++")
+    archiver = which("lib", "llvm-lib")
+    if (run([cxx, "--target=x86_64-pc-windows-msvc", "-c", src, "-o", obj]) != 0 or
+            run([archiver, "/NOLOGO", f"/OUT:{stub}", obj]) != 0):
+        sys.exit("fpm_qt: could not create the stdc++.lib stand-in")
+
+
+def dll_settings(lib, intel):
     """Settings for fpm when the shim is the separately built DLL."""
     dll, rebuilt = build_shim_dll(lib)
     if rebuilt:
         # fpm does not relink executables when only the DLL changed
-        for d in glob.glob(os.path.join(os.getcwd(), "build", "gfortran_*")):
-            shutil.rmtree(d)
-    # The DLL is passed as a linker input (not -lqtf): ld resolves symbols from a
-    # DLL regardless of its position on the command line, unlike an import library.
+        # (fpm's build directories are named after the compiler)
+        for fc in ("gfortran", "ifx", "ifort"):
+            for d in glob.glob(os.path.join(os.getcwd(), "build", f"{fc}_*")):
+                shutil.rmtree(d)
+    dll_dir = os.path.dirname(dll)
+    # fpm compiles C++ as `<cxx> -c x.cpp ... -o x.o`; MSVC's cl ignores -o for
+    # objects (writes x.obj in the current directory), so don't use it here.
+    # (setup-fortran's Intel toolchain sets FPM_CXX=cl.)
+    cxx = os.environ.get("FPM_CXX")
+    if cxx and os.path.splitext(os.path.basename(cxx))[0].lower() == "cl":
+        print(f"fpm_qt: ignoring FPM_CXX={cxx} (cl doesn't accept fpm's -o); using clang++",
+              flush=True)
+        cxx = None
     env = {
-        "FPM_CXX": os.environ.get("FPM_CXX") or which("clang++"),
+        "FPM_CXX": cxx or which("clang++"),
         "FPM_CXXFLAGS": "-DQTF_EXTERNAL_SHIM",
-        "FPM_LDFLAGS": f"-L{os.path.join(lib, 'lib')} {dll.replace(os.sep, '/')}",
     }
-    return env, os.path.dirname(dll)
+    if intel:
+        # link.exe: link the import library (clang writes qtf.lib next to the
+        # DLL) and find it and Qt's *.lib through LIB, not command-line paths
+        build_stdcxx_stub(dll_dir)
+        env["FPM_LDFLAGS"] = "qtf.lib"
+        env["LIB"] = os.pathsep.join(p for p in (dll_dir, os.path.join(lib, "lib"),
+                                                 os.environ.get("LIB")) if p)
+    else:
+        # The DLL is passed as a linker input (not -lqtf): ld resolves symbols from a
+        # DLL regardless of its position on the command line, unlike an import library.
+        env["FPM_LDFLAGS"] = f"-L{os.path.join(lib, 'lib')} {dll.replace(os.sep, '/')}"
+    return env, dll_dir
 
 
 # ---------------------------------------------------------------------------
@@ -150,14 +206,35 @@ def keep_user_flags(settings):
     return settings
 
 
+def pop_compiler(args):
+    """Remove `--compiler X` / `--compiler=X` from args; return X (or None)."""
+    for i, a in enumerate(args):
+        if a == "--compiler" and i + 1 < len(args):
+            fc = args[i + 1]
+            del args[i:i + 2]
+            return fc
+        if a.startswith("--compiler="):
+            del args[i]
+            return a.split("=", 1)[1]
+    return None
+
+
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
+    args = sys.argv[1:]
+    if not args or args[0] in ("-h", "--help"):
         sys.exit(__doc__)
+    fc = pop_compiler(args) or os.environ.get("FPM_FC") or which("gfortran")
+    intel = is_intel(fc)
     lib = conda_msvc_qt()
-    settings, dll_dir = dll_settings(lib) if lib else fpm_settings()
+    if WINDOWS and intel and not lib:
+        sys.exit("fpm_qt: Intel Fortran on Windows is supported only with conda-forge's\n"
+                 "        MSVC-built Qt (run inside the pixi/conda environment)")
+    settings, dll_dir = dll_settings(lib, intel) if lib else fpm_settings()
     settings = keep_user_flags(settings)
 
-    if sys.argv[1] == "--env":
+    if args[0] == "--env":
+        if intel:
+            print(f"export FPM_FC={shlex.quote(fc)}")
         for k, v in settings.items():
             print(f"export {k}={shlex.quote(v)}")
         if dll_dir:
@@ -167,8 +244,7 @@ def main():
     env = dict(os.environ, **settings)
     if dll_dir:
         env["PATH"] = dll_dir + os.pathsep + env.get("PATH", "")
-    fc = os.environ.get("FPM_FC") or which("gfortran")
-    sys.exit(run(["fpm", sys.argv[1], "--compiler", fc, *sys.argv[2:]], env))
+    sys.exit(run(["fpm", args[0], "--compiler", fc, *args[1:]], env))
 
 
 if __name__ == "__main__":

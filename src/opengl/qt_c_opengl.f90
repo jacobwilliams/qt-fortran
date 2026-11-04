@@ -687,7 +687,7 @@ module qt_c_opengl
             integer(c_int) :: res
         end function qtf_qopenglcontext_isValid
 
-        !> Make the context current on the calling thread, drawing to `window`.
+        !> Make the context current on the calling thread, drawing to `window` (from a render thread on macOS, with the GUI thread's help; see the type's notes).
         !>
         !> C: `int qtf_qopenglcontext_makeCurrent(void *self, void *window)`
         function qtf_qopenglcontext_makeCurrent(self, window) result(res) bind(C, name='qtf_qopenglcontext_makeCurrent')

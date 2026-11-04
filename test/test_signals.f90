@@ -26,6 +26,12 @@ module test_signals_slots
 
 contains
 
+    !> A fresh recorder. (Not the structure constructor `recorder()`: ifx
+    !> rejects it because QMetaObject_Connection has private components.)
+    function new_recorder() result(r)
+        type(recorder) :: r
+    end function new_recorder
+
     !> Count a call.
     subroutine on_void(data)
         class(*), intent(inout), optional :: data
@@ -216,7 +222,7 @@ program test_signals
     call check(r2%calls == 1, 'QSignal emit')
 
     ! --- the other kinds
-    r = recorder()
+    r = new_recorder()
     sigb = QSignalBool(owner)
     sigd = QSignalDouble(owner)
     sig2 = QSignalInt2(owner)
@@ -242,7 +248,7 @@ program test_signals
     call check(.true., 'emit without slots')
 
     ! --- slots run in connection order
-    r = recorder()
+    r = new_recorder()
     r%order = ''
     sigi = QSignalInt(owner)
     call sigi%connect(on_first, r)
@@ -260,7 +266,7 @@ program test_signals
     call check(.not. QObject_disconnect(never), 'never-connected handle')
 
     ! --- a slot that disconnects itself while running
-    r = recorder()
+    r = new_recorder()
     sigv = QSignal(owner)
     call sigv%connect(on_once, r, connection=r%self_connection)
     call sigv%emit()
@@ -270,7 +276,7 @@ program test_signals
     ! --- disconnect all slots of a signal (others are untouched)
     call solver%progress%connect(on_int, r)
     call solver%progress%disconnect()
-    r = recorder()
+    r = new_recorder()
     call solver%progress%emit(5)
     call check(r%calls == 0, 'sig%disconnect() removes all slots')
     call solver%progress%connect(on_int, r)
@@ -279,8 +285,8 @@ program test_signals
 
     ! --- Qt signals
     button = QPushButton('Go')
-    r = recorder()
-    r2 = recorder()
+    r = new_recorder()
+    r2 = new_recorder()
     call button%clicked%connect(on_void, r, connection=c1)
     call button%clicked%connect(on_void, r2)
     call button%click()
@@ -295,7 +301,7 @@ program test_signals
 
     ! --- event slots: a disconnected handler restores Qt's default handling
     canvas = QtfWidget()
-    r = recorder()
+    r = new_recorder()
     call canvas%mousePressEvent%connect(on_press, r, connection=c1)
     me = QMouseEvent(QEvent_MouseButtonPress, 1.0_c_double, 1.0_c_double, Qt_LeftButton)
     handled = QCoreApplication_sendEvent(canvas, me)
