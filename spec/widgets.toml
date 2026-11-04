@@ -15,7 +15,7 @@ uses = [
     "use qt_gui_types",
     "use qt_gui",
 ]
-handle_types = ["QPixmap", "QImage", "QIcon"]
+handle_types = ["QPixmap", "QImage", "QIcon", "QPainter"]
 cpp_includes = [
     "QAction", "QApplication", "QBoxLayout", "QCheckBox", "QComboBox", "QDialog", "QDoubleSpinBox",
     "QFileDialog", "QGridLayout", "QLabel", "QLineEdit", "QMainWindow", "QMenu", "QMenuBar",
@@ -31,6 +31,8 @@ cpp_includes = [
     "QExposeEvent", "QPlatformSurfaceEvent", "QWindow", "QRegularExpression", "QCompleter", "QDialogButtonBox", "QDateTimeEdit", "QTextBrowser", "QToolBox",
     "QSplashScreen", "QMdiArea", "QMdiSubWindow", "QWizard", "QWizardPage", "QUndoStack", "QUndoView",
     "QStringListModel", "QUrl", "QFileInfo", "QValidator", "QDateTime",
+    "QBrush", "QColor", "QCursor", "QDragEnterEvent", "QDragLeaveEvent", "QDragMoveEvent", "QDropEvent", "QFont",
+    "QListView", "QPainter", "QScreen", "QStyleOptionViewItem", "map",
 ]
 
 cpp_prelude = """
@@ -238,6 +240,10 @@ enum qtf_filter_event {
     QTF_FILTER_FOCUSOUT,
     QTF_FILTER_SHOW,
     QTF_FILTER_HIDE,
+    QTF_FILTER_DRAGENTER,
+    QTF_FILTER_DRAGMOVE,
+    QTF_FILTER_DRAGLEAVE,
+    QTF_FILTER_DROP,
     QTF_FILTER_COUNT
 };
 
@@ -287,6 +293,21 @@ class QtfWidgetEventFilter : public QObject {
             break;
         case QEvent::Show: qtf_emit_all(handlers[QTF_FILTER_SHOW], a); break;
         case QEvent::Hide: qtf_emit_all(handlers[QTF_FILTER_HIDE], a); break;
+        case QEvent::DragEnter:
+        case QEvent::DragMove:
+        case QEvent::Drop: {
+            // a slot that accepts the event takes the drag (or drop); otherwise
+            // the widget's own handling runs, with the event as it came
+            const qtf_filter_event k = e->type() == QEvent::DragEnter  ? QTF_FILTER_DRAGENTER
+                                       : e->type() == QEvent::DragMove ? QTF_FILTER_DRAGMOVE
+                                                                       : QTF_FILTER_DROP;
+            const bool accepted = e->isAccepted();
+            e->ignore();
+            if (qtf_emit_all(handlers[k], a) > 0 && e->isAccepted()) return true;
+            e->setAccepted(accepted);
+            break;
+        }
+        case QEvent::DragLeave: qtf_emit_all(handlers[QTF_FILTER_DRAGLEAVE], a); break;
         default: break;
         }
         return QObject::eventFilter(o, e);
@@ -362,22 +383,91 @@ class QtfWidget : public QWidget {
     }
 };
 
-// The value a Fortran data slot produces for one table cell.
+// What a Fortran data slot produces for one cell: values by role (text,
+// icon, check state, tool tip, colors, ...). `role` is the role being asked
+// for; slots normally set everything, and the model picks the role it needs.
 struct QtfModelRequest {
-    QVariant value;
+    int role = Qt::DisplayRole;
+    std::map<int, QVariant> values;
+
+    void set(int r, const QVariant &v) { values[r] = v; }
+
+    void setFontStyle(bool bold, bool italic, bool setBold) {
+        auto it = values.find(Qt::FontRole);
+        QFont f = it != values.end() ? qvariant_cast<QFont>(it->second) : QFont();
+        if (setBold) f.setBold(bold);
+        else f.setItalic(italic);
+        values[Qt::FontRole] = QVariant::fromValue(f);
+    }
 };
 
 // The Fortran slots of a Fortran-backed model (QtfTableModel, QtfTreeModel).
 struct QtfModelHandlers {
     virtual ~QtfModelHandlers() = default;
-    std::vector<qtf_slot> data_handlers, edit_handlers, sort_handlers;
+    std::vector<qtf_slot> data_handlers, edit_handlers, sort_handlers, check_handlers;
 
-    // The value of one cell, from the dataRequested slots (`key` is the row or node).
-    QVariant request(int key, int column) const {
+    // Roles any slot has set so far (bit r: role r). Others are not asked for,
+    // so a model showing only text calls its slots once per cell.
+    mutable unsigned used_roles = 1u << Qt::DisplayRole;
+
+    // Redisplay every cell (called once a slot sets a role for the first time).
+    virtual void rolesLearned() const {}
+
+    static bool supportedRole(int role) {
+        switch (role) {
+        case Qt::DisplayRole: case Qt::EditRole: case Qt::DecorationRole: case Qt::ToolTipRole:
+        case Qt::StatusTipRole: case Qt::FontRole: case Qt::TextAlignmentRole: case Qt::BackgroundRole:
+        case Qt::ForegroundRole: case Qt::CheckStateRole: return true;
+        default: return false;
+        }
+    }
+
+    mutable bool probed = false;   // a full request was made to learn the roles
+
+    // The value of one cell for `role` from the dataRequested slots (`key` is
+    // the row or node); the edit role gets the displayed value.
+    QVariant request(int key, int column, int role = Qt::DisplayRole) const {
+        if (!supportedRole(role)) return QVariant();
+        const int r = role == Qt::EditRole ? int(Qt::DisplayRole) : role;
+        if (!(used_roles & (1u << r))) {
+            if (probed) return QVariant();
+            probed = true;
+            ask(key, column, Qt::DisplayRole);   // learn which roles the slots set
+            if (!(used_roles & (1u << r))) return QVariant();
+        }
+        return ask(key, column, r);
+    }
+
+    // Call the dataRequested slots for one role of a cell, and learn the roles they set.
+    QVariant ask(int key, int column, int r) const {
+        probed = true;
         QtfModelRequest req;
+        req.role = r;
         const std::vector<qtf_slot> targets = data_handlers;   // a slot may connect more
         for (const qtf_slot &s : targets) qtf_emit_ptr_ints(s, &req, {key, column});
-        return req.value;
+        const unsigned before = used_roles;
+        for (const auto &kv : req.values)
+            if (supportedRole(kv.first)) used_roles |= 1u << kv.first;
+        if (used_roles != before) rolesLearned();
+        const auto it = req.values.find(r);
+        return it != req.values.end() ? it->second : QVariant();
+    }
+
+    // Item flags from the requested values: checkable if a slot sets a check state.
+    Qt::ItemFlags requestFlags(int key, int column) const {
+        Qt::ItemFlags f;
+        if (request(key, column, Qt::CheckStateRole).isValid())
+            f |= Qt::ItemIsUserCheckable;
+        return f;
+    }
+
+    // Report a check-box click to the checkChanged slots; false if nobody listens.
+    bool check(int key, int column, const QVariant &v) const {
+        qtf_args a{};
+        a.i[0] = key;
+        a.i[1] = column;
+        a.i[2] = v.toInt() == Qt::Checked ? 1 : 0;
+        return qtf_emit_all(check_handlers, a) > 0;
     }
 
     // Report an edit to the dataEdited slots; false if nobody listens.
@@ -416,12 +506,15 @@ class QtfTableModel : public QAbstractTableModel, public QtfModelHandlers {
     int columnCount(const QModelIndex &parent) const override { return parent.isValid() ? 0 : ncols; }
 
     QVariant data(const QModelIndex &i, int role) const override {
-        if (!i.isValid() || (role != Qt::DisplayRole && role != Qt::EditRole)) return QVariant();
-        return request(i.row(), i.column());
+        if (!i.isValid()) return QVariant();
+        return request(i.row(), i.column(), role);
     }
 
     bool setData(const QModelIndex &i, const QVariant &v, int role) override {
-        if (!i.isValid() || role != Qt::EditRole || !edit(i.row(), i.column(), v)) return false;
+        if (!i.isValid()) return false;
+        if (role == Qt::CheckStateRole ? !check(i.row(), i.column(), v)
+                                       : role != Qt::EditRole || !edit(i.row(), i.column(), v))
+            return false;
         emit dataChanged(i, i);
         return true;
     }
@@ -429,7 +522,13 @@ class QtfTableModel : public QAbstractTableModel, public QtfModelHandlers {
     Qt::ItemFlags flags(const QModelIndex &i) const override {
         Qt::ItemFlags f = QAbstractTableModel::flags(i);
         if (editable && i.isValid()) f |= Qt::ItemIsEditable;
+        if (i.isValid()) f |= requestFlags(i.row(), i.column());
         return f;
+    }
+
+    void rolesLearned() const override {
+        auto *self = const_cast<QtfTableModel *>(this);
+        QMetaObject::invokeMethod(self, [self]() { self->refresh(); }, Qt::QueuedConnection);
     }
 
     QVariant headerData(int section, Qt::Orientation o, int role) const override {
@@ -530,12 +629,16 @@ class QtfTreeModel : public QAbstractItemModel, public QtfModelHandlers {
     int columnCount(const QModelIndex &) const override { return ncols; }
 
     QVariant data(const QModelIndex &i, int role) const override {
-        if (!i.isValid() || (role != Qt::DisplayRole && role != Qt::EditRole)) return QVariant();
-        return request(int(i.internalId()), i.column());
+        if (!i.isValid()) return QVariant();
+        return request(int(i.internalId()), i.column(), role);
     }
 
     bool setData(const QModelIndex &i, const QVariant &v, int role) override {
-        if (!i.isValid() || role != Qt::EditRole || !edit(int(i.internalId()), i.column(), v)) return false;
+        if (!i.isValid()) return false;
+        const int node = int(i.internalId());
+        if (role == Qt::CheckStateRole ? !check(node, i.column(), v)
+                                       : role != Qt::EditRole || !edit(node, i.column(), v))
+            return false;
         emit dataChanged(i, i);
         return true;
     }
@@ -543,7 +646,13 @@ class QtfTreeModel : public QAbstractItemModel, public QtfModelHandlers {
     Qt::ItemFlags flags(const QModelIndex &i) const override {
         Qt::ItemFlags f = QAbstractItemModel::flags(i);
         if (editable && i.isValid()) f |= Qt::ItemIsEditable;
+        if (i.isValid()) f |= requestFlags(int(i.internalId()), i.column());
         return f;
+    }
+
+    void rolesLearned() const override {
+        auto *self = const_cast<QtfTreeModel *>(this);
+        QMetaObject::invokeMethod(self, [self]() { self->refresh(); }, Qt::QueuedConnection);
     }
 
     QVariant headerData(int section, Qt::Orientation o, int role) const override {
@@ -576,11 +685,22 @@ class QtfTreeModel : public QAbstractItemModel, public QtfModelHandlers {
     }
 };
 
-// Attach a slot to a Fortran-backed model's data (WHICH = 0), edit (1) or sort (2) requests.
+// QtfListModel: a one-column QtfTableModel, for QListView.
+class QtfListModel : public QtfTableModel {
+  public:
+    QtfListModel(int rows, QObject *parent) : QtfTableModel(rows, 1, parent) {}
+};
+
+// Attach a slot to a Fortran-backed model's data (WHICH = 0), edit (1), sort (2)
+// or check-box (3) requests.
 template <int WHICH> static bool connect_model(void *s, const qtf_slot &ref) {
     auto *m = dynamic_cast<QtfModelHandlers *>(static_cast<QObject *>(s));
     if (!m) return false;
-    (WHICH == 0 ? m->data_handlers : WHICH == 1 ? m->edit_handlers : m->sort_handlers).push_back(ref);
+    (WHICH == 0   ? m->data_handlers
+     : WHICH == 1 ? m->edit_handlers
+     : WHICH == 2 ? m->sort_handlers
+                  : m->check_handlers)
+        .push_back(ref);
     return true;
 }
 
@@ -683,11 +803,63 @@ static int qtf_proxy_from_source(QSortFilterProxyModel *p, int row, int column) 
     return m ? p->mapFromSource(m->index(row, column)).row() : -1;
 }
 
+// A cell being painted by a QtfItemDelegate's paintCell slots: the painter,
+// the cell's style option (rectangle, state, text, ...) and its index.
+struct QtfPaintCell {
+    QPainter *painter;
+    QStyleOptionViewItem raw;      // as the view passed it
+    QStyleOptionViewItem option;   // filled in from the model (text, icon, colors, ...)
+    QModelIndex index;
+    const QStyledItemDelegate *delegate;
+
+    // Qt's standard rendering of the cell.
+    void drawDefault() const { delegate->QStyledItemDelegate::paint(painter, raw, index); }
+
+    // Only the background (selection, hover, the model's background color).
+    void drawBackground() const {
+        const QWidget *w = option.widget;
+        QStyle *style = w ? w->style() : QApplication::style();
+        style->drawPrimitive(QStyle::PE_PanelItemViewItem, &option, painter, w);
+    }
+
+    // The text color for this cell's state (selected cells use the highlight text color).
+    QColor textColor() const {
+        const QPalette::ColorGroup g = !(option.state & QStyle::State_Enabled) ? QPalette::Disabled
+                                       : (option.state & QStyle::State_Active) ? QPalette::Normal
+                                                                               : QPalette::Inactive;
+        return option.palette.color(g, (option.state & QStyle::State_Selected) ? QPalette::HighlightedText
+                                                                                : QPalette::Text);
+    }
+};
+
 // QtfItemDelegate: a cell editor chosen per column: a combo box of fixed
-// choices, a (double) spin box with a range, or Qt's default line edit.
+// choices, a (double) spin box with a range, or Qt's default line edit. Cells
+// are painted by Fortran paintCell slots if any are connected.
 class QtfItemDelegate : public QStyledItemDelegate {
   public:
     using QStyledItemDelegate::QStyledItemDelegate;
+    std::vector<qtf_slot> paint_handlers;
+    int hint_width = -1, hint_height = -1;
+
+    void paint(QPainter *p, const QStyleOptionViewItem &opt, const QModelIndex &index) const override {
+        if (paint_handlers.empty()) return QStyledItemDelegate::paint(p, opt, index);
+        QtfPaintCell cell{p, opt, opt, index, this};
+        initStyleOption(&cell.option, index);
+        qtf_args a{};
+        a.p = &cell;
+        p->save();
+        const int n = qtf_emit_all(paint_handlers, a);
+        p->restore();
+        if (n == 0) QStyledItemDelegate::paint(p, opt, index);   // all slots disconnected
+    }
+
+    QSize sizeHint(const QStyleOptionViewItem &opt, const QModelIndex &index) const override {
+        QSize s = QStyledItemDelegate::sizeHint(opt, index);
+        if (hint_width > 0) s.setWidth(hint_width);
+        if (hint_height > 0) s.setHeight(hint_height);
+        return s;
+    }
+
     QStringList choices;
     bool ranged = false;
     double lo = 0, hi = 0;
@@ -742,6 +914,14 @@ class QtfItemDelegate : public QStyledItemDelegate {
     }
 };
 
+// Attach a slot to a QtfItemDelegate's paintCell.
+static bool connect_delegate_paint(void *s, const qtf_slot &ref) {
+    auto *d = dynamic_cast<QtfItemDelegate *>(static_cast<QObject *>(s));
+    if (!d) return false;
+    d->paint_handlers.push_back(ref);
+    return true;
+}
+
 // Attach a slot to one of the QtfWidget's event handlers. The slots are owned
 // by the widget, so they are released when it is destroyed.
 template <qtf_widget_event EV> static bool connect_event(void *s, const qtf_slot &ref) {
@@ -777,6 +957,12 @@ fortran_decls = '''
         procedure :: connect => qsignaltreeitemint_connect
     end type QSignalTreeItemInt
 
+    !> A cell to paint: slots get (cell) and draw it with `cell%painter()`.
+    type, extends(QtfSignal), public :: QSignalPaintCell
+    contains
+        procedure :: connect => qsignalpaintcell_connect
+    end type QSignalPaintCell
+
     public :: QFontDialog_getFont
 '''
 
@@ -802,6 +988,13 @@ fortran_decls_after = '''
             character(len=*), intent(in) :: text
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_model_edit
+        !> Slot painting one cell of an item view (QtfItemDelegate%paintCell).
+        subroutine qt_slot_paint_cell(cell, data)
+            import :: QtfPaintCell
+            implicit none
+            type(QtfPaintCell), intent(in) :: cell
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_paint_cell
         !> Slot receiving a tree item.
         subroutine qt_slot_tree_item(item, data)
             import :: QTreeWidgetItem
@@ -819,6 +1012,14 @@ fortran_decls_after = '''
         end subroutine qt_slot_tree_item_int
     end interface
     public :: qt_slot_model_data, qt_slot_model_edit, qt_slot_tree_item, qt_slot_tree_item_int
+    public :: qt_slot_paint_cell
+
+    !> Slot handler for QSignalPaintCell.
+    type, extends(qt_slot_handler) :: paint_cell_handler
+        procedure(qt_slot_paint_cell), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => paint_cell_handler_invoke
+    end type paint_cell_handler
 
     !> Slot handler for QSignalModelData.
     type, extends(qt_slot_handler) :: model_data_handler
@@ -894,6 +1095,31 @@ fortran_procedures = '''
             call self%f(int(args%i(1)), int(args%i(2)), request)
         end if
     end subroutine model_data_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalpaintcell_connect(self, slot, data, connection)
+        class(QSignalPaintCell), intent(in) :: self
+        procedure(qt_slot_paint_cell) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
+        type(paint_cell_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self, h, data, connection)
+    end subroutine qsignalpaintcell_connect
+
+    !> Call the slot with the cell (borrowed: valid during the call).
+    subroutine paint_cell_handler_invoke(self, args, data)
+        class(paint_cell_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QtfPaintCell) :: cell
+        cell%ptr = args%p
+        if (associated(data)) then
+            call self%f(cell, data)
+        else
+            call self%f(cell)
+        end if
+    end subroutine paint_cell_handler_invoke
 
     !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalmodeledit_connect(self, slot, data, connection)
@@ -1019,6 +1245,23 @@ out = { hour = "{v}.hour()", minute = "{v}.minute()", second = "{v}.second()" }
 
 # ---------------------------------------------------------------------------
 # enums
+
+[[enum]]
+doc = "Qt::ItemDataRole (QtfModelRequest%role)"
+values = [
+    "Qt_DisplayRole = 0", "Qt_DecorationRole = 1", "Qt_EditRole = 2", "Qt_ToolTipRole = 3",
+    "Qt_StatusTipRole = 4", "Qt_FontRole = 6", "Qt_TextAlignmentRole = 7", "Qt_BackgroundRole = 8",
+    "Qt_ForegroundRole = 9", "Qt_CheckStateRole = 10",
+]
+
+[[enum]]
+doc = "QListView::ViewMode, Flow, ResizeMode and Movement"
+values = [
+    "QListView_ListMode = 0", "QListView_IconMode = 1",
+    "QListView_LeftToRight = 0", "QListView_TopToBottom = 1",
+    "QListView_Fixed = 0", "QListView_Adjust = 1",
+    "QListView_Static = 0", "QListView_Free = 1", "QListView_Snap = 2",
+]
 
 [[enum]]
 doc = "QDialog::DialogCode"
@@ -1267,6 +1510,10 @@ name = "QWidget"
 doc = "Base of all user interface objects; a widget without a parent is a window."
 ctor = "(parent: QWidget?) -- Create a widget; without a parent it is a top-level window."
 signals = [
+    { sig = "dragEnterEvent: custom", fortran_type = "QSignalDropEvent", connector = "connect_filter<QTF_FILTER_DRAGENTER>", doc = "A drag entered the widget (needs `setAcceptDrops(.true.)`): accept it in the slot (`event%acceptProposedAction()`) to allow a drop." },
+    { sig = "dragMoveEvent: custom", fortran_type = "QSignalDropEvent", connector = "connect_filter<QTF_FILTER_DRAGMOVE>", doc = "An accepted drag moved over the widget; ignore it to refuse a drop at this position." },
+    { sig = "dragLeaveEvent: void", connector = "connect_filter<QTF_FILTER_DRAGLEAVE>", doc = "The drag left the widget." },
+    { sig = "dropEvent: custom", fortran_type = "QSignalDropEvent", connector = "connect_filter<QTF_FILTER_DROP>", doc = "Something was dropped on the widget: read it (`event%text()`, `event%urls()`, ...) and accept the event." },
     { sig = "closeEvent: custom", fortran_type = "QSignalCloseEvent", connector = "connect_filter<QTF_FILTER_CLOSE>", doc = "The window is about to close; a slot can keep it open with `event%ignore()`." },
     { sig = "contextMenuEvent: custom", fortran_type = "QSignalContextMenuEvent", connector = "connect_filter<QTF_FILTER_CONTEXTMENU>", doc = "A context menu was requested (right click); show one with `menu%popup(event%globalX(), event%globalY())`." },
     { sig = "enterEvent: void", connector = "connect_filter<QTF_FILTER_ENTER>", doc = "The mouse entered the widget." },
@@ -1320,6 +1567,13 @@ methods = [
     { sig = "saveGeometry() -> string", cpp = "QString::fromLatin1({self}->saveGeometry().toBase64())", doc = "The window's position and size as text (base64), e.g. to store with QSettings." },
     { sig = "restoreGeometry(geometry: string) -> bool", cpp = "{self}->restoreGeometry(QByteArray::fromBase64({geometry}.toLatin1()))", doc = "Restore a geometry from `saveGeometry`; false (and no change) if it is invalid." },
     "isWindow() -> bool -- True if the widget is a top-level window.",
+    { sig = "setCursor(shape: Qt::CursorShape)", cpp = "{self}->setCursor(QCursor({shape}))", doc = "The mouse cursor over the widget (a Qt_*Cursor shape)." },
+    { sig = "setCursorPixmap(pixmap: QPixmap, hotX: int = -1, hotY: int = -1)", cpp = "{self}->setCursor(QCursor(*{pixmap}, {hotX}, {hotY}))", doc = "A cursor from an image, with its hot spot at (hotX, hotY) (default: the center)." },
+    "unsetCursor() -- Back to the parent's cursor.",
+    { sig = "cursorShape() -> int", cpp = "int({self}->cursor().shape())", doc = "The cursor shape over the widget (a Qt_*Cursor constant)." },
+    "setAcceptDrops(on: bool) -- Accept drag and drop (then connect dragEnterEvent and dropEvent).",
+    "acceptDrops() -> bool -- True if the widget accepts drops.",
+    "screen() -> QScreen -- The screen the widget is on.",
     "devicePixelRatio() -> double -- Physical pixels per logical pixel of the widget's screen (2 on a typical HiDPI display).",
     { sig = "static createWindowContainer(window: QWindow, parent: QWidget?) -> QWidget", doc = "A widget that embeds `window` (e.g. an OpenGL QWindow rendered by an external engine) in a widget layout; the container takes ownership of the window." },
     "showMaximized() -- Show the window maximized.",
@@ -1772,11 +2026,27 @@ methods = [
 [[class]]
 name = "QtfModelRequest"
 handle = true
-doc = "The cell being requested from a QtfTableModel `dataRequested` slot: set its value."
+doc = """
+The cell being requested from a `dataRequested` slot (QtfTableModel,
+QtfListModel, QtfTreeModel): set its text, and optionally an icon, a check
+box, a tool tip, colors, alignment or font style. Setting everything every
+time is fine: the model takes the part the view asks for (`role()`), and
+asks again only for parts some cell has set."""
 methods = [
-    { sig = "setText(text: string)", cpp = "{self}->value = {text}", doc = "Show `text` in the cell." },
-    { sig = "setNumber(value: double)", cpp = "{self}->value = {value}", doc = "Show a real number in the cell." },
-    { sig = "setInt(value: int)", cpp = "{self}->value = {value}", doc = "Show an integer in the cell." },
+    { sig = "setText(text: string)", cpp = "{self}->set(Qt::DisplayRole, {text})", doc = "Show `text` in the cell." },
+    { sig = "setNumber(value: double)", cpp = "{self}->set(Qt::DisplayRole, {value})", doc = "Show a real number in the cell." },
+    { sig = "setInt(value: int)", cpp = "{self}->set(Qt::DisplayRole, {value})", doc = "Show an integer in the cell." },
+    { sig = "setIcon(icon: QIcon)", cpp = "{self}->set(Qt::DecorationRole, QVariant::fromValue(*{icon}))", doc = "Show an icon before the text (copied)." },
+    { sig = "setIconColor(color: QColor)", cpp = "{self}->set(Qt::DecorationRole, QVariant::fromValue({color}))", doc = "Show a color swatch before the text." },
+    { sig = "setChecked(checked: bool)", cpp = "{self}->set(Qt::CheckStateRole, int({checked} ? Qt::Checked : Qt::Unchecked))", doc = "Give the cell a check box, checked or not; clicks arrive at the model's `checkChanged`." },
+    { sig = "setToolTip(text: string)", cpp = "{self}->set(Qt::ToolTipRole, {text})", doc = "The tool tip shown when hovering over the cell." },
+    { sig = "setStatusTip(text: string)", cpp = "{self}->set(Qt::StatusTipRole, {text})", doc = "The text shown in the status bar when hovering over the cell." },
+    { sig = "setForeground(color: QColor)", cpp = "{self}->set(Qt::ForegroundRole, QVariant::fromValue(QBrush({color})))", doc = "The text color." },
+    { sig = "setBackground(color: QColor)", cpp = "{self}->set(Qt::BackgroundRole, QVariant::fromValue(QBrush({color})))", doc = "The background color." },
+    { sig = "setAlignment(flags: Qt::Alignment)", cpp = "{self}->set(Qt::TextAlignmentRole, int({flags}))", doc = "Align the text (Qt_Align* flags, e.g. ior(Qt_AlignRight, Qt_AlignVCenter) for numbers)." },
+    { sig = "setBold(bold: bool = .true.)", cpp = "{self}->setFontStyle({bold}, false, true)", doc = "Show the text in bold." },
+    { sig = "setItalic(italic: bool = .true.)", cpp = "{self}->setFontStyle(false, {italic}, false)", doc = "Show the text in italics." },
+    { sig = "role() -> int", cpp = "{self}->role", doc = "The part being asked for (Qt_DisplayRole, Qt_DecorationRole, ...); slots may skip expensive work for the others." },
 ]
 
 [[class]]
@@ -1799,6 +2069,7 @@ signals = [
     { sig = "dataRequested: custom", fortran_type = "QSignalModelData", connector = "connect_model<0>", doc = "A cell is needed: slots get (row, column, request) and set the request's value." },
     { sig = "dataEdited: custom", fortran_type = "QSignalModelEdit", connector = "connect_model<1>", doc = "The user edited a cell: slots get (row, column, text); store the new value." },
     { sig = "sortRequested: custom", fortran_type = "QSignalInt2", connector = "connect_model<2>", doc = "Sort by a column: slots get (column, order) with order Qt_AscendingOrder or Qt_DescendingOrder, and reorder the data." },
+    { sig = "checkChanged: custom", fortran_type = "QSignalInt3", connector = "connect_model<3>", doc = "The user clicked a cell's check box (see `request%setChecked`): slots get (row, column, checked) with checked 1 or 0; store the new state." },
 ]
 methods = [
     { sig = "setRowCount(rows: int)", cpp = "{self}->setShape({rows}, {self}->ncols)", doc = "Set the number of rows." },
@@ -1810,7 +2081,20 @@ methods = [
     { sig = "refreshCell(row: int, column: int)", cpp = "{self}->refreshCell({row}, {column})", doc = "Redisplay one cell." },
     { sig = "dataText(row: int, column: int) -> string", cpp = "{self}->data({self}->index({row}, {column}), Qt::DisplayRole).toString()", doc = "The text of a cell, as the view would show it (asks the `dataRequested` slots)." },
     { sig = "setDataText(row: int, column: int, text: string) -> bool", cpp = "{self}->setData({self}->index({row}, {column}), {text}, Qt::EditRole)", doc = "Edit a cell as the user would (calls the `dataEdited` slots); false if not accepted." },
+    { sig = "isCheckable(row: int, column: int) -> bool", cpp = "bool({self}->flags({self}->index({row}, {column})) & Qt::ItemIsUserCheckable)", doc = "True if the cell has a check box (its slot calls `request%setChecked`)." },
+    { sig = "isChecked(row: int, column: int) -> bool", cpp = "{self}->data({self}->index({row}, {column}), Qt::CheckStateRole).toInt() == Qt::Checked", doc = "True if the cell's check box is checked, as the view would show it." },
+    { sig = "setChecked(row: int, column: int, checked: bool) -> bool", cpp = "{self}->setData({self}->index({row}, {column}), int({checked} ? Qt::Checked : Qt::Unchecked), Qt::CheckStateRole)", doc = "Click a check box as the user would (calls the `checkChanged` slots); false if nobody listens." },
+    { sig = "toolTip(row: int, column: int) -> string", cpp = "{self}->data({self}->index({row}, {column}), Qt::ToolTipRole).toString()", doc = "The tool tip of a cell, as the view would show it." },
 ]
+
+[[class]]
+name = "QtfListModel"
+base = "QtfTableModel"
+doc = """
+A one-column QtfTableModel for a QListView (or a QComboBox's popup list):
+the `dataRequested` slots get (row, 0, request). Rows are 0-based."""
+ctor = "(rows: int = 0, parent: QObject?) -- A list model with `rows` rows."
+cpp_ctor = "new QtfListModel({rows}, {parent})"
 
 [[class]]
 name = "QAbstractItemView"
@@ -1827,6 +2111,7 @@ methods = [
     "setItemDelegateForColumn(column: int, delegate: QtfItemDelegate) -- Edit the cells of one column with `delegate`.",
     { sig = "edit(row: int, column: int)", cpp = "if ({self}->model()) {self}->edit({self}->model()->index({row}, {column}))", doc = "Start editing a (top-level) cell, as a double click would." },
     "setAlternatingRowColors(enable: bool) -- Shade every other row.",
+    { sig = "setIconSize(width: int, height: int)", cpp = "{self}->setIconSize(QSize({width}, {height}))", doc = "The size of the items' icons." },
     "setSelectionMode(mode: QAbstractItemView::SelectionMode) -- Single, multiple, ... selection (QAbstractItemView_* constants).",
     "setSelectionBehavior(behavior: QAbstractItemView::SelectionBehavior) -- Select items, rows or columns.",
     "setEditTriggers(triggers: QAbstractItemView::EditTriggers) -- What starts editing (QAbstractItemView_DoubleClicked, ..., or NoEditTriggers).",
@@ -1856,6 +2141,31 @@ methods = [
     "setSortingEnabled(enable: bool) -- Sort when a column title is clicked (a QtfTableModel gets `sortRequested`).",
     "sortByColumn(column: int, order: Qt::SortOrder) -- Sort by a column now.",
     "setColumnHidden(column: int, hide: bool) -- Hide or show a column.",
+]
+
+[[class]]
+name = "QListView"
+base = "QAbstractItemView"
+doc = """
+A list (or icon grid) view of a model: a QtfListModel for Fortran data, or
+column 0 of any model (`setModelColumn` for another). In
+`setViewMode(QListView_IconMode)` items are laid out as a grid of icons."""
+ctor = "(parent: QWidget?) -- Create a list view."
+methods = [
+    "setViewMode(mode: QListView::ViewMode) -- QListView_ListMode (default) or QListView_IconMode (large icons in a grid).",
+    "setFlow(flow: QListView::Flow) -- Lay items out QListView_TopToBottom (list mode default) or QListView_LeftToRight (icon mode default).",
+    "setWrapping(enable: bool) -- Wrap items into more rows or columns when the flow reaches the edge.",
+    "setSpacing(space: int) -- Space around each item, in pixels.",
+    { sig = "setGridSize(width: int, height: int)", cpp = "{self}->setGridSize(QSize({width}, {height}))", doc = "Lay items out on a fixed grid (icon mode)." },
+    "setUniformItemSizes(enable: bool) -- Promise equal item sizes (faster for long lists).",
+    "setResizeMode(mode: QListView::ResizeMode) -- QListView_Adjust: lay items out again when the view is resized.",
+    "setMovement(movement: QListView::Movement) -- Whether the user can move items (QListView_Static, _Free, _Snap).",
+    "setWordWrap(on: bool) -- Wrap long item text.",
+    "setModelColumn(column: int) -- The column of the model to show (default 0).",
+    "setRowHidden(row: int, hide: bool) -- Hide or show a row.",
+    { sig = "currentRow() -> int", cpp = "{self}->currentIndex().row()", doc = "The current row (-1 if none)." },
+    { sig = "setCurrentRow(row: int)", cpp = "if ({self}->model()) {self}->setCurrentIndex({self}->model()->index({row}, {self}->modelColumn()))", doc = "Make `row` the current item." },
+    { sig = "scrollToRow(row: int)", cpp = "if ({self}->model()) {self}->scrollTo({self}->model()->index({row}, {self}->modelColumn()))", doc = "Scroll so that `row` is visible." },
 ]
 
 [[class]]
@@ -1920,6 +2230,7 @@ cpp_ctor = "new QtfTreeModel({columns}, {parent})"
 signals = [
     { sig = "dataRequested: custom", fortran_type = "QSignalModelData", connector = "connect_model<0>", doc = "A cell is needed: slots get (node, column, request) and set the request's value." },
     { sig = "dataEdited: custom", fortran_type = "QSignalModelEdit", connector = "connect_model<1>", doc = "The user edited a cell: slots get (node, column, text)." },
+    { sig = "checkChanged: custom", fortran_type = "QSignalInt3", connector = "connect_model<3>", doc = "The user clicked a cell's check box: slots get (node, column, checked) with checked 1 or 0." },
 ]
 methods = [
     { sig = "setParents(parents: int[])", cpp = "{self}->setParents({parents}, {n})", doc = "Set the structure: node i's parent is `parents(i)` (0: top level; must be < i). Resets the views." },
@@ -1990,13 +2301,49 @@ A cell editor for item views (`Qtf` marks a qt-fortran class): set it on a
 view, for all cells or one column (`setItemDelegateForColumn`). With
 `setChoices` cells are edited with a combo box of fixed choices; with
 `setRange` with a spin box (`decimals = 0`: integers). The edited value
-reaches the model as for a normal edit (QtfTableModel's `dataEdited`)."""
+reaches the model as for a normal edit (QtfTableModel's `dataEdited`).
+
+Custom painting: connect `paintCell`, and the slot draws each cell with
+`cell%painter()` inside `cell%x(), cell%y(), cell%width(), cell%height()`
+(e.g. a bar for a number). `cell%drawBackground()` draws the selection and
+hover background first, `cell%drawDefault()` Qt's normal rendering. Set the
+cells' size with `setSizeHint`."""
 ctor = "(parent: QObject?) -- A delegate (give it the view as parent)."
 cpp_ctor = "new QtfItemDelegate({parent})"
+signals = [
+    { sig = "paintCell: custom", fortran_type = "QSignalPaintCell", connector = "connect_delegate_paint", doc = "Paint a cell: slots get (cell) and draw it with `cell%painter()` (the painter's state is restored afterwards)." },
+]
 methods = [
+    { sig = "setSizeHint(width: int = -1, height: int = -1)", cpp = "{self}->hint_width = {width}; {self}->hint_height = {height}", doc = "The size of each cell (-1: Qt's default for that dimension)." },
     { sig = "setChoices(choices: strings)", cpp = "{self}->choices = {choices}", doc = "Edit with a combo box offering `choices`." },
     { sig = "setRange(minimum: double, maximum: double, decimals: int = 2)", cpp = "{self}->setRange({minimum}, {maximum}, {decimals})", doc = "Edit with a spin box limited to [minimum, maximum] (`decimals = 0`: an integer spin box)." },
     { sig = "clear()", cpp = "{self}->clear()", doc = "Back to the default editor (a line edit)." },
+]
+
+[[class]]
+name = "QtfPaintCell"
+handle = true
+doc = """
+A cell being painted by a QtfItemDelegate's `paintCell` slot (valid only
+during the slot). Rows and columns are the model's (through any proxy)."""
+methods = [
+    { sig = "painter() -> QPainter", cpp = "{self}->painter", doc = "The painter (do not `end` it)." },
+    { sig = "row() -> int", cpp = "qtf_source_index({self}->index).row()", doc = "The cell's row in the model (for a tree: its row under its parent)." },
+    { sig = "column() -> int", cpp = "qtf_source_index({self}->index).column()", doc = "The cell's column." },
+    { sig = "node() -> int", cpp = "qtf_node({self}->index)", doc = "The cell's node, for a QtfTreeModel (-1 otherwise)." },
+    { sig = "viewRow() -> int", cpp = "{self}->index.row()", doc = "The cell's row in the view (differs from `row()` behind a sorting proxy)." },
+    { sig = "x() -> int", cpp = "{self}->option.rect.x()", doc = "Left of the cell." },
+    { sig = "y() -> int", cpp = "{self}->option.rect.y()", doc = "Top of the cell." },
+    { sig = "width() -> int", cpp = "{self}->option.rect.width()", doc = "Width of the cell." },
+    { sig = "height() -> int", cpp = "{self}->option.rect.height()", doc = "Height of the cell." },
+    { sig = "text() -> string", cpp = "{self}->option.text", doc = "The cell's text (from the model)." },
+    { sig = "textColor() -> QColor", cpp = "{self}->textColor()", doc = "The color for text in this cell's state (the highlight text color when selected)." },
+    { sig = "isSelected() -> bool", cpp = "bool({self}->option.state & QStyle::State_Selected)", doc = "True if the cell is selected." },
+    { sig = "hasFocus() -> bool", cpp = "bool({self}->option.state & QStyle::State_HasFocus)", doc = "True if the cell is the current one and the view has focus." },
+    { sig = "isHovered() -> bool", cpp = "bool({self}->option.state & QStyle::State_MouseOver)", doc = "True if the mouse is over the cell." },
+    { sig = "isEnabled() -> bool", cpp = "bool({self}->option.state & QStyle::State_Enabled)", doc = "True if the view is enabled." },
+    { sig = "drawBackground()", cpp = "{self}->drawBackground()", doc = "Draw the cell's background: selection, hover and the model's background color." },
+    { sig = "drawDefault()", cpp = "{self}->drawDefault()", doc = "Draw the cell as Qt normally would (background, icon, text, check box)." },
 ]
 
 [[class]]

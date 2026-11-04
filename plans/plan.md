@@ -441,8 +441,23 @@ spec-only work now; items marked *(design)* need new machinery.
     - Undo: `QUndoStack` (a `QtfUndoStack`) with commands as (text, id):
       `push` calls the `redoRequested(id)` slots, undo the `undoRequested(id)`
       slots; macros, clean state, undo/redo actions; `QUndoView`.
-  - Not yet: `QListView` with a Fortran list model, item icons and check
-    states in the Fortran models, custom-painted cells.
+  - **Done (beyond text):**
+    - `QListView` (list and icon modes) with **`QtfListModel`**, a one-column
+      QtfTableModel.
+    - Roles in the Fortran models: `QtfModelRequest` holds values by role
+      (text, icon or color swatch, check state, tool tip, status tip,
+      foreground/background, alignment, bold/italic) and `role()` says which
+      one the view asked for. Each model remembers the roles its slots have
+      set (a bit mask). Roles never set are not asked for, so a text-only
+      model still costs one slot call per cell. The first request for an
+      unknown role asks for everything once to learn them, and learning a new
+      role queues one refresh so cells painted earlier pick it up. Check
+      boxes: `setChecked` makes a cell checkable; clicks go to
+      `checkChanged(row|node, column, checked)`.
+    - Custom-painted cells: `QtfItemDelegate%paintCell` slots get a
+      `QtfPaintCell` (painter, model row/column/node, rectangle, state, text,
+      text color, `drawBackground`, `drawDefault`); the painter state is
+      saved and restored around the slots; `setSizeHint`.
 - **Gui**
   - **Done:** `QIcon` (from files or pixmaps), `QStyle_standardIcon(name)`, and
     icons on actions, buttons, tabs, table/tree items and windows.
@@ -450,8 +465,18 @@ spec-only work now; items marked *(design)* need new machinery.
     `QImage_colorbar`. Colormapping is done in C++ with 256-entry lookup tables
     (viridis, magma, inferno, plasma, coolwarm, gray); NaN is transparent. Also
     `QPixmap_fromImage`, `QLabel%setPixmap`, and a scaled `QPainter%drawImage`.
-  - Painting: `QPainterPath` (curves), gradients, `QTransform`, standalone font metrics.
-  - System: clipboard, cursors, drag and drop, screens/DPI.
+  - **Done:** `QPainterPath` (lines, curves, arcs, shapes, text outlines,
+    boolean operations, hit testing), gradients (`QLinearGradient`,
+    `QRadialGradient`, `QConicalGradient`, a `QGradient` base) for brushes,
+    `fillRect` and `fillPath`, `QTransform` (a handle; `QPainter%setTransform`
+    / `transform`), `QFontMetrics` (application font, a QFont, or the
+    painter's), clipping, arcs, pies and chords.
+  - **Done:** `QClipboard` (text, image, mime data, `dataChanged`), cursors
+    (`QWidget%setCursor`, override cursor, `QCursor_x/y/setPos`), `QScreen`
+    (geometry, available area, DPI, pixel ratio; `QGuiApplication_screen*`,
+    `QWidget%screen`, `QWindow%screen`).
+  - The generator now declares handle-type arguments `class(...)`, so a
+    subtype (a QLinearGradient) passes where its base (QGradient) is expected.
 - **Core**
   - **Done:** `QThread_create(work, data, parent)` (like Qt's QThread::create):
     a `QtfThread` whose run() calls the Fortran procedure. The worker never
@@ -481,7 +506,13 @@ spec-only work now; items marked *(design)* need new machinery.
     defaults, `hasProperty`; `QWidget%repolish` for property-driven style
     sheets), `findChild(name, child)` (binds a handle of the caller's type).
     gen_c_interfaces gained `long long`.
-- **Events**: drag/drop (with desktop integration).
+- **Events: done:** drag and drop. `QMimeData` (text, HTML, URLs as paths,
+  image, any format), `QDropEvent` (also synthetic, for tests), `QDrag`
+  (exec is untested: it waits for the mouse), and `dragEnterEvent`,
+  `dragMoveEvent`, `dragLeaveEvent`, `dropEvent` on every QWidget through the
+  widget event filter. A slot that accepts the event takes the drag or drop;
+  otherwise the widget's own handling runs. As in Qt, a widget gets moves and
+  the drop only after accepting a drag-enter.
   - **Done:** `enterEvent`, `leaveEvent`, `focusInEvent(reason)`,
     `focusOutEvent(reason)`, `showEvent`, `hideEvent` on every QWidget, through
     the same `QtfEventFilter` as close/context-menu (one handler list per event;

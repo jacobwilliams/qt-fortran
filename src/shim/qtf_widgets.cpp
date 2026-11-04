@@ -14,15 +14,18 @@
 #include <QAction>
 #include <QApplication>
 #include <QBoxLayout>
+#include <QBrush>
 #include <QButtonGroup>
 #include <QByteArray>
 #include <QCalendarWidget>
 #include <QCheckBox>
 #include <QCloseEvent>
+#include <QColor>
 #include <QColorDialog>
 #include <QComboBox>
 #include <QCompleter>
 #include <QContextMenuEvent>
+#include <QCursor>
 #include <QDate>
 #include <QDateEdit>
 #include <QDateTime>
@@ -32,11 +35,16 @@
 #include <QDialogButtonBox>
 #include <QDockWidget>
 #include <QDoubleSpinBox>
+#include <QDragEnterEvent>
+#include <QDragLeaveEvent>
+#include <QDragMoveEvent>
+#include <QDropEvent>
 #include <QExposeEvent>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFileSystemModel>
 #include <QFocusEvent>
+#include <QFont>
 #include <QFontDialog>
 #include <QFormLayout>
 #include <QFrame>
@@ -48,6 +56,7 @@
 #include <QLCDNumber>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListView>
 #include <QListWidget>
 #include <QMainWindow>
 #include <QMdiArea>
@@ -57,6 +66,7 @@
 #include <QMessageBox>
 #include <QMetaEnum>
 #include <QPainter>
+#include <QPainter>
 #include <QPixmap>
 #include <QPlainTextEdit>
 #include <QPlatformSurfaceEvent>
@@ -65,6 +75,7 @@
 #include <QPushButton>
 #include <QRadioButton>
 #include <QRegularExpression>
+#include <QScreen>
 #include <QScrollArea>
 #include <QSlider>
 #include <QSortFilterProxyModel>
@@ -75,6 +86,7 @@
 #include <QStatusBar>
 #include <QStringListModel>
 #include <QStyle>
+#include <QStyleOptionViewItem>
 #include <QStyledItemDelegate>
 #include <QTabWidget>
 #include <QTableView>
@@ -98,6 +110,7 @@
 #include <QWizard>
 #include <QWizardPage>
 #include <array>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -105,139 +118,146 @@ template <typename T> static T *as(void *p) { return static_cast<T *>(p); }
 
 // Signal ids (shared with Fortran through the generated raw module).
 enum : int {
-    QTF_SIG_QWIDGET_CLOSEEVENT = 1000,
-    QTF_SIG_QWIDGET_CONTEXTMENUEVENT = 1001,
-    QTF_SIG_QWIDGET_ENTEREVENT = 1002,
-    QTF_SIG_QWIDGET_LEAVEEVENT = 1003,
-    QTF_SIG_QWIDGET_FOCUSINEVENT = 1004,
-    QTF_SIG_QWIDGET_FOCUSOUTEVENT = 1005,
-    QTF_SIG_QWIDGET_SHOWEVENT = 1006,
-    QTF_SIG_QWIDGET_HIDEEVENT = 1007,
-    QTF_SIG_QTFWIDGET_PAINTEVENT = 1008,
-    QTF_SIG_QTFWIDGET_MOUSEPRESSEVENT = 1009,
-    QTF_SIG_QTFWIDGET_MOUSERELEASEEVENT = 1010,
-    QTF_SIG_QTFWIDGET_MOUSEMOVEEVENT = 1011,
-    QTF_SIG_QTFWIDGET_MOUSEDOUBLECLICKEVENT = 1012,
-    QTF_SIG_QTFWIDGET_WHEELEVENT = 1013,
-    QTF_SIG_QTFWIDGET_KEYPRESSEVENT = 1014,
-    QTF_SIG_QTFWIDGET_KEYRELEASEEVENT = 1015,
-    QTF_SIG_QTFWIDGET_RESIZEEVENT = 1016,
-    QTF_SIG_QABSTRACTBUTTON_CLICKED = 1017,
-    QTF_SIG_QABSTRACTBUTTON_TOGGLED = 1018,
-    QTF_SIG_QABSTRACTBUTTON_PRESSED = 1019,
-    QTF_SIG_QABSTRACTBUTTON_RELEASED = 1020,
-    QTF_SIG_QLINEEDIT_TEXTCHANGED = 1021,
-    QTF_SIG_QLINEEDIT_TEXTEDITED = 1022,
-    QTF_SIG_QLINEEDIT_INPUTREJECTED = 1023,
-    QTF_SIG_QLINEEDIT_RETURNPRESSED = 1024,
-    QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1025,
-    QTF_SIG_QSPINBOX_VALUECHANGED = 1026,
-    QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1027,
-    QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1028,
-    QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1029,
-    QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1030,
-    QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1031,
-    QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1032,
-    QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1033,
-    QTF_SIG_QCOMBOBOX_ACTIVATED = 1034,
-    QTF_SIG_QDIALOG_ACCEPTED = 1035,
-    QTF_SIG_QDIALOG_REJECTED = 1036,
-    QTF_SIG_QDIALOG_FINISHED = 1037,
-    QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1038,
-    QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1039,
-    QTF_SIG_QTFTABLEMODEL_SORTREQUESTED = 1040,
-    QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1041,
-    QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1042,
-    QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1043,
-    QTF_SIG_QTREEVIEW_NODECLICKED = 1044,
-    QTF_SIG_QTREEVIEW_NODEACTIVATED = 1045,
-    QTF_SIG_QTREEVIEW_CURRENTNODECHANGED = 1046,
-    QTF_SIG_QTREEVIEW_CURRENTFILECHANGED = 1047,
-    QTF_SIG_QTREEVIEW_FILEACTIVATED = 1048,
-    QTF_SIG_QTREEVIEW_EXPANDEDNODE = 1049,
-    QTF_SIG_QTREEVIEW_COLLAPSEDNODE = 1050,
-    QTF_SIG_QTFTREEMODEL_DATAREQUESTED = 1051,
-    QTF_SIG_QTFTREEMODEL_DATAEDITED = 1052,
-    QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED = 1053,
-    QTF_SIG_QFILESYSTEMMODEL_ROOTPATHCHANGED = 1054,
-    QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1055,
-    QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1056,
-    QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1057,
-    QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1058,
-    QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1059,
-    QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1060,
-    QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1061,
-    QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1062,
-    QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1063,
-    QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1064,
-    QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1065,
-    QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1066,
-    QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1067,
-    QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1068,
-    QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1069,
-    QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1070,
-    QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1071,
-    QTF_SIG_QTABWIDGET_TABBARCLICKED = 1072,
-    QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1073,
-    QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1074,
-    QTF_SIG_QSPLITTER_SPLITTERMOVED = 1075,
-    QTF_SIG_QGROUPBOX_TOGGLED = 1076,
-    QTF_SIG_QGROUPBOX_CLICKED = 1077,
-    QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1078,
-    QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1079,
-    QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1080,
-    QTF_SIG_QBUTTONGROUP_IDCLICKED = 1081,
-    QTF_SIG_QDATEEDIT_DATECHANGED = 1082,
-    QTF_SIG_QTIMEEDIT_TIMECHANGED = 1083,
-    QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1084,
-    QTF_SIG_QCALENDARWIDGET_CLICKED = 1085,
-    QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1086,
-    QTF_SIG_QPROGRESSDIALOG_CANCELED = 1087,
-    QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED = 1088,
-    QTF_SIG_QDIALOGBUTTONBOX_REJECTED = 1089,
-    QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED = 1090,
-    QTF_SIG_QDIALOGBUTTONBOX_CLICKED = 1091,
-    QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE = 1092,
-    QTF_SIG_QCOMPLETER_ACTIVATED = 1093,
-    QTF_SIG_QCOMPLETER_HIGHLIGHTED = 1094,
-    QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED = 1095,
-    QTF_SIG_QTEXTBROWSER_ANCHORCLICKED = 1096,
-    QTF_SIG_QTEXTBROWSER_SOURCECHANGED = 1097,
-    QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE = 1098,
-    QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE = 1099,
-    QTF_SIG_QTOOLBOX_CURRENTCHANGED = 1100,
-    QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED = 1101,
-    QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE = 1102,
-    QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED = 1103,
-    QTF_SIG_QWIZARDPAGE_COMPLETECHANGED = 1104,
-    QTF_SIG_QWIZARD_CURRENTIDCHANGED = 1105,
-    QTF_SIG_QWIZARD_HELPREQUESTED = 1106,
-    QTF_SIG_QUNDOSTACK_REDOREQUESTED = 1107,
-    QTF_SIG_QUNDOSTACK_UNDOREQUESTED = 1108,
-    QTF_SIG_QUNDOSTACK_CANUNDOCHANGED = 1109,
-    QTF_SIG_QUNDOSTACK_CANREDOCHANGED = 1110,
-    QTF_SIG_QUNDOSTACK_INDEXCHANGED = 1111,
-    QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1112,
-    QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1113,
-    QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1114,
-    QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT = 1115,
-    QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT = 1116,
-    QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT = 1117,
-    QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT = 1118,
-    QTF_SIG_QTFEVENTFILTER_WHEELEVENT = 1119,
-    QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT = 1120,
-    QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT = 1121,
-    QTF_SIG_QTFEVENTFILTER_RESIZEEVENT = 1122,
-    QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT = 1123,
-    QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST = 1124,
-    QTF_SIG_QTFEVENTFILTER_ENTEREVENT = 1125,
-    QTF_SIG_QTFEVENTFILTER_LEAVEEVENT = 1126,
-    QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT = 1127,
-    QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1128,
-    QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1129,
-    QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1130,
-    QTF_SIG_QTFEVENTFILTER_SURFACECREATED = 1131,
-    QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED = 1132,
+    QTF_SIG_QWIDGET_DRAGENTEREVENT = 1000,
+    QTF_SIG_QWIDGET_DRAGMOVEEVENT = 1001,
+    QTF_SIG_QWIDGET_DRAGLEAVEEVENT = 1002,
+    QTF_SIG_QWIDGET_DROPEVENT = 1003,
+    QTF_SIG_QWIDGET_CLOSEEVENT = 1004,
+    QTF_SIG_QWIDGET_CONTEXTMENUEVENT = 1005,
+    QTF_SIG_QWIDGET_ENTEREVENT = 1006,
+    QTF_SIG_QWIDGET_LEAVEEVENT = 1007,
+    QTF_SIG_QWIDGET_FOCUSINEVENT = 1008,
+    QTF_SIG_QWIDGET_FOCUSOUTEVENT = 1009,
+    QTF_SIG_QWIDGET_SHOWEVENT = 1010,
+    QTF_SIG_QWIDGET_HIDEEVENT = 1011,
+    QTF_SIG_QTFWIDGET_PAINTEVENT = 1012,
+    QTF_SIG_QTFWIDGET_MOUSEPRESSEVENT = 1013,
+    QTF_SIG_QTFWIDGET_MOUSERELEASEEVENT = 1014,
+    QTF_SIG_QTFWIDGET_MOUSEMOVEEVENT = 1015,
+    QTF_SIG_QTFWIDGET_MOUSEDOUBLECLICKEVENT = 1016,
+    QTF_SIG_QTFWIDGET_WHEELEVENT = 1017,
+    QTF_SIG_QTFWIDGET_KEYPRESSEVENT = 1018,
+    QTF_SIG_QTFWIDGET_KEYRELEASEEVENT = 1019,
+    QTF_SIG_QTFWIDGET_RESIZEEVENT = 1020,
+    QTF_SIG_QABSTRACTBUTTON_CLICKED = 1021,
+    QTF_SIG_QABSTRACTBUTTON_TOGGLED = 1022,
+    QTF_SIG_QABSTRACTBUTTON_PRESSED = 1023,
+    QTF_SIG_QABSTRACTBUTTON_RELEASED = 1024,
+    QTF_SIG_QLINEEDIT_TEXTCHANGED = 1025,
+    QTF_SIG_QLINEEDIT_TEXTEDITED = 1026,
+    QTF_SIG_QLINEEDIT_INPUTREJECTED = 1027,
+    QTF_SIG_QLINEEDIT_RETURNPRESSED = 1028,
+    QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1029,
+    QTF_SIG_QSPINBOX_VALUECHANGED = 1030,
+    QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1031,
+    QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1032,
+    QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1033,
+    QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1034,
+    QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1035,
+    QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1036,
+    QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1037,
+    QTF_SIG_QCOMBOBOX_ACTIVATED = 1038,
+    QTF_SIG_QDIALOG_ACCEPTED = 1039,
+    QTF_SIG_QDIALOG_REJECTED = 1040,
+    QTF_SIG_QDIALOG_FINISHED = 1041,
+    QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1042,
+    QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1043,
+    QTF_SIG_QTFTABLEMODEL_SORTREQUESTED = 1044,
+    QTF_SIG_QTFTABLEMODEL_CHECKCHANGED = 1045,
+    QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1046,
+    QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1047,
+    QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1048,
+    QTF_SIG_QTREEVIEW_NODECLICKED = 1049,
+    QTF_SIG_QTREEVIEW_NODEACTIVATED = 1050,
+    QTF_SIG_QTREEVIEW_CURRENTNODECHANGED = 1051,
+    QTF_SIG_QTREEVIEW_CURRENTFILECHANGED = 1052,
+    QTF_SIG_QTREEVIEW_FILEACTIVATED = 1053,
+    QTF_SIG_QTREEVIEW_EXPANDEDNODE = 1054,
+    QTF_SIG_QTREEVIEW_COLLAPSEDNODE = 1055,
+    QTF_SIG_QTFTREEMODEL_DATAREQUESTED = 1056,
+    QTF_SIG_QTFTREEMODEL_DATAEDITED = 1057,
+    QTF_SIG_QTFTREEMODEL_CHECKCHANGED = 1058,
+    QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED = 1059,
+    QTF_SIG_QFILESYSTEMMODEL_ROOTPATHCHANGED = 1060,
+    QTF_SIG_QTFITEMDELEGATE_PAINTCELL = 1061,
+    QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1062,
+    QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1063,
+    QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1064,
+    QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1065,
+    QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1066,
+    QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1067,
+    QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1068,
+    QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1069,
+    QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1070,
+    QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1071,
+    QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1072,
+    QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1073,
+    QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1074,
+    QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1075,
+    QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1076,
+    QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1077,
+    QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1078,
+    QTF_SIG_QTABWIDGET_TABBARCLICKED = 1079,
+    QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1080,
+    QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1081,
+    QTF_SIG_QSPLITTER_SPLITTERMOVED = 1082,
+    QTF_SIG_QGROUPBOX_TOGGLED = 1083,
+    QTF_SIG_QGROUPBOX_CLICKED = 1084,
+    QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1085,
+    QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1086,
+    QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1087,
+    QTF_SIG_QBUTTONGROUP_IDCLICKED = 1088,
+    QTF_SIG_QDATEEDIT_DATECHANGED = 1089,
+    QTF_SIG_QTIMEEDIT_TIMECHANGED = 1090,
+    QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1091,
+    QTF_SIG_QCALENDARWIDGET_CLICKED = 1092,
+    QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1093,
+    QTF_SIG_QPROGRESSDIALOG_CANCELED = 1094,
+    QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED = 1095,
+    QTF_SIG_QDIALOGBUTTONBOX_REJECTED = 1096,
+    QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED = 1097,
+    QTF_SIG_QDIALOGBUTTONBOX_CLICKED = 1098,
+    QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE = 1099,
+    QTF_SIG_QCOMPLETER_ACTIVATED = 1100,
+    QTF_SIG_QCOMPLETER_HIGHLIGHTED = 1101,
+    QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED = 1102,
+    QTF_SIG_QTEXTBROWSER_ANCHORCLICKED = 1103,
+    QTF_SIG_QTEXTBROWSER_SOURCECHANGED = 1104,
+    QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE = 1105,
+    QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE = 1106,
+    QTF_SIG_QTOOLBOX_CURRENTCHANGED = 1107,
+    QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED = 1108,
+    QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE = 1109,
+    QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED = 1110,
+    QTF_SIG_QWIZARDPAGE_COMPLETECHANGED = 1111,
+    QTF_SIG_QWIZARD_CURRENTIDCHANGED = 1112,
+    QTF_SIG_QWIZARD_HELPREQUESTED = 1113,
+    QTF_SIG_QUNDOSTACK_REDOREQUESTED = 1114,
+    QTF_SIG_QUNDOSTACK_UNDOREQUESTED = 1115,
+    QTF_SIG_QUNDOSTACK_CANUNDOCHANGED = 1116,
+    QTF_SIG_QUNDOSTACK_CANREDOCHANGED = 1117,
+    QTF_SIG_QUNDOSTACK_INDEXCHANGED = 1118,
+    QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1119,
+    QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1120,
+    QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1121,
+    QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT = 1122,
+    QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT = 1123,
+    QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT = 1124,
+    QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT = 1125,
+    QTF_SIG_QTFEVENTFILTER_WHEELEVENT = 1126,
+    QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT = 1127,
+    QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT = 1128,
+    QTF_SIG_QTFEVENTFILTER_RESIZEEVENT = 1129,
+    QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT = 1130,
+    QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST = 1131,
+    QTF_SIG_QTFEVENTFILTER_ENTEREVENT = 1132,
+    QTF_SIG_QTFEVENTFILTER_LEAVEEVENT = 1133,
+    QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT = 1134,
+    QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1135,
+    QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1136,
+    QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1137,
+    QTF_SIG_QTFEVENTFILTER_SURFACECREATED = 1138,
+    QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED = 1139,
 };
 
 // QApplication keeps references to argc/argv, so they must outlive it.
@@ -444,6 +464,10 @@ enum qtf_filter_event {
     QTF_FILTER_FOCUSOUT,
     QTF_FILTER_SHOW,
     QTF_FILTER_HIDE,
+    QTF_FILTER_DRAGENTER,
+    QTF_FILTER_DRAGMOVE,
+    QTF_FILTER_DRAGLEAVE,
+    QTF_FILTER_DROP,
     QTF_FILTER_COUNT
 };
 
@@ -493,6 +517,21 @@ class QtfWidgetEventFilter : public QObject {
             break;
         case QEvent::Show: qtf_emit_all(handlers[QTF_FILTER_SHOW], a); break;
         case QEvent::Hide: qtf_emit_all(handlers[QTF_FILTER_HIDE], a); break;
+        case QEvent::DragEnter:
+        case QEvent::DragMove:
+        case QEvent::Drop: {
+            // a slot that accepts the event takes the drag (or drop); otherwise
+            // the widget's own handling runs, with the event as it came
+            const qtf_filter_event k = e->type() == QEvent::DragEnter  ? QTF_FILTER_DRAGENTER
+                                       : e->type() == QEvent::DragMove ? QTF_FILTER_DRAGMOVE
+                                                                       : QTF_FILTER_DROP;
+            const bool accepted = e->isAccepted();
+            e->ignore();
+            if (qtf_emit_all(handlers[k], a) > 0 && e->isAccepted()) return true;
+            e->setAccepted(accepted);
+            break;
+        }
+        case QEvent::DragLeave: qtf_emit_all(handlers[QTF_FILTER_DRAGLEAVE], a); break;
         default: break;
         }
         return QObject::eventFilter(o, e);
@@ -568,22 +607,91 @@ class QtfWidget : public QWidget {
     }
 };
 
-// The value a Fortran data slot produces for one table cell.
+// What a Fortran data slot produces for one cell: values by role (text,
+// icon, check state, tool tip, colors, ...). `role` is the role being asked
+// for; slots normally set everything, and the model picks the role it needs.
 struct QtfModelRequest {
-    QVariant value;
+    int role = Qt::DisplayRole;
+    std::map<int, QVariant> values;
+
+    void set(int r, const QVariant &v) { values[r] = v; }
+
+    void setFontStyle(bool bold, bool italic, bool setBold) {
+        auto it = values.find(Qt::FontRole);
+        QFont f = it != values.end() ? qvariant_cast<QFont>(it->second) : QFont();
+        if (setBold) f.setBold(bold);
+        else f.setItalic(italic);
+        values[Qt::FontRole] = QVariant::fromValue(f);
+    }
 };
 
 // The Fortran slots of a Fortran-backed model (QtfTableModel, QtfTreeModel).
 struct QtfModelHandlers {
     virtual ~QtfModelHandlers() = default;
-    std::vector<qtf_slot> data_handlers, edit_handlers, sort_handlers;
+    std::vector<qtf_slot> data_handlers, edit_handlers, sort_handlers, check_handlers;
 
-    // The value of one cell, from the dataRequested slots (`key` is the row or node).
-    QVariant request(int key, int column) const {
+    // Roles any slot has set so far (bit r: role r). Others are not asked for,
+    // so a model showing only text calls its slots once per cell.
+    mutable unsigned used_roles = 1u << Qt::DisplayRole;
+
+    // Redisplay every cell (called once a slot sets a role for the first time).
+    virtual void rolesLearned() const {}
+
+    static bool supportedRole(int role) {
+        switch (role) {
+        case Qt::DisplayRole: case Qt::EditRole: case Qt::DecorationRole: case Qt::ToolTipRole:
+        case Qt::StatusTipRole: case Qt::FontRole: case Qt::TextAlignmentRole: case Qt::BackgroundRole:
+        case Qt::ForegroundRole: case Qt::CheckStateRole: return true;
+        default: return false;
+        }
+    }
+
+    mutable bool probed = false;   // a full request was made to learn the roles
+
+    // The value of one cell for `role` from the dataRequested slots (`key` is
+    // the row or node); the edit role gets the displayed value.
+    QVariant request(int key, int column, int role = Qt::DisplayRole) const {
+        if (!supportedRole(role)) return QVariant();
+        const int r = role == Qt::EditRole ? int(Qt::DisplayRole) : role;
+        if (!(used_roles & (1u << r))) {
+            if (probed) return QVariant();
+            probed = true;
+            ask(key, column, Qt::DisplayRole);   // learn which roles the slots set
+            if (!(used_roles & (1u << r))) return QVariant();
+        }
+        return ask(key, column, r);
+    }
+
+    // Call the dataRequested slots for one role of a cell, and learn the roles they set.
+    QVariant ask(int key, int column, int r) const {
+        probed = true;
         QtfModelRequest req;
+        req.role = r;
         const std::vector<qtf_slot> targets = data_handlers;   // a slot may connect more
         for (const qtf_slot &s : targets) qtf_emit_ptr_ints(s, &req, {key, column});
-        return req.value;
+        const unsigned before = used_roles;
+        for (const auto &kv : req.values)
+            if (supportedRole(kv.first)) used_roles |= 1u << kv.first;
+        if (used_roles != before) rolesLearned();
+        const auto it = req.values.find(r);
+        return it != req.values.end() ? it->second : QVariant();
+    }
+
+    // Item flags from the requested values: checkable if a slot sets a check state.
+    Qt::ItemFlags requestFlags(int key, int column) const {
+        Qt::ItemFlags f;
+        if (request(key, column, Qt::CheckStateRole).isValid())
+            f |= Qt::ItemIsUserCheckable;
+        return f;
+    }
+
+    // Report a check-box click to the checkChanged slots; false if nobody listens.
+    bool check(int key, int column, const QVariant &v) const {
+        qtf_args a{};
+        a.i[0] = key;
+        a.i[1] = column;
+        a.i[2] = v.toInt() == Qt::Checked ? 1 : 0;
+        return qtf_emit_all(check_handlers, a) > 0;
     }
 
     // Report an edit to the dataEdited slots; false if nobody listens.
@@ -622,12 +730,15 @@ class QtfTableModel : public QAbstractTableModel, public QtfModelHandlers {
     int columnCount(const QModelIndex &parent) const override { return parent.isValid() ? 0 : ncols; }
 
     QVariant data(const QModelIndex &i, int role) const override {
-        if (!i.isValid() || (role != Qt::DisplayRole && role != Qt::EditRole)) return QVariant();
-        return request(i.row(), i.column());
+        if (!i.isValid()) return QVariant();
+        return request(i.row(), i.column(), role);
     }
 
     bool setData(const QModelIndex &i, const QVariant &v, int role) override {
-        if (!i.isValid() || role != Qt::EditRole || !edit(i.row(), i.column(), v)) return false;
+        if (!i.isValid()) return false;
+        if (role == Qt::CheckStateRole ? !check(i.row(), i.column(), v)
+                                       : role != Qt::EditRole || !edit(i.row(), i.column(), v))
+            return false;
         emit dataChanged(i, i);
         return true;
     }
@@ -635,7 +746,13 @@ class QtfTableModel : public QAbstractTableModel, public QtfModelHandlers {
     Qt::ItemFlags flags(const QModelIndex &i) const override {
         Qt::ItemFlags f = QAbstractTableModel::flags(i);
         if (editable && i.isValid()) f |= Qt::ItemIsEditable;
+        if (i.isValid()) f |= requestFlags(i.row(), i.column());
         return f;
+    }
+
+    void rolesLearned() const override {
+        auto *self = const_cast<QtfTableModel *>(this);
+        QMetaObject::invokeMethod(self, [self]() { self->refresh(); }, Qt::QueuedConnection);
     }
 
     QVariant headerData(int section, Qt::Orientation o, int role) const override {
@@ -736,12 +853,16 @@ class QtfTreeModel : public QAbstractItemModel, public QtfModelHandlers {
     int columnCount(const QModelIndex &) const override { return ncols; }
 
     QVariant data(const QModelIndex &i, int role) const override {
-        if (!i.isValid() || (role != Qt::DisplayRole && role != Qt::EditRole)) return QVariant();
-        return request(int(i.internalId()), i.column());
+        if (!i.isValid()) return QVariant();
+        return request(int(i.internalId()), i.column(), role);
     }
 
     bool setData(const QModelIndex &i, const QVariant &v, int role) override {
-        if (!i.isValid() || role != Qt::EditRole || !edit(int(i.internalId()), i.column(), v)) return false;
+        if (!i.isValid()) return false;
+        const int node = int(i.internalId());
+        if (role == Qt::CheckStateRole ? !check(node, i.column(), v)
+                                       : role != Qt::EditRole || !edit(node, i.column(), v))
+            return false;
         emit dataChanged(i, i);
         return true;
     }
@@ -749,7 +870,13 @@ class QtfTreeModel : public QAbstractItemModel, public QtfModelHandlers {
     Qt::ItemFlags flags(const QModelIndex &i) const override {
         Qt::ItemFlags f = QAbstractItemModel::flags(i);
         if (editable && i.isValid()) f |= Qt::ItemIsEditable;
+        if (i.isValid()) f |= requestFlags(int(i.internalId()), i.column());
         return f;
+    }
+
+    void rolesLearned() const override {
+        auto *self = const_cast<QtfTreeModel *>(this);
+        QMetaObject::invokeMethod(self, [self]() { self->refresh(); }, Qt::QueuedConnection);
     }
 
     QVariant headerData(int section, Qt::Orientation o, int role) const override {
@@ -782,11 +909,22 @@ class QtfTreeModel : public QAbstractItemModel, public QtfModelHandlers {
     }
 };
 
-// Attach a slot to a Fortran-backed model's data (WHICH = 0), edit (1) or sort (2) requests.
+// QtfListModel: a one-column QtfTableModel, for QListView.
+class QtfListModel : public QtfTableModel {
+  public:
+    QtfListModel(int rows, QObject *parent) : QtfTableModel(rows, 1, parent) {}
+};
+
+// Attach a slot to a Fortran-backed model's data (WHICH = 0), edit (1), sort (2)
+// or check-box (3) requests.
 template <int WHICH> static bool connect_model(void *s, const qtf_slot &ref) {
     auto *m = dynamic_cast<QtfModelHandlers *>(static_cast<QObject *>(s));
     if (!m) return false;
-    (WHICH == 0 ? m->data_handlers : WHICH == 1 ? m->edit_handlers : m->sort_handlers).push_back(ref);
+    (WHICH == 0   ? m->data_handlers
+     : WHICH == 1 ? m->edit_handlers
+     : WHICH == 2 ? m->sort_handlers
+                  : m->check_handlers)
+        .push_back(ref);
     return true;
 }
 
@@ -889,11 +1027,63 @@ static int qtf_proxy_from_source(QSortFilterProxyModel *p, int row, int column) 
     return m ? p->mapFromSource(m->index(row, column)).row() : -1;
 }
 
+// A cell being painted by a QtfItemDelegate's paintCell slots: the painter,
+// the cell's style option (rectangle, state, text, ...) and its index.
+struct QtfPaintCell {
+    QPainter *painter;
+    QStyleOptionViewItem raw;      // as the view passed it
+    QStyleOptionViewItem option;   // filled in from the model (text, icon, colors, ...)
+    QModelIndex index;
+    const QStyledItemDelegate *delegate;
+
+    // Qt's standard rendering of the cell.
+    void drawDefault() const { delegate->QStyledItemDelegate::paint(painter, raw, index); }
+
+    // Only the background (selection, hover, the model's background color).
+    void drawBackground() const {
+        const QWidget *w = option.widget;
+        QStyle *style = w ? w->style() : QApplication::style();
+        style->drawPrimitive(QStyle::PE_PanelItemViewItem, &option, painter, w);
+    }
+
+    // The text color for this cell's state (selected cells use the highlight text color).
+    QColor textColor() const {
+        const QPalette::ColorGroup g = !(option.state & QStyle::State_Enabled) ? QPalette::Disabled
+                                       : (option.state & QStyle::State_Active) ? QPalette::Normal
+                                                                               : QPalette::Inactive;
+        return option.palette.color(g, (option.state & QStyle::State_Selected) ? QPalette::HighlightedText
+                                                                                : QPalette::Text);
+    }
+};
+
 // QtfItemDelegate: a cell editor chosen per column: a combo box of fixed
-// choices, a (double) spin box with a range, or Qt's default line edit.
+// choices, a (double) spin box with a range, or Qt's default line edit. Cells
+// are painted by Fortran paintCell slots if any are connected.
 class QtfItemDelegate : public QStyledItemDelegate {
   public:
     using QStyledItemDelegate::QStyledItemDelegate;
+    std::vector<qtf_slot> paint_handlers;
+    int hint_width = -1, hint_height = -1;
+
+    void paint(QPainter *p, const QStyleOptionViewItem &opt, const QModelIndex &index) const override {
+        if (paint_handlers.empty()) return QStyledItemDelegate::paint(p, opt, index);
+        QtfPaintCell cell{p, opt, opt, index, this};
+        initStyleOption(&cell.option, index);
+        qtf_args a{};
+        a.p = &cell;
+        p->save();
+        const int n = qtf_emit_all(paint_handlers, a);
+        p->restore();
+        if (n == 0) QStyledItemDelegate::paint(p, opt, index);   // all slots disconnected
+    }
+
+    QSize sizeHint(const QStyleOptionViewItem &opt, const QModelIndex &index) const override {
+        QSize s = QStyledItemDelegate::sizeHint(opt, index);
+        if (hint_width > 0) s.setWidth(hint_width);
+        if (hint_height > 0) s.setHeight(hint_height);
+        return s;
+    }
+
     QStringList choices;
     bool ranged = false;
     double lo = 0, hi = 0;
@@ -947,6 +1137,14 @@ class QtfItemDelegate : public QStyledItemDelegate {
         else QStyledItemDelegate::setModelData(editor, model, index);
     }
 };
+
+// Attach a slot to a QtfItemDelegate's paintCell.
+static bool connect_delegate_paint(void *s, const qtf_slot &ref) {
+    auto *d = dynamic_cast<QtfItemDelegate *>(static_cast<QObject *>(s));
+    if (!d) return false;
+    d->paint_handlers.push_back(ref);
+    return true;
+}
 
 // Attach a slot to one of the QtfWidget's event handlers. The slots are owned
 // by the widget, so they are released when it is destroyed.
@@ -1194,6 +1392,31 @@ QTF_API int qtf_qwidget_restoreGeometry(void *self, const char *geometry, int ge
 
 // True if the widget is a top-level window.
 QTF_API int qtf_qwidget_isWindow(void *self) { return qtf_bool(as<QWidget>(self)->isWindow()); }
+
+// The mouse cursor over the widget (a Qt_*Cursor shape).
+QTF_API void qtf_qwidget_setCursor(void *self, int shape) {
+    as<QWidget>(self)->setCursor(QCursor(Qt::CursorShape(shape)));
+}
+
+// A cursor from an image, with its hot spot at (hotX, hotY) (default: the center).
+QTF_API void qtf_qwidget_setCursorPixmap(void *self, void *pixmap, int hotX, int hotY) {
+    as<QWidget>(self)->setCursor(QCursor(*as<QPixmap>(pixmap), hotX, hotY));
+}
+
+// Back to the parent's cursor.
+QTF_API void qtf_qwidget_unsetCursor(void *self) { as<QWidget>(self)->unsetCursor(); }
+
+// The cursor shape over the widget (a Qt_*Cursor constant).
+QTF_API int qtf_qwidget_cursorShape(void *self) { return int(as<QWidget>(self)->cursor().shape()); }
+
+// Accept drag and drop (then connect dragEnterEvent and dropEvent).
+QTF_API void qtf_qwidget_setAcceptDrops(void *self, int on) { as<QWidget>(self)->setAcceptDrops((on != 0)); }
+
+// True if the widget accepts drops.
+QTF_API int qtf_qwidget_acceptDrops(void *self) { return qtf_bool(as<QWidget>(self)->acceptDrops()); }
+
+// The screen the widget is on.
+QTF_API void *qtf_qwidget_screen(void *self) { return as<QWidget>(self)->screen(); }
 
 // Physical pixels per logical pixel of the widget's screen (2 on a typical HiDPI display).
 QTF_API double qtf_qwidget_devicePixelRatio(void *self) { return as<QWidget>(self)->devicePixelRatio(); }
@@ -2060,16 +2283,71 @@ QTF_API int qtf_qabstractitemmodel_columnCount(void *self) {
 
 // Show `text` in the cell.
 QTF_API void qtf_qtfmodelrequest_setText(void *self, const char *text, int text_len) {
-    as<QtfModelRequest>(self)->value = qtf_qstring(text, text_len);
+    as<QtfModelRequest>(self)->set(Qt::DisplayRole, qtf_qstring(text, text_len));
 }
 
 // Show a real number in the cell.
 QTF_API void qtf_qtfmodelrequest_setNumber(void *self, double value) {
-    as<QtfModelRequest>(self)->value = value;
+    as<QtfModelRequest>(self)->set(Qt::DisplayRole, value);
 }
 
 // Show an integer in the cell.
-QTF_API void qtf_qtfmodelrequest_setInt(void *self, int value) { as<QtfModelRequest>(self)->value = value; }
+QTF_API void qtf_qtfmodelrequest_setInt(void *self, int value) {
+    as<QtfModelRequest>(self)->set(Qt::DisplayRole, value);
+}
+
+// Show an icon before the text (copied).
+QTF_API void qtf_qtfmodelrequest_setIcon(void *self, void *icon) {
+    as<QtfModelRequest>(self)->set(Qt::DecorationRole, QVariant::fromValue(*as<QIcon>(icon)));
+}
+
+// Show a color swatch before the text.
+QTF_API void qtf_qtfmodelrequest_setIconColor(void *self, int color_r, int color_g, int color_b, int color_a, int color_valid) {
+    as<QtfModelRequest>(self)->set(Qt::DecorationRole, QVariant::fromValue(QColor(color_r, color_g, color_b, color_a)));
+}
+
+// Give the cell a check box, checked or not; clicks arrive at the model's `checkChanged`.
+QTF_API void qtf_qtfmodelrequest_setChecked(void *self, int checked) {
+    as<QtfModelRequest>(self)->set(Qt::CheckStateRole, int((checked != 0) ? Qt::Checked : Qt::Unchecked));
+}
+
+// The tool tip shown when hovering over the cell.
+QTF_API void qtf_qtfmodelrequest_setToolTip(void *self, const char *text, int text_len) {
+    as<QtfModelRequest>(self)->set(Qt::ToolTipRole, qtf_qstring(text, text_len));
+}
+
+// The text shown in the status bar when hovering over the cell.
+QTF_API void qtf_qtfmodelrequest_setStatusTip(void *self, const char *text, int text_len) {
+    as<QtfModelRequest>(self)->set(Qt::StatusTipRole, qtf_qstring(text, text_len));
+}
+
+// The text color.
+QTF_API void qtf_qtfmodelrequest_setForeground(void *self, int color_r, int color_g, int color_b, int color_a, int color_valid) {
+    as<QtfModelRequest>(self)->set(Qt::ForegroundRole, QVariant::fromValue(QBrush(QColor(color_r, color_g, color_b, color_a))));
+}
+
+// The background color.
+QTF_API void qtf_qtfmodelrequest_setBackground(void *self, int color_r, int color_g, int color_b, int color_a, int color_valid) {
+    as<QtfModelRequest>(self)->set(Qt::BackgroundRole, QVariant::fromValue(QBrush(QColor(color_r, color_g, color_b, color_a))));
+}
+
+// Align the text (Qt_Align* flags, e.g. ior(Qt_AlignRight, Qt_AlignVCenter) for numbers).
+QTF_API void qtf_qtfmodelrequest_setAlignment(void *self, int flags) {
+    as<QtfModelRequest>(self)->set(Qt::TextAlignmentRole, int(Qt::Alignment(flags)));
+}
+
+// Show the text in bold.
+QTF_API void qtf_qtfmodelrequest_setBold(void *self, int bold) {
+    as<QtfModelRequest>(self)->setFontStyle((bold != 0), false, true);
+}
+
+// Show the text in italics.
+QTF_API void qtf_qtfmodelrequest_setItalic(void *self, int italic) {
+    as<QtfModelRequest>(self)->setFontStyle(false, (italic != 0), false);
+}
+
+// The part being asked for (Qt_DisplayRole, Qt_DecorationRole, ...); slots may skip expensive work for the others.
+QTF_API int qtf_qtfmodelrequest_role(void *self) { return as<QtfModelRequest>(self)->role; }
 
 // ---------------------------------------------------------------------------
 // QtfTableModel
@@ -2122,6 +2400,34 @@ QTF_API int qtf_qtftablemodel_setDataText(void *self, int row, int column, const
     return qtf_bool(as<QtfTableModel>(self)->setData(as<QtfTableModel>(self)->index(row, column), qtf_qstring(text, text_len), Qt::EditRole));
 }
 
+// True if the cell has a check box (its slot calls `request%setChecked`).
+QTF_API int qtf_qtftablemodel_isCheckable(void *self, int row, int column) {
+    return qtf_bool(bool(as<QtfTableModel>(self)->flags(as<QtfTableModel>(self)->index(row, column)) & Qt::ItemIsUserCheckable));
+}
+
+// True if the cell's check box is checked, as the view would show it.
+QTF_API int qtf_qtftablemodel_isChecked(void *self, int row, int column) {
+    return qtf_bool(as<QtfTableModel>(self)->data(as<QtfTableModel>(self)->index(row, column), Qt::CheckStateRole).toInt() == Qt::Checked);
+}
+
+// Click a check box as the user would (calls the `checkChanged` slots); false if nobody listens.
+QTF_API int qtf_qtftablemodel_setChecked(void *self, int row, int column, int checked) {
+    return qtf_bool(as<QtfTableModel>(self)->setData(as<QtfTableModel>(self)->index(row, column), int((checked != 0) ? Qt::Checked : Qt::Unchecked), Qt::CheckStateRole));
+}
+
+// The tool tip of a cell, as the view would show it.
+QTF_API char *qtf_qtftablemodel_toolTip(void *self, int row, int column, int *len) {
+    return qtf_to_c(as<QtfTableModel>(self)->data(as<QtfTableModel>(self)->index(row, column), Qt::ToolTipRole).toString(), len);
+}
+
+// ---------------------------------------------------------------------------
+// QtfListModel
+
+// A list model with `rows` rows.
+QTF_API void *qtf_qtflistmodel_new(int rows, void *parent) {
+    return new QtfListModel(rows, as<QObject>(parent));
+}
+
 // ---------------------------------------------------------------------------
 // QAbstractItemView
 
@@ -2148,6 +2454,11 @@ QTF_API void qtf_qabstractitemview_edit(void *self, int row, int column) {
 // Shade every other row.
 QTF_API void qtf_qabstractitemview_setAlternatingRowColors(void *self, int enable) {
     as<QAbstractItemView>(self)->setAlternatingRowColors((enable != 0));
+}
+
+// The size of the items' icons.
+QTF_API void qtf_qabstractitemview_setIconSize(void *self, int width, int height) {
+    as<QAbstractItemView>(self)->setIconSize(QSize(width, height));
 }
 
 // Single, multiple, ... selection (QAbstractItemView_* constants).
@@ -2247,6 +2558,76 @@ QTF_API void qtf_qtableview_sortByColumn(void *self, int column, int order) {
 // Hide or show a column.
 QTF_API void qtf_qtableview_setColumnHidden(void *self, int column, int hide) {
     as<QTableView>(self)->setColumnHidden(column, (hide != 0));
+}
+
+// ---------------------------------------------------------------------------
+// QListView
+
+// Create a list view.
+QTF_API void *qtf_qlistview_new(void *parent) { return new QListView(as<QWidget>(parent)); }
+
+// QListView_ListMode (default) or QListView_IconMode (large icons in a grid).
+QTF_API void qtf_qlistview_setViewMode(void *self, int mode) {
+    as<QListView>(self)->setViewMode(QListView::ViewMode(mode));
+}
+
+// Lay items out QListView_TopToBottom (list mode default) or QListView_LeftToRight (icon mode default).
+QTF_API void qtf_qlistview_setFlow(void *self, int flow) {
+    as<QListView>(self)->setFlow(QListView::Flow(flow));
+}
+
+// Wrap items into more rows or columns when the flow reaches the edge.
+QTF_API void qtf_qlistview_setWrapping(void *self, int enable) {
+    as<QListView>(self)->setWrapping((enable != 0));
+}
+
+// Space around each item, in pixels.
+QTF_API void qtf_qlistview_setSpacing(void *self, int space) { as<QListView>(self)->setSpacing(space); }
+
+// Lay items out on a fixed grid (icon mode).
+QTF_API void qtf_qlistview_setGridSize(void *self, int width, int height) {
+    as<QListView>(self)->setGridSize(QSize(width, height));
+}
+
+// Promise equal item sizes (faster for long lists).
+QTF_API void qtf_qlistview_setUniformItemSizes(void *self, int enable) {
+    as<QListView>(self)->setUniformItemSizes((enable != 0));
+}
+
+// QListView_Adjust: lay items out again when the view is resized.
+QTF_API void qtf_qlistview_setResizeMode(void *self, int mode) {
+    as<QListView>(self)->setResizeMode(QListView::ResizeMode(mode));
+}
+
+// Whether the user can move items (QListView_Static, _Free, _Snap).
+QTF_API void qtf_qlistview_setMovement(void *self, int movement) {
+    as<QListView>(self)->setMovement(QListView::Movement(movement));
+}
+
+// Wrap long item text.
+QTF_API void qtf_qlistview_setWordWrap(void *self, int on) { as<QListView>(self)->setWordWrap((on != 0)); }
+
+// The column of the model to show (default 0).
+QTF_API void qtf_qlistview_setModelColumn(void *self, int column) {
+    as<QListView>(self)->setModelColumn(column);
+}
+
+// Hide or show a row.
+QTF_API void qtf_qlistview_setRowHidden(void *self, int row, int hide) {
+    as<QListView>(self)->setRowHidden(row, (hide != 0));
+}
+
+// The current row (-1 if none).
+QTF_API int qtf_qlistview_currentRow(void *self) { return as<QListView>(self)->currentIndex().row(); }
+
+// Make `row` the current item.
+QTF_API void qtf_qlistview_setCurrentRow(void *self, int row) {
+    if (as<QListView>(self)->model()) as<QListView>(self)->setCurrentIndex(as<QListView>(self)->model()->index(row, as<QListView>(self)->modelColumn()));
+}
+
+// Scroll so that `row` is visible.
+QTF_API void qtf_qlistview_scrollToRow(void *self, int row) {
+    if (as<QListView>(self)->model()) as<QListView>(self)->scrollTo(as<QListView>(self)->model()->index(row, as<QListView>(self)->modelColumn()));
 }
 
 // ---------------------------------------------------------------------------
@@ -2529,6 +2910,11 @@ QTF_API int qtf_qfilesystemmodel_childCount(void *self, const char *path, int pa
 // A delegate (give it the view as parent).
 QTF_API void *qtf_qtfitemdelegate_new(void *parent) { return new QtfItemDelegate(as<QObject>(parent)); }
 
+// The size of each cell (-1: Qt's default for that dimension).
+QTF_API void qtf_qtfitemdelegate_setSizeHint(void *self, int width, int height) {
+    as<QtfItemDelegate>(self)->hint_width = width; as<QtfItemDelegate>(self)->hint_height = height;
+}
+
 // Edit with a combo box offering `choices`.
 QTF_API void qtf_qtfitemdelegate_setChoices(void *self, const char *choices, int choices_len, int n) {
     as<QtfItemDelegate>(self)->choices = qtf_qstringlist(choices, choices_len, n);
@@ -2541,6 +2927,79 @@ QTF_API void qtf_qtfitemdelegate_setRange(void *self, double minimum, double max
 
 // Back to the default editor (a line edit).
 QTF_API void qtf_qtfitemdelegate_clear(void *self) { as<QtfItemDelegate>(self)->clear(); }
+
+// ---------------------------------------------------------------------------
+// QtfPaintCell
+
+// The painter (do not `end` it).
+QTF_API void *qtf_qtfpaintcell_painter(void *self) { return as<QtfPaintCell>(self)->painter; }
+
+// The cell's row in the model (for a tree: its row under its parent).
+QTF_API int qtf_qtfpaintcell_row(void *self) { return qtf_source_index(as<QtfPaintCell>(self)->index).row(); }
+
+// The cell's column.
+QTF_API int qtf_qtfpaintcell_column(void *self) {
+    return qtf_source_index(as<QtfPaintCell>(self)->index).column();
+}
+
+// The cell's node, for a QtfTreeModel (-1 otherwise).
+QTF_API int qtf_qtfpaintcell_node(void *self) { return qtf_node(as<QtfPaintCell>(self)->index); }
+
+// The cell's row in the view (differs from `row()` behind a sorting proxy).
+QTF_API int qtf_qtfpaintcell_viewRow(void *self) { return as<QtfPaintCell>(self)->index.row(); }
+
+// Left of the cell.
+QTF_API int qtf_qtfpaintcell_x(void *self) { return as<QtfPaintCell>(self)->option.rect.x(); }
+
+// Top of the cell.
+QTF_API int qtf_qtfpaintcell_y(void *self) { return as<QtfPaintCell>(self)->option.rect.y(); }
+
+// Width of the cell.
+QTF_API int qtf_qtfpaintcell_width(void *self) { return as<QtfPaintCell>(self)->option.rect.width(); }
+
+// Height of the cell.
+QTF_API int qtf_qtfpaintcell_height(void *self) { return as<QtfPaintCell>(self)->option.rect.height(); }
+
+// The cell's text (from the model).
+QTF_API char *qtf_qtfpaintcell_text(void *self, int *len) {
+    return qtf_to_c(as<QtfPaintCell>(self)->option.text, len);
+}
+
+// The color for text in this cell's state (the highlight text color when selected).
+QTF_API void qtf_qtfpaintcell_textColor(void *self, int *res_r, int *res_g, int *res_b, int *res_a, int *res_valid) {
+    const auto v_ = as<QtfPaintCell>(self)->textColor();
+    *res_r = v_.red();
+    *res_g = v_.green();
+    *res_b = v_.blue();
+    *res_a = v_.alpha();
+    *res_valid = v_.isValid();
+}
+
+// True if the cell is selected.
+QTF_API int qtf_qtfpaintcell_isSelected(void *self) {
+    return qtf_bool(bool(as<QtfPaintCell>(self)->option.state & QStyle::State_Selected));
+}
+
+// True if the cell is the current one and the view has focus.
+QTF_API int qtf_qtfpaintcell_hasFocus(void *self) {
+    return qtf_bool(bool(as<QtfPaintCell>(self)->option.state & QStyle::State_HasFocus));
+}
+
+// True if the mouse is over the cell.
+QTF_API int qtf_qtfpaintcell_isHovered(void *self) {
+    return qtf_bool(bool(as<QtfPaintCell>(self)->option.state & QStyle::State_MouseOver));
+}
+
+// True if the view is enabled.
+QTF_API int qtf_qtfpaintcell_isEnabled(void *self) {
+    return qtf_bool(bool(as<QtfPaintCell>(self)->option.state & QStyle::State_Enabled));
+}
+
+// Draw the cell's background: selection, hover and the model's background color.
+QTF_API void qtf_qtfpaintcell_drawBackground(void *self) { as<QtfPaintCell>(self)->drawBackground(); }
+
+// Draw the cell as Qt normally would (background, icon, text, check box).
+QTF_API void qtf_qtfpaintcell_drawDefault(void *self) { as<QtfPaintCell>(self)->drawDefault(); }
 
 // ---------------------------------------------------------------------------
 // QTableWidgetItem
@@ -4421,6 +4880,10 @@ QTF_API void *qtf_qtfeventfilter_new(void *target) { return new QtfEventFilter(a
 // signal connectors
 
 static const bool qtf_widgets_registered = [] {
+    qtf_register_connector(QTF_SIG_QWIDGET_DRAGENTEREVENT, connect_filter<QTF_FILTER_DRAGENTER>);
+    qtf_register_connector(QTF_SIG_QWIDGET_DRAGMOVEEVENT, connect_filter<QTF_FILTER_DRAGMOVE>);
+    qtf_register_connector(QTF_SIG_QWIDGET_DRAGLEAVEEVENT, connect_filter<QTF_FILTER_DRAGLEAVE>);
+    qtf_register_connector(QTF_SIG_QWIDGET_DROPEVENT, connect_filter<QTF_FILTER_DROP>);
     qtf_register_connector(QTF_SIG_QWIDGET_CLOSEEVENT, connect_filter<QTF_FILTER_CLOSE>);
     qtf_register_connector(QTF_SIG_QWIDGET_CONTEXTMENUEVENT, connect_filter<QTF_FILTER_CONTEXTMENU>);
     qtf_register_connector(QTF_SIG_QWIDGET_ENTEREVENT, connect_filter<QTF_FILTER_ENTER>);
@@ -4504,6 +4967,7 @@ static const bool qtf_widgets_registered = [] {
     qtf_register_connector(QTF_SIG_QTFTABLEMODEL_DATAREQUESTED, connect_model<0>);
     qtf_register_connector(QTF_SIG_QTFTABLEMODEL_DATAEDITED, connect_model<1>);
     qtf_register_connector(QTF_SIG_QTFTABLEMODEL_SORTREQUESTED, connect_model<2>);
+    qtf_register_connector(QTF_SIG_QTFTABLEMODEL_CHECKCHANGED, connect_model<3>);
     qtf_register_connector(QTF_SIG_QABSTRACTITEMVIEW_CLICKED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QAbstractItemView>(s), &QAbstractItemView::clicked, as<QAbstractItemView>(s), [ref](const QModelIndex &i) { qtf_emit_ints(ref, {i.row(), i.column()}); }));
     });
@@ -4532,12 +4996,14 @@ static const bool qtf_widgets_registered = [] {
     });
     qtf_register_connector(QTF_SIG_QTFTREEMODEL_DATAREQUESTED, connect_model<0>);
     qtf_register_connector(QTF_SIG_QTFTREEMODEL_DATAEDITED, connect_model<1>);
+    qtf_register_connector(QTF_SIG_QTFTREEMODEL_CHECKCHANGED, connect_model<3>);
     qtf_register_connector(QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QFileSystemModel>(s), &QFileSystemModel::directoryLoaded, as<QFileSystemModel>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QFILESYSTEMMODEL_ROOTPATHCHANGED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QFileSystemModel>(s), &QFileSystemModel::rootPathChanged, as<QFileSystemModel>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
     });
+    qtf_register_connector(QTF_SIG_QTFITEMDELEGATE_PAINTCELL, connect_delegate_paint);
     qtf_register_connector(QTF_SIG_QTABLEWIDGET_CELLCLICKED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QTableWidget>(s), &QTableWidget::cellClicked, as<QTableWidget>(s), [ref](int a, int b) { qtf_emit_ints(ref, {a, b}); }));
     });

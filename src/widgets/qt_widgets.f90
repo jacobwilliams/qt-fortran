@@ -14,6 +14,29 @@ module qt_widgets
     implicit none
     private
 
+    ! Qt::ItemDataRole (QtfModelRequest%role)
+    integer(c_int), parameter, public :: Qt_DisplayRole = 0
+    integer(c_int), parameter, public :: Qt_DecorationRole = 1
+    integer(c_int), parameter, public :: Qt_EditRole = 2
+    integer(c_int), parameter, public :: Qt_ToolTipRole = 3
+    integer(c_int), parameter, public :: Qt_StatusTipRole = 4
+    integer(c_int), parameter, public :: Qt_FontRole = 6
+    integer(c_int), parameter, public :: Qt_TextAlignmentRole = 7
+    integer(c_int), parameter, public :: Qt_BackgroundRole = 8
+    integer(c_int), parameter, public :: Qt_ForegroundRole = 9
+    integer(c_int), parameter, public :: Qt_CheckStateRole = 10
+
+    ! QListView::ViewMode, Flow, ResizeMode and Movement
+    integer(c_int), parameter, public :: QListView_ListMode = 0
+    integer(c_int), parameter, public :: QListView_IconMode = 1
+    integer(c_int), parameter, public :: QListView_LeftToRight = 0
+    integer(c_int), parameter, public :: QListView_TopToBottom = 1
+    integer(c_int), parameter, public :: QListView_Fixed = 0
+    integer(c_int), parameter, public :: QListView_Adjust = 1
+    integer(c_int), parameter, public :: QListView_Static = 0
+    integer(c_int), parameter, public :: QListView_Free = 1
+    integer(c_int), parameter, public :: QListView_Snap = 2
+
     ! QDialog::DialogCode
     integer(c_int), parameter, public :: QDialog_Rejected = 0
     integer(c_int), parameter, public :: QDialog_Accepted = 1
@@ -286,6 +309,12 @@ module qt_widgets
         procedure :: connect => qsignaltreeitemint_connect
     end type QSignalTreeItemInt
 
+    !> A cell to paint: slots get (cell) and draw it with `cell%painter()`.
+    type, extends(QtfSignal), public :: QSignalPaintCell
+    contains
+        procedure :: connect => qsignalpaintcell_connect
+    end type QSignalPaintCell
+
     public :: QFontDialog_getFont
 
     !> The application object. Create exactly one, before any widget, with
@@ -300,6 +329,10 @@ module qt_widgets
 
     !> Base of all user interface objects; a widget without a parent is a window.
     type, extends(QObject), public :: QWidget
+        type(QSignalDropEvent) :: dragEnterEvent   !! A drag entered the widget (needs `setAcceptDrops(.true.)`): accept it in the slot (`event%acceptProposedAction()`) to allow a drop.
+        type(QSignalDropEvent) :: dragMoveEvent   !! An accepted drag moved over the widget; ignore it to refuse a drop at this position.
+        type(QSignal) :: dragLeaveEvent   !! The drag left the widget.
+        type(QSignalDropEvent) :: dropEvent   !! Something was dropped on the widget: read it (`event%text()`, `event%urls()`, ...) and accept the event.
         type(QSignalCloseEvent) :: closeEvent   !! The window is about to close; a slot can keep it open with `event%ignore()`.
         type(QSignalContextMenuEvent) :: contextMenuEvent   !! A context menu was requested (right click); show one with `menu%popup(event%globalX(), event%globalY())`.
         type(QSignal) :: enterEvent   !! The mouse entered the widget.
@@ -353,6 +386,13 @@ module qt_widgets
         procedure :: saveGeometry => qwidget_saveGeometry
         procedure :: restoreGeometry => qwidget_restoreGeometry
         procedure :: isWindow => qwidget_isWindow
+        procedure :: setCursor => qwidget_setCursor
+        procedure :: setCursorPixmap => qwidget_setCursorPixmap
+        procedure :: unsetCursor => qwidget_unsetCursor
+        procedure :: cursorShape => qwidget_cursorShape
+        procedure :: setAcceptDrops => qwidget_setAcceptDrops
+        procedure :: acceptDrops => qwidget_acceptDrops
+        procedure :: screen => qwidget_screen
         procedure :: devicePixelRatio => qwidget_devicePixelRatio
         procedure :: showMaximized => qwidget_showMaximized
         procedure :: showMinimized => qwidget_showMinimized
@@ -772,13 +812,28 @@ module qt_widgets
         procedure :: columnCount => qabstractitemmodel_columnCount
     end type QAbstractItemModel
 
-    !> The cell being requested from a QtfTableModel `dataRequested` slot: set its value.
+    !> The cell being requested from a `dataRequested` slot (QtfTableModel,
+    !> QtfListModel, QtfTreeModel): set its text, and optionally an icon, a check
+    !> box, a tool tip, colors, alignment or font style. Setting everything every
+    !> time is fine: the model takes the part the view asks for (`role()`), and
+    !> asks again only for parts some cell has set.
     type, public :: QtfModelRequest
         type(c_ptr) :: ptr = c_null_ptr
     contains
         procedure :: setText => qtfmodelrequest_setText
         procedure :: setNumber => qtfmodelrequest_setNumber
         procedure :: setInt => qtfmodelrequest_setInt
+        procedure :: setIcon => qtfmodelrequest_setIcon
+        procedure :: setIconColor => qtfmodelrequest_setIconColor
+        procedure :: setChecked => qtfmodelrequest_setChecked
+        procedure :: setToolTip => qtfmodelrequest_setToolTip
+        procedure :: setStatusTip => qtfmodelrequest_setStatusTip
+        procedure :: setForeground => qtfmodelrequest_setForeground
+        procedure :: setBackground => qtfmodelrequest_setBackground
+        procedure :: setAlignment => qtfmodelrequest_setAlignment
+        procedure :: setBold => qtfmodelrequest_setBold
+        procedure :: setItalic => qtfmodelrequest_setItalic
+        procedure :: role => qtfmodelrequest_role
     end type QtfModelRequest
 
     !> A table model whose cells come from Fortran on demand (`Qtf` marks a
@@ -795,6 +850,7 @@ module qt_widgets
         type(QSignalModelData) :: dataRequested   !! A cell is needed: slots get (row, column, request) and set the request's value.
         type(QSignalModelEdit) :: dataEdited   !! The user edited a cell: slots get (row, column, text); store the new value.
         type(QSignalInt2) :: sortRequested   !! Sort by a column: slots get (column, order) with order Qt_AscendingOrder or Qt_DescendingOrder, and reorder the data.
+        type(QSignalInt3) :: checkChanged   !! The user clicked a cell's check box (see `request%setChecked`): slots get (row, column, checked) with checked 1 or 0; store the new state.
     contains
         procedure :: attach => qtftablemodel_attach
         procedure :: setRowCount => qtftablemodel_setRowCount
@@ -806,11 +862,24 @@ module qt_widgets
         procedure :: refreshCell => qtftablemodel_refreshCell
         procedure :: dataText => qtftablemodel_dataText
         procedure :: setDataText => qtftablemodel_setDataText
+        procedure :: isCheckable => qtftablemodel_isCheckable
+        procedure :: isChecked => qtftablemodel_isChecked
+        procedure :: setChecked => qtftablemodel_setChecked
+        procedure :: toolTip => qtftablemodel_toolTip
     end type QtfTableModel
     !> Constructor: `QtfTableModel([rows, columns, parent])`.
     interface QtfTableModel
         module procedure :: qtftablemodel_new
     end interface QtfTableModel
+
+    !> A one-column QtfTableModel for a QListView (or a QComboBox's popup list):
+    !> the `dataRequested` slots get (row, 0, request). Rows are 0-based.
+    type, extends(QtfTableModel), public :: QtfListModel
+    end type QtfListModel
+    !> Constructor: `QtfListModel([rows, parent])`.
+    interface QtfListModel
+        module procedure :: qtflistmodel_new
+    end interface QtfListModel
 
     !> Base of the item views (tables, lists, trees).
     type, extends(QFrame), public :: QAbstractItemView
@@ -824,6 +893,7 @@ module qt_widgets
         procedure :: setItemDelegateForColumn => qabstractitemview_setItemDelegateForColumn
         procedure :: edit => qabstractitemview_edit
         procedure :: setAlternatingRowColors => qabstractitemview_setAlternatingRowColors
+        procedure :: setIconSize => qabstractitemview_setIconSize
         procedure :: setSelectionMode => qabstractitemview_setSelectionMode
         procedure :: setSelectionBehavior => qabstractitemview_setSelectionBehavior
         procedure :: setEditTriggers => qabstractitemview_setEditTriggers
@@ -855,6 +925,31 @@ module qt_widgets
     interface QTableView
         module procedure :: qtableview_new
     end interface QTableView
+
+    !> A list (or icon grid) view of a model: a QtfListModel for Fortran data, or
+    !> column 0 of any model (`setModelColumn` for another). In
+    !> `setViewMode(QListView_IconMode)` items are laid out as a grid of icons.
+    type, extends(QAbstractItemView), public :: QListView
+    contains
+        procedure :: setViewMode => qlistview_setViewMode
+        procedure :: setFlow => qlistview_setFlow
+        procedure :: setWrapping => qlistview_setWrapping
+        procedure :: setSpacing => qlistview_setSpacing
+        procedure :: setGridSize => qlistview_setGridSize
+        procedure :: setUniformItemSizes => qlistview_setUniformItemSizes
+        procedure :: setResizeMode => qlistview_setResizeMode
+        procedure :: setMovement => qlistview_setMovement
+        procedure :: setWordWrap => qlistview_setWordWrap
+        procedure :: setModelColumn => qlistview_setModelColumn
+        procedure :: setRowHidden => qlistview_setRowHidden
+        procedure :: currentRow => qlistview_currentRow
+        procedure :: setCurrentRow => qlistview_setCurrentRow
+        procedure :: scrollToRow => qlistview_scrollToRow
+    end type QListView
+    !> Constructor: `QListView([parent])`.
+    interface QListView
+        module procedure :: qlistview_new
+    end interface QListView
 
     !> A tree view of a model: a QtfTreeModel (Fortran data), a QFileSystemModel
     !> (files), or a QSortFilterProxyModel over either.
@@ -910,6 +1005,7 @@ module qt_widgets
     type, extends(QAbstractItemModel), public :: QtfTreeModel
         type(QSignalModelData) :: dataRequested   !! A cell is needed: slots get (node, column, request) and set the request's value.
         type(QSignalModelEdit) :: dataEdited   !! The user edited a cell: slots get (node, column, text).
+        type(QSignalInt3) :: checkChanged   !! The user clicked a cell's check box: slots get (node, column, checked) with checked 1 or 0.
     contains
         procedure :: attach => qtftreemodel_attach
         procedure :: setParents => qtftreemodel_setParents
@@ -981,8 +1077,17 @@ module qt_widgets
     !> `setChoices` cells are edited with a combo box of fixed choices; with
     !> `setRange` with a spin box (`decimals = 0`: integers). The edited value
     !> reaches the model as for a normal edit (QtfTableModel's `dataEdited`).
+    !>
+    !> Custom painting: connect `paintCell`, and the slot draws each cell with
+    !> `cell%painter()` inside `cell%x(), cell%y(), cell%width(), cell%height()`
+    !> (e.g. a bar for a number). `cell%drawBackground()` draws the selection and
+    !> hover background first, `cell%drawDefault()` Qt's normal rendering. Set the
+    !> cells' size with `setSizeHint`.
     type, extends(QObject), public :: QtfItemDelegate
+        type(QSignalPaintCell) :: paintCell   !! Paint a cell: slots get (cell) and draw it with `cell%painter()` (the painter's state is restored afterwards).
     contains
+        procedure :: attach => qtfitemdelegate_attach
+        procedure :: setSizeHint => qtfitemdelegate_setSizeHint
         procedure :: setChoices => qtfitemdelegate_setChoices
         procedure :: setRange => qtfitemdelegate_setRange
         procedure :: clear => qtfitemdelegate_clear
@@ -991,6 +1096,30 @@ module qt_widgets
     interface QtfItemDelegate
         module procedure :: qtfitemdelegate_new
     end interface QtfItemDelegate
+
+    !> A cell being painted by a QtfItemDelegate's `paintCell` slot (valid only
+    !> during the slot). Rows and columns are the model's (through any proxy).
+    type, public :: QtfPaintCell
+        type(c_ptr) :: ptr = c_null_ptr
+    contains
+        procedure :: painter => qtfpaintcell_painter
+        procedure :: row => qtfpaintcell_row
+        procedure :: column => qtfpaintcell_column
+        procedure :: node => qtfpaintcell_node
+        procedure :: viewRow => qtfpaintcell_viewRow
+        procedure :: x => qtfpaintcell_x
+        procedure :: y => qtfpaintcell_y
+        procedure :: width => qtfpaintcell_width
+        procedure :: height => qtfpaintcell_height
+        procedure :: text => qtfpaintcell_text
+        procedure :: textColor => qtfpaintcell_textColor
+        procedure :: isSelected => qtfpaintcell_isSelected
+        procedure :: hasFocus => qtfpaintcell_hasFocus
+        procedure :: isHovered => qtfpaintcell_isHovered
+        procedure :: isEnabled => qtfpaintcell_isEnabled
+        procedure :: drawBackground => qtfpaintcell_drawBackground
+        procedure :: drawDefault => qtfpaintcell_drawDefault
+    end type QtfPaintCell
 
     !> A cell of a QTableWidget. Put it in a table with `setItem`, which takes
     !> ownership.
@@ -1841,6 +1970,13 @@ module qt_widgets
             character(len=*), intent(in) :: text
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_model_edit
+        !> Slot painting one cell of an item view (QtfItemDelegate%paintCell).
+        subroutine qt_slot_paint_cell(cell, data)
+            import :: QtfPaintCell
+            implicit none
+            type(QtfPaintCell), intent(in) :: cell
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_paint_cell
         !> Slot receiving a tree item.
         subroutine qt_slot_tree_item(item, data)
             import :: QTreeWidgetItem
@@ -1858,6 +1994,14 @@ module qt_widgets
         end subroutine qt_slot_tree_item_int
     end interface
     public :: qt_slot_model_data, qt_slot_model_edit, qt_slot_tree_item, qt_slot_tree_item_int
+    public :: qt_slot_paint_cell
+
+    !> Slot handler for QSignalPaintCell.
+    type, extends(qt_slot_handler) :: paint_cell_handler
+        procedure(qt_slot_paint_cell), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => paint_cell_handler_invoke
+    end type paint_cell_handler
 
     !> Slot handler for QSignalModelData.
     type, extends(qt_slot_handler) :: model_data_handler
@@ -2007,6 +2151,10 @@ contains
         class(QWidget), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
         call self%QObject%attach(ptr)
+        self%dragEnterEvent = QSignalDropEvent(ptr, QTF_SIG_QWIDGET_DRAGENTEREVENT, self%serial)
+        self%dragMoveEvent = QSignalDropEvent(ptr, QTF_SIG_QWIDGET_DRAGMOVEEVENT, self%serial)
+        self%dragLeaveEvent = QSignal(ptr, QTF_SIG_QWIDGET_DRAGLEAVEEVENT, self%serial)
+        self%dropEvent = QSignalDropEvent(ptr, QTF_SIG_QWIDGET_DROPEVENT, self%serial)
         self%closeEvent = QSignalCloseEvent(ptr, QTF_SIG_QWIDGET_CLOSEEVENT, self%serial)
         self%contextMenuEvent = QSignalContextMenuEvent(ptr, QTF_SIG_QWIDGET_CONTEXTMENUEVENT, self%serial)
         self%enterEvent = QSignal(ptr, QTF_SIG_QWIDGET_ENTEREVENT, self%serial)
@@ -2312,7 +2460,7 @@ contains
     !> Set the icon of the window (copied).
     subroutine qwidget_setWindowIcon(self, icon)
         class(QWidget), intent(in) :: self
-        type(QIcon), intent(in) :: icon
+        class(QIcon), intent(in) :: icon
         call qtf_qwidget_setWindowIcon(qtf_live(self, 'QWidget%setWindowIcon'), icon%ptr)
     end subroutine qwidget_setWindowIcon
 
@@ -2341,6 +2489,62 @@ contains
         logical :: res
         res = qtf_logical(qtf_qwidget_isWindow(qtf_live(self, 'QWidget%isWindow')))
     end function qwidget_isWindow
+
+    !> The mouse cursor over the widget (a Qt_*Cursor shape).
+    subroutine qwidget_setCursor(self, shape)
+        class(QWidget), intent(in) :: self
+        integer, intent(in) :: shape
+        call qtf_qwidget_setCursor(qtf_live(self, 'QWidget%setCursor'), int(shape, c_int))
+    end subroutine qwidget_setCursor
+
+    !> A cursor from an image, with its hot spot at (hotX, hotY) (default: the center).
+    subroutine qwidget_setCursorPixmap(self, pixmap, hotX, hotY)
+        class(QWidget), intent(in) :: self
+        class(QPixmap), intent(in) :: pixmap
+        integer, intent(in), optional :: hotX
+        integer, intent(in), optional :: hotY
+        integer(c_int) :: hotX_
+        integer(c_int) :: hotY_
+        hotX_ = -1
+        if (present(hotX)) hotX_ = int(hotX, c_int)
+        hotY_ = -1
+        if (present(hotY)) hotY_ = int(hotY, c_int)
+        call qtf_qwidget_setCursorPixmap(qtf_live(self, 'QWidget%setCursorPixmap'), pixmap%ptr, hotX_, hotY_)
+    end subroutine qwidget_setCursorPixmap
+
+    !> Back to the parent's cursor.
+    subroutine qwidget_unsetCursor(self)
+        class(QWidget), intent(in) :: self
+        call qtf_qwidget_unsetCursor(qtf_live(self, 'QWidget%unsetCursor'))
+    end subroutine qwidget_unsetCursor
+
+    !> The cursor shape over the widget (a Qt_*Cursor constant).
+    function qwidget_cursorShape(self) result(res)
+        class(QWidget), intent(in) :: self
+        integer :: res
+        res = qtf_qwidget_cursorShape(qtf_live(self, 'QWidget%cursorShape'))
+    end function qwidget_cursorShape
+
+    !> Accept drag and drop (then connect dragEnterEvent and dropEvent).
+    subroutine qwidget_setAcceptDrops(self, on)
+        class(QWidget), intent(in) :: self
+        logical, intent(in) :: on
+        call qtf_qwidget_setAcceptDrops(qtf_live(self, 'QWidget%setAcceptDrops'), qtf_int(on))
+    end subroutine qwidget_setAcceptDrops
+
+    !> True if the widget accepts drops.
+    function qwidget_acceptDrops(self) result(res)
+        class(QWidget), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qwidget_acceptDrops(qtf_live(self, 'QWidget%acceptDrops')))
+    end function qwidget_acceptDrops
+
+    !> The screen the widget is on.
+    function qwidget_screen(self) result(res)
+        class(QWidget), intent(in) :: self
+        type(QScreen) :: res
+        call res%attach(qtf_qwidget_screen(qtf_live(self, 'QWidget%screen')))
+    end function qwidget_screen
 
     !> Physical pixels per logical pixel of the widget's screen (2 on a typical HiDPI display).
     function qwidget_devicePixelRatio(self) result(res)
@@ -2539,7 +2743,7 @@ contains
     !> Show an image instead of text (copied; see QPixmap_fromImage).
     subroutine qlabel_setPixmap(self, pixmap)
         class(QLabel), intent(in) :: self
-        type(QPixmap), intent(in) :: pixmap
+        class(QPixmap), intent(in) :: pixmap
         call qtf_qlabel_setPixmap(qtf_live(self, 'QLabel%setPixmap'), pixmap%ptr)
     end subroutine qlabel_setPixmap
 
@@ -2621,7 +2825,7 @@ contains
     !> Show an icon on the button (copied).
     subroutine qabstractbutton_setIcon(self, icon)
         class(QAbstractButton), intent(in) :: self
-        type(QIcon), intent(in) :: icon
+        class(QIcon), intent(in) :: icon
         call qtf_qabstractbutton_setIcon(qtf_live(self, 'QAbstractButton%setIcon'), icon%ptr)
     end subroutine qabstractbutton_setIcon
 
@@ -4044,6 +4248,92 @@ contains
         call qtf_qtfmodelrequest_setInt(self%ptr, int(value, c_int))
     end subroutine qtfmodelrequest_setInt
 
+    !> Show an icon before the text (copied).
+    subroutine qtfmodelrequest_setIcon(self, icon)
+        class(QtfModelRequest), intent(in) :: self
+        class(QIcon), intent(in) :: icon
+        call qtf_qtfmodelrequest_setIcon(self%ptr, icon%ptr)
+    end subroutine qtfmodelrequest_setIcon
+
+    !> Show a color swatch before the text.
+    subroutine qtfmodelrequest_setIconColor(self, color)
+        class(QtfModelRequest), intent(in) :: self
+        type(QColor), intent(in) :: color
+        call qtf_qtfmodelrequest_setIconColor(self%ptr, int(color%r, c_int), int(color%g, c_int), int(color%b, &
+                c_int), int(color%a, c_int), qtf_int(color%valid))
+    end subroutine qtfmodelrequest_setIconColor
+
+    !> Give the cell a check box, checked or not; clicks arrive at the model's `checkChanged`.
+    subroutine qtfmodelrequest_setChecked(self, checked)
+        class(QtfModelRequest), intent(in) :: self
+        logical, intent(in) :: checked
+        call qtf_qtfmodelrequest_setChecked(self%ptr, qtf_int(checked))
+    end subroutine qtfmodelrequest_setChecked
+
+    !> The tool tip shown when hovering over the cell.
+    subroutine qtfmodelrequest_setToolTip(self, text)
+        class(QtfModelRequest), intent(in) :: self
+        character(len=*), intent(in) :: text
+        call qtf_qtfmodelrequest_setToolTip(self%ptr, text, len(text, c_int))
+    end subroutine qtfmodelrequest_setToolTip
+
+    !> The text shown in the status bar when hovering over the cell.
+    subroutine qtfmodelrequest_setStatusTip(self, text)
+        class(QtfModelRequest), intent(in) :: self
+        character(len=*), intent(in) :: text
+        call qtf_qtfmodelrequest_setStatusTip(self%ptr, text, len(text, c_int))
+    end subroutine qtfmodelrequest_setStatusTip
+
+    !> The text color.
+    subroutine qtfmodelrequest_setForeground(self, color)
+        class(QtfModelRequest), intent(in) :: self
+        type(QColor), intent(in) :: color
+        call qtf_qtfmodelrequest_setForeground(self%ptr, int(color%r, c_int), int(color%g, c_int), int(color%b, &
+                c_int), int(color%a, c_int), qtf_int(color%valid))
+    end subroutine qtfmodelrequest_setForeground
+
+    !> The background color.
+    subroutine qtfmodelrequest_setBackground(self, color)
+        class(QtfModelRequest), intent(in) :: self
+        type(QColor), intent(in) :: color
+        call qtf_qtfmodelrequest_setBackground(self%ptr, int(color%r, c_int), int(color%g, c_int), int(color%b, &
+                c_int), int(color%a, c_int), qtf_int(color%valid))
+    end subroutine qtfmodelrequest_setBackground
+
+    !> Align the text (Qt_Align* flags, e.g. ior(Qt_AlignRight, Qt_AlignVCenter) for numbers).
+    subroutine qtfmodelrequest_setAlignment(self, flags)
+        class(QtfModelRequest), intent(in) :: self
+        integer, intent(in) :: flags
+        call qtf_qtfmodelrequest_setAlignment(self%ptr, int(flags, c_int))
+    end subroutine qtfmodelrequest_setAlignment
+
+    !> Show the text in bold.
+    subroutine qtfmodelrequest_setBold(self, bold)
+        class(QtfModelRequest), intent(in) :: self
+        logical, intent(in), optional :: bold
+        logical :: bold_
+        bold_ = .true.
+        if (present(bold)) bold_ = bold
+        call qtf_qtfmodelrequest_setBold(self%ptr, qtf_int(bold_))
+    end subroutine qtfmodelrequest_setBold
+
+    !> Show the text in italics.
+    subroutine qtfmodelrequest_setItalic(self, italic)
+        class(QtfModelRequest), intent(in) :: self
+        logical, intent(in), optional :: italic
+        logical :: italic_
+        italic_ = .true.
+        if (present(italic)) italic_ = italic
+        call qtf_qtfmodelrequest_setItalic(self%ptr, qtf_int(italic_))
+    end subroutine qtfmodelrequest_setItalic
+
+    !> The part being asked for (Qt_DisplayRole, Qt_DecorationRole, ...); slots may skip expensive work for the others.
+    function qtfmodelrequest_role(self) result(res)
+        class(QtfModelRequest), intent(in) :: self
+        integer :: res
+        res = qtf_qtfmodelrequest_role(self%ptr)
+    end function qtfmodelrequest_role
+
     !> Bind to a C++ QtfTableModel and its signals.
     subroutine qtftablemodel_attach(self, ptr)
         class(QtfTableModel), intent(inout) :: self
@@ -4052,6 +4342,7 @@ contains
         self%dataRequested = QSignalModelData(ptr, QTF_SIG_QTFTABLEMODEL_DATAREQUESTED, self%serial)
         self%dataEdited = QSignalModelEdit(ptr, QTF_SIG_QTFTABLEMODEL_DATAEDITED, self%serial)
         self%sortRequested = QSignalInt2(ptr, QTF_SIG_QTFTABLEMODEL_SORTREQUESTED, self%serial)
+        self%checkChanged = QSignalInt3(ptr, QTF_SIG_QTFTABLEMODEL_CHECKCHANGED, self%serial)
     end subroutine qtftablemodel_attach
 
     !> A table model of the given shape.
@@ -4145,6 +4436,60 @@ contains
                 int(column, c_int), text, len(text, c_int)))
     end function qtftablemodel_setDataText
 
+    !> True if the cell has a check box (its slot calls `request%setChecked`).
+    function qtftablemodel_isCheckable(self, row, column) result(res)
+        class(QtfTableModel), intent(in) :: self
+        integer, intent(in) :: row
+        integer, intent(in) :: column
+        logical :: res
+        res = qtf_logical(qtf_qtftablemodel_isCheckable(qtf_live(self, 'QtfTableModel%isCheckable'), int(row, c_int), &
+                int(column, c_int)))
+    end function qtftablemodel_isCheckable
+
+    !> True if the cell's check box is checked, as the view would show it.
+    function qtftablemodel_isChecked(self, row, column) result(res)
+        class(QtfTableModel), intent(in) :: self
+        integer, intent(in) :: row
+        integer, intent(in) :: column
+        logical :: res
+        res = qtf_logical(qtf_qtftablemodel_isChecked(qtf_live(self, 'QtfTableModel%isChecked'), int(row, c_int), &
+                int(column, c_int)))
+    end function qtftablemodel_isChecked
+
+    !> Click a check box as the user would (calls the `checkChanged` slots); false if nobody listens.
+    function qtftablemodel_setChecked(self, row, column, checked) result(res)
+        class(QtfTableModel), intent(in) :: self
+        integer, intent(in) :: row
+        integer, intent(in) :: column
+        logical, intent(in) :: checked
+        logical :: res
+        res = qtf_logical(qtf_qtftablemodel_setChecked(qtf_live(self, 'QtfTableModel%setChecked'), int(row, c_int), &
+                int(column, c_int), qtf_int(checked)))
+    end function qtftablemodel_setChecked
+
+    !> The tool tip of a cell, as the view would show it.
+    function qtftablemodel_toolTip(self, row, column) result(res)
+        class(QtfTableModel), intent(in) :: self
+        integer, intent(in) :: row
+        integer, intent(in) :: column
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qtftablemodel_toolTip(qtf_live(self, 'QtfTableModel%toolTip'), int(row, c_int), int(column, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function qtftablemodel_toolTip
+
+    !> A list model with `rows` rows.
+    function qtflistmodel_new(rows, parent) result(res)
+        integer, intent(in), optional :: rows
+        class(QObject), intent(in), optional :: parent
+        type(QtfListModel) :: res
+        integer(c_int) :: rows_
+        rows_ = 0
+        if (present(rows)) rows_ = int(rows, c_int)
+        call res%attach(qtf_qtflistmodel_new(rows_, qtf_ptr(parent)))
+    end function qtflistmodel_new
+
     !> Bind to a C++ QAbstractItemView and its signals.
     subroutine qabstractitemview_attach(self, ptr)
         class(QAbstractItemView), intent(inout) :: self
@@ -4196,6 +4541,15 @@ contains
         call qtf_qabstractitemview_setAlternatingRowColors(qtf_live(self, &
                 'QAbstractItemView%setAlternatingRowColors'), qtf_int(enable))
     end subroutine qabstractitemview_setAlternatingRowColors
+
+    !> The size of the items' icons.
+    subroutine qabstractitemview_setIconSize(self, width, height)
+        class(QAbstractItemView), intent(in) :: self
+        integer, intent(in) :: width
+        integer, intent(in) :: height
+        call qtf_qabstractitemview_setIconSize(qtf_live(self, 'QAbstractItemView%setIconSize'), int(width, c_int), &
+                int(height, c_int))
+    end subroutine qabstractitemview_setIconSize
 
     !> Single, multiple, ... selection (QAbstractItemView_* constants).
     subroutine qabstractitemview_setSelectionMode(self, mode)
@@ -4359,6 +4713,113 @@ contains
         call qtf_qtableview_setColumnHidden(qtf_live(self, 'QTableView%setColumnHidden'), int(column, c_int), &
                 qtf_int(hide))
     end subroutine qtableview_setColumnHidden
+
+    !> Create a list view.
+    function qlistview_new(parent) result(res)
+        class(QWidget), intent(in), optional :: parent
+        type(QListView) :: res
+        call res%attach(qtf_qlistview_new(qtf_ptr(parent)))
+    end function qlistview_new
+
+    !> QListView_ListMode (default) or QListView_IconMode (large icons in a grid).
+    subroutine qlistview_setViewMode(self, mode)
+        class(QListView), intent(in) :: self
+        integer, intent(in) :: mode
+        call qtf_qlistview_setViewMode(qtf_live(self, 'QListView%setViewMode'), int(mode, c_int))
+    end subroutine qlistview_setViewMode
+
+    !> Lay items out QListView_TopToBottom (list mode default) or QListView_LeftToRight (icon mode default).
+    subroutine qlistview_setFlow(self, flow)
+        class(QListView), intent(in) :: self
+        integer, intent(in) :: flow
+        call qtf_qlistview_setFlow(qtf_live(self, 'QListView%setFlow'), int(flow, c_int))
+    end subroutine qlistview_setFlow
+
+    !> Wrap items into more rows or columns when the flow reaches the edge.
+    subroutine qlistview_setWrapping(self, enable)
+        class(QListView), intent(in) :: self
+        logical, intent(in) :: enable
+        call qtf_qlistview_setWrapping(qtf_live(self, 'QListView%setWrapping'), qtf_int(enable))
+    end subroutine qlistview_setWrapping
+
+    !> Space around each item, in pixels.
+    subroutine qlistview_setSpacing(self, space)
+        class(QListView), intent(in) :: self
+        integer, intent(in) :: space
+        call qtf_qlistview_setSpacing(qtf_live(self, 'QListView%setSpacing'), int(space, c_int))
+    end subroutine qlistview_setSpacing
+
+    !> Lay items out on a fixed grid (icon mode).
+    subroutine qlistview_setGridSize(self, width, height)
+        class(QListView), intent(in) :: self
+        integer, intent(in) :: width
+        integer, intent(in) :: height
+        call qtf_qlistview_setGridSize(qtf_live(self, 'QListView%setGridSize'), int(width, c_int), int(height, c_int))
+    end subroutine qlistview_setGridSize
+
+    !> Promise equal item sizes (faster for long lists).
+    subroutine qlistview_setUniformItemSizes(self, enable)
+        class(QListView), intent(in) :: self
+        logical, intent(in) :: enable
+        call qtf_qlistview_setUniformItemSizes(qtf_live(self, 'QListView%setUniformItemSizes'), qtf_int(enable))
+    end subroutine qlistview_setUniformItemSizes
+
+    !> QListView_Adjust: lay items out again when the view is resized.
+    subroutine qlistview_setResizeMode(self, mode)
+        class(QListView), intent(in) :: self
+        integer, intent(in) :: mode
+        call qtf_qlistview_setResizeMode(qtf_live(self, 'QListView%setResizeMode'), int(mode, c_int))
+    end subroutine qlistview_setResizeMode
+
+    !> Whether the user can move items (QListView_Static, _Free, _Snap).
+    subroutine qlistview_setMovement(self, movement)
+        class(QListView), intent(in) :: self
+        integer, intent(in) :: movement
+        call qtf_qlistview_setMovement(qtf_live(self, 'QListView%setMovement'), int(movement, c_int))
+    end subroutine qlistview_setMovement
+
+    !> Wrap long item text.
+    subroutine qlistview_setWordWrap(self, on)
+        class(QListView), intent(in) :: self
+        logical, intent(in) :: on
+        call qtf_qlistview_setWordWrap(qtf_live(self, 'QListView%setWordWrap'), qtf_int(on))
+    end subroutine qlistview_setWordWrap
+
+    !> The column of the model to show (default 0).
+    subroutine qlistview_setModelColumn(self, column)
+        class(QListView), intent(in) :: self
+        integer, intent(in) :: column
+        call qtf_qlistview_setModelColumn(qtf_live(self, 'QListView%setModelColumn'), int(column, c_int))
+    end subroutine qlistview_setModelColumn
+
+    !> Hide or show a row.
+    subroutine qlistview_setRowHidden(self, row, hide)
+        class(QListView), intent(in) :: self
+        integer, intent(in) :: row
+        logical, intent(in) :: hide
+        call qtf_qlistview_setRowHidden(qtf_live(self, 'QListView%setRowHidden'), int(row, c_int), qtf_int(hide))
+    end subroutine qlistview_setRowHidden
+
+    !> The current row (-1 if none).
+    function qlistview_currentRow(self) result(res)
+        class(QListView), intent(in) :: self
+        integer :: res
+        res = qtf_qlistview_currentRow(qtf_live(self, 'QListView%currentRow'))
+    end function qlistview_currentRow
+
+    !> Make `row` the current item.
+    subroutine qlistview_setCurrentRow(self, row)
+        class(QListView), intent(in) :: self
+        integer, intent(in) :: row
+        call qtf_qlistview_setCurrentRow(qtf_live(self, 'QListView%setCurrentRow'), int(row, c_int))
+    end subroutine qlistview_setCurrentRow
+
+    !> Scroll so that `row` is visible.
+    subroutine qlistview_scrollToRow(self, row)
+        class(QListView), intent(in) :: self
+        integer, intent(in) :: row
+        call qtf_qlistview_scrollToRow(qtf_live(self, 'QListView%scrollToRow'), int(row, c_int))
+    end subroutine qlistview_scrollToRow
 
     !> Bind to a C++ QTreeView and its signals.
     subroutine qtreeview_attach(self, ptr)
@@ -4550,6 +5011,7 @@ contains
         call self%QAbstractItemModel%attach(ptr)
         self%dataRequested = QSignalModelData(ptr, QTF_SIG_QTFTREEMODEL_DATAREQUESTED, self%serial)
         self%dataEdited = QSignalModelEdit(ptr, QTF_SIG_QTFTREEMODEL_DATAEDITED, self%serial)
+        self%checkChanged = QSignalInt3(ptr, QTF_SIG_QTFTREEMODEL_CHECKCHANGED, self%serial)
     end subroutine qtftreemodel_attach
 
     !> An empty tree model with `columns` columns.
@@ -4836,12 +5298,34 @@ contains
         res = qtf_qfilesystemmodel_childCount(qtf_live(self, 'QFileSystemModel%childCount'), path, len(path, c_int))
     end function qfilesystemmodel_childCount
 
+    !> Bind to a C++ QtfItemDelegate and its signals.
+    subroutine qtfitemdelegate_attach(self, ptr)
+        class(QtfItemDelegate), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QObject%attach(ptr)
+        self%paintCell = QSignalPaintCell(ptr, QTF_SIG_QTFITEMDELEGATE_PAINTCELL, self%serial)
+    end subroutine qtfitemdelegate_attach
+
     !> A delegate (give it the view as parent).
     function qtfitemdelegate_new(parent) result(res)
         class(QObject), intent(in), optional :: parent
         type(QtfItemDelegate) :: res
         call res%attach(qtf_qtfitemdelegate_new(qtf_ptr(parent)))
     end function qtfitemdelegate_new
+
+    !> The size of each cell (-1: Qt's default for that dimension).
+    subroutine qtfitemdelegate_setSizeHint(self, width, height)
+        class(QtfItemDelegate), intent(in) :: self
+        integer, intent(in), optional :: width
+        integer, intent(in), optional :: height
+        integer(c_int) :: width_
+        integer(c_int) :: height_
+        width_ = -1
+        if (present(width)) width_ = int(width, c_int)
+        height_ = -1
+        if (present(height)) height_ = int(height, c_int)
+        call qtf_qtfitemdelegate_setSizeHint(qtf_live(self, 'QtfItemDelegate%setSizeHint'), width_, height_)
+    end subroutine qtfitemdelegate_setSizeHint
 
     !> Edit with a combo box offering `choices`.
     subroutine qtfitemdelegate_setChoices(self, choices)
@@ -4868,6 +5352,136 @@ contains
         class(QtfItemDelegate), intent(in) :: self
         call qtf_qtfitemdelegate_clear(qtf_live(self, 'QtfItemDelegate%clear'))
     end subroutine qtfitemdelegate_clear
+
+    !> The painter (do not `end` it).
+    function qtfpaintcell_painter(self) result(res)
+        class(QtfPaintCell), intent(in) :: self
+        type(QPainter) :: res
+        res%ptr = qtf_qtfpaintcell_painter(self%ptr)
+    end function qtfpaintcell_painter
+
+    !> The cell's row in the model (for a tree: its row under its parent).
+    function qtfpaintcell_row(self) result(res)
+        class(QtfPaintCell), intent(in) :: self
+        integer :: res
+        res = qtf_qtfpaintcell_row(self%ptr)
+    end function qtfpaintcell_row
+
+    !> The cell's column.
+    function qtfpaintcell_column(self) result(res)
+        class(QtfPaintCell), intent(in) :: self
+        integer :: res
+        res = qtf_qtfpaintcell_column(self%ptr)
+    end function qtfpaintcell_column
+
+    !> The cell's node, for a QtfTreeModel (-1 otherwise).
+    function qtfpaintcell_node(self) result(res)
+        class(QtfPaintCell), intent(in) :: self
+        integer :: res
+        res = qtf_qtfpaintcell_node(self%ptr)
+    end function qtfpaintcell_node
+
+    !> The cell's row in the view (differs from `row()` behind a sorting proxy).
+    function qtfpaintcell_viewRow(self) result(res)
+        class(QtfPaintCell), intent(in) :: self
+        integer :: res
+        res = qtf_qtfpaintcell_viewRow(self%ptr)
+    end function qtfpaintcell_viewRow
+
+    !> Left of the cell.
+    function qtfpaintcell_x(self) result(res)
+        class(QtfPaintCell), intent(in) :: self
+        integer :: res
+        res = qtf_qtfpaintcell_x(self%ptr)
+    end function qtfpaintcell_x
+
+    !> Top of the cell.
+    function qtfpaintcell_y(self) result(res)
+        class(QtfPaintCell), intent(in) :: self
+        integer :: res
+        res = qtf_qtfpaintcell_y(self%ptr)
+    end function qtfpaintcell_y
+
+    !> Width of the cell.
+    function qtfpaintcell_width(self) result(res)
+        class(QtfPaintCell), intent(in) :: self
+        integer :: res
+        res = qtf_qtfpaintcell_width(self%ptr)
+    end function qtfpaintcell_width
+
+    !> Height of the cell.
+    function qtfpaintcell_height(self) result(res)
+        class(QtfPaintCell), intent(in) :: self
+        integer :: res
+        res = qtf_qtfpaintcell_height(self%ptr)
+    end function qtfpaintcell_height
+
+    !> The cell's text (from the model).
+    function qtfpaintcell_text(self) result(res)
+        class(QtfPaintCell), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qtfpaintcell_text(self%ptr, n_)
+        res = qtf_take_string(p_, n_)
+    end function qtfpaintcell_text
+
+    !> The color for text in this cell's state (the highlight text color when selected).
+    function qtfpaintcell_textColor(self) result(res)
+        class(QtfPaintCell), intent(in) :: self
+        type(QColor) :: res
+        integer(c_int) :: r_r
+        integer(c_int) :: r_g
+        integer(c_int) :: r_b
+        integer(c_int) :: r_a
+        integer(c_int) :: r_valid
+        call qtf_qtfpaintcell_textColor(self%ptr, r_r, r_g, r_b, r_a, r_valid)
+        res%r = int(r_r)
+        res%g = int(r_g)
+        res%b = int(r_b)
+        res%a = int(r_a)
+        res%valid = qtf_logical(r_valid)
+    end function qtfpaintcell_textColor
+
+    !> True if the cell is selected.
+    function qtfpaintcell_isSelected(self) result(res)
+        class(QtfPaintCell), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtfpaintcell_isSelected(self%ptr))
+    end function qtfpaintcell_isSelected
+
+    !> True if the cell is the current one and the view has focus.
+    function qtfpaintcell_hasFocus(self) result(res)
+        class(QtfPaintCell), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtfpaintcell_hasFocus(self%ptr))
+    end function qtfpaintcell_hasFocus
+
+    !> True if the mouse is over the cell.
+    function qtfpaintcell_isHovered(self) result(res)
+        class(QtfPaintCell), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtfpaintcell_isHovered(self%ptr))
+    end function qtfpaintcell_isHovered
+
+    !> True if the view is enabled.
+    function qtfpaintcell_isEnabled(self) result(res)
+        class(QtfPaintCell), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtfpaintcell_isEnabled(self%ptr))
+    end function qtfpaintcell_isEnabled
+
+    !> Draw the cell's background: selection, hover and the model's background color.
+    subroutine qtfpaintcell_drawBackground(self)
+        class(QtfPaintCell), intent(in) :: self
+        call qtf_qtfpaintcell_drawBackground(self%ptr)
+    end subroutine qtfpaintcell_drawBackground
+
+    !> Draw the cell as Qt normally would (background, icon, text, check box).
+    subroutine qtfpaintcell_drawDefault(self)
+        class(QtfPaintCell), intent(in) :: self
+        call qtf_qtfpaintcell_drawDefault(self%ptr)
+    end subroutine qtfpaintcell_drawDefault
 
     !> A cell item with `text`.
     function qtablewidgetitem_new(text) result(res)
@@ -4927,7 +5541,7 @@ contains
     !> Show an icon in the cell (copied).
     subroutine qtablewidgetitem_setIcon(self, icon)
         class(QTableWidgetItem), intent(in) :: self
-        type(QIcon), intent(in) :: icon
+        class(QIcon), intent(in) :: icon
         call qtf_qtablewidgetitem_setIcon(self%ptr, icon%ptr)
     end subroutine qtablewidgetitem_setIcon
 
@@ -5026,7 +5640,7 @@ contains
         class(QTableWidget), intent(in) :: self
         integer, intent(in) :: row
         integer, intent(in) :: column
-        type(QTableWidgetItem), intent(in) :: item
+        class(QTableWidgetItem), intent(in) :: item
         call qtf_qtablewidget_setItem(qtf_live(self, 'QTableWidget%setItem'), int(row, c_int), int(column, c_int), &
                 item%ptr)
     end subroutine qtablewidget_setItem
@@ -5244,7 +5858,7 @@ contains
 
     !> A child of `parent` with the given column texts.
     function qtreewidgetitem_newChild(parent, texts) result(res)
-        type(QTreeWidgetItem), intent(in) :: parent
+        class(QTreeWidgetItem), intent(in) :: parent
         character(len=*), intent(in) :: texts(:)
         type(QTreeWidgetItem) :: res
         res%ptr = qtf_qtreewidgetitem_newChild(parent%ptr, texts, len(texts, c_int), int(size(texts), c_int))
@@ -5294,7 +5908,7 @@ contains
     !> Append a child (this item takes ownership).
     subroutine qtreewidgetitem_addChild(self, child)
         class(QTreeWidgetItem), intent(in) :: self
-        type(QTreeWidgetItem), intent(in) :: child
+        class(QTreeWidgetItem), intent(in) :: child
         call qtf_qtreewidgetitem_addChild(self%ptr, child%ptr)
     end subroutine qtreewidgetitem_addChild
 
@@ -5331,7 +5945,7 @@ contains
     subroutine qtreewidgetitem_setIcon(self, column, icon)
         class(QTreeWidgetItem), intent(in) :: self
         integer, intent(in) :: column
-        type(QIcon), intent(in) :: icon
+        class(QIcon), intent(in) :: icon
         call qtf_qtreewidgetitem_setIcon(self%ptr, int(column, c_int), icon%ptr)
     end subroutine qtreewidgetitem_setIcon
 
@@ -5400,7 +6014,7 @@ contains
     !> Append a top-level item (the tree takes ownership).
     subroutine qtreewidget_addTopLevelItem(self, item)
         class(QTreeWidget), intent(in) :: self
-        type(QTreeWidgetItem), intent(in) :: item
+        class(QTreeWidgetItem), intent(in) :: item
         call qtf_qtreewidget_addTopLevelItem(qtf_live(self, 'QTreeWidget%addTopLevelItem'), item%ptr)
     end subroutine qtreewidget_addTopLevelItem
 
@@ -5429,7 +6043,7 @@ contains
     !> Make `item` the current item.
     subroutine qtreewidget_setCurrentItem(self, item)
         class(QTreeWidget), intent(in) :: self
-        type(QTreeWidgetItem), intent(in) :: item
+        class(QTreeWidgetItem), intent(in) :: item
         call qtf_qtreewidget_setCurrentItem(qtf_live(self, 'QTreeWidget%setCurrentItem'), item%ptr)
     end subroutine qtreewidget_setCurrentItem
 
@@ -5853,7 +6467,7 @@ contains
     subroutine qtabwidget_setTabIcon(self, index, icon)
         class(QTabWidget), intent(in) :: self
         integer, intent(in) :: index
-        type(QIcon), intent(in) :: icon
+        class(QIcon), intent(in) :: icon
         call qtf_qtabwidget_setTabIcon(qtf_live(self, 'QTabWidget%setTabIcon'), int(index, c_int), icon%ptr)
     end subroutine qtabwidget_setTabIcon
 
@@ -7622,7 +8236,7 @@ contains
     subroutine qtoolbox_setItemIcon(self, index, icon)
         class(QToolBox), intent(in) :: self
         integer, intent(in) :: index
-        type(QIcon), intent(in) :: icon
+        class(QIcon), intent(in) :: icon
         call qtf_qtoolbox_setItemIcon(qtf_live(self, 'QToolBox%setItemIcon'), int(index, c_int), icon%ptr)
     end subroutine qtoolbox_setItemIcon
 
@@ -7660,7 +8274,7 @@ contains
 
     !> A splash screen showing `pixmap` (copied).
     function qsplashscreen_new(pixmap) result(res)
-        type(QPixmap), intent(in) :: pixmap
+        class(QPixmap), intent(in) :: pixmap
         type(QSplashScreen) :: res
         call res%attach(qtf_qsplashscreen_new(pixmap%ptr))
     end function qsplashscreen_new
@@ -8370,6 +8984,31 @@ contains
             call self%f(int(args%i(1)), int(args%i(2)), request)
         end if
     end subroutine model_data_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalpaintcell_connect(self, slot, data, connection)
+        class(QSignalPaintCell), intent(in) :: self
+        procedure(qt_slot_paint_cell) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
+        type(paint_cell_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self, h, data, connection)
+    end subroutine qsignalpaintcell_connect
+
+    !> Call the slot with the cell (borrowed: valid during the call).
+    subroutine paint_cell_handler_invoke(self, args, data)
+        class(paint_cell_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QtfPaintCell) :: cell
+        cell%ptr = args%p
+        if (associated(data)) then
+            call self%f(cell, data)
+        else
+            call self%f(cell)
+        end if
+    end subroutine paint_cell_handler_invoke
 
     !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalmodeledit_connect(self, slot, data, connection)

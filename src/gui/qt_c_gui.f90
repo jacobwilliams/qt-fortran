@@ -8,12 +8,15 @@ module qt_c_gui
     private
 
     ! Signal ids: must match `enum qtf_signal` in src/shim/qtf_common.h.
-    integer(c_int), parameter, public :: QTF_SIG_QACTION_TRIGGERED = 2000
-    integer(c_int), parameter, public :: QTF_SIG_QACTION_TOGGLED = 2001
-    integer(c_int), parameter, public :: QTF_SIG_QWINDOW_WIDTHCHANGED = 2002
-    integer(c_int), parameter, public :: QTF_SIG_QWINDOW_HEIGHTCHANGED = 2003
-    integer(c_int), parameter, public :: QTF_SIG_QWINDOW_VISIBLECHANGED = 2004
-    integer(c_int), parameter, public :: QTF_SIG_QWINDOW_ACTIVECHANGED = 2005
+    integer(c_int), parameter, public :: QTF_SIG_QCLIPBOARD_DATACHANGED = 2000
+    integer(c_int), parameter, public :: QTF_SIG_QSCREEN_GEOMETRYCHANGED = 2001
+    integer(c_int), parameter, public :: QTF_SIG_QSCREEN_LOGICALDOTSPERINCHCHANGED = 2002
+    integer(c_int), parameter, public :: QTF_SIG_QACTION_TRIGGERED = 2003
+    integer(c_int), parameter, public :: QTF_SIG_QACTION_TOGGLED = 2004
+    integer(c_int), parameter, public :: QTF_SIG_QWINDOW_WIDTHCHANGED = 2005
+    integer(c_int), parameter, public :: QTF_SIG_QWINDOW_HEIGHTCHANGED = 2006
+    integer(c_int), parameter, public :: QTF_SIG_QWINDOW_VISIBLECHANGED = 2007
+    integer(c_int), parameter, public :: QTF_SIG_QWINDOW_ACTIVECHANGED = 2008
 
     interface
 
@@ -658,6 +661,227 @@ module qt_c_gui
             type(c_ptr), value :: image
         end subroutine qtf_qpainter_drawImageRect
 
+        !> Draw `pixmap` with its top-left corner at (x, y).
+        !>
+        !> C: `void qtf_qpainter_drawPixmap(void *self, int x, int y, void *pixmap)`
+        subroutine qtf_qpainter_drawPixmap(self, x, y, pixmap) bind(C, name='qtf_qpainter_drawPixmap')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: x
+            integer(c_int), value :: y
+            type(c_ptr), value :: pixmap
+        end subroutine qtf_qpainter_drawPixmap
+
+        !> Draw an arc of the ellipse inscribed in (x, y, w, h): angles in degrees, counterclockwise from 3 o'clock.
+        !>
+        !> C: `void qtf_qpainter_drawArc(void *self, double x, double y, double w, double h, double startAngle, double spanAngle)`
+        subroutine qtf_qpainter_drawArc(self, x, y, w, h, startAngle, spanAngle) bind(C, name='qtf_qpainter_drawArc')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double), value :: w
+            real(c_double), value :: h
+            real(c_double), value :: startAngle
+            real(c_double), value :: spanAngle
+        end subroutine qtf_qpainter_drawArc
+
+        !> Draw a pie segment (filled with the brush); angles as for `drawArc`.
+        !>
+        !> C: `void qtf_qpainter_drawPie(void *self, double x, double y, double w, double h, double startAngle, double spanAngle)`
+        subroutine qtf_qpainter_drawPie(self, x, y, w, h, startAngle, spanAngle) bind(C, name='qtf_qpainter_drawPie')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double), value :: w
+            real(c_double), value :: h
+            real(c_double), value :: startAngle
+            real(c_double), value :: spanAngle
+        end subroutine qtf_qpainter_drawPie
+
+        !> Draw a chord (an arc closed by a straight line); angles as for `drawArc`.
+        !>
+        !> C: `void qtf_qpainter_drawChord(void *self, double x, double y, double w, double h, double startAngle, double spanAngle)`
+        subroutine qtf_qpainter_drawChord(self, x, y, w, h, startAngle, spanAngle) &
+                bind(C, name='qtf_qpainter_drawChord')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double), value :: w
+            real(c_double), value :: h
+            real(c_double), value :: startAngle
+            real(c_double), value :: spanAngle
+        end subroutine qtf_qpainter_drawChord
+
+        !> Draw a path: outlined with the pen, filled with the brush.
+        !>
+        !> C: `void qtf_qpainter_drawPath(void *self, void *path)`
+        subroutine qtf_qpainter_drawPath(self, path) bind(C, name='qtf_qpainter_drawPath')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: path
+        end subroutine qtf_qpainter_drawPath
+
+        !> Fill a path with `color` (no outline).
+        !>
+        !> C: `void qtf_qpainter_fillPath(void *self, void *path, int color_r, int color_g, int color_b, int color_a)`
+        subroutine qtf_qpainter_fillPath(self, path, color_r, color_g, color_b, color_a) &
+                bind(C, name='qtf_qpainter_fillPath')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: path
+            integer(c_int), value :: color_r
+            integer(c_int), value :: color_g
+            integer(c_int), value :: color_b
+            integer(c_int), value :: color_a
+        end subroutine qtf_qpainter_fillPath
+
+        !> Fill a path with a gradient (no outline).
+        !>
+        !> C: `void qtf_qpainter_fillPathGradient(void *self, void *path, void *gradient)`
+        subroutine qtf_qpainter_fillPathGradient(self, path, gradient) bind(C, name='qtf_qpainter_fillPathGradient')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: path
+            type(c_ptr), value :: gradient
+        end subroutine qtf_qpainter_fillPathGradient
+
+        !> Draw the outline of a path with `pen` (no fill).
+        !>
+        !> C: `void qtf_qpainter_strokePath(void *self, void *path, int pen_color_r, int pen_color_g, int pen_color_b, int pen_color_a, double pen_width, int pen_style)`
+        subroutine qtf_qpainter_strokePath(self, path, pen_color_r, pen_color_g, pen_color_b, pen_color_a, pen_width, pen_style) &
+                bind(C, name='qtf_qpainter_strokePath')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: path
+            integer(c_int), value :: pen_color_r
+            integer(c_int), value :: pen_color_g
+            integer(c_int), value :: pen_color_b
+            integer(c_int), value :: pen_color_a
+            real(c_double), value :: pen_width
+            integer(c_int), value :: pen_style
+        end subroutine qtf_qpainter_strokePath
+
+        !> Fill shapes with a gradient (copied).
+        !>
+        !> C: `void qtf_qpainter_setBrushGradient(void *self, void *gradient)`
+        subroutine qtf_qpainter_setBrushGradient(self, gradient) bind(C, name='qtf_qpainter_setBrushGradient')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: gradient
+        end subroutine qtf_qpainter_setBrushGradient
+
+        !> Fill a rectangle with a gradient.
+        !>
+        !> C: `void qtf_qpainter_fillRectGradient(void *self, double x, double y, double w, double h, void *gradient)`
+        subroutine qtf_qpainter_fillRectGradient(self, x, y, w, h, gradient) &
+                bind(C, name='qtf_qpainter_fillRectGradient')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double), value :: w
+            real(c_double), value :: h
+            type(c_ptr), value :: gradient
+        end subroutine qtf_qpainter_fillRectGradient
+
+        !> Draw only inside the rectangle (in the current coordinates).
+        !>
+        !> C: `void qtf_qpainter_setClipRect(void *self, double x, double y, double w, double h)`
+        subroutine qtf_qpainter_setClipRect(self, x, y, w, h) bind(C, name='qtf_qpainter_setClipRect')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double), value :: w
+            real(c_double), value :: h
+        end subroutine qtf_qpainter_setClipRect
+
+        !> Draw only inside the path.
+        !>
+        !> C: `void qtf_qpainter_setClipPath(void *self, void *path)`
+        subroutine qtf_qpainter_setClipPath(self, path) bind(C, name='qtf_qpainter_setClipPath')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: path
+        end subroutine qtf_qpainter_setClipPath
+
+        !> Turn clipping on or off (off: draw everywhere).
+        !>
+        !> C: `void qtf_qpainter_setClipping(void *self, int enable)`
+        subroutine qtf_qpainter_setClipping(self, enable) bind(C, name='qtf_qpainter_setClipping')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enable
+        end subroutine qtf_qpainter_setClipping
+
+        !> True if clipping is on.
+        !>
+        !> C: `int qtf_qpainter_hasClipping(void *self)`
+        function qtf_qpainter_hasClipping(self) result(res) bind(C, name='qtf_qpainter_hasClipping')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qpainter_hasClipping
+
+        !> Shear the coordinate system by (sh, sv).
+        !>
+        !> C: `void qtf_qpainter_shear(void *self, double sh, double sv)`
+        subroutine qtf_qpainter_shear(self, sh, sv) bind(C, name='qtf_qpainter_shear')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: sh
+            real(c_double), value :: sv
+        end subroutine qtf_qpainter_shear
+
+        !> Set the coordinate transform (`combine`: multiply it onto the current one).
+        !>
+        !> C: `void qtf_qpainter_setTransform(void *self, void *transform, int combine)`
+        subroutine qtf_qpainter_setTransform(self, transform, combine) bind(C, name='qtf_qpainter_setTransform')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: transform
+            integer(c_int), value :: combine
+        end subroutine qtf_qpainter_setTransform
+
+        !> A copy of the current coordinate transform (delete it when done).
+        !>
+        !> C: `void *qtf_qpainter_transform(void *self)`
+        function qtf_qpainter_transform(self) result(res) bind(C, name='qtf_qpainter_transform')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qpainter_transform
+
+        !> Metrics of the current font (delete them when done).
+        !>
+        !> C: `void *qtf_qpainter_fontMetrics(void *self)`
+        function qtf_qpainter_fontMetrics(self) result(res) bind(C, name='qtf_qpainter_fontMetrics')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qpainter_fontMetrics
+
         !> Width in pixels of `text` in the current font.
         !>
         !> C: `int qtf_qpainter_textWidth(void *self, const char *text, int text_len)`
@@ -1014,6 +1238,1639 @@ module qt_c_gui
             type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qcontextmenuevent_modifiers
+
+        !> Release a path.
+        !>
+        !> C: `void qtf_qpainterpath_delete(void *self)`
+        subroutine qtf_qpainterpath_delete(self) bind(C, name='qtf_qpainterpath_delete')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qpainterpath_delete
+
+        !> An empty path.
+        !>
+        !> C: `void *qtf_qpainterpath_new(void)`
+        function qtf_qpainterpath_new() result(res) bind(C, name='qtf_qpainterpath_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr) :: res
+        end function qtf_qpainterpath_new
+
+        !> Start a new subpath at (x, y).
+        !>
+        !> C: `void qtf_qpainterpath_moveTo(void *self, double x, double y)`
+        subroutine qtf_qpainterpath_moveTo(self, x, y) bind(C, name='qtf_qpainterpath_moveTo')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+        end subroutine qtf_qpainterpath_moveTo
+
+        !> A straight line to (x, y).
+        !>
+        !> C: `void qtf_qpainterpath_lineTo(void *self, double x, double y)`
+        subroutine qtf_qpainterpath_lineTo(self, x, y) bind(C, name='qtf_qpainterpath_lineTo')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+        end subroutine qtf_qpainterpath_lineTo
+
+        !> A quadratic Bezier curve to (x, y) with control point (cx, cy).
+        !>
+        !> C: `void qtf_qpainterpath_quadTo(void *self, double cx, double cy, double x, double y)`
+        subroutine qtf_qpainterpath_quadTo(self, cx, cy, x, y) bind(C, name='qtf_qpainterpath_quadTo')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: cx
+            real(c_double), value :: cy
+            real(c_double), value :: x
+            real(c_double), value :: y
+        end subroutine qtf_qpainterpath_quadTo
+
+        !> A cubic Bezier curve to (x, y) with control points (c1x, c1y) and (c2x, c2y).
+        !>
+        !> C: `void qtf_qpainterpath_cubicTo(void *self, double c1x, double c1y, double c2x, double c2y, double x, double y)`
+        subroutine qtf_qpainterpath_cubicTo(self, c1x, c1y, c2x, c2y, x, y) bind(C, name='qtf_qpainterpath_cubicTo')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: c1x
+            real(c_double), value :: c1y
+            real(c_double), value :: c2x
+            real(c_double), value :: c2y
+            real(c_double), value :: x
+            real(c_double), value :: y
+        end subroutine qtf_qpainterpath_cubicTo
+
+        !> An arc of the ellipse inscribed in (x, y, w, h), joined to the current point by a line; angles in degrees, counterclockwise from 3 o'clock.
+        !>
+        !> C: `void qtf_qpainterpath_arcTo(void *self, double x, double y, double w, double h, double startAngle, double sweepLength)`
+        subroutine qtf_qpainterpath_arcTo(self, x, y, w, h, startAngle, sweepLength) &
+                bind(C, name='qtf_qpainterpath_arcTo')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double), value :: w
+            real(c_double), value :: h
+            real(c_double), value :: startAngle
+            real(c_double), value :: sweepLength
+        end subroutine qtf_qpainterpath_arcTo
+
+        !> Close the current subpath with a line to its start.
+        !>
+        !> C: `void qtf_qpainterpath_closeSubpath(void *self)`
+        subroutine qtf_qpainterpath_closeSubpath(self) bind(C, name='qtf_qpainterpath_closeSubpath')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qpainterpath_closeSubpath
+
+        !> Add a rectangle (a closed subpath).
+        !>
+        !> C: `void qtf_qpainterpath_addRect(void *self, double x, double y, double w, double h)`
+        subroutine qtf_qpainterpath_addRect(self, x, y, w, h) bind(C, name='qtf_qpainterpath_addRect')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double), value :: w
+            real(c_double), value :: h
+        end subroutine qtf_qpainterpath_addRect
+
+        !> Add a rectangle with corners rounded by radii (rx, ry).
+        !>
+        !> C: `void qtf_qpainterpath_addRoundedRect(void *self, double x, double y, double w, double h, double rx, double ry)`
+        subroutine qtf_qpainterpath_addRoundedRect(self, x, y, w, h, rx, ry) &
+                bind(C, name='qtf_qpainterpath_addRoundedRect')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double), value :: w
+            real(c_double), value :: h
+            real(c_double), value :: rx
+            real(c_double), value :: ry
+        end subroutine qtf_qpainterpath_addRoundedRect
+
+        !> Add the ellipse inscribed in (x, y, w, h).
+        !>
+        !> C: `void qtf_qpainterpath_addEllipse(void *self, double x, double y, double w, double h)`
+        subroutine qtf_qpainterpath_addEllipse(self, x, y, w, h) bind(C, name='qtf_qpainterpath_addEllipse')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double), value :: w
+            real(c_double), value :: h
+        end subroutine qtf_qpainterpath_addEllipse
+
+        !> Add a polygon through the points (x(i), y(i)) (not closed: call closeSubpath).
+        !>
+        !> C: `void qtf_qpainterpath_addPolygon(void *self, const double *x, const double *y, int n)`
+        subroutine qtf_qpainterpath_addPolygon(self, x, y, n) bind(C, name='qtf_qpainterpath_addPolygon')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), dimension(*), intent(in) :: x
+            real(c_double), dimension(*), intent(in) :: y
+            integer(c_int), value :: n
+        end subroutine qtf_qpainterpath_addPolygon
+
+        !> Add the outline of `text` with its baseline starting at (x, y) (default: the application font).
+        !>
+        !> C: `void qtf_qpainterpath_addText(void *self, double x, double y, const char *text, int text_len, const char *family, int family_len, double pointSize, int bold)`
+        subroutine qtf_qpainterpath_addText(self, x, y, text, text_len, family, family_len, pointSize, bold) &
+                bind(C, name='qtf_qpainterpath_addText')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+            character(kind=c_char), dimension(*), intent(in) :: family
+            integer(c_int), value :: family_len
+            real(c_double), value :: pointSize
+            integer(c_int), value :: bold
+        end subroutine qtf_qpainterpath_addText
+
+        !> Add the subpaths of another path.
+        !>
+        !> C: `void qtf_qpainterpath_addPath(void *self, void *other)`
+        subroutine qtf_qpainterpath_addPath(self, other) bind(C, name='qtf_qpainterpath_addPath')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: other
+        end subroutine qtf_qpainterpath_addPath
+
+        !> Move the whole path by (dx, dy).
+        !>
+        !> C: `void qtf_qpainterpath_translate(void *self, double dx, double dy)`
+        subroutine qtf_qpainterpath_translate(self, dx, dy) bind(C, name='qtf_qpainterpath_translate')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: dx
+            real(c_double), value :: dy
+        end subroutine qtf_qpainterpath_translate
+
+        !> How overlapping subpaths fill: Qt_OddEvenFill (default) or Qt_WindingFill.
+        !>
+        !> C: `void qtf_qpainterpath_setFillRule(void *self, int rule)`
+        subroutine qtf_qpainterpath_setFillRule(self, rule) bind(C, name='qtf_qpainterpath_setFillRule')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: rule
+        end subroutine qtf_qpainterpath_setFillRule
+
+        !> True if (x, y) is inside the path.
+        !>
+        !> C: `int qtf_qpainterpath_containsPoint(void *self, double x, double y)`
+        function qtf_qpainterpath_containsPoint(self, x, y) result(res) bind(C, name='qtf_qpainterpath_containsPoint')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            integer(c_int) :: res
+        end function qtf_qpainterpath_containsPoint
+
+        !> True if the path has no elements.
+        !>
+        !> C: `int qtf_qpainterpath_isEmpty(void *self)`
+        function qtf_qpainterpath_isEmpty(self) result(res) bind(C, name='qtf_qpainterpath_isEmpty')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qpainterpath_isEmpty
+
+        !> The length of the path.
+        !>
+        !> C: `double qtf_qpainterpath_length(void *self)`
+        function qtf_qpainterpath_length(self) result(res) bind(C, name='qtf_qpainterpath_length')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qpainterpath_length
+
+        !> The number of path elements (move-to, line-to and curve points).
+        !>
+        !> C: `int qtf_qpainterpath_elementCount(void *self)`
+        function qtf_qpainterpath_elementCount(self) result(res) bind(C, name='qtf_qpainterpath_elementCount')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qpainterpath_elementCount
+
+        !> x of the point at fraction `t` (0..1) of the path's length.
+        !>
+        !> C: `double qtf_qpainterpath_pointAtPercentX(void *self, double t)`
+        function qtf_qpainterpath_pointAtPercentX(self, t) result(res) bind(C, name='qtf_qpainterpath_pointAtPercentX')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: t
+            real(c_double) :: res
+        end function qtf_qpainterpath_pointAtPercentX
+
+        !> y of the point at fraction `t` (0..1) of the path's length.
+        !>
+        !> C: `double qtf_qpainterpath_pointAtPercentY(void *self, double t)`
+        function qtf_qpainterpath_pointAtPercentY(self, t) result(res) bind(C, name='qtf_qpainterpath_pointAtPercentY')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: t
+            real(c_double) :: res
+        end function qtf_qpainterpath_pointAtPercentY
+
+        !> Left of the bounding rectangle.
+        !>
+        !> C: `double qtf_qpainterpath_boundingX(void *self)`
+        function qtf_qpainterpath_boundingX(self) result(res) bind(C, name='qtf_qpainterpath_boundingX')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qpainterpath_boundingX
+
+        !> Top of the bounding rectangle.
+        !>
+        !> C: `double qtf_qpainterpath_boundingY(void *self)`
+        function qtf_qpainterpath_boundingY(self) result(res) bind(C, name='qtf_qpainterpath_boundingY')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qpainterpath_boundingY
+
+        !> Width of the bounding rectangle.
+        !>
+        !> C: `double qtf_qpainterpath_boundingWidth(void *self)`
+        function qtf_qpainterpath_boundingWidth(self) result(res) bind(C, name='qtf_qpainterpath_boundingWidth')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qpainterpath_boundingWidth
+
+        !> Height of the bounding rectangle.
+        !>
+        !> C: `double qtf_qpainterpath_boundingHeight(void *self)`
+        function qtf_qpainterpath_boundingHeight(self) result(res) bind(C, name='qtf_qpainterpath_boundingHeight')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qpainterpath_boundingHeight
+
+        !> A copy of the path (delete it when done).
+        !>
+        !> C: `void *qtf_qpainterpath_copy(void *self)`
+        function qtf_qpainterpath_copy(self) result(res) bind(C, name='qtf_qpainterpath_copy')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qpainterpath_copy
+
+        !> A new path: the union of the two filled areas.
+        !>
+        !> C: `void *qtf_qpainterpath_united(void *self, void *other)`
+        function qtf_qpainterpath_united(self, other) result(res) bind(C, name='qtf_qpainterpath_united')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: other
+            type(c_ptr) :: res
+        end function qtf_qpainterpath_united
+
+        !> A new path: the intersection of the two filled areas.
+        !>
+        !> C: `void *qtf_qpainterpath_intersected(void *self, void *other)`
+        function qtf_qpainterpath_intersected(self, other) result(res) bind(C, name='qtf_qpainterpath_intersected')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: other
+            type(c_ptr) :: res
+        end function qtf_qpainterpath_intersected
+
+        !> A new path: this area minus the other.
+        !>
+        !> C: `void *qtf_qpainterpath_subtracted(void *self, void *other)`
+        function qtf_qpainterpath_subtracted(self, other) result(res) bind(C, name='qtf_qpainterpath_subtracted')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: other
+            type(c_ptr) :: res
+        end function qtf_qpainterpath_subtracted
+
+        !> Release a gradient.
+        !>
+        !> C: `void qtf_qgradient_delete(void *self)`
+        subroutine qtf_qgradient_delete(self) bind(C, name='qtf_qgradient_delete')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qgradient_delete
+
+        !> The color at `position` (0..1) along the gradient.
+        !>
+        !> C: `void qtf_qgradient_setColorAt(void *self, double position, int color_r, int color_g, int color_b, int color_a)`
+        subroutine qtf_qgradient_setColorAt(self, position, color_r, color_g, color_b, color_a) &
+                bind(C, name='qtf_qgradient_setColorAt')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: position
+            integer(c_int), value :: color_r
+            integer(c_int), value :: color_g
+            integer(c_int), value :: color_b
+            integer(c_int), value :: color_a
+        end subroutine qtf_qgradient_setColorAt
+
+        !> Beyond the ends: QGradient_PadSpread (default), _ReflectSpread or _RepeatSpread.
+        !>
+        !> C: `void qtf_qgradient_setSpread(void *self, int spread)`
+        subroutine qtf_qgradient_setSpread(self, spread) bind(C, name='qtf_qgradient_setSpread')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: spread
+        end subroutine qtf_qgradient_setSpread
+
+        !> QGradient_LogicalMode (default: painter coordinates) or QGradient_ObjectMode (0..1 across each filled shape).
+        !>
+        !> C: `void qtf_qgradient_setCoordinateMode(void *self, int mode)`
+        subroutine qtf_qgradient_setCoordinateMode(self, mode) bind(C, name='qtf_qgradient_setCoordinateMode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: mode
+        end subroutine qtf_qgradient_setCoordinateMode
+
+        !> A linear gradient from (x1, y1) (position 0) to (x2, y2) (position 1).
+        !>
+        !> C: `void *qtf_qlineargradient_new(double x1, double y1, double x2, double y2)`
+        function qtf_qlineargradient_new(x1, y1, x2, y2) result(res) bind(C, name='qtf_qlineargradient_new')
+            import :: c_double, c_ptr
+            implicit none
+            real(c_double), value :: x1
+            real(c_double), value :: y1
+            real(c_double), value :: x2
+            real(c_double), value :: y2
+            type(c_ptr) :: res
+        end function qtf_qlineargradient_new
+
+        !> The start point (position 0).
+        !>
+        !> C: `void qtf_qlineargradient_setStart(void *self, double x, double y)`
+        subroutine qtf_qlineargradient_setStart(self, x, y) bind(C, name='qtf_qlineargradient_setStart')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+        end subroutine qtf_qlineargradient_setStart
+
+        !> The end point (position 1).
+        !>
+        !> C: `void qtf_qlineargradient_setFinalStop(void *self, double x, double y)`
+        subroutine qtf_qlineargradient_setFinalStop(self, x, y) bind(C, name='qtf_qlineargradient_setFinalStop')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+        end subroutine qtf_qlineargradient_setFinalStop
+
+        !> A radial gradient: position 0 at the center (cx, cy), 1 at `radius`.
+        !>
+        !> C: `void *qtf_qradialgradient_new(double cx, double cy, double radius)`
+        function qtf_qradialgradient_new(cx, cy, radius) result(res) bind(C, name='qtf_qradialgradient_new')
+            import :: c_double, c_ptr
+            implicit none
+            real(c_double), value :: cx
+            real(c_double), value :: cy
+            real(c_double), value :: radius
+            type(c_ptr) :: res
+        end function qtf_qradialgradient_new
+
+        !> The center of the circle.
+        !>
+        !> C: `void qtf_qradialgradient_setCenter(void *self, double x, double y)`
+        subroutine qtf_qradialgradient_setCenter(self, x, y) bind(C, name='qtf_qradialgradient_setCenter')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+        end subroutine qtf_qradialgradient_setCenter
+
+        !> The radius (position 1).
+        !>
+        !> C: `void qtf_qradialgradient_setRadius(void *self, double radius)`
+        subroutine qtf_qradialgradient_setRadius(self, radius) bind(C, name='qtf_qradialgradient_setRadius')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: radius
+        end subroutine qtf_qradialgradient_setRadius
+
+        !> The focal point (position 0); by default the center.
+        !>
+        !> C: `void qtf_qradialgradient_setFocalPoint(void *self, double x, double y)`
+        subroutine qtf_qradialgradient_setFocalPoint(self, x, y) bind(C, name='qtf_qradialgradient_setFocalPoint')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+        end subroutine qtf_qradialgradient_setFocalPoint
+
+        !> A conical gradient around (cx, cy), starting at `angle` degrees (counterclockwise from 3 o'clock).
+        !>
+        !> C: `void *qtf_qconicalgradient_new(double cx, double cy, double angle)`
+        function qtf_qconicalgradient_new(cx, cy, angle) result(res) bind(C, name='qtf_qconicalgradient_new')
+            import :: c_double, c_ptr
+            implicit none
+            real(c_double), value :: cx
+            real(c_double), value :: cy
+            real(c_double), value :: angle
+            type(c_ptr) :: res
+        end function qtf_qconicalgradient_new
+
+        !> The center.
+        !>
+        !> C: `void qtf_qconicalgradient_setCenter(void *self, double x, double y)`
+        subroutine qtf_qconicalgradient_setCenter(self, x, y) bind(C, name='qtf_qconicalgradient_setCenter')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+        end subroutine qtf_qconicalgradient_setCenter
+
+        !> The start angle in degrees.
+        !>
+        !> C: `void qtf_qconicalgradient_setAngle(void *self, double angle)`
+        subroutine qtf_qconicalgradient_setAngle(self, angle) bind(C, name='qtf_qconicalgradient_setAngle')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: angle
+        end subroutine qtf_qconicalgradient_setAngle
+
+        !> Release a transform.
+        !>
+        !> C: `void qtf_qtransform_delete(void *self)`
+        subroutine qtf_qtransform_delete(self) bind(C, name='qtf_qtransform_delete')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtransform_delete
+
+        !> The identity transform.
+        !>
+        !> C: `void *qtf_qtransform_new(void)`
+        function qtf_qtransform_new() result(res) bind(C, name='qtf_qtransform_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr) :: res
+        end function qtf_qtransform_new
+
+        !> An affine transform: x' = m11 x + m21 y + dx, y' = m12 x + m22 y + dy.
+        !>
+        !> C: `void *qtf_qtransform_fromAffine(double m11, double m12, double m21, double m22, double dx, double dy)`
+        function qtf_qtransform_fromAffine(m11, m12, m21, m22, dx, dy) &
+                result(res) bind(C, name='qtf_qtransform_fromAffine')
+            import :: c_double, c_ptr
+            implicit none
+            real(c_double), value :: m11
+            real(c_double), value :: m12
+            real(c_double), value :: m21
+            real(c_double), value :: m22
+            real(c_double), value :: dx
+            real(c_double), value :: dy
+            type(c_ptr) :: res
+        end function qtf_qtransform_fromAffine
+
+        !> Move by (dx, dy).
+        !>
+        !> C: `void qtf_qtransform_translate(void *self, double dx, double dy)`
+        subroutine qtf_qtransform_translate(self, dx, dy) bind(C, name='qtf_qtransform_translate')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: dx
+            real(c_double), value :: dy
+        end subroutine qtf_qtransform_translate
+
+        !> Rotate clockwise (on screen, where y points down) by `degrees`.
+        !>
+        !> C: `void qtf_qtransform_rotate(void *self, double degrees)`
+        subroutine qtf_qtransform_rotate(self, degrees) bind(C, name='qtf_qtransform_rotate')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: degrees
+        end subroutine qtf_qtransform_rotate
+
+        !> Scale by (sx, sy).
+        !>
+        !> C: `void qtf_qtransform_scale(void *self, double sx, double sy)`
+        subroutine qtf_qtransform_scale(self, sx, sy) bind(C, name='qtf_qtransform_scale')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: sx
+            real(c_double), value :: sy
+        end subroutine qtf_qtransform_scale
+
+        !> Shear by (sh, sv).
+        !>
+        !> C: `void qtf_qtransform_shear(void *self, double sh, double sv)`
+        subroutine qtf_qtransform_shear(self, sh, sv) bind(C, name='qtf_qtransform_shear')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: sh
+            real(c_double), value :: sv
+        end subroutine qtf_qtransform_shear
+
+        !> Back to the identity.
+        !>
+        !> C: `void qtf_qtransform_reset(void *self)`
+        subroutine qtf_qtransform_reset(self) bind(C, name='qtf_qtransform_reset')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtransform_reset
+
+        !> True for the identity.
+        !>
+        !> C: `int qtf_qtransform_isIdentity(void *self)`
+        function qtf_qtransform_isIdentity(self) result(res) bind(C, name='qtf_qtransform_isIdentity')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtransform_isIdentity
+
+        !> True if the transform can be inverted.
+        !>
+        !> C: `int qtf_qtransform_isInvertible(void *self)`
+        function qtf_qtransform_isInvertible(self) result(res) bind(C, name='qtf_qtransform_isInvertible')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtransform_isInvertible
+
+        !> The determinant of the 2x2 part.
+        !>
+        !> C: `double qtf_qtransform_determinant(void *self)`
+        function qtf_qtransform_determinant(self) result(res) bind(C, name='qtf_qtransform_determinant')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qtransform_determinant
+
+        !> Matrix element (1, 1): x scale.
+        !>
+        !> C: `double qtf_qtransform_m11(void *self)`
+        function qtf_qtransform_m11(self) result(res) bind(C, name='qtf_qtransform_m11')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qtransform_m11
+
+        !> Matrix element (1, 2): y shear.
+        !>
+        !> C: `double qtf_qtransform_m12(void *self)`
+        function qtf_qtransform_m12(self) result(res) bind(C, name='qtf_qtransform_m12')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qtransform_m12
+
+        !> Matrix element (2, 1): x shear.
+        !>
+        !> C: `double qtf_qtransform_m21(void *self)`
+        function qtf_qtransform_m21(self) result(res) bind(C, name='qtf_qtransform_m21')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qtransform_m21
+
+        !> Matrix element (2, 2): y scale.
+        !>
+        !> C: `double qtf_qtransform_m22(void *self)`
+        function qtf_qtransform_m22(self) result(res) bind(C, name='qtf_qtransform_m22')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qtransform_m22
+
+        !> The x translation.
+        !>
+        !> C: `double qtf_qtransform_dx(void *self)`
+        function qtf_qtransform_dx(self) result(res) bind(C, name='qtf_qtransform_dx')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qtransform_dx
+
+        !> The y translation.
+        !>
+        !> C: `double qtf_qtransform_dy(void *self)`
+        function qtf_qtransform_dy(self) result(res) bind(C, name='qtf_qtransform_dy')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qtransform_dy
+
+        !> x of the transformed point (x, y).
+        !>
+        !> C: `double qtf_qtransform_mapX(void *self, double x, double y)`
+        function qtf_qtransform_mapX(self, x, y) result(res) bind(C, name='qtf_qtransform_mapX')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double) :: res
+        end function qtf_qtransform_mapX
+
+        !> y of the transformed point (x, y).
+        !>
+        !> C: `double qtf_qtransform_mapY(void *self, double x, double y)`
+        function qtf_qtransform_mapY(self, x, y) result(res) bind(C, name='qtf_qtransform_mapY')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: x
+            real(c_double), value :: y
+            real(c_double) :: res
+        end function qtf_qtransform_mapY
+
+        !> A new transform: the inverse (the identity if not invertible; then `ok` is false).
+        !>
+        !> C: `void *qtf_qtransform_inverted(void *self, int *ok)`
+        function qtf_qtransform_inverted(self, ok) result(res) bind(C, name='qtf_qtransform_inverted')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: ok
+            type(c_ptr) :: res
+        end function qtf_qtransform_inverted
+
+        !> A new transform: this one, then `other`.
+        !>
+        !> C: `void *qtf_qtransform_multiplied(void *self, void *other)`
+        function qtf_qtransform_multiplied(self, other) result(res) bind(C, name='qtf_qtransform_multiplied')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: other
+            type(c_ptr) :: res
+        end function qtf_qtransform_multiplied
+
+        !> A copy (delete it when done).
+        !>
+        !> C: `void *qtf_qtransform_copy(void *self)`
+        function qtf_qtransform_copy(self) result(res) bind(C, name='qtf_qtransform_copy')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qtransform_copy
+
+        !> Release font metrics.
+        !>
+        !> C: `void qtf_qfontmetrics_delete(void *self)`
+        subroutine qtf_qfontmetrics_delete(self) bind(C, name='qtf_qfontmetrics_delete')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qfontmetrics_delete
+
+        !> Metrics of a font given by the fields of a Fortran QFont.
+        !>
+        !> C: `void *qtf_qfontmetrics_fromFont(const char *family, int len, double pointSize, int bold, int italic)`
+        function qtf_qfontmetrics_fromFont(family, len, pointSize, bold, italic) &
+                result(res) bind(C, name='qtf_qfontmetrics_fromFont')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: family
+            integer(c_int), value :: len
+            real(c_double), value :: pointSize
+            integer(c_int), value :: bold
+            integer(c_int), value :: italic
+            type(c_ptr) :: res
+        end function qtf_qfontmetrics_fromFont
+
+        !> Metrics of the application's default font.
+        !>
+        !> C: `void *qtf_qfontmetrics_new(void)`
+        function qtf_qfontmetrics_new() result(res) bind(C, name='qtf_qfontmetrics_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr) :: res
+        end function qtf_qfontmetrics_new
+
+        !> Width of `text` (the advance to where the next text would start).
+        !>
+        !> C: `int qtf_qfontmetrics_horizontalAdvance(void *self, const char *text, int text_len)`
+        function qtf_qfontmetrics_horizontalAdvance(self, text, text_len) &
+                result(res) bind(C, name='qtf_qfontmetrics_horizontalAdvance')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+            integer(c_int) :: res
+        end function qtf_qfontmetrics_horizontalAdvance
+
+        !> Width of the ink of `text` (its bounding rectangle).
+        !>
+        !> C: `int qtf_qfontmetrics_boundingWidth(void *self, const char *text, int text_len)`
+        function qtf_qfontmetrics_boundingWidth(self, text, text_len) &
+                result(res) bind(C, name='qtf_qfontmetrics_boundingWidth')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+            integer(c_int) :: res
+        end function qtf_qfontmetrics_boundingWidth
+
+        !> Line height (ascent + descent).
+        !>
+        !> C: `int qtf_qfontmetrics_height(void *self)`
+        function qtf_qfontmetrics_height(self) result(res) bind(C, name='qtf_qfontmetrics_height')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qfontmetrics_height
+
+        !> Distance from the baseline to the top of the tallest glyphs.
+        !>
+        !> C: `int qtf_qfontmetrics_ascent(void *self)`
+        function qtf_qfontmetrics_ascent(self) result(res) bind(C, name='qtf_qfontmetrics_ascent')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qfontmetrics_ascent
+
+        !> Distance from the baseline to the bottom of the lowest glyphs.
+        !>
+        !> C: `int qtf_qfontmetrics_descent(void *self)`
+        function qtf_qfontmetrics_descent(self) result(res) bind(C, name='qtf_qfontmetrics_descent')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qfontmetrics_descent
+
+        !> Extra space between lines.
+        !>
+        !> C: `int qtf_qfontmetrics_leading(void *self)`
+        function qtf_qfontmetrics_leading(self) result(res) bind(C, name='qtf_qfontmetrics_leading')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qfontmetrics_leading
+
+        !> Distance from one baseline to the next.
+        !>
+        !> C: `int qtf_qfontmetrics_lineSpacing(void *self)`
+        function qtf_qfontmetrics_lineSpacing(self) result(res) bind(C, name='qtf_qfontmetrics_lineSpacing')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qfontmetrics_lineSpacing
+
+        !> Average character width.
+        !>
+        !> C: `int qtf_qfontmetrics_averageCharWidth(void *self)`
+        function qtf_qfontmetrics_averageCharWidth(self) result(res) bind(C, name='qtf_qfontmetrics_averageCharWidth')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qfontmetrics_averageCharWidth
+
+        !> Width of the widest character.
+        !>
+        !> C: `int qtf_qfontmetrics_maxWidth(void *self)`
+        function qtf_qfontmetrics_maxWidth(self) result(res) bind(C, name='qtf_qfontmetrics_maxWidth')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qfontmetrics_maxWidth
+
+        !> Height of capital letters.
+        !>
+        !> C: `int qtf_qfontmetrics_capHeight(void *self)`
+        function qtf_qfontmetrics_capHeight(self) result(res) bind(C, name='qtf_qfontmetrics_capHeight')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qfontmetrics_capHeight
+
+        !> Height of lowercase letters (without ascenders).
+        !>
+        !> C: `int qtf_qfontmetrics_xHeight(void *self)`
+        function qtf_qfontmetrics_xHeight(self) result(res) bind(C, name='qtf_qfontmetrics_xHeight')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qfontmetrics_xHeight
+
+        !> `text` shortened with an ellipsis (Qt_ElideRight, _ElideLeft, _ElideMiddle) to fit `width` pixels.
+        !>
+        !> C: `char *qtf_qfontmetrics_elidedText(void *self, const char *text, int text_len, int mode, int width, int *len)`
+        function qtf_qfontmetrics_elidedText(self, text, text_len, mode, width, len) &
+                result(res) bind(C, name='qtf_qfontmetrics_elidedText')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+            integer(c_int), value :: mode
+            integer(c_int), value :: width
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qfontmetrics_elidedText
+
+        !> Empty data.
+        !>
+        !> C: `void *qtf_qmimedata_new(void)`
+        function qtf_qmimedata_new() result(res) bind(C, name='qtf_qmimedata_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr) :: res
+        end function qtf_qmimedata_new
+
+        !> Set the plain text (text/plain).
+        !>
+        !> C: `void qtf_qmimedata_setText(void *self, const char *text, int text_len)`
+        subroutine qtf_qmimedata_setText(self, text, text_len) bind(C, name='qtf_qmimedata_setText')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+        end subroutine qtf_qmimedata_setText
+
+        !> The plain text.
+        !>
+        !> C: `char *qtf_qmimedata_text(void *self, int *len)`
+        function qtf_qmimedata_text(self, len) result(res) bind(C, name='qtf_qmimedata_text')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qmimedata_text
+
+        !> True if there is plain text.
+        !>
+        !> C: `int qtf_qmimedata_hasText(void *self)`
+        function qtf_qmimedata_hasText(self) result(res) bind(C, name='qtf_qmimedata_hasText')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qmimedata_hasText
+
+        !> Set HTML (text/html).
+        !>
+        !> C: `void qtf_qmimedata_setHtml(void *self, const char *html, int html_len)`
+        subroutine qtf_qmimedata_setHtml(self, html, html_len) bind(C, name='qtf_qmimedata_setHtml')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: html
+            integer(c_int), value :: html_len
+        end subroutine qtf_qmimedata_setHtml
+
+        !> The HTML.
+        !>
+        !> C: `char *qtf_qmimedata_html(void *self, int *len)`
+        function qtf_qmimedata_html(self, len) result(res) bind(C, name='qtf_qmimedata_html')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qmimedata_html
+
+        !> True if there is HTML.
+        !>
+        !> C: `int qtf_qmimedata_hasHtml(void *self)`
+        function qtf_qmimedata_hasHtml(self) result(res) bind(C, name='qtf_qmimedata_hasHtml')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qmimedata_hasHtml
+
+        !> Set URLs (text/uri-list): file paths, or URLs such as 'https://...'.
+        !>
+        !> C: `void qtf_qmimedata_setUrls(void *self, const char *urls, int urls_len, int n)`
+        subroutine qtf_qmimedata_setUrls(self, urls, urls_len, n) bind(C, name='qtf_qmimedata_setUrls')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: urls
+            integer(c_int), value :: urls_len
+            integer(c_int), value :: n
+        end subroutine qtf_qmimedata_setUrls
+
+        !> The URLs: local files as paths.
+        !>
+        !> C: `char *qtf_qmimedata_urls(void *self, int *len)`
+        function qtf_qmimedata_urls(self, len) result(res) bind(C, name='qtf_qmimedata_urls')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qmimedata_urls
+
+        !> True if there are URLs (e.g. files dropped from the desktop).
+        !>
+        !> C: `int qtf_qmimedata_hasUrls(void *self)`
+        function qtf_qmimedata_hasUrls(self) result(res) bind(C, name='qtf_qmimedata_hasUrls')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qmimedata_hasUrls
+
+        !> Set an image (copied).
+        !>
+        !> C: `void qtf_qmimedata_setImage(void *self, void *image)`
+        subroutine qtf_qmimedata_setImage(self, image) bind(C, name='qtf_qmimedata_setImage')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: image
+        end subroutine qtf_qmimedata_setImage
+
+        !> A copy of the image (null if none; delete it when done).
+        !>
+        !> C: `void *qtf_qmimedata_image(void *self)`
+        function qtf_qmimedata_image(self) result(res) bind(C, name='qtf_qmimedata_image')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qmimedata_image
+
+        !> True if there is an image.
+        !>
+        !> C: `int qtf_qmimedata_hasImage(void *self)`
+        function qtf_qmimedata_hasImage(self) result(res) bind(C, name='qtf_qmimedata_hasImage')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qmimedata_hasImage
+
+        !> Set data of any MIME type `format` (e.g. 'application/x-mydata') as UTF-8 text.
+        !>
+        !> C: `void qtf_qmimedata_setData(void *self, const char *format, int format_len, const char *data, int data_len)`
+        subroutine qtf_qmimedata_setData(self, format, format_len, data, data_len) bind(C, name='qtf_qmimedata_setData')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: format
+            integer(c_int), value :: format_len
+            character(kind=c_char), dimension(*), intent(in) :: data
+            integer(c_int), value :: data_len
+        end subroutine qtf_qmimedata_setData
+
+        !> The data of `format` as text (empty if none).
+        !>
+        !> C: `char *qtf_qmimedata_data(void *self, const char *format, int format_len, int *len)`
+        function qtf_qmimedata_data(self, format, format_len, len) result(res) bind(C, name='qtf_qmimedata_data')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: format
+            integer(c_int), value :: format_len
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qmimedata_data
+
+        !> True if there is data of MIME type `format`.
+        !>
+        !> C: `int qtf_qmimedata_hasFormat(void *self, const char *format, int format_len)`
+        function qtf_qmimedata_hasFormat(self, format, format_len) result(res) bind(C, name='qtf_qmimedata_hasFormat')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: format
+            integer(c_int), value :: format_len
+            integer(c_int) :: res
+        end function qtf_qmimedata_hasFormat
+
+        !> The MIME types present.
+        !>
+        !> C: `char *qtf_qmimedata_formats(void *self, int *len)`
+        function qtf_qmimedata_formats(self, len) result(res) bind(C, name='qtf_qmimedata_formats')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qmimedata_formats
+
+        !> Remove all data.
+        !>
+        !> C: `void qtf_qmimedata_clear(void *self)`
+        subroutine qtf_qmimedata_clear(self) bind(C, name='qtf_qmimedata_clear')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qmimedata_clear
+
+        !> A synthetic QEvent_DragEnter, QEvent_DragMove or QEvent_Drop event carrying `mimeData` (not owned: delete both after use), e.g. to test drop handling with QCoreApplication_sendEvent. As in a real drag, a widget gets moves and the drop only after accepting a drag-enter.
+        !>
+        !> C: `void *qtf_qdropevent_new(int type, double x, double y, void *mimeData, int actions, int buttons, int modifiers)`
+        function qtf_qdropevent_new(type, x, y, mimeData, actions, buttons, modifiers) &
+                result(res) bind(C, name='qtf_qdropevent_new')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            integer(c_int), value :: type
+            real(c_double), value :: x
+            real(c_double), value :: y
+            type(c_ptr), value :: mimeData
+            integer(c_int), value :: actions
+            integer(c_int), value :: buttons
+            integer(c_int), value :: modifiers
+            type(c_ptr) :: res
+        end function qtf_qdropevent_new
+
+        !> Horizontal position in widget coordinates.
+        !>
+        !> C: `double qtf_qdropevent_x(void *self)`
+        function qtf_qdropevent_x(self) result(res) bind(C, name='qtf_qdropevent_x')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qdropevent_x
+
+        !> Vertical position in widget coordinates.
+        !>
+        !> C: `double qtf_qdropevent_y(void *self)`
+        function qtf_qdropevent_y(self) result(res) bind(C, name='qtf_qdropevent_y')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qdropevent_y
+
+        !> The action the user asks for (Qt_CopyAction, _MoveAction, _LinkAction).
+        !>
+        !> C: `int qtf_qdropevent_proposedAction(void *self)`
+        function qtf_qdropevent_proposedAction(self) result(res) bind(C, name='qtf_qdropevent_proposedAction')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qdropevent_proposedAction
+
+        !> The actions the source allows (a combination of Qt_*Action).
+        !>
+        !> C: `int qtf_qdropevent_possibleActions(void *self)`
+        function qtf_qdropevent_possibleActions(self) result(res) bind(C, name='qtf_qdropevent_possibleActions')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qdropevent_possibleActions
+
+        !> The action that will be taken.
+        !>
+        !> C: `int qtf_qdropevent_dropAction(void *self)`
+        function qtf_qdropevent_dropAction(self) result(res) bind(C, name='qtf_qdropevent_dropAction')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qdropevent_dropAction
+
+        !> Take another (possible) action than the proposed one; then `accept()` the event.
+        !>
+        !> C: `void qtf_qdropevent_setDropAction(void *self, int action)`
+        subroutine qtf_qdropevent_setDropAction(self, action) bind(C, name='qtf_qdropevent_setDropAction')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: action
+        end subroutine qtf_qdropevent_setDropAction
+
+        !> Accept the drag or drop with the proposed action.
+        !>
+        !> C: `void qtf_qdropevent_acceptProposedAction(void *self)`
+        subroutine qtf_qdropevent_acceptProposedAction(self) bind(C, name='qtf_qdropevent_acceptProposedAction')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qdropevent_acceptProposedAction
+
+        !> Mouse buttons held.
+        !>
+        !> C: `int qtf_qdropevent_buttons(void *self)`
+        function qtf_qdropevent_buttons(self) result(res) bind(C, name='qtf_qdropevent_buttons')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qdropevent_buttons
+
+        !> Keyboard modifiers held (e.g. Ctrl to copy).
+        !>
+        !> C: `int qtf_qdropevent_modifiers(void *self)`
+        function qtf_qdropevent_modifiers(self) result(res) bind(C, name='qtf_qdropevent_modifiers')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qdropevent_modifiers
+
+        !> The dragged data (valid during the slot).
+        !>
+        !> C: `void *qtf_qdropevent_mimeData(void *self)`
+        function qtf_qdropevent_mimeData(self) result(res) bind(C, name='qtf_qdropevent_mimeData')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qdropevent_mimeData
+
+        !> True if the drag carries plain text.
+        !>
+        !> C: `int qtf_qdropevent_hasText(void *self)`
+        function qtf_qdropevent_hasText(self) result(res) bind(C, name='qtf_qdropevent_hasText')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qdropevent_hasText
+
+        !> The dragged plain text.
+        !>
+        !> C: `char *qtf_qdropevent_text(void *self, int *len)`
+        function qtf_qdropevent_text(self, len) result(res) bind(C, name='qtf_qdropevent_text')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qdropevent_text
+
+        !> True if the drag carries URLs (e.g. files from the desktop).
+        !>
+        !> C: `int qtf_qdropevent_hasUrls(void *self)`
+        function qtf_qdropevent_hasUrls(self) result(res) bind(C, name='qtf_qdropevent_hasUrls')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qdropevent_hasUrls
+
+        !> The dragged URLs: local files as paths.
+        !>
+        !> C: `char *qtf_qdropevent_urls(void *self, int *len)`
+        function qtf_qdropevent_urls(self, len) result(res) bind(C, name='qtf_qdropevent_urls')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qdropevent_urls
+
+        !> True if the drag carries an image.
+        !>
+        !> C: `int qtf_qdropevent_hasImage(void *self)`
+        function qtf_qdropevent_hasImage(self) result(res) bind(C, name='qtf_qdropevent_hasImage')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qdropevent_hasImage
+
+        !> True if the drag carries data of MIME type `format`.
+        !>
+        !> C: `int qtf_qdropevent_hasFormat(void *self, const char *format, int format_len)`
+        function qtf_qdropevent_hasFormat(self, format, format_len) result(res) bind(C, name='qtf_qdropevent_hasFormat')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: format
+            integer(c_int), value :: format_len
+            integer(c_int) :: res
+        end function qtf_qdropevent_hasFormat
+
+        !> The dragged data of `format`, as text.
+        !>
+        !> C: `char *qtf_qdropevent_data(void *self, const char *format, int format_len, int *len)`
+        function qtf_qdropevent_data(self, format, format_len, len) result(res) bind(C, name='qtf_qdropevent_data')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: format
+            integer(c_int), value :: format_len
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qdropevent_data
+
+        !> A drag from `source` (the widget dragged from).
+        !>
+        !> C: `void *qtf_qdrag_new(void *source)`
+        function qtf_qdrag_new(source) result(res) bind(C, name='qtf_qdrag_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: source
+            type(c_ptr) :: res
+        end function qtf_qdrag_new
+
+        !> The data to drag (the drag takes ownership).
+        !>
+        !> C: `void qtf_qdrag_setMimeData(void *self, void *data)`
+        subroutine qtf_qdrag_setMimeData(self, data) bind(C, name='qtf_qdrag_setMimeData')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: data
+        end subroutine qtf_qdrag_setMimeData
+
+        !> The image shown under the cursor (copied).
+        !>
+        !> C: `void qtf_qdrag_setPixmap(void *self, void *pixmap)`
+        subroutine qtf_qdrag_setPixmap(self, pixmap) bind(C, name='qtf_qdrag_setPixmap')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: pixmap
+        end subroutine qtf_qdrag_setPixmap
+
+        !> Where the cursor is on the pixmap.
+        !>
+        !> C: `void qtf_qdrag_setHotSpot(void *self, int x, int y)`
+        subroutine qtf_qdrag_setHotSpot(self, x, y) bind(C, name='qtf_qdrag_setHotSpot')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: x
+            integer(c_int), value :: y
+        end subroutine qtf_qdrag_setHotSpot
+
+        !> Run the drag (blocks until it ends); returns the action taken, Qt_IgnoreAction if cancelled.
+        !>
+        !> C: `int qtf_qdrag_exec(void *self, int supportedActions, int defaultAction)`
+        function qtf_qdrag_exec(self, supportedActions, defaultAction) result(res) bind(C, name='qtf_qdrag_exec')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: supportedActions
+            integer(c_int), value :: defaultAction
+            integer(c_int) :: res
+        end function qtf_qdrag_exec
+
+        !> Put text on the clipboard.
+        !>
+        !> C: `void qtf_qclipboard_setText(void *self, const char *text, int text_len, int mode)`
+        subroutine qtf_qclipboard_setText(self, text, text_len, mode) bind(C, name='qtf_qclipboard_setText')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+            integer(c_int), value :: mode
+        end subroutine qtf_qclipboard_setText
+
+        !> The clipboard's text (empty if none).
+        !>
+        !> C: `char *qtf_qclipboard_text(void *self, int mode, int *len)`
+        function qtf_qclipboard_text(self, mode, len) result(res) bind(C, name='qtf_qclipboard_text')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: mode
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qclipboard_text
+
+        !> True if the clipboard holds text.
+        !>
+        !> C: `int qtf_qclipboard_hasText(void *self, int mode)`
+        function qtf_qclipboard_hasText(self, mode) result(res) bind(C, name='qtf_qclipboard_hasText')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: mode
+            integer(c_int) :: res
+        end function qtf_qclipboard_hasText
+
+        !> Put an image on the clipboard (copied).
+        !>
+        !> C: `void qtf_qclipboard_setImage(void *self, void *image, int mode)`
+        subroutine qtf_qclipboard_setImage(self, image, mode) bind(C, name='qtf_qclipboard_setImage')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: image
+            integer(c_int), value :: mode
+        end subroutine qtf_qclipboard_setImage
+
+        !> The clipboard's image (null if none; delete it when done).
+        !>
+        !> C: `void *qtf_qclipboard_image(void *self, int mode)`
+        function qtf_qclipboard_image(self, mode) result(res) bind(C, name='qtf_qclipboard_image')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: mode
+            type(c_ptr) :: res
+        end function qtf_qclipboard_image
+
+        !> True if the clipboard holds an image.
+        !>
+        !> C: `int qtf_qclipboard_hasImage(void *self, int mode)`
+        function qtf_qclipboard_hasImage(self, mode) result(res) bind(C, name='qtf_qclipboard_hasImage')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: mode
+            integer(c_int) :: res
+        end function qtf_qclipboard_hasImage
+
+        !> Put mime data on the clipboard (it takes ownership).
+        !>
+        !> C: `void qtf_qclipboard_setMimeData(void *self, void *data, int mode)`
+        subroutine qtf_qclipboard_setMimeData(self, data, mode) bind(C, name='qtf_qclipboard_setMimeData')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: data
+            integer(c_int), value :: mode
+        end subroutine qtf_qclipboard_setMimeData
+
+        !> The clipboard's data (owned by the clipboard; valid until it changes).
+        !>
+        !> C: `void *qtf_qclipboard_mimeData(void *self, int mode)`
+        function qtf_qclipboard_mimeData(self, mode) result(res) bind(C, name='qtf_qclipboard_mimeData')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: mode
+            type(c_ptr) :: res
+        end function qtf_qclipboard_mimeData
+
+        !> Empty the clipboard.
+        !>
+        !> C: `void qtf_qclipboard_clear(void *self, int mode)`
+        subroutine qtf_qclipboard_clear(self, mode) bind(C, name='qtf_qclipboard_clear')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: mode
+        end subroutine qtf_qclipboard_clear
+
+        !> The screen's name (e.g. its connector).
+        !>
+        !> C: `char *qtf_qscreen_name(void *self, int *len)`
+        function qtf_qscreen_name(self, len) result(res) bind(C, name='qtf_qscreen_name')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qscreen_name
+
+        !> The manufacturer (may be empty).
+        !>
+        !> C: `char *qtf_qscreen_manufacturer(void *self, int *len)`
+        function qtf_qscreen_manufacturer(self, len) result(res) bind(C, name='qtf_qscreen_manufacturer')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qscreen_manufacturer
+
+        !> The model (may be empty).
+        !>
+        !> C: `char *qtf_qscreen_model(void *self, int *len)`
+        function qtf_qscreen_model(self, len) result(res) bind(C, name='qtf_qscreen_model')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qscreen_model
+
+        !> Left of the screen in the virtual desktop.
+        !>
+        !> C: `int qtf_qscreen_x(void *self)`
+        function qtf_qscreen_x(self) result(res) bind(C, name='qtf_qscreen_x')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qscreen_x
+
+        !> Top of the screen in the virtual desktop.
+        !>
+        !> C: `int qtf_qscreen_y(void *self)`
+        function qtf_qscreen_y(self) result(res) bind(C, name='qtf_qscreen_y')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qscreen_y
+
+        !> Width in logical pixels.
+        !>
+        !> C: `int qtf_qscreen_width(void *self)`
+        function qtf_qscreen_width(self) result(res) bind(C, name='qtf_qscreen_width')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qscreen_width
+
+        !> Height in logical pixels.
+        !>
+        !> C: `int qtf_qscreen_height(void *self)`
+        function qtf_qscreen_height(self) result(res) bind(C, name='qtf_qscreen_height')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qscreen_height
+
+        !> Left of the area available to windows (without docks and task bars).
+        !>
+        !> C: `int qtf_qscreen_availableX(void *self)`
+        function qtf_qscreen_availableX(self) result(res) bind(C, name='qtf_qscreen_availableX')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qscreen_availableX
+
+        !> Top of the available area.
+        !>
+        !> C: `int qtf_qscreen_availableY(void *self)`
+        function qtf_qscreen_availableY(self) result(res) bind(C, name='qtf_qscreen_availableY')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qscreen_availableY
+
+        !> Width of the available area.
+        !>
+        !> C: `int qtf_qscreen_availableWidth(void *self)`
+        function qtf_qscreen_availableWidth(self) result(res) bind(C, name='qtf_qscreen_availableWidth')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qscreen_availableWidth
+
+        !> Height of the available area.
+        !>
+        !> C: `int qtf_qscreen_availableHeight(void *self)`
+        function qtf_qscreen_availableHeight(self) result(res) bind(C, name='qtf_qscreen_availableHeight')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qscreen_availableHeight
+
+        !> Physical pixels per logical pixel (2 on a typical HiDPI display).
+        !>
+        !> C: `double qtf_qscreen_devicePixelRatio(void *self)`
+        function qtf_qscreen_devicePixelRatio(self) result(res) bind(C, name='qtf_qscreen_devicePixelRatio')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qscreen_devicePixelRatio
+
+        !> Logical resolution (what font sizes in points are based on).
+        !>
+        !> C: `double qtf_qscreen_logicalDotsPerInch(void *self)`
+        function qtf_qscreen_logicalDotsPerInch(self) result(res) bind(C, name='qtf_qscreen_logicalDotsPerInch')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qscreen_logicalDotsPerInch
+
+        !> Physical resolution of the display.
+        !>
+        !> C: `double qtf_qscreen_physicalDotsPerInch(void *self)`
+        function qtf_qscreen_physicalDotsPerInch(self) result(res) bind(C, name='qtf_qscreen_physicalDotsPerInch')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qscreen_physicalDotsPerInch
+
+        !> Physical width in millimeters (0 if unknown).
+        !>
+        !> C: `double qtf_qscreen_physicalWidth(void *self)`
+        function qtf_qscreen_physicalWidth(self) result(res) bind(C, name='qtf_qscreen_physicalWidth')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qscreen_physicalWidth
+
+        !> Physical height in millimeters (0 if unknown).
+        !>
+        !> C: `double qtf_qscreen_physicalHeight(void *self)`
+        function qtf_qscreen_physicalHeight(self) result(res) bind(C, name='qtf_qscreen_physicalHeight')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qscreen_physicalHeight
+
+        !> Refresh rate in Hz.
+        !>
+        !> C: `double qtf_qscreen_refreshRate(void *self)`
+        function qtf_qscreen_refreshRate(self) result(res) bind(C, name='qtf_qscreen_refreshRate')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qscreen_refreshRate
+
+        !> Color depth in bits.
+        !>
+        !> C: `int qtf_qscreen_depth(void *self)`
+        function qtf_qscreen_depth(self) result(res) bind(C, name='qtf_qscreen_depth')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qscreen_depth
+
+        !> A screenshot of (part of) the screen (default: all of it); delete it when done. May be blank where the system does not allow it.
+        !>
+        !> C: `void *qtf_qscreen_grab(void *self, int x, int y, int width, int height)`
+        function qtf_qscreen_grab(self, x, y, width, height) result(res) bind(C, name='qtf_qscreen_grab')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: x
+            integer(c_int), value :: y
+            integer(c_int), value :: width
+            integer(c_int), value :: height
+            type(c_ptr) :: res
+        end function qtf_qscreen_grab
 
         !> Create an action with `text`, owned by `parent` if given.
         !>
@@ -1490,6 +3347,16 @@ module qt_c_gui
             type(c_ptr) :: res
         end function qtf_qwindow_title
 
+        !> The screen the window is on.
+        !>
+        !> C: `void *qtf_qwindow_screen(void *self)`
+        function qtf_qwindow_screen(self) result(res) bind(C, name='qtf_qwindow_screen')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qwindow_screen
+
         !> Ask for an UpdateRequest event (a QtfEventFilter's `updateRequest`) at the next frame, for render loops on the GUI thread.
         !>
         !> C: `void qtf_qwindow_requestUpdate(void *self)`
@@ -1498,6 +3365,118 @@ module qt_c_gui
             implicit none
             type(c_ptr), value :: self
         end subroutine qtf_qwindow_requestUpdate
+
+        !> The system clipboard (needs the application object).
+        !>
+        !> C: `void *qtf_QGuiApplication_clipboard(void)`
+        function qtf_QGuiApplication_clipboard() result(res) bind(C, name='qtf_QGuiApplication_clipboard')
+            import :: c_ptr
+            implicit none
+            type(c_ptr) :: res
+        end function qtf_QGuiApplication_clipboard
+
+        !> The primary screen.
+        !>
+        !> C: `void *qtf_QGuiApplication_primaryScreen(void)`
+        function qtf_QGuiApplication_primaryScreen() result(res) bind(C, name='qtf_QGuiApplication_primaryScreen')
+            import :: c_ptr
+            implicit none
+            type(c_ptr) :: res
+        end function qtf_QGuiApplication_primaryScreen
+
+        !> The number of screens.
+        !>
+        !> C: `int qtf_QGuiApplication_screenCount(void)`
+        function qtf_QGuiApplication_screenCount() result(res) bind(C, name='qtf_QGuiApplication_screenCount')
+            import :: c_int
+            implicit none
+            integer(c_int) :: res
+        end function qtf_QGuiApplication_screenCount
+
+        !> Screen `index` (0-based; a null handle if out of range).
+        !>
+        !> C: `void *qtf_QGuiApplication_screen(int index)`
+        function qtf_QGuiApplication_screen(index) result(res) bind(C, name='qtf_QGuiApplication_screen')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), value :: index
+            type(c_ptr) :: res
+        end function qtf_QGuiApplication_screen
+
+        !> The screen containing the point (x, y) of the virtual desktop (a null handle if none).
+        !>
+        !> C: `void *qtf_QGuiApplication_screenAt(int x, int y)`
+        function qtf_QGuiApplication_screenAt(x, y) result(res) bind(C, name='qtf_QGuiApplication_screenAt')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), value :: x
+            integer(c_int), value :: y
+            type(c_ptr) :: res
+        end function qtf_QGuiApplication_screenAt
+
+        !> Show cursor `shape` (e.g. Qt_WaitCursor) over all windows until QGuiApplication_restoreOverrideCursor; calls nest.
+        !>
+        !> C: `void qtf_QGuiApplication_setOverrideCursor(int shape)`
+        subroutine qtf_QGuiApplication_setOverrideCursor(shape) bind(C, name='qtf_QGuiApplication_setOverrideCursor')
+            import :: c_int
+            implicit none
+            integer(c_int), value :: shape
+        end subroutine qtf_QGuiApplication_setOverrideCursor
+
+        !> Change the current override cursor.
+        !>
+        !> C: `void qtf_QGuiApplication_changeOverrideCursor(int shape)`
+        subroutine qtf_QGuiApplication_changeOverrideCursor(shape) &
+                bind(C, name='qtf_QGuiApplication_changeOverrideCursor')
+            import :: c_int
+            implicit none
+            integer(c_int), value :: shape
+        end subroutine qtf_QGuiApplication_changeOverrideCursor
+
+        !> Undo the last QGuiApplication_setOverrideCursor.
+        !>
+        !> C: `void qtf_QGuiApplication_restoreOverrideCursor(void)`
+        subroutine qtf_QGuiApplication_restoreOverrideCursor() bind(C, name='qtf_QGuiApplication_restoreOverrideCursor')
+            implicit none
+        end subroutine qtf_QGuiApplication_restoreOverrideCursor
+
+        !> The override cursor's shape (-1 if none is set).
+        !>
+        !> C: `int qtf_QGuiApplication_overrideCursorShape(void)`
+        function qtf_QGuiApplication_overrideCursorShape() &
+                result(res) bind(C, name='qtf_QGuiApplication_overrideCursorShape')
+            import :: c_int
+            implicit none
+            integer(c_int) :: res
+        end function qtf_QGuiApplication_overrideCursorShape
+
+        !> The mouse cursor's x position on the screen (virtual desktop).
+        !>
+        !> C: `int qtf_QCursor_x(void)`
+        function qtf_QCursor_x() result(res) bind(C, name='qtf_QCursor_x')
+            import :: c_int
+            implicit none
+            integer(c_int) :: res
+        end function qtf_QCursor_x
+
+        !> The mouse cursor's y position on the screen.
+        !>
+        !> C: `int qtf_QCursor_y(void)`
+        function qtf_QCursor_y() result(res) bind(C, name='qtf_QCursor_y')
+            import :: c_int
+            implicit none
+            integer(c_int) :: res
+        end function qtf_QCursor_y
+
+        !> Move the mouse cursor to (x, y) on the screen (where the system allows it).
+        !>
+        !> C: `void qtf_QCursor_setPos(int x, int y)`
+        subroutine qtf_QCursor_setPos(x, y) bind(C, name='qtf_QCursor_setPos')
+            import :: c_int
+            implicit none
+            integer(c_int), value :: x
+            integer(c_int), value :: y
+        end subroutine qtf_QCursor_setPos
 
     end interface
 
@@ -1515,18 +3494,68 @@ module qt_c_gui
     public :: qtf_qpainter_drawRect, qtf_qpainter_drawRoundedRect, qtf_qpainter_drawEllipse
     public :: qtf_qpainter_fillRect, qtf_qpainter_drawPolyline, qtf_qpainter_drawPolygon
     public :: qtf_qpainter_drawText, qtf_qpainter_drawTextRect, qtf_qpainter_drawImage
-    public :: qtf_qpainter_drawImageRect, qtf_qpainter_textWidth, qtf_qpainter_fontHeight
-    public :: qtf_qmouseevent_new, qtf_qmouseevent_x, qtf_qmouseevent_y, qtf_qmouseevent_button
-    public :: qtf_qmouseevent_buttons, qtf_qmouseevent_modifiers, qtf_qkeyevent_new, qtf_qkeyevent_key
-    public :: qtf_qkeyevent_modifiers, qtf_qkeyevent_text, qtf_qkeyevent_isAutoRepeat, qtf_qwheelevent_new
-    public :: qtf_qwheelevent_x, qtf_qwheelevent_y, qtf_qwheelevent_angleDeltaX, qtf_qwheelevent_angleDeltaY
-    public :: qtf_qwheelevent_buttons, qtf_qwheelevent_modifiers, qtf_qresizeevent_new
-    public :: qtf_qresizeevent_width, qtf_qresizeevent_height, qtf_qresizeevent_oldWidth
-    public :: qtf_qresizeevent_oldHeight, qtf_qcloseevent_new, qtf_qcontextmenuevent_new
-    public :: qtf_qcontextmenuevent_x, qtf_qcontextmenuevent_y, qtf_qcontextmenuevent_globalX
-    public :: qtf_qcontextmenuevent_globalY, qtf_qcontextmenuevent_reason, qtf_qcontextmenuevent_modifiers
-    public :: qtf_qaction_new, qtf_qaction_setText, qtf_qaction_text, qtf_qaction_setShortcut
-    public :: qtf_qaction_shortcut, qtf_qaction_setCheckable, qtf_qaction_isCheckable, qtf_qaction_setChecked
+    public :: qtf_qpainter_drawImageRect, qtf_qpainter_drawPixmap, qtf_qpainter_drawArc, qtf_qpainter_drawPie
+    public :: qtf_qpainter_drawChord, qtf_qpainter_drawPath, qtf_qpainter_fillPath
+    public :: qtf_qpainter_fillPathGradient, qtf_qpainter_strokePath, qtf_qpainter_setBrushGradient
+    public :: qtf_qpainter_fillRectGradient, qtf_qpainter_setClipRect, qtf_qpainter_setClipPath
+    public :: qtf_qpainter_setClipping, qtf_qpainter_hasClipping, qtf_qpainter_shear
+    public :: qtf_qpainter_setTransform, qtf_qpainter_transform, qtf_qpainter_fontMetrics
+    public :: qtf_qpainter_textWidth, qtf_qpainter_fontHeight, qtf_qmouseevent_new, qtf_qmouseevent_x
+    public :: qtf_qmouseevent_y, qtf_qmouseevent_button, qtf_qmouseevent_buttons, qtf_qmouseevent_modifiers
+    public :: qtf_qkeyevent_new, qtf_qkeyevent_key, qtf_qkeyevent_modifiers, qtf_qkeyevent_text
+    public :: qtf_qkeyevent_isAutoRepeat, qtf_qwheelevent_new, qtf_qwheelevent_x, qtf_qwheelevent_y
+    public :: qtf_qwheelevent_angleDeltaX, qtf_qwheelevent_angleDeltaY, qtf_qwheelevent_buttons
+    public :: qtf_qwheelevent_modifiers, qtf_qresizeevent_new, qtf_qresizeevent_width
+    public :: qtf_qresizeevent_height, qtf_qresizeevent_oldWidth, qtf_qresizeevent_oldHeight
+    public :: qtf_qcloseevent_new, qtf_qcontextmenuevent_new, qtf_qcontextmenuevent_x
+    public :: qtf_qcontextmenuevent_y, qtf_qcontextmenuevent_globalX, qtf_qcontextmenuevent_globalY
+    public :: qtf_qcontextmenuevent_reason, qtf_qcontextmenuevent_modifiers, qtf_qpainterpath_delete
+    public :: qtf_qpainterpath_new, qtf_qpainterpath_moveTo, qtf_qpainterpath_lineTo, qtf_qpainterpath_quadTo
+    public :: qtf_qpainterpath_cubicTo, qtf_qpainterpath_arcTo, qtf_qpainterpath_closeSubpath
+    public :: qtf_qpainterpath_addRect, qtf_qpainterpath_addRoundedRect, qtf_qpainterpath_addEllipse
+    public :: qtf_qpainterpath_addPolygon, qtf_qpainterpath_addText, qtf_qpainterpath_addPath
+    public :: qtf_qpainterpath_translate, qtf_qpainterpath_setFillRule, qtf_qpainterpath_containsPoint
+    public :: qtf_qpainterpath_isEmpty, qtf_qpainterpath_length, qtf_qpainterpath_elementCount
+    public :: qtf_qpainterpath_pointAtPercentX, qtf_qpainterpath_pointAtPercentY, qtf_qpainterpath_boundingX
+    public :: qtf_qpainterpath_boundingY, qtf_qpainterpath_boundingWidth, qtf_qpainterpath_boundingHeight
+    public :: qtf_qpainterpath_copy, qtf_qpainterpath_united, qtf_qpainterpath_intersected
+    public :: qtf_qpainterpath_subtracted, qtf_qgradient_delete, qtf_qgradient_setColorAt
+    public :: qtf_qgradient_setSpread, qtf_qgradient_setCoordinateMode, qtf_qlineargradient_new
+    public :: qtf_qlineargradient_setStart, qtf_qlineargradient_setFinalStop, qtf_qradialgradient_new
+    public :: qtf_qradialgradient_setCenter, qtf_qradialgradient_setRadius, qtf_qradialgradient_setFocalPoint
+    public :: qtf_qconicalgradient_new, qtf_qconicalgradient_setCenter, qtf_qconicalgradient_setAngle
+    public :: qtf_qtransform_delete, qtf_qtransform_new, qtf_qtransform_fromAffine, qtf_qtransform_translate
+    public :: qtf_qtransform_rotate, qtf_qtransform_scale, qtf_qtransform_shear, qtf_qtransform_reset
+    public :: qtf_qtransform_isIdentity, qtf_qtransform_isInvertible, qtf_qtransform_determinant
+    public :: qtf_qtransform_m11, qtf_qtransform_m12, qtf_qtransform_m21, qtf_qtransform_m22
+    public :: qtf_qtransform_dx, qtf_qtransform_dy, qtf_qtransform_mapX, qtf_qtransform_mapY
+    public :: qtf_qtransform_inverted, qtf_qtransform_multiplied, qtf_qtransform_copy
+    public :: qtf_qfontmetrics_delete, qtf_qfontmetrics_fromFont, qtf_qfontmetrics_new
+    public :: qtf_qfontmetrics_horizontalAdvance, qtf_qfontmetrics_boundingWidth, qtf_qfontmetrics_height
+    public :: qtf_qfontmetrics_ascent, qtf_qfontmetrics_descent, qtf_qfontmetrics_leading
+    public :: qtf_qfontmetrics_lineSpacing, qtf_qfontmetrics_averageCharWidth, qtf_qfontmetrics_maxWidth
+    public :: qtf_qfontmetrics_capHeight, qtf_qfontmetrics_xHeight, qtf_qfontmetrics_elidedText
+    public :: qtf_qmimedata_new, qtf_qmimedata_setText, qtf_qmimedata_text, qtf_qmimedata_hasText
+    public :: qtf_qmimedata_setHtml, qtf_qmimedata_html, qtf_qmimedata_hasHtml, qtf_qmimedata_setUrls
+    public :: qtf_qmimedata_urls, qtf_qmimedata_hasUrls, qtf_qmimedata_setImage, qtf_qmimedata_image
+    public :: qtf_qmimedata_hasImage, qtf_qmimedata_setData, qtf_qmimedata_data, qtf_qmimedata_hasFormat
+    public :: qtf_qmimedata_formats, qtf_qmimedata_clear, qtf_qdropevent_new, qtf_qdropevent_x
+    public :: qtf_qdropevent_y, qtf_qdropevent_proposedAction, qtf_qdropevent_possibleActions
+    public :: qtf_qdropevent_dropAction, qtf_qdropevent_setDropAction, qtf_qdropevent_acceptProposedAction
+    public :: qtf_qdropevent_buttons, qtf_qdropevent_modifiers, qtf_qdropevent_mimeData
+    public :: qtf_qdropevent_hasText, qtf_qdropevent_text, qtf_qdropevent_hasUrls, qtf_qdropevent_urls
+    public :: qtf_qdropevent_hasImage, qtf_qdropevent_hasFormat, qtf_qdropevent_data, qtf_qdrag_new
+    public :: qtf_qdrag_setMimeData, qtf_qdrag_setPixmap, qtf_qdrag_setHotSpot, qtf_qdrag_exec
+    public :: qtf_qclipboard_setText, qtf_qclipboard_text, qtf_qclipboard_hasText, qtf_qclipboard_setImage
+    public :: qtf_qclipboard_image, qtf_qclipboard_hasImage, qtf_qclipboard_setMimeData
+    public :: qtf_qclipboard_mimeData, qtf_qclipboard_clear, qtf_qscreen_name, qtf_qscreen_manufacturer
+    public :: qtf_qscreen_model, qtf_qscreen_x, qtf_qscreen_y, qtf_qscreen_width, qtf_qscreen_height
+    public :: qtf_qscreen_availableX, qtf_qscreen_availableY, qtf_qscreen_availableWidth
+    public :: qtf_qscreen_availableHeight, qtf_qscreen_devicePixelRatio, qtf_qscreen_logicalDotsPerInch
+    public :: qtf_qscreen_physicalDotsPerInch, qtf_qscreen_physicalWidth, qtf_qscreen_physicalHeight
+    public :: qtf_qscreen_refreshRate, qtf_qscreen_depth, qtf_qscreen_grab, qtf_qaction_new
+    public :: qtf_qaction_setText, qtf_qaction_text, qtf_qaction_setShortcut, qtf_qaction_shortcut
+    public :: qtf_qaction_setCheckable, qtf_qaction_isCheckable, qtf_qaction_setChecked
     public :: qtf_qaction_isChecked, qtf_qaction_setEnabled, qtf_qaction_isEnabled, qtf_qaction_setStatusTip
     public :: qtf_qaction_setToolTip, qtf_qaction_trigger, qtf_qaction_setIcon, qtf_qvalidator_validate
     public :: qtf_qintvalidator_new, qtf_qintvalidator_setRange, qtf_qintvalidator_bottom
@@ -1538,6 +3567,10 @@ module qt_c_gui
     public :: qtf_qwindow_destroy, qtf_qwindow_show, qtf_qwindow_hide, qtf_qwindow_isVisible
     public :: qtf_qwindow_isExposed, qtf_qwindow_resize, qtf_qwindow_width, qtf_qwindow_height
     public :: qtf_qwindow_devicePixelRatio, qtf_qwindow_winId, qtf_qwindow_setTitle, qtf_qwindow_title
-    public :: qtf_qwindow_requestUpdate
+    public :: qtf_qwindow_screen, qtf_qwindow_requestUpdate, qtf_QGuiApplication_clipboard
+    public :: qtf_QGuiApplication_primaryScreen, qtf_QGuiApplication_screenCount, qtf_QGuiApplication_screen
+    public :: qtf_QGuiApplication_screenAt, qtf_QGuiApplication_setOverrideCursor
+    public :: qtf_QGuiApplication_changeOverrideCursor, qtf_QGuiApplication_restoreOverrideCursor
+    public :: qtf_QGuiApplication_overrideCursorShape, qtf_QCursor_x, qtf_QCursor_y, qtf_QCursor_setPos
 
 end module qt_c_gui

@@ -356,7 +356,7 @@ module qt_core
         procedure :: delete => qevent_delete
     end type QEvent
     !> Constructor: `QEvent(type)`, a synthetic event (e.g. QEvent_FocusIn, QEvent_Enter,
-    !> QEvent_Show) to send with QCoreApplication_sendEvent; delete it after use.
+    !> QEvent_Show, QEvent_DragLeave) to send with QCoreApplication_sendEvent; delete it after use.
     interface QEvent
         module procedure :: qevent_new
     end interface QEvent

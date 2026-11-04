@@ -8,6 +8,7 @@
 
 #include <QCoreApplication>
 #include <QDateTime>
+#include <QDragLeaveEvent>
 #include <QEnterEvent>
 #include <QEvent>
 #include <QFocusEvent>
@@ -355,6 +356,7 @@ QTF_API void *qtf_qevent_new(int type) {
     case QEvent::Enter: return new QEnterEvent(QPointF(), QPointF(), QPointF());
     case QEvent::Show: return new QShowEvent();
     case QEvent::Hide: return new QHideEvent();
+    case QEvent::DragLeave: return new QDragLeaveEvent();
     default: return new QEvent(QEvent::Type(type));
     }
 }

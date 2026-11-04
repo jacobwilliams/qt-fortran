@@ -21,6 +21,9 @@ cpp_includes = [
     "QAction", "QFontMetrics", "QImage", "QKeyEvent", "QKeySequence", "QMouseEvent", "QPainter",
     "QPixmap", "QPolygonF", "QResizeEvent", "QWheelEvent", "QIcon", "QCloseEvent", "QContextMenuEvent",
     "QWindow",
+    "QPainterPath", "QLinearGradient", "QRadialGradient", "QConicalGradient", "QTransform", "QFont",
+    "QGuiApplication", "QClipboard", "QCursor", "QMimeData", "QDrag", "QDropEvent", "QDragEnterEvent",
+    "QDragMoveEvent", "QScreen", "QUrl",
     "QValidator", "QIntValidator", "QDoubleValidator", "QRegularExpressionValidator", "QRegularExpression", "QLocale",
     "cmath", "vector",
 ]
@@ -124,6 +127,58 @@ QTF_API void *qtf_qimage_colorbar(const char *cmap, int len, int width, int heig
     return img;
 }
 
+// A font from the fields of a Fortran QFont, starting from the application font
+// (an empty family or pointSize <= 0 keeps the default).
+static QFont qtf_font(const QString &family, double pointSize, bool bold, bool italic) {
+    QFont f = QGuiApplication::font();
+    if (!family.isEmpty()) f.setFamily(family);
+    if (pointSize > 0) f.setPointSizeF(pointSize);
+    f.setBold(bold);
+    f.setItalic(italic);
+    return f;
+}
+
+// URLs from strings: "scheme://..." as given, anything else as a local file path.
+static QList<QUrl> qtf_urls(const QStringList &items) {
+    QList<QUrl> urls;
+    for (const QString &s : items) urls << (s.contains(QLatin1String("://")) ? QUrl(s) : QUrl::fromLocalFile(s));
+    return urls;
+}
+
+// URLs as strings: local files as paths, others as URLs.
+static QStringList qtf_url_strings(const QList<QUrl> &urls) {
+    QStringList out;
+    for (const QUrl &u : urls) out << (u.isLocalFile() ? u.toLocalFile() : u.toString());
+    return out;
+}
+
+// A synthetic drag-enter, drag-move or drop event.
+static QDropEvent *qtf_drop_event(QEvent::Type type, double x, double y, QMimeData *mime, Qt::DropActions actions,
+                                  Qt::MouseButtons buttons, Qt::KeyboardModifiers modifiers) {
+    const QPoint p(qRound(x), qRound(y));
+    switch (type) {
+    case QEvent::DragEnter: return new QDragEnterEvent(p, actions, mime, buttons, modifiers);
+    case QEvent::DragMove: return new QDragMoveEvent(p, actions, mime, buttons, modifiers);
+    default: return new QDropEvent(QPointF(x, y), actions, mime, buttons, modifiers);
+    }
+}
+
+// The mime data of a drag-and-drop event (never null).
+static const QMimeData *qtf_mime(const QDropEvent *e) {
+    static const QMimeData empty;
+    return e->mimeData() ? e->mimeData() : &empty;
+}
+
+// Release a gradient (QGradient has no virtual destructor: delete the actual type).
+static void qtf_delete_gradient(QGradient *g) {
+    switch (g->type()) {
+    case QGradient::LinearGradient: delete static_cast<QLinearGradient *>(g); break;
+    case QGradient::RadialGradient: delete static_cast<QRadialGradient *>(g); break;
+    case QGradient::ConicalGradient: delete static_cast<QConicalGradient *>(g); break;
+    default: delete g; break;
+    }
+}
+
 static QPolygonF qtf_polygon(const double *xs, const double *ys, int n) {
     QPolygonF poly;
     poly.reserve(n);
@@ -135,6 +190,21 @@ static QPolygonF qtf_polygon(const double *xs, const double *ys, int n) {
 fortran_decls = """
     public :: QImage_fromArray, QImage_colorbar
 """
+
+functions = [
+    { sig = "QGuiApplication_clipboard() -> QClipboard", cpp = "QGuiApplication::clipboard()", doc = "The system clipboard (needs the application object)." },
+    { sig = "QGuiApplication_primaryScreen() -> QScreen", cpp = "QGuiApplication::primaryScreen()", doc = "The primary screen." },
+    { sig = "QGuiApplication_screenCount() -> int", cpp = "int(QGuiApplication::screens().size())", doc = "The number of screens." },
+    { sig = "QGuiApplication_screen(index: int) -> QScreen", cpp = "QGuiApplication::screens().value({index}, nullptr)", doc = "Screen `index` (0-based; a null handle if out of range)." },
+    { sig = "QGuiApplication_screenAt(x: int, y: int) -> QScreen", cpp = "QGuiApplication::screenAt(QPoint({x}, {y}))", doc = "The screen containing the point (x, y) of the virtual desktop (a null handle if none)." },
+    { sig = "QGuiApplication_setOverrideCursor(shape: Qt::CursorShape)", cpp = "QGuiApplication::setOverrideCursor(QCursor({shape}))", doc = "Show cursor `shape` (e.g. Qt_WaitCursor) over all windows until QGuiApplication_restoreOverrideCursor; calls nest." },
+    { sig = "QGuiApplication_changeOverrideCursor(shape: Qt::CursorShape)", cpp = "QGuiApplication::changeOverrideCursor(QCursor({shape}))", doc = "Change the current override cursor." },
+    { sig = "QGuiApplication_restoreOverrideCursor()", cpp = "QGuiApplication::restoreOverrideCursor()", doc = "Undo the last QGuiApplication_setOverrideCursor." },
+    { sig = "QGuiApplication_overrideCursorShape() -> int", cpp = "QGuiApplication::overrideCursor() ? int(QGuiApplication::overrideCursor()->shape()) : -1", doc = "The override cursor's shape (-1 if none is set)." },
+    { sig = "QCursor_x() -> int", cpp = "QCursor::pos().x()", doc = "The mouse cursor's x position on the screen (virtual desktop)." },
+    { sig = "QCursor_y() -> int", cpp = "QCursor::pos().y()", doc = "The mouse cursor's y position on the screen." },
+    { sig = "QCursor_setPos(x: int, y: int)", cpp = "QCursor::setPos({x}, {y})", doc = "Move the mouse cursor to (x, y) on the screen (where the system allows it)." },
+]
 
 # ---------------------------------------------------------------------------
 # event / painter signals (used by QtfWidget): verbatim
@@ -183,6 +253,13 @@ fortran_decls_after = '''
             type(QCloseEvent), intent(in) :: event
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_close_event
+        !> Slot for drag-and-drop events (drag enter, drag move, drop).
+        subroutine qt_slot_drop_event(event, data)
+            import :: QDropEvent
+            implicit none
+            type(QDropEvent), intent(in) :: event
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_drop_event
         !> Slot for context-menu requests.
         subroutine qt_slot_context_menu_event(event, data)
             import :: QContextMenuEvent
@@ -193,7 +270,25 @@ fortran_decls_after = '''
     end interface
     public :: qt_slot_painter, qt_slot_mouse_event, qt_slot_key_event
     public :: qt_slot_wheel_event, qt_slot_resize_event
-    public :: qt_slot_close_event, qt_slot_context_menu_event
+    public :: qt_slot_close_event, qt_slot_context_menu_event, qt_slot_drop_event
+
+    !> Constructor: `QFontMetrics(font)`, metrics of a QFont.
+    interface QFontMetrics
+        module procedure :: qfontmetrics_fromFont
+    end interface QFontMetrics
+
+    !> A signal carrying a drag-and-drop event (accept it in the slot to take the drop).
+    type, extends(QtfSignal), public :: QSignalDropEvent
+    contains
+        procedure :: connect => qsignaldropevent_connect
+    end type QSignalDropEvent
+
+    !> Slot handler for QSignalDropEvent.
+    type, extends(qt_slot_handler) :: drop_handler
+        procedure(qt_slot_drop_event), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => drop_handler_invoke
+    end type drop_handler
 
     !> Paint request: slots receive an active painter (do not `end` it).
     type, extends(QtfSignal), public :: QSignalPainter
@@ -449,6 +544,31 @@ fortran_procedures = '''
         call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalcontextmenuevent_connect
 
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignaldropevent_connect(self, slot, data, connection)
+        class(QSignalDropEvent), intent(in) :: self
+        procedure(qt_slot_drop_event) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
+        type(drop_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self, h, data, connection)
+    end subroutine qsignaldropevent_connect
+
+    !> Call the slot with the raw pointer wrapped as a QDropEvent.
+    subroutine drop_handler_invoke(self, args, data)
+        class(drop_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QDropEvent) :: e
+        e%ptr = args%p
+        if (associated(data)) then
+            call self%f(e, data)
+        else
+            call self%f(e)
+        end if
+    end subroutine drop_handler_invoke
+
     !> Call the slot with the raw pointer wrapped as a QContextMenuEvent.
     subroutine context_menu_handler_invoke(self, args, data)
         class(context_menu_handler), intent(in) :: self
@@ -501,6 +621,48 @@ values = [
     "QSurface_RasterSurface = 0", "QSurface_OpenGLSurface = 1", "QSurface_RasterGLSurface = 2",
     "QSurface_OpenVGSurface = 3", "QSurface_VulkanSurface = 4", "QSurface_MetalSurface = 5",
     "QSurface_Direct3DSurface = 6",
+]
+
+[[enum]]
+doc = "Qt::FillRule (QPainterPath%setFillRule)"
+values = ["Qt_OddEvenFill = 0", "Qt_WindingFill = 1"]
+
+[[enum]]
+doc = "QGradient::Spread and QGradient::CoordinateMode"
+values = [
+    "QGradient_PadSpread = 0", "QGradient_ReflectSpread = 1", "QGradient_RepeatSpread = 2",
+    "QGradient_LogicalMode = 0", "QGradient_StretchToDeviceMode = 1", "QGradient_ObjectBoundingMode = 2",
+    "QGradient_ObjectMode = 3",
+]
+
+[[enum]]
+doc = "Qt::TextElideMode (QFontMetrics%elidedText)"
+values = ["Qt_ElideLeft = 0", "Qt_ElideRight = 1", "Qt_ElideMiddle = 2", "Qt_ElideNone = 3"]
+
+[[enum]]
+doc = "QClipboard::Mode"
+values = ["QClipboard_Clipboard = 0", "QClipboard_Selection = 1", "QClipboard_FindBuffer = 2"]
+
+[[enum]]
+doc = "Qt::DropAction (drag and drop; combine with ior for the possible actions)"
+values = [
+    "Qt_IgnoreAction = 0", "Qt_CopyAction = 1", "Qt_MoveAction = 2", "Qt_LinkAction = 4",
+    "Qt_ActionMask = 0xff",
+]
+
+[[enum]]
+doc = "QEvent::Type of drag-and-drop events"
+values = ["QEvent_DragEnter = 60", "QEvent_DragMove = 61", "QEvent_DragLeave = 62", "QEvent_Drop = 63"]
+
+[[enum]]
+doc = "Qt::CursorShape (QWidget%setCursor, QGuiApplication_setOverrideCursor)"
+values = [
+    "Qt_ArrowCursor = 0", "Qt_UpArrowCursor = 1", "Qt_CrossCursor = 2", "Qt_WaitCursor = 3",
+    "Qt_IBeamCursor = 4", "Qt_SizeVerCursor = 5", "Qt_SizeHorCursor = 6", "Qt_SizeBDiagCursor = 7",
+    "Qt_SizeFDiagCursor = 8", "Qt_SizeAllCursor = 9", "Qt_BlankCursor = 10", "Qt_SplitVCursor = 11",
+    "Qt_SplitHCursor = 12", "Qt_PointingHandCursor = 13", "Qt_ForbiddenCursor = 14",
+    "Qt_WhatsThisCursor = 15", "Qt_BusyCursor = 16", "Qt_OpenHandCursor = 17", "Qt_ClosedHandCursor = 18",
+    "Qt_DragCopyCursor = 19", "Qt_DragMoveCursor = 20", "Qt_DragLinkCursor = 21",
 ]
 
 [[enum]]
@@ -847,6 +1009,24 @@ methods = [
     { sig = "drawTextRect(x: num, y: num, w: num, h: num, flags: int, text: string)", fortran_name = "drawText", cpp = "{self}->drawText(QRectF({x}, {y}, {w}, {h}), {flags}, {text})", doc = "Draw text inside a rectangle, aligned by `flags` (e.g. Qt_AlignCenter)." },
     { sig = "drawImage(x: int, y: int, image: QImage)", cpp = "{self}->drawImage(QPointF({x}, {y}), *{image})", doc = "Draw `image` with its top-left corner at (x, y)." },
     { sig = "drawImageRect(x: num, y: num, w: num, h: num, image: QImage)", fortran_name = "drawImage", cpp = "{self}->drawImage(QRectF({x}, {y}, {w}, {h}), *{image})", doc = "Draw `image` scaled into the rectangle (x, y, w, h); smooth with the QPainter_SmoothPixmapTransform hint." },
+    { sig = "drawPixmap(x: int, y: int, pixmap: QPixmap)", cpp = "{self}->drawPixmap(QPoint({x}, {y}), *{pixmap})", doc = "Draw `pixmap` with its top-left corner at (x, y)." },
+    { sig = "drawArc(x: num, y: num, w: num, h: num, startAngle: double, spanAngle: double)", cpp = "{self}->drawArc(QRectF({x}, {y}, {w}, {h}), qRound({startAngle} * 16), qRound({spanAngle} * 16))", doc = "Draw an arc of the ellipse inscribed in (x, y, w, h): angles in degrees, counterclockwise from 3 o'clock." },
+    { sig = "drawPie(x: num, y: num, w: num, h: num, startAngle: double, spanAngle: double)", cpp = "{self}->drawPie(QRectF({x}, {y}, {w}, {h}), qRound({startAngle} * 16), qRound({spanAngle} * 16))", doc = "Draw a pie segment (filled with the brush); angles as for `drawArc`." },
+    { sig = "drawChord(x: num, y: num, w: num, h: num, startAngle: double, spanAngle: double)", cpp = "{self}->drawChord(QRectF({x}, {y}, {w}, {h}), qRound({startAngle} * 16), qRound({spanAngle} * 16))", doc = "Draw a chord (an arc closed by a straight line); angles as for `drawArc`." },
+    { sig = "drawPath(path: QPainterPath)", cpp = "{self}->drawPath(*{path})", doc = "Draw a path: outlined with the pen, filled with the brush." },
+    { sig = "fillPath(path: QPainterPath, color: QColor)", cpp = "{self}->fillPath(*{path}, QBrush({color}))", doc = "Fill a path with `color` (no outline)." },
+    { sig = "fillPathGradient(path: QPainterPath, gradient: QGradient)", fortran_name = "fillPath", cpp = "{self}->fillPath(*{path}, QBrush(*{gradient}))", doc = "Fill a path with a gradient (no outline)." },
+    { sig = "strokePath(path: QPainterPath, pen: QPen)", cpp = "{self}->strokePath(*{path}, {pen})", doc = "Draw the outline of a path with `pen` (no fill)." },
+    { sig = "setBrushGradient(gradient: QGradient)", fortran_name = "setBrush", cpp = "{self}->setBrush(QBrush(*{gradient}))", doc = "Fill shapes with a gradient (copied)." },
+    { sig = "fillRectGradient(x: num, y: num, w: num, h: num, gradient: QGradient)", fortran_name = "fillRect", cpp = "{self}->fillRect(QRectF({x}, {y}, {w}, {h}), QBrush(*{gradient}))", doc = "Fill a rectangle with a gradient." },
+    { sig = "setClipRect(x: num, y: num, w: num, h: num)", cpp = "{self}->setClipRect(QRectF({x}, {y}, {w}, {h}))", doc = "Draw only inside the rectangle (in the current coordinates)." },
+    { sig = "setClipPath(path: QPainterPath)", cpp = "{self}->setClipPath(*{path})", doc = "Draw only inside the path." },
+    "setClipping(enable: bool) -- Turn clipping on or off (off: draw everywhere).",
+    "hasClipping() -> bool -- True if clipping is on.",
+    "shear(sh: double, sv: double) -- Shear the coordinate system by (sh, sv).",
+    { sig = "setTransform(transform: QTransform, combine: bool = .false.)", cpp = "{self}->setTransform(*{transform}, {combine})", doc = "Set the coordinate transform (`combine`: multiply it onto the current one)." },
+    { sig = "transform() -> QTransform", cpp = "new QTransform({self}->transform())", doc = "A copy of the current coordinate transform (delete it when done)." },
+    { sig = "fontMetrics() -> QFontMetrics", cpp = "new QFontMetrics({self}->fontMetrics())", doc = "Metrics of the current font (delete them when done)." },
     { sig = "textWidth(text: string) -> int", cpp = "{self}->fontMetrics().horizontalAdvance({text})", doc = "Width in pixels of `text` in the current font." },
     { sig = "fontHeight() -> int", cpp = "{self}->fontMetrics().height()", doc = "Line height in pixels of the current font." },
 ]
@@ -994,6 +1174,355 @@ methods = [
     "modifiers() -> Qt::KeyboardModifiers -- Keyboard modifiers held (a combination of Qt_*Modifier).",
 ]
 
+
+# ---------------------------------------------------------------------------
+# painter paths, gradients, transforms, font metrics
+
+[[class]]
+name = "QPainterPath"
+handle = true
+doc = """
+A shape made of lines and curves, drawn with QPainter%drawPath / fillPath /
+strokePath or used for clipping. Build it with moveTo, lineTo, cubicTo, ...
+and the add* shapes; release it with `delete`."""
+ctor = "() -- An empty path."
+methods = [
+    "moveTo(x: num, y: num) -- Start a new subpath at (x, y).",
+    "lineTo(x: num, y: num) -- A straight line to (x, y).",
+    "quadTo(cx: num, cy: num, x: num, y: num) -- A quadratic Bezier curve to (x, y) with control point (cx, cy).",
+    "cubicTo(c1x: num, c1y: num, c2x: num, c2y: num, x: num, y: num) -- A cubic Bezier curve to (x, y) with control points (c1x, c1y) and (c2x, c2y).",
+    { sig = "arcTo(x: num, y: num, w: num, h: num, startAngle: double, sweepLength: double)", cpp = "{self}->arcTo(QRectF({x}, {y}, {w}, {h}), {startAngle}, {sweepLength})", doc = "An arc of the ellipse inscribed in (x, y, w, h), joined to the current point by a line; angles in degrees, counterclockwise from 3 o'clock." },
+    "closeSubpath() -- Close the current subpath with a line to its start.",
+    { sig = "addRect(x: num, y: num, w: num, h: num)", cpp = "{self}->addRect(QRectF({x}, {y}, {w}, {h}))", doc = "Add a rectangle (a closed subpath)." },
+    { sig = "addRoundedRect(x: num, y: num, w: num, h: num, rx: num, ry: num)", cpp = "{self}->addRoundedRect(QRectF({x}, {y}, {w}, {h}), {rx}, {ry})", doc = "Add a rectangle with corners rounded by radii (rx, ry)." },
+    { sig = "addEllipse(x: num, y: num, w: num, h: num)", cpp = "{self}->addEllipse(QRectF({x}, {y}, {w}, {h}))", doc = "Add the ellipse inscribed in (x, y, w, h)." },
+    { sig = "addPolygon(x: num[], y: num[])", cpp = "{self}->addPolygon(qtf_polygon({x}, {y}, {n}))", doc = "Add a polygon through the points (x(i), y(i)) (not closed: call closeSubpath)." },
+    { sig = "addText(x: num, y: num, text: string, family: string = '', pointSize: double = -1.0_c_double, bold: bool = .false.)", cpp = "{self}->addText(QPointF({x}, {y}), qtf_font({family}, {pointSize}, {bold}, false), {text})", doc = "Add the outline of `text` with its baseline starting at (x, y) (default: the application font)." },
+    { sig = "addPath(other: QPainterPath)", cpp = "{self}->addPath(*{other})", doc = "Add the subpaths of another path." },
+    "translate(dx: num, dy: num) -- Move the whole path by (dx, dy).",
+    "setFillRule(rule: Qt::FillRule) -- How overlapping subpaths fill: Qt_OddEvenFill (default) or Qt_WindingFill.",
+    { sig = "containsPoint(x: double, y: double) -> bool", cpp = "{self}->contains(QPointF({x}, {y}))", doc = "True if (x, y) is inside the path." },
+    "isEmpty() -> bool -- True if the path has no elements.",
+    "length() -> double -- The length of the path.",
+    "elementCount() -> int -- The number of path elements (move-to, line-to and curve points).",
+    { sig = "pointAtPercentX(t: double) -> double", cpp = "{self}->pointAtPercent({t}).x()", doc = "x of the point at fraction `t` (0..1) of the path's length." },
+    { sig = "pointAtPercentY(t: double) -> double", cpp = "{self}->pointAtPercent({t}).y()", doc = "y of the point at fraction `t` (0..1) of the path's length." },
+    { sig = "boundingX() -> double", cpp = "{self}->boundingRect().x()", doc = "Left of the bounding rectangle." },
+    { sig = "boundingY() -> double", cpp = "{self}->boundingRect().y()", doc = "Top of the bounding rectangle." },
+    { sig = "boundingWidth() -> double", cpp = "{self}->boundingRect().width()", doc = "Width of the bounding rectangle." },
+    { sig = "boundingHeight() -> double", cpp = "{self}->boundingRect().height()", doc = "Height of the bounding rectangle." },
+    { sig = "copy() -> QPainterPath", cpp = "new QPainterPath(*{self})", doc = "A copy of the path (delete it when done)." },
+    { sig = "united(other: QPainterPath) -> QPainterPath", cpp = "new QPainterPath({self}->united(*{other}))", doc = "A new path: the union of the two filled areas." },
+    { sig = "intersected(other: QPainterPath) -> QPainterPath", cpp = "new QPainterPath({self}->intersected(*{other}))", doc = "A new path: the intersection of the two filled areas." },
+    { sig = "subtracted(other: QPainterPath) -> QPainterPath", cpp = "new QPainterPath({self}->subtracted(*{other}))", doc = "A new path: this area minus the other." },
+]
+cpp = """
+// Release a path.
+QTF_API void qtf_qpainterpath_delete(void *self) { delete as<QPainterPath>(self); }
+"""
+fortran_bindings = "procedure :: delete => qpainterpath_delete"
+fortran_procedures = """
+    !> Release the path.
+    subroutine qpainterpath_delete(self)
+        class(QPainterPath), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qpainterpath_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qpainterpath_delete
+"""
+
+[[class]]
+name = "QGradient"
+handle = true
+doc = """
+Base of the gradients (QLinearGradient, QRadialGradient, QConicalGradient):
+colors at stops from 0 to 1. Paint with it through QPainter%setBrush,
+fillRect or fillPath (which copy it); release it with `delete`."""
+methods = [
+    "setColorAt(position: double, color: QColor) -- The color at `position` (0..1) along the gradient.",
+    "setSpread(spread: QGradient::Spread) -- Beyond the ends: QGradient_PadSpread (default), _ReflectSpread or _RepeatSpread.",
+    "setCoordinateMode(mode: QGradient::CoordinateMode) -- QGradient_LogicalMode (default: painter coordinates) or QGradient_ObjectMode (0..1 across each filled shape).",
+]
+cpp = """
+// Release a gradient.
+QTF_API void qtf_qgradient_delete(void *self) { qtf_delete_gradient(as<QGradient>(self)); }
+"""
+fortran_bindings = "procedure :: delete => qgradient_delete"
+fortran_procedures = """
+    !> Release the gradient.
+    subroutine qgradient_delete(self)
+        class(QGradient), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qgradient_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qgradient_delete
+"""
+
+[[class]]
+name = "QLinearGradient"
+base = "QGradient"
+handle = true
+doc = "A gradient along the line from (x1, y1) to (x2, y2)."
+ctor = "(x1: double, y1: double, x2: double, y2: double) -- A linear gradient from (x1, y1) (position 0) to (x2, y2) (position 1)."
+methods = [
+    "setStart(x: double, y: double) -- The start point (position 0).",
+    "setFinalStop(x: double, y: double) -- The end point (position 1).",
+]
+
+[[class]]
+name = "QRadialGradient"
+base = "QGradient"
+handle = true
+doc = "A gradient from a focal point (by default the center) out to a circle."
+ctor = "(cx: double, cy: double, radius: double) -- A radial gradient: position 0 at the center (cx, cy), 1 at `radius`."
+methods = [
+    "setCenter(x: double, y: double) -- The center of the circle.",
+    "setRadius(radius: double) -- The radius (position 1).",
+    "setFocalPoint(x: double, y: double) -- The focal point (position 0); by default the center.",
+]
+
+[[class]]
+name = "QConicalGradient"
+base = "QGradient"
+handle = true
+doc = "A gradient sweeping counterclockwise around a center."
+ctor = "(cx: double, cy: double, angle: double) -- A conical gradient around (cx, cy), starting at `angle` degrees (counterclockwise from 3 o'clock)."
+methods = [
+    "setCenter(x: double, y: double) -- The center.",
+    "setAngle(angle: double) -- The start angle in degrees.",
+]
+
+[[class]]
+name = "QTransform"
+handle = true
+doc = """
+A 2D coordinate transform (translation, rotation, scaling, shearing) for
+QPainter%setTransform; release it with `delete`. As in Qt, each call
+(`translate`, `rotate`, ...) applies before the transforms already in it."""
+ctor = "() -- The identity transform."
+ctors = [
+    { sig = "(m11: double, m12: double, m21: double, m22: double, dx: double, dy: double)", name = "fromAffine", doc = "An affine transform: x' = m11 x + m21 y + dx, y' = m12 x + m22 y + dy." },
+]
+methods = [
+    "translate(dx: double, dy: double) -- Move by (dx, dy).",
+    "rotate(degrees: double) -- Rotate clockwise (on screen, where y points down) by `degrees`.",
+    "scale(sx: double, sy: double) -- Scale by (sx, sy).",
+    "shear(sh: double, sv: double) -- Shear by (sh, sv).",
+    "reset() -- Back to the identity.",
+    "isIdentity() -> bool -- True for the identity.",
+    "isInvertible() -> bool -- True if the transform can be inverted.",
+    "determinant() -> double -- The determinant of the 2x2 part.",
+    "m11() -> double -- Matrix element (1, 1): x scale.",
+    "m12() -> double -- Matrix element (1, 2): y shear.",
+    "m21() -> double -- Matrix element (2, 1): x shear.",
+    "m22() -> double -- Matrix element (2, 2): y scale.",
+    "dx() -> double -- The x translation.",
+    "dy() -> double -- The y translation.",
+    { sig = "mapX(x: double, y: double) -> double", cpp = "{self}->map(QPointF({x}, {y})).x()", doc = "x of the transformed point (x, y)." },
+    { sig = "mapY(x: double, y: double) -> double", cpp = "{self}->map(QPointF({x}, {y})).y()", doc = "y of the transformed point (x, y)." },
+    { sig = "inverted(ok: bool&) -> QTransform", cpp = "new QTransform({self}->inverted({ok}))", doc = "A new transform: the inverse (the identity if not invertible; then `ok` is false)." },
+    { sig = "multiplied(other: QTransform) -> QTransform", cpp = "new QTransform(*{self} * *{other})", doc = "A new transform: this one, then `other`." },
+    { sig = "copy() -> QTransform", cpp = "new QTransform(*{self})", doc = "A copy (delete it when done)." },
+]
+cpp = """
+// Release a transform.
+QTF_API void qtf_qtransform_delete(void *self) { delete as<QTransform>(self); }
+"""
+fortran_bindings = "procedure :: delete => qtransform_delete"
+fortran_procedures = """
+    !> Release the transform.
+    subroutine qtransform_delete(self)
+        class(QTransform), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qtransform_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qtransform_delete
+"""
+
+[[class]]
+name = "QFontMetrics"
+handle = true
+doc = """
+Text measurements for a font, in pixels: `QFontMetrics()` for the
+application font, `QFontMetrics(font)` for a QFont, or QPainter%fontMetrics
+for the painter's. Release it with `delete`."""
+ctor = "() -- Metrics of the application's default font."
+cpp_ctor = "new QFontMetrics(QGuiApplication::font())"
+methods = [
+    "horizontalAdvance(text: string) -> int -- Width of `text` (the advance to where the next text would start).",
+    { sig = "boundingWidth(text: string) -> int", cpp = "{self}->boundingRect({text}).width()", doc = "Width of the ink of `text` (its bounding rectangle)." },
+    "height() -> int -- Line height (ascent + descent).",
+    "ascent() -> int -- Distance from the baseline to the top of the tallest glyphs.",
+    "descent() -> int -- Distance from the baseline to the bottom of the lowest glyphs.",
+    "leading() -> int -- Extra space between lines.",
+    "lineSpacing() -> int -- Distance from one baseline to the next.",
+    "averageCharWidth() -> int -- Average character width.",
+    "maxWidth() -> int -- Width of the widest character.",
+    "capHeight() -> int -- Height of capital letters.",
+    "xHeight() -> int -- Height of lowercase letters (without ascenders).",
+    { sig = "elidedText(text: string, mode: Qt::TextElideMode, width: int) -> string", doc = "`text` shortened with an ellipsis (Qt_ElideRight, _ElideLeft, _ElideMiddle) to fit `width` pixels." },
+]
+cpp = """
+// Release font metrics.
+QTF_API void qtf_qfontmetrics_delete(void *self) { delete as<QFontMetrics>(self); }
+
+// Metrics of a font given by the fields of a Fortran QFont.
+QTF_API void *qtf_qfontmetrics_fromFont(const char *family, int len, double pointSize, int bold, int italic) {
+    return new QFontMetrics(qtf_font(qtf_qstring(family, len), pointSize, bold != 0, italic != 0));
+}
+"""
+fortran_bindings = "procedure :: delete => qfontmetrics_delete"
+fortran_procedures = """
+    !> Release the metrics.
+    subroutine qfontmetrics_delete(self)
+        class(QFontMetrics), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qfontmetrics_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qfontmetrics_delete
+
+    !> Metrics of `font` (unset fields take the application font's values).
+    function qfontmetrics_fromFont(font) result(res)
+        type(QFont), intent(in) :: font
+        type(QFontMetrics) :: res
+        if (allocated(font%family)) then
+            res%ptr = qtf_qfontmetrics_fromFont(font%family, len(font%family, c_int), font%pointSize, &
+                                                qtf_int(font%bold), qtf_int(font%italic))
+        else
+            res%ptr = qtf_qfontmetrics_fromFont('', 0_c_int, font%pointSize, qtf_int(font%bold), &
+                                                qtf_int(font%italic))
+        end if
+    end function qfontmetrics_fromFont
+"""
+
+# ---------------------------------------------------------------------------
+# clipboard, drag and drop, screens
+
+[[class]]
+name = "QMimeData"
+doc = """
+Data with MIME types, for drag and drop and the clipboard: text, HTML, URLs
+(file paths), an image, or any `format` as text. A QDrag or QClipboard that is
+given it takes ownership; otherwise delete it."""
+ctor = "() -- Empty data."
+methods = [
+    "setText(text: string) -- Set the plain text (text/plain).",
+    "text() -> string -- The plain text.",
+    "hasText() -> bool -- True if there is plain text.",
+    "setHtml(html: string) -- Set HTML (text/html).",
+    "html() -> string -- The HTML.",
+    "hasHtml() -> bool -- True if there is HTML.",
+    { sig = "setUrls(urls: strings)", cpp = "{self}->setUrls(qtf_urls({urls}))", doc = "Set URLs (text/uri-list): file paths, or URLs such as 'https://...'." },
+    { sig = "urls() -> strings", cpp = "qtf_url_strings({self}->urls())", doc = "The URLs: local files as paths." },
+    "hasUrls() -> bool -- True if there are URLs (e.g. files dropped from the desktop).",
+    { sig = "setImage(image: QImage)", cpp = "{self}->setImageData(*{image})", doc = "Set an image (copied)." },
+    { sig = "image() -> QImage", cpp = "new QImage(qvariant_cast<QImage>({self}->imageData()))", doc = "A copy of the image (null if none; delete it when done)." },
+    "hasImage() -> bool -- True if there is an image.",
+    { sig = "setData(format: string, data: string)", cpp = "{self}->setData({format}, {data}.toUtf8())", doc = "Set data of any MIME type `format` (e.g. 'application/x-mydata') as UTF-8 text." },
+    { sig = "data(format: string) -> string", cpp = "QString::fromUtf8({self}->data({format}))", doc = "The data of `format` as text (empty if none)." },
+    "hasFormat(format: string) -> bool -- True if there is data of MIME type `format`.",
+    "formats() -> strings -- The MIME types present.",
+    "clear() -- Remove all data.",
+]
+
+[[class]]
+name = "QDropEvent"
+base = "QEvent"
+handle = true
+doc = """
+A drag entering, moving over or dropped on a widget (QWidget's
+dragEnterEvent, dragMoveEvent and dropEvent; the widget must
+`setAcceptDrops(.true.)`). In dragEnterEvent call `acceptProposedAction()`
+to accept the drag (otherwise no drop follows); in dropEvent read the data
+(`text`, `urls`, ...) and accept it."""
+ctor = "(type: QEvent::Type, x: double, y: double, mimeData: QMimeData, actions: Qt::DropActions = Qt_CopyAction, buttons: Qt::MouseButtons = Qt_LeftButton, modifiers: Qt::KeyboardModifiers = Qt_NoModifier) -- A synthetic QEvent_DragEnter, QEvent_DragMove or QEvent_Drop event carrying `mimeData` (not owned: delete both after use), e.g. to test drop handling with QCoreApplication_sendEvent. As in a real drag, a widget gets moves and the drop only after accepting a drag-enter."
+cpp_ctor = "qtf_drop_event({type}, {x}, {y}, {mimeData}, {actions}, {buttons}, {modifiers})"
+methods = [
+    { sig = "x() -> double", cpp = "{self}->position().x()", doc = "Horizontal position in widget coordinates." },
+    { sig = "y() -> double", cpp = "{self}->position().y()", doc = "Vertical position in widget coordinates." },
+    "proposedAction() -> Qt::DropAction -- The action the user asks for (Qt_CopyAction, _MoveAction, _LinkAction).",
+    "possibleActions() -> Qt::DropActions -- The actions the source allows (a combination of Qt_*Action).",
+    "dropAction() -> Qt::DropAction -- The action that will be taken.",
+    "setDropAction(action: Qt::DropAction) -- Take another (possible) action than the proposed one; then `accept()` the event.",
+    "acceptProposedAction() -- Accept the drag or drop with the proposed action.",
+    "buttons() -> Qt::MouseButtons -- Mouse buttons held.",
+    "modifiers() -> Qt::KeyboardModifiers -- Keyboard modifiers held (e.g. Ctrl to copy).",
+    { sig = "mimeData() -> QMimeData", cpp = "const_cast<QMimeData *>(qtf_mime({self}))", doc = "The dragged data (valid during the slot)." },
+    { sig = "hasText() -> bool", cpp = "qtf_mime({self})->hasText()", doc = "True if the drag carries plain text." },
+    { sig = "text() -> string", cpp = "qtf_mime({self})->text()", doc = "The dragged plain text." },
+    { sig = "hasUrls() -> bool", cpp = "qtf_mime({self})->hasUrls()", doc = "True if the drag carries URLs (e.g. files from the desktop)." },
+    { sig = "urls() -> strings", cpp = "qtf_url_strings(qtf_mime({self})->urls())", doc = "The dragged URLs: local files as paths." },
+    { sig = "hasImage() -> bool", cpp = "qtf_mime({self})->hasImage()", doc = "True if the drag carries an image." },
+    { sig = "hasFormat(format: string) -> bool", cpp = "qtf_mime({self})->hasFormat({format})", doc = "True if the drag carries data of MIME type `format`." },
+    { sig = "data(format: string) -> string", cpp = "QString::fromUtf8(qtf_mime({self})->data({format}))", doc = "The dragged data of `format`, as text." },
+]
+
+[[class]]
+name = "QDrag"
+doc = """
+Start a drag from a widget, typically in its mouse-move slot once the mouse
+has moved far enough: `drag = QDrag(widget)`, `call drag%setMimeData(data)`,
+`action = drag%exec(Qt_CopyAction)`. `exec` returns when the drop is done
+(the action taken, or Qt_IgnoreAction if cancelled). Delete the drag
+afterwards with `deleteLater`."""
+ctor = "(source: QObject) -- A drag from `source` (the widget dragged from)."
+methods = [
+    "setMimeData(data: QMimeData) -- The data to drag (the drag takes ownership).",
+    { sig = "setPixmap(pixmap: QPixmap)", cpp = "{self}->setPixmap(*{pixmap})", doc = "The image shown under the cursor (copied)." },
+    { sig = "setHotSpot(x: int, y: int)", cpp = "{self}->setHotSpot(QPoint({x}, {y}))", doc = "Where the cursor is on the pixmap." },
+    { sig = "exec(supportedActions: Qt::DropActions = Qt_CopyAction, defaultAction: Qt::DropAction = Qt_IgnoreAction) -> Qt::DropAction", doc = "Run the drag (blocks until it ends); returns the action taken, Qt_IgnoreAction if cancelled." },
+]
+
+[[class]]
+name = "QClipboard"
+doc = """
+The system clipboard: `cb = QGuiApplication_clipboard()`, then `setText`,
+`text`, `setImage`, ... (needs the application object). `mode` selects
+QClipboard_Clipboard (default) or, on X11, the mouse selection."""
+signals = [
+    "dataChanged: void -- The clipboard contents changed.",
+]
+methods = [
+    "setText(text: string, mode: QClipboard::Mode = QClipboard_Clipboard) -- Put text on the clipboard.",
+    "text(mode: QClipboard::Mode = QClipboard_Clipboard) -> string -- The clipboard's text (empty if none).",
+    { sig = "hasText(mode: QClipboard::Mode = QClipboard_Clipboard) -> bool", cpp = "{self}->mimeData({mode}) && {self}->mimeData({mode})->hasText()", doc = "True if the clipboard holds text." },
+    { sig = "setImage(image: QImage, mode: QClipboard::Mode = QClipboard_Clipboard)", cpp = "{self}->setImage(*{image}, {mode})", doc = "Put an image on the clipboard (copied)." },
+    { sig = "image(mode: QClipboard::Mode = QClipboard_Clipboard) -> QImage", cpp = "new QImage({self}->image({mode}))", doc = "The clipboard's image (null if none; delete it when done)." },
+    { sig = "hasImage(mode: QClipboard::Mode = QClipboard_Clipboard) -> bool", cpp = "{self}->mimeData({mode}) && {self}->mimeData({mode})->hasImage()", doc = "True if the clipboard holds an image." },
+    "setMimeData(data: QMimeData, mode: QClipboard::Mode = QClipboard_Clipboard) -- Put mime data on the clipboard (it takes ownership).",
+    { sig = "mimeData(mode: QClipboard::Mode = QClipboard_Clipboard) -> QMimeData", cpp = "const_cast<QMimeData *>({self}->mimeData({mode}))", doc = "The clipboard's data (owned by the clipboard; valid until it changes)." },
+    "clear(mode: QClipboard::Mode = QClipboard_Clipboard) -- Empty the clipboard.",
+]
+
+[[class]]
+name = "QScreen"
+doc = """
+A display: its size, available area (without task bars), resolution and
+pixel ratio. Get one with QGuiApplication_primaryScreen,
+QGuiApplication_screen(i), QGuiApplication_screenAt(x, y), or a widget's
+or window's `screen()`. Sizes are in logical pixels."""
+signals = [
+    { sig = "geometryChanged: custom", fortran_type = "QSignal", lambda = "const QRect &", emit = "qtf_emit(ref)", doc = "The screen's size or position changed." },
+    { sig = "logicalDotsPerInchChanged: custom", fortran_type = "QSignalDouble", lambda = "qreal d", emit = "qtf_emit_double(ref, d)", doc = "The logical resolution changed (e.g. the user changed the scaling)." },
+]
+methods = [
+    "name() -> string -- The screen's name (e.g. its connector).",
+    "manufacturer() -> string -- The manufacturer (may be empty).",
+    "model() -> string -- The model (may be empty).",
+    { sig = "x() -> int", cpp = "{self}->geometry().x()", doc = "Left of the screen in the virtual desktop." },
+    { sig = "y() -> int", cpp = "{self}->geometry().y()", doc = "Top of the screen in the virtual desktop." },
+    { sig = "width() -> int", cpp = "{self}->geometry().width()", doc = "Width in logical pixels." },
+    { sig = "height() -> int", cpp = "{self}->geometry().height()", doc = "Height in logical pixels." },
+    { sig = "availableX() -> int", cpp = "{self}->availableGeometry().x()", doc = "Left of the area available to windows (without docks and task bars)." },
+    { sig = "availableY() -> int", cpp = "{self}->availableGeometry().y()", doc = "Top of the available area." },
+    { sig = "availableWidth() -> int", cpp = "{self}->availableGeometry().width()", doc = "Width of the available area." },
+    { sig = "availableHeight() -> int", cpp = "{self}->availableGeometry().height()", doc = "Height of the available area." },
+    "devicePixelRatio() -> double -- Physical pixels per logical pixel (2 on a typical HiDPI display).",
+    "logicalDotsPerInch() -> double -- Logical resolution (what font sizes in points are based on).",
+    "physicalDotsPerInch() -> double -- Physical resolution of the display.",
+    { sig = "physicalWidth() -> double", cpp = "{self}->physicalSize().width()", doc = "Physical width in millimeters (0 if unknown)." },
+    { sig = "physicalHeight() -> double", cpp = "{self}->physicalSize().height()", doc = "Physical height in millimeters (0 if unknown)." },
+    "refreshRate() -> double -- Refresh rate in Hz.",
+    "depth() -> int -- Color depth in bits.",
+    { sig = "grab(x: int = 0, y: int = 0, width: int = -1, height: int = -1) -> QPixmap", cpp = "new QPixmap({self}->grabWindow(0, {x}, {y}, {width}, {height}))", doc = "A screenshot of (part of) the screen (default: all of it); delete it when done. May be blank where the system does not allow it." },
+]
+
 # ---------------------------------------------------------------------------
 # QAction
 
@@ -1111,5 +1640,6 @@ methods = [
     "winId() -> int64 -- The native window handle (an NSView* on macOS, an HWND on Windows, an X11/xcb window id on Linux), for rendering engines that draw into the window themselves (e.g. Vulkan). Creates the native window if needed.",
     "setTitle(title: string) -- The window title (for a top-level window).",
     "title() -> string -- The window title.",
+    "screen() -> QScreen -- The screen the window is on.",
     "requestUpdate() -- Ask for an UpdateRequest event (a QtfEventFilter's `updateRequest`) at the next frame, for render loops on the GUI thread.",
 ]

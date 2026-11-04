@@ -350,7 +350,7 @@ contains
 
     !> Use `format` for all OpenGL widgets; call before creating the application.
     subroutine QSurfaceFormat_setDefaultFormat(format)
-        type(QSurfaceFormat), intent(in) :: format
+        class(QSurfaceFormat), intent(in) :: format
         call qtf_qsurfaceformat_setDefaultFormat(format%ptr)
     end subroutine QSurfaceFormat_setDefaultFormat
 
@@ -733,7 +733,7 @@ contains
     !> Request a format (version, profile, ...) before `create`; by default the QSurfaceFormat default format.
     subroutine qopenglcontext_setFormat(self, format)
         class(QOpenGLContext), intent(in) :: self
-        type(QSurfaceFormat), intent(in) :: format
+        class(QSurfaceFormat), intent(in) :: format
         call qtf_qopenglcontext_setFormat(qtf_live(self, 'QOpenGLContext%setFormat'), format%ptr)
     end subroutine qopenglcontext_setFormat
 

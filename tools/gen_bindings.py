@@ -432,7 +432,7 @@ def f_dummy(a, handle_types, variant=None):
     elif k == "value":
         decl = f"type({a.type})"
     elif k == "object":
-        decl = f"type({a.type})" if a.type in handle_types else f"class({a.type})"
+        decl = f"class({a.type})"   # handle types too: accepts subtypes (QLinearGradient as a QGradient)
     return f"{decl}, intent(in){opt} :: {a.name}{dims}"
 
 

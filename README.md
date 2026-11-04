@@ -98,16 +98,17 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 | Widgets | `QWidget`, `QFrame`, `QLabel`, `QPushButton`, `QToolButton`, `QCheckBox`, `QRadioButton`, `QButtonGroup`, `QLineEdit`, `QSpinBox`, `QDoubleSpinBox`, `QSlider`, `QDial`, `QComboBox`, `QProgressBar`, `QLCDNumber`, `QDateEdit`, `QTimeEdit`, `QCalendarWidget`, `QtfWidget` (custom painting/events) |
 | Input helpers | `QDateTimeEdit`, validators (`QIntValidator`, `QDoubleValidator`, `QRegularExpressionValidator`), `QCompleter` |
 | Text | `QTextEdit`, `QPlainTextEdit`, `QTextBrowser` (help pages with links) |
-| Item views | `QTableWidget`, `QListWidget`, `QTreeWidget`; `QTableView` with `QtfTableModel` and `QTreeView` with `QtfTreeModel` (cells come from Fortran on demand, so large arrays aren't copied); `QSortFilterProxyModel`, `QFileSystemModel`, `QtfItemDelegate` (combo / spin-box cell editors) |
+| Item views | `QTableWidget`, `QListWidget`, `QTreeWidget`; `QTableView` with `QtfTableModel`, `QListView` with `QtfListModel` and `QTreeView` with `QtfTreeModel` (cells come from Fortran on demand, so large arrays aren't copied; with icons, check boxes, tool tips, colors, alignment and bold/italic); `QSortFilterProxyModel`, `QFileSystemModel`, `QtfItemDelegate` (combo / spin-box cell editors, custom-painted cells) |
 | Containers | `QTabWidget`, `QStackedWidget`, `QSplitter`, `QScrollArea`, `QGroupBox`, `QDockWidget`, `QToolBox`, `QMdiArea` |
 | Undo | `QUndoStack` (commands are Fortran slots), `QUndoView` |
 | Layouts | `QVBoxLayout`, `QHBoxLayout`, `QGridLayout`, `QFormLayout`, size policies |
 | Main window | `QMainWindow`, `QMenuBar`, `QMenu`, `QToolBar`, `QStatusBar`, `QAction`, docks |
 | Dialogs | `QDialog`, `QDialogButtonBox`, `QMessageBox`, `QFileDialog`, `QInputDialog`, `QColorDialog`, `QFontDialog`, `QProgressDialog`, `QWizard`, `QSplashScreen` |
-| Painting | `QPainter`, `QImage`, `QPixmap`, `QColor`, `QPen`, `QBrush`, `QFont` |
+| Painting | `QPainter` (shapes, text, images, arcs and pies, clipping, transforms), `QPainterPath` (curves, boolean operations), `QLinearGradient`, `QRadialGradient`, `QConicalGradient`, `QTransform`, `QFontMetrics`, `QImage`, `QPixmap`, `QColor`, `QPen`, `QBrush`, `QFont` |
 | Arrays as images | `QImage_fromArray` (a 2D Fortran array through a colormap: viridis, magma, inferno, plasma, coolwarm, gray; NaN transparent), `QImage_colorbar` |
 | Icons | `QIcon` (files or generated images), `QStyle_standardIcon`, icons on actions, buttons, tabs, items and windows |
-| Events | `QMouseEvent`, `QKeyEvent`, `QWheelEvent`, `QResizeEvent`; on any widget: `QCloseEvent` (veto closing), `QContextMenuEvent`, enter/leave, focus in/out, show/hide; on any object: `QtfEventFilter` (input events can be consumed) |
+| Events | `QMouseEvent`, `QKeyEvent`, `QWheelEvent`, `QResizeEvent`; on any widget: `QCloseEvent` (veto closing), `QContextMenuEvent`, enter/leave, focus in/out, show/hide, drag and drop; on any object: `QtfEventFilter` (input events can be consumed) |
+| Desktop | `QClipboard` (text, images, any data), drag and drop (`QMimeData`, `QDropEvent`, `QDrag`; files from the desktop arrive as paths), cursors (per widget, override cursor), `QScreen` (size, available area, DPI, pixel ratio) |
 | OpenGL | `QtfOpenGLWidget`, `QOpenGLShaderProgram`, `QOpenGLBuffer`, `QOpenGLVertexArrayObject`, `QSurfaceFormat`, `QMatrix4x4`, and `glClear`, `glDrawArrays`, `glDrawElements`, ...; for external engines: `QWindow`, `QOpenGLContext`, `QWidget_createWindowContainer` |
 
 ## Getting started
@@ -395,8 +396,37 @@ A few conventions to know (the full list is in [plans/plan.md](plans/plan.md)):
     a permutation. For generic sorting and filtering, put a
     `QSortFilterProxyModel` between model and view. View rows are then the
     proxy's, so map them back with `proxy%mapToSourceRow(row)`.
+  - *Lists*: `QtfListModel(rows)` is a one-column table model for a
+    `QListView` (list or icon grid, `setViewMode(QListView_IconMode)`).
+  - *More than text*: besides `setText`/`setNumber`, a slot can give a cell
+    an icon (`request%setIcon`), a check box (`request%setChecked`; clicks
+    arrive at the model's `checkChanged(row, column, checked)`), a tool tip,
+    text and background colors, alignment, and bold or italic. Set them all
+    every time: the model only asks again for what some cell has used.
   - *Cell editors*: `QtfItemDelegate` gives a column a combo-box editor
     (`setChoices`) or a spin-box editor (`setRange`).
+  - *Custom-painted cells*: connect the delegate's `paintCell`. The slot gets
+    the cell (its row, column, rectangle, state and text) and draws with
+    `cell%painter()`; `cell%drawBackground()` and `cell%drawDefault()` draw
+    Qt's selection background or the whole standard cell first.
+
+    ```fortran
+    subroutine paint_bar(cell, data)            ! a bar for values(row) in 0..1 (a module array)
+        type(QtfPaintCell), intent(in) :: cell
+        class(*), intent(inout), optional :: data
+        type(QPainter) :: p
+        call cell%drawBackground()
+        p = cell%painter()
+        call p%fillRect(cell%x(), cell%y() + 2, nint(values(cell%row() + 1) * cell%width()), &
+                        cell%height() - 4, Qt_blue)
+    end subroutine paint_bar
+    ```
+- **Drag and drop**: call `w%setAcceptDrops(.true.)` and connect
+  `w%dragEnterEvent` (call `event%acceptProposedAction()` for data you can
+  take) and `w%dropEvent` (read `event%text()`, `event%urls()` for dropped
+  files, or `event%data(format)`). To start a drag, fill a `QMimeData` and
+  call `QDrag(w)`'s `exec`. The clipboard (`QGuiApplication_clipboard()`)
+  takes the same `QMimeData`.
 - **Undo/redo**: a command is a text and an integer id of your choosing.
   `stack%push('Set value', id)` records it and immediately calls your
   `redoRequested(id)` slot, which performs it. `undo` calls your

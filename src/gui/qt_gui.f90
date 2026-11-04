@@ -36,6 +36,67 @@ module qt_gui
     integer(c_int), parameter, public :: QSurface_MetalSurface = 5
     integer(c_int), parameter, public :: QSurface_Direct3DSurface = 6
 
+    ! Qt::FillRule (QPainterPath%setFillRule)
+    integer(c_int), parameter, public :: Qt_OddEvenFill = 0
+    integer(c_int), parameter, public :: Qt_WindingFill = 1
+
+    ! QGradient::Spread and QGradient::CoordinateMode
+    integer(c_int), parameter, public :: QGradient_PadSpread = 0
+    integer(c_int), parameter, public :: QGradient_ReflectSpread = 1
+    integer(c_int), parameter, public :: QGradient_RepeatSpread = 2
+    integer(c_int), parameter, public :: QGradient_LogicalMode = 0
+    integer(c_int), parameter, public :: QGradient_StretchToDeviceMode = 1
+    integer(c_int), parameter, public :: QGradient_ObjectBoundingMode = 2
+    integer(c_int), parameter, public :: QGradient_ObjectMode = 3
+
+    ! Qt::TextElideMode (QFontMetrics%elidedText)
+    integer(c_int), parameter, public :: Qt_ElideLeft = 0
+    integer(c_int), parameter, public :: Qt_ElideRight = 1
+    integer(c_int), parameter, public :: Qt_ElideMiddle = 2
+    integer(c_int), parameter, public :: Qt_ElideNone = 3
+
+    ! QClipboard::Mode
+    integer(c_int), parameter, public :: QClipboard_Clipboard = 0
+    integer(c_int), parameter, public :: QClipboard_Selection = 1
+    integer(c_int), parameter, public :: QClipboard_FindBuffer = 2
+
+    ! Qt::DropAction (drag and drop; combine with ior for the possible actions)
+    integer(c_int), parameter, public :: Qt_IgnoreAction = 0
+    integer(c_int), parameter, public :: Qt_CopyAction = 1
+    integer(c_int), parameter, public :: Qt_MoveAction = 2
+    integer(c_int), parameter, public :: Qt_LinkAction = 4
+    integer(c_int), parameter, public :: Qt_ActionMask = int(z'000000FF', c_int)
+
+    ! QEvent::Type of drag-and-drop events
+    integer(c_int), parameter, public :: QEvent_DragEnter = 60
+    integer(c_int), parameter, public :: QEvent_DragMove = 61
+    integer(c_int), parameter, public :: QEvent_DragLeave = 62
+    integer(c_int), parameter, public :: QEvent_Drop = 63
+
+    ! Qt::CursorShape (QWidget%setCursor, QGuiApplication_setOverrideCursor)
+    integer(c_int), parameter, public :: Qt_ArrowCursor = 0
+    integer(c_int), parameter, public :: Qt_UpArrowCursor = 1
+    integer(c_int), parameter, public :: Qt_CrossCursor = 2
+    integer(c_int), parameter, public :: Qt_WaitCursor = 3
+    integer(c_int), parameter, public :: Qt_IBeamCursor = 4
+    integer(c_int), parameter, public :: Qt_SizeVerCursor = 5
+    integer(c_int), parameter, public :: Qt_SizeHorCursor = 6
+    integer(c_int), parameter, public :: Qt_SizeBDiagCursor = 7
+    integer(c_int), parameter, public :: Qt_SizeFDiagCursor = 8
+    integer(c_int), parameter, public :: Qt_SizeAllCursor = 9
+    integer(c_int), parameter, public :: Qt_BlankCursor = 10
+    integer(c_int), parameter, public :: Qt_SplitVCursor = 11
+    integer(c_int), parameter, public :: Qt_SplitHCursor = 12
+    integer(c_int), parameter, public :: Qt_PointingHandCursor = 13
+    integer(c_int), parameter, public :: Qt_ForbiddenCursor = 14
+    integer(c_int), parameter, public :: Qt_WhatsThisCursor = 15
+    integer(c_int), parameter, public :: Qt_BusyCursor = 16
+    integer(c_int), parameter, public :: Qt_OpenHandCursor = 17
+    integer(c_int), parameter, public :: Qt_ClosedHandCursor = 18
+    integer(c_int), parameter, public :: Qt_DragCopyCursor = 19
+    integer(c_int), parameter, public :: Qt_DragMoveCursor = 20
+    integer(c_int), parameter, public :: Qt_DragLinkCursor = 21
+
     ! QContextMenuEvent::Reason
     integer(c_int), parameter, public :: QContextMenuEvent_Mouse = 0
     integer(c_int), parameter, public :: QContextMenuEvent_Keyboard = 1
@@ -211,8 +272,8 @@ module qt_gui
         procedure :: deviceHeight => qpainter_deviceHeight
         procedure, private :: qpainter_setPen, qpainter_setPenColor
         generic :: setPen => qpainter_setPen, qpainter_setPenColor
-        procedure, private :: qpainter_setBrush, qpainter_setBrushColor
-        generic :: setBrush => qpainter_setBrush, qpainter_setBrushColor
+        procedure, private :: qpainter_setBrush, qpainter_setBrushColor, qpainter_setBrushGradient
+        generic :: setBrush => qpainter_setBrush, qpainter_setBrushColor, qpainter_setBrushGradient
         procedure :: setRenderHint => qpainter_setRenderHint
         procedure :: setOpacity => qpainter_setOpacity
         procedure :: save => qpainter_save
@@ -232,8 +293,8 @@ module qt_gui
         generic :: drawRoundedRect => qpainter_drawRoundedRect_d, qpainter_drawRoundedRect_i
         procedure, private :: qpainter_drawEllipse_d, qpainter_drawEllipse_i
         generic :: drawEllipse => qpainter_drawEllipse_d, qpainter_drawEllipse_i
-        procedure, private :: qpainter_fillRect_d, qpainter_fillRect_i
-        generic :: fillRect => qpainter_fillRect_d, qpainter_fillRect_i
+        procedure, private :: qpainter_fillRect_d, qpainter_fillRect_i, qpainter_fillRectGradient_d, qpainter_fillRectGradient_i
+        generic :: fillRect => qpainter_fillRect_d, qpainter_fillRect_i, qpainter_fillRectGradient_d, qpainter_fillRectGradient_i
         procedure, private :: qpainter_drawPolyline_d, qpainter_drawPolyline_i
         generic :: drawPolyline => qpainter_drawPolyline_d, qpainter_drawPolyline_i
         procedure, private :: qpainter_drawPolygon_d, qpainter_drawPolygon_i
@@ -242,6 +303,26 @@ module qt_gui
         generic :: drawText => qpainter_drawText_d, qpainter_drawText_i, qpainter_drawTextRect_d, qpainter_drawTextRect_i
         procedure, private :: qpainter_drawImage, qpainter_drawImageRect_d, qpainter_drawImageRect_i
         generic :: drawImage => qpainter_drawImage, qpainter_drawImageRect_d, qpainter_drawImageRect_i
+        procedure :: drawPixmap => qpainter_drawPixmap
+        procedure, private :: qpainter_drawArc_d, qpainter_drawArc_i
+        generic :: drawArc => qpainter_drawArc_d, qpainter_drawArc_i
+        procedure, private :: qpainter_drawPie_d, qpainter_drawPie_i
+        generic :: drawPie => qpainter_drawPie_d, qpainter_drawPie_i
+        procedure, private :: qpainter_drawChord_d, qpainter_drawChord_i
+        generic :: drawChord => qpainter_drawChord_d, qpainter_drawChord_i
+        procedure :: drawPath => qpainter_drawPath
+        procedure, private :: qpainter_fillPath, qpainter_fillPathGradient
+        generic :: fillPath => qpainter_fillPath, qpainter_fillPathGradient
+        procedure :: strokePath => qpainter_strokePath
+        procedure, private :: qpainter_setClipRect_d, qpainter_setClipRect_i
+        generic :: setClipRect => qpainter_setClipRect_d, qpainter_setClipRect_i
+        procedure :: setClipPath => qpainter_setClipPath
+        procedure :: setClipping => qpainter_setClipping
+        procedure :: hasClipping => qpainter_hasClipping
+        procedure :: shear => qpainter_shear
+        procedure :: setTransform => qpainter_setTransform
+        procedure :: transform => qpainter_transform
+        procedure :: fontMetrics => qpainter_fontMetrics
         procedure :: textWidth => qpainter_textWidth
         procedure :: fontHeight => qpainter_fontHeight
         procedure :: end => qpainter_end
@@ -332,6 +413,284 @@ module qt_gui
     interface QContextMenuEvent
         module procedure :: qcontextmenuevent_new
     end interface QContextMenuEvent
+
+    !> A shape made of lines and curves, drawn with QPainter%drawPath / fillPath /
+    !> strokePath or used for clipping. Build it with moveTo, lineTo, cubicTo, ...
+    !> and the add* shapes; release it with `delete`.
+    type, public :: QPainterPath
+        type(c_ptr) :: ptr = c_null_ptr
+    contains
+        procedure, private :: qpainterpath_moveTo_d, qpainterpath_moveTo_i
+        generic :: moveTo => qpainterpath_moveTo_d, qpainterpath_moveTo_i
+        procedure, private :: qpainterpath_lineTo_d, qpainterpath_lineTo_i
+        generic :: lineTo => qpainterpath_lineTo_d, qpainterpath_lineTo_i
+        procedure, private :: qpainterpath_quadTo_d, qpainterpath_quadTo_i
+        generic :: quadTo => qpainterpath_quadTo_d, qpainterpath_quadTo_i
+        procedure, private :: qpainterpath_cubicTo_d, qpainterpath_cubicTo_i
+        generic :: cubicTo => qpainterpath_cubicTo_d, qpainterpath_cubicTo_i
+        procedure, private :: qpainterpath_arcTo_d, qpainterpath_arcTo_i
+        generic :: arcTo => qpainterpath_arcTo_d, qpainterpath_arcTo_i
+        procedure :: closeSubpath => qpainterpath_closeSubpath
+        procedure, private :: qpainterpath_addRect_d, qpainterpath_addRect_i
+        generic :: addRect => qpainterpath_addRect_d, qpainterpath_addRect_i
+        procedure, private :: qpainterpath_addRoundedRect_d, qpainterpath_addRoundedRect_i
+        generic :: addRoundedRect => qpainterpath_addRoundedRect_d, qpainterpath_addRoundedRect_i
+        procedure, private :: qpainterpath_addEllipse_d, qpainterpath_addEllipse_i
+        generic :: addEllipse => qpainterpath_addEllipse_d, qpainterpath_addEllipse_i
+        procedure, private :: qpainterpath_addPolygon_d, qpainterpath_addPolygon_i
+        generic :: addPolygon => qpainterpath_addPolygon_d, qpainterpath_addPolygon_i
+        procedure, private :: qpainterpath_addText_d, qpainterpath_addText_i
+        generic :: addText => qpainterpath_addText_d, qpainterpath_addText_i
+        procedure :: addPath => qpainterpath_addPath
+        procedure, private :: qpainterpath_translate_d, qpainterpath_translate_i
+        generic :: translate => qpainterpath_translate_d, qpainterpath_translate_i
+        procedure :: setFillRule => qpainterpath_setFillRule
+        procedure :: containsPoint => qpainterpath_containsPoint
+        procedure :: isEmpty => qpainterpath_isEmpty
+        procedure :: length => qpainterpath_length
+        procedure :: elementCount => qpainterpath_elementCount
+        procedure :: pointAtPercentX => qpainterpath_pointAtPercentX
+        procedure :: pointAtPercentY => qpainterpath_pointAtPercentY
+        procedure :: boundingX => qpainterpath_boundingX
+        procedure :: boundingY => qpainterpath_boundingY
+        procedure :: boundingWidth => qpainterpath_boundingWidth
+        procedure :: boundingHeight => qpainterpath_boundingHeight
+        procedure :: copy => qpainterpath_copy
+        procedure :: united => qpainterpath_united
+        procedure :: intersected => qpainterpath_intersected
+        procedure :: subtracted => qpainterpath_subtracted
+        procedure :: delete => qpainterpath_delete
+    end type QPainterPath
+    !> Constructor: `QPainterPath()`.
+    interface QPainterPath
+        module procedure :: qpainterpath_new
+    end interface QPainterPath
+
+    !> Base of the gradients (QLinearGradient, QRadialGradient, QConicalGradient):
+    !> colors at stops from 0 to 1. Paint with it through QPainter%setBrush,
+    !> fillRect or fillPath (which copy it); release it with `delete`.
+    type, public :: QGradient
+        type(c_ptr) :: ptr = c_null_ptr
+    contains
+        procedure :: setColorAt => qgradient_setColorAt
+        procedure :: setSpread => qgradient_setSpread
+        procedure :: setCoordinateMode => qgradient_setCoordinateMode
+        procedure :: delete => qgradient_delete
+    end type QGradient
+
+    !> A gradient along the line from (x1, y1) to (x2, y2).
+    type, extends(QGradient), public :: QLinearGradient
+    contains
+        procedure :: setStart => qlineargradient_setStart
+        procedure :: setFinalStop => qlineargradient_setFinalStop
+    end type QLinearGradient
+    !> Constructor: `QLinearGradient(x1, y1, x2, y2)`.
+    interface QLinearGradient
+        module procedure :: qlineargradient_new
+    end interface QLinearGradient
+
+    !> A gradient from a focal point (by default the center) out to a circle.
+    type, extends(QGradient), public :: QRadialGradient
+    contains
+        procedure :: setCenter => qradialgradient_setCenter
+        procedure :: setRadius => qradialgradient_setRadius
+        procedure :: setFocalPoint => qradialgradient_setFocalPoint
+    end type QRadialGradient
+    !> Constructor: `QRadialGradient(cx, cy, radius)`.
+    interface QRadialGradient
+        module procedure :: qradialgradient_new
+    end interface QRadialGradient
+
+    !> A gradient sweeping counterclockwise around a center.
+    type, extends(QGradient), public :: QConicalGradient
+    contains
+        procedure :: setCenter => qconicalgradient_setCenter
+        procedure :: setAngle => qconicalgradient_setAngle
+    end type QConicalGradient
+    !> Constructor: `QConicalGradient(cx, cy, angle)`.
+    interface QConicalGradient
+        module procedure :: qconicalgradient_new
+    end interface QConicalGradient
+
+    !> A 2D coordinate transform (translation, rotation, scaling, shearing) for
+    !> QPainter%setTransform; release it with `delete`. As in Qt, each call
+    !> (`translate`, `rotate`, ...) applies before the transforms already in it.
+    type, public :: QTransform
+        type(c_ptr) :: ptr = c_null_ptr
+    contains
+        procedure :: translate => qtransform_translate
+        procedure :: rotate => qtransform_rotate
+        procedure :: scale => qtransform_scale
+        procedure :: shear => qtransform_shear
+        procedure :: reset => qtransform_reset
+        procedure :: isIdentity => qtransform_isIdentity
+        procedure :: isInvertible => qtransform_isInvertible
+        procedure :: determinant => qtransform_determinant
+        procedure :: m11 => qtransform_m11
+        procedure :: m12 => qtransform_m12
+        procedure :: m21 => qtransform_m21
+        procedure :: m22 => qtransform_m22
+        procedure :: dx => qtransform_dx
+        procedure :: dy => qtransform_dy
+        procedure :: mapX => qtransform_mapX
+        procedure :: mapY => qtransform_mapY
+        procedure :: inverted => qtransform_inverted
+        procedure :: multiplied => qtransform_multiplied
+        procedure :: copy => qtransform_copy
+        procedure :: delete => qtransform_delete
+    end type QTransform
+    !> Constructor: `QTransform()` or `QTransform(m11, m12, m21, m22, dx, dy)`.
+    interface QTransform
+        module procedure :: qtransform_new, qtransform_fromAffine
+    end interface QTransform
+
+    !> Text measurements for a font, in pixels: `QFontMetrics()` for the
+    !> application font, `QFontMetrics(font)` for a QFont, or QPainter%fontMetrics
+    !> for the painter's. Release it with `delete`.
+    type, public :: QFontMetrics
+        type(c_ptr) :: ptr = c_null_ptr
+    contains
+        procedure :: horizontalAdvance => qfontmetrics_horizontalAdvance
+        procedure :: boundingWidth => qfontmetrics_boundingWidth
+        procedure :: height => qfontmetrics_height
+        procedure :: ascent => qfontmetrics_ascent
+        procedure :: descent => qfontmetrics_descent
+        procedure :: leading => qfontmetrics_leading
+        procedure :: lineSpacing => qfontmetrics_lineSpacing
+        procedure :: averageCharWidth => qfontmetrics_averageCharWidth
+        procedure :: maxWidth => qfontmetrics_maxWidth
+        procedure :: capHeight => qfontmetrics_capHeight
+        procedure :: xHeight => qfontmetrics_xHeight
+        procedure :: elidedText => qfontmetrics_elidedText
+        procedure :: delete => qfontmetrics_delete
+    end type QFontMetrics
+    !> Constructor: `QFontMetrics()`.
+    interface QFontMetrics
+        module procedure :: qfontmetrics_new
+    end interface QFontMetrics
+
+    !> Data with MIME types, for drag and drop and the clipboard: text, HTML, URLs
+    !> (file paths), an image, or any `format` as text. A QDrag or QClipboard that is
+    !> given it takes ownership; otherwise delete it.
+    type, extends(QObject), public :: QMimeData
+    contains
+        procedure :: setText => qmimedata_setText
+        procedure :: text => qmimedata_text
+        procedure :: hasText => qmimedata_hasText
+        procedure :: setHtml => qmimedata_setHtml
+        procedure :: html => qmimedata_html
+        procedure :: hasHtml => qmimedata_hasHtml
+        procedure :: setUrls => qmimedata_setUrls
+        procedure :: urls => qmimedata_urls
+        procedure :: hasUrls => qmimedata_hasUrls
+        procedure :: setImage => qmimedata_setImage
+        procedure :: image => qmimedata_image
+        procedure :: hasImage => qmimedata_hasImage
+        procedure :: setData => qmimedata_setData
+        procedure :: data => qmimedata_data
+        procedure :: hasFormat => qmimedata_hasFormat
+        procedure :: formats => qmimedata_formats
+        procedure :: clear => qmimedata_clear
+    end type QMimeData
+    !> Constructor: `QMimeData()`.
+    interface QMimeData
+        module procedure :: qmimedata_new
+    end interface QMimeData
+
+    !> A drag entering, moving over or dropped on a widget (QWidget's
+    !> dragEnterEvent, dragMoveEvent and dropEvent; the widget must
+    !> `setAcceptDrops(.true.)`). In dragEnterEvent call `acceptProposedAction()`
+    !> to accept the drag (otherwise no drop follows); in dropEvent read the data
+    !> (`text`, `urls`, ...) and accept it.
+    type, extends(QEvent), public :: QDropEvent
+    contains
+        procedure :: x => qdropevent_x
+        procedure :: y => qdropevent_y
+        procedure :: proposedAction => qdropevent_proposedAction
+        procedure :: possibleActions => qdropevent_possibleActions
+        procedure :: dropAction => qdropevent_dropAction
+        procedure :: setDropAction => qdropevent_setDropAction
+        procedure :: acceptProposedAction => qdropevent_acceptProposedAction
+        procedure :: buttons => qdropevent_buttons
+        procedure :: modifiers => qdropevent_modifiers
+        procedure :: mimeData => qdropevent_mimeData
+        procedure :: hasText => qdropevent_hasText
+        procedure :: text => qdropevent_text
+        procedure :: hasUrls => qdropevent_hasUrls
+        procedure :: urls => qdropevent_urls
+        procedure :: hasImage => qdropevent_hasImage
+        procedure :: hasFormat => qdropevent_hasFormat
+        procedure :: data => qdropevent_data
+    end type QDropEvent
+    !> Constructor: `QDropEvent(type, x, y, mimeData [, actions, buttons, modifiers])`.
+    interface QDropEvent
+        module procedure :: qdropevent_new
+    end interface QDropEvent
+
+    !> Start a drag from a widget, typically in its mouse-move slot once the mouse
+    !> has moved far enough: `drag = QDrag(widget)`, `call drag%setMimeData(data)`,
+    !> `action = drag%exec(Qt_CopyAction)`. `exec` returns when the drop is done
+    !> (the action taken, or Qt_IgnoreAction if cancelled). Delete the drag
+    !> afterwards with `deleteLater`.
+    type, extends(QObject), public :: QDrag
+    contains
+        procedure :: setMimeData => qdrag_setMimeData
+        procedure :: setPixmap => qdrag_setPixmap
+        procedure :: setHotSpot => qdrag_setHotSpot
+        procedure :: exec => qdrag_exec
+    end type QDrag
+    !> Constructor: `QDrag(source)`.
+    interface QDrag
+        module procedure :: qdrag_new
+    end interface QDrag
+
+    !> The system clipboard: `cb = QGuiApplication_clipboard()`, then `setText`,
+    !> `text`, `setImage`, ... (needs the application object). `mode` selects
+    !> QClipboard_Clipboard (default) or, on X11, the mouse selection.
+    type, extends(QObject), public :: QClipboard
+        type(QSignal) :: dataChanged   !! The clipboard contents changed.
+    contains
+        procedure :: attach => qclipboard_attach
+        procedure :: setText => qclipboard_setText
+        procedure :: text => qclipboard_text
+        procedure :: hasText => qclipboard_hasText
+        procedure :: setImage => qclipboard_setImage
+        procedure :: image => qclipboard_image
+        procedure :: hasImage => qclipboard_hasImage
+        procedure :: setMimeData => qclipboard_setMimeData
+        procedure :: mimeData => qclipboard_mimeData
+        procedure :: clear => qclipboard_clear
+    end type QClipboard
+
+    !> A display: its size, available area (without task bars), resolution and
+    !> pixel ratio. Get one with QGuiApplication_primaryScreen,
+    !> QGuiApplication_screen(i), QGuiApplication_screenAt(x, y), or a widget's
+    !> or window's `screen()`. Sizes are in logical pixels.
+    type, extends(QObject), public :: QScreen
+        type(QSignal) :: geometryChanged   !! The screen's size or position changed.
+        type(QSignalDouble) :: logicalDotsPerInchChanged   !! The logical resolution changed (e.g. the user changed the scaling).
+    contains
+        procedure :: attach => qscreen_attach
+        procedure :: name => qscreen_name
+        procedure :: manufacturer => qscreen_manufacturer
+        procedure :: model => qscreen_model
+        procedure :: x => qscreen_x
+        procedure :: y => qscreen_y
+        procedure :: width => qscreen_width
+        procedure :: height => qscreen_height
+        procedure :: availableX => qscreen_availableX
+        procedure :: availableY => qscreen_availableY
+        procedure :: availableWidth => qscreen_availableWidth
+        procedure :: availableHeight => qscreen_availableHeight
+        procedure :: devicePixelRatio => qscreen_devicePixelRatio
+        procedure :: logicalDotsPerInch => qscreen_logicalDotsPerInch
+        procedure :: physicalDotsPerInch => qscreen_physicalDotsPerInch
+        procedure :: physicalWidth => qscreen_physicalWidth
+        procedure :: physicalHeight => qscreen_physicalHeight
+        procedure :: refreshRate => qscreen_refreshRate
+        procedure :: depth => qscreen_depth
+        procedure :: grab => qscreen_grab
+    end type QScreen
 
     !> A menu/toolbar command. `triggered` carries no argument; use `toggled`
     !> for checkable actions.
@@ -435,6 +794,7 @@ module qt_gui
         procedure :: winId => qwindow_winId
         procedure :: setTitle => qwindow_setTitle
         procedure :: title => qwindow_title
+        procedure :: screen => qwindow_screen
         procedure :: requestUpdate => qwindow_requestUpdate
     end type QWindow
     !> Constructor: `QWindow([parent])`.
@@ -485,6 +845,13 @@ module qt_gui
             type(QCloseEvent), intent(in) :: event
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_close_event
+        !> Slot for drag-and-drop events (drag enter, drag move, drop).
+        subroutine qt_slot_drop_event(event, data)
+            import :: QDropEvent
+            implicit none
+            type(QDropEvent), intent(in) :: event
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_drop_event
         !> Slot for context-menu requests.
         subroutine qt_slot_context_menu_event(event, data)
             import :: QContextMenuEvent
@@ -495,7 +862,25 @@ module qt_gui
     end interface
     public :: qt_slot_painter, qt_slot_mouse_event, qt_slot_key_event
     public :: qt_slot_wheel_event, qt_slot_resize_event
-    public :: qt_slot_close_event, qt_slot_context_menu_event
+    public :: qt_slot_close_event, qt_slot_context_menu_event, qt_slot_drop_event
+
+    !> Constructor: `QFontMetrics(font)`, metrics of a QFont.
+    interface QFontMetrics
+        module procedure :: qfontmetrics_fromFont
+    end interface QFontMetrics
+
+    !> A signal carrying a drag-and-drop event (accept it in the slot to take the drop).
+    type, extends(QtfSignal), public :: QSignalDropEvent
+    contains
+        procedure :: connect => qsignaldropevent_connect
+    end type QSignalDropEvent
+
+    !> Slot handler for QSignalDropEvent.
+    type, extends(qt_slot_handler) :: drop_handler
+        procedure(qt_slot_drop_event), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => drop_handler_invoke
+    end type drop_handler
 
     !> Paint request: slots receive an active painter (do not `end` it).
     type, extends(QtfSignal), public :: QSignalPainter
@@ -589,6 +974,18 @@ module qt_gui
     end type context_menu_handler
 
     public :: QPixmap_fromImage
+    public :: QGuiApplication_clipboard
+    public :: QGuiApplication_primaryScreen
+    public :: QGuiApplication_screenCount
+    public :: QGuiApplication_screen
+    public :: QGuiApplication_screenAt
+    public :: QGuiApplication_setOverrideCursor
+    public :: QGuiApplication_changeOverrideCursor
+    public :: QGuiApplication_restoreOverrideCursor
+    public :: QGuiApplication_overrideCursorShape
+    public :: QCursor_x
+    public :: QCursor_y
+    public :: QCursor_setPos
 
 contains
 
@@ -740,7 +1137,7 @@ contains
 
     !> A new pixmap with an image's contents, e.g. for QLabel%setPixmap (delete it when done).
     function QPixmap_fromImage(image) result(res)
-        type(QImage), intent(in) :: image
+        class(QImage), intent(in) :: image
         type(QPixmap) :: res
         res%ptr = qtf_qpixmap_fromImage(image%ptr)
     end function QPixmap_fromImage
@@ -776,7 +1173,7 @@ contains
 
     !> An icon from a pixmap (e.g. QPixmap_fromImage of a generated image).
     function qicon_fromPixmap(pixmap) result(res)
-        type(QPixmap), intent(in) :: pixmap
+        class(QPixmap), intent(in) :: pixmap
         type(QIcon) :: res
         res%ptr = qtf_qicon_fromPixmap(pixmap%ptr)
     end function qicon_fromPixmap
@@ -797,7 +1194,7 @@ contains
 
     !> Begin painting on `image`; call `end` when done.
     function qpainter_new(image) result(res)
-        type(QImage), intent(in) :: image
+        class(QImage), intent(in) :: image
         type(QPainter) :: res
         res%ptr = qtf_qpainter_new(image%ptr)
         res%owned = .true.
@@ -1124,7 +1521,7 @@ contains
         class(QPainter), intent(in) :: self
         integer, intent(in) :: x
         integer, intent(in) :: y
-        type(QImage), intent(in) :: image
+        class(QImage), intent(in) :: image
         call qtf_qpainter_drawImage(self%ptr, int(x, c_int), int(y, c_int), image%ptr)
     end subroutine qpainter_drawImage
 
@@ -1135,7 +1532,7 @@ contains
         real(c_double), intent(in) :: y
         real(c_double), intent(in) :: w
         real(c_double), intent(in) :: h
-        type(QImage), intent(in) :: image
+        class(QImage), intent(in) :: image
         call qtf_qpainter_drawImageRect(self%ptr, x, y, w, h, image%ptr)
     end subroutine qpainter_drawImageRect_d
 
@@ -1146,10 +1543,232 @@ contains
         integer, intent(in) :: y
         integer, intent(in) :: w
         integer, intent(in) :: h
-        type(QImage), intent(in) :: image
+        class(QImage), intent(in) :: image
         call qtf_qpainter_drawImageRect(self%ptr, real(x, c_double), real(y, c_double), real(w, c_double), real(h, &
                 c_double), image%ptr)
     end subroutine qpainter_drawImageRect_i
+
+    !> Draw `pixmap` with its top-left corner at (x, y).
+    subroutine qpainter_drawPixmap(self, x, y, pixmap)
+        class(QPainter), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        class(QPixmap), intent(in) :: pixmap
+        call qtf_qpainter_drawPixmap(self%ptr, int(x, c_int), int(y, c_int), pixmap%ptr)
+    end subroutine qpainter_drawPixmap
+
+    !> Draw an arc of the ellipse inscribed in (x, y, w, h): angles in degrees, counterclockwise from 3 o'clock.
+    subroutine qpainter_drawArc_d(self, x, y, w, h, startAngle, spanAngle)
+        class(QPainter), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        real(c_double), intent(in) :: w
+        real(c_double), intent(in) :: h
+        real(c_double), intent(in) :: startAngle
+        real(c_double), intent(in) :: spanAngle
+        call qtf_qpainter_drawArc(self%ptr, x, y, w, h, startAngle, spanAngle)
+    end subroutine qpainter_drawArc_d
+
+    !> Draw an arc of the ellipse inscribed in (x, y, w, h): angles in degrees, counterclockwise from 3 o'clock.
+    subroutine qpainter_drawArc_i(self, x, y, w, h, startAngle, spanAngle)
+        class(QPainter), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        integer, intent(in) :: w
+        integer, intent(in) :: h
+        real(c_double), intent(in) :: startAngle
+        real(c_double), intent(in) :: spanAngle
+        call qtf_qpainter_drawArc(self%ptr, real(x, c_double), real(y, c_double), real(w, c_double), real(h, &
+                c_double), startAngle, spanAngle)
+    end subroutine qpainter_drawArc_i
+
+    !> Draw a pie segment (filled with the brush); angles as for `drawArc`.
+    subroutine qpainter_drawPie_d(self, x, y, w, h, startAngle, spanAngle)
+        class(QPainter), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        real(c_double), intent(in) :: w
+        real(c_double), intent(in) :: h
+        real(c_double), intent(in) :: startAngle
+        real(c_double), intent(in) :: spanAngle
+        call qtf_qpainter_drawPie(self%ptr, x, y, w, h, startAngle, spanAngle)
+    end subroutine qpainter_drawPie_d
+
+    !> Draw a pie segment (filled with the brush); angles as for `drawArc`.
+    subroutine qpainter_drawPie_i(self, x, y, w, h, startAngle, spanAngle)
+        class(QPainter), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        integer, intent(in) :: w
+        integer, intent(in) :: h
+        real(c_double), intent(in) :: startAngle
+        real(c_double), intent(in) :: spanAngle
+        call qtf_qpainter_drawPie(self%ptr, real(x, c_double), real(y, c_double), real(w, c_double), real(h, &
+                c_double), startAngle, spanAngle)
+    end subroutine qpainter_drawPie_i
+
+    !> Draw a chord (an arc closed by a straight line); angles as for `drawArc`.
+    subroutine qpainter_drawChord_d(self, x, y, w, h, startAngle, spanAngle)
+        class(QPainter), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        real(c_double), intent(in) :: w
+        real(c_double), intent(in) :: h
+        real(c_double), intent(in) :: startAngle
+        real(c_double), intent(in) :: spanAngle
+        call qtf_qpainter_drawChord(self%ptr, x, y, w, h, startAngle, spanAngle)
+    end subroutine qpainter_drawChord_d
+
+    !> Draw a chord (an arc closed by a straight line); angles as for `drawArc`.
+    subroutine qpainter_drawChord_i(self, x, y, w, h, startAngle, spanAngle)
+        class(QPainter), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        integer, intent(in) :: w
+        integer, intent(in) :: h
+        real(c_double), intent(in) :: startAngle
+        real(c_double), intent(in) :: spanAngle
+        call qtf_qpainter_drawChord(self%ptr, real(x, c_double), real(y, c_double), real(w, c_double), real(h, &
+                c_double), startAngle, spanAngle)
+    end subroutine qpainter_drawChord_i
+
+    !> Draw a path: outlined with the pen, filled with the brush.
+    subroutine qpainter_drawPath(self, path)
+        class(QPainter), intent(in) :: self
+        class(QPainterPath), intent(in) :: path
+        call qtf_qpainter_drawPath(self%ptr, path%ptr)
+    end subroutine qpainter_drawPath
+
+    !> Fill a path with `color` (no outline).
+    subroutine qpainter_fillPath(self, path, color)
+        class(QPainter), intent(in) :: self
+        class(QPainterPath), intent(in) :: path
+        type(QColor), intent(in) :: color
+        call qtf_qpainter_fillPath(self%ptr, path%ptr, int(color%r, c_int), int(color%g, c_int), int(color%b, c_int), &
+                int(color%a, c_int))
+    end subroutine qpainter_fillPath
+
+    !> Fill a path with a gradient (no outline).
+    subroutine qpainter_fillPathGradient(self, path, gradient)
+        class(QPainter), intent(in) :: self
+        class(QPainterPath), intent(in) :: path
+        class(QGradient), intent(in) :: gradient
+        call qtf_qpainter_fillPathGradient(self%ptr, path%ptr, gradient%ptr)
+    end subroutine qpainter_fillPathGradient
+
+    !> Draw the outline of a path with `pen` (no fill).
+    subroutine qpainter_strokePath(self, path, pen)
+        class(QPainter), intent(in) :: self
+        class(QPainterPath), intent(in) :: path
+        type(QPen), intent(in) :: pen
+        call qtf_qpainter_strokePath(self%ptr, path%ptr, int(pen%color%r, c_int), int(pen%color%g, c_int), &
+                int(pen%color%b, c_int), int(pen%color%a, c_int), pen%width, int(pen%style, c_int))
+    end subroutine qpainter_strokePath
+
+    !> Fill shapes with a gradient (copied).
+    subroutine qpainter_setBrushGradient(self, gradient)
+        class(QPainter), intent(in) :: self
+        class(QGradient), intent(in) :: gradient
+        call qtf_qpainter_setBrushGradient(self%ptr, gradient%ptr)
+    end subroutine qpainter_setBrushGradient
+
+    !> Fill a rectangle with a gradient.
+    subroutine qpainter_fillRectGradient_d(self, x, y, w, h, gradient)
+        class(QPainter), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        real(c_double), intent(in) :: w
+        real(c_double), intent(in) :: h
+        class(QGradient), intent(in) :: gradient
+        call qtf_qpainter_fillRectGradient(self%ptr, x, y, w, h, gradient%ptr)
+    end subroutine qpainter_fillRectGradient_d
+
+    !> Fill a rectangle with a gradient.
+    subroutine qpainter_fillRectGradient_i(self, x, y, w, h, gradient)
+        class(QPainter), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        integer, intent(in) :: w
+        integer, intent(in) :: h
+        class(QGradient), intent(in) :: gradient
+        call qtf_qpainter_fillRectGradient(self%ptr, real(x, c_double), real(y, c_double), real(w, c_double), real(h, &
+                c_double), gradient%ptr)
+    end subroutine qpainter_fillRectGradient_i
+
+    !> Draw only inside the rectangle (in the current coordinates).
+    subroutine qpainter_setClipRect_d(self, x, y, w, h)
+        class(QPainter), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        real(c_double), intent(in) :: w
+        real(c_double), intent(in) :: h
+        call qtf_qpainter_setClipRect(self%ptr, x, y, w, h)
+    end subroutine qpainter_setClipRect_d
+
+    !> Draw only inside the rectangle (in the current coordinates).
+    subroutine qpainter_setClipRect_i(self, x, y, w, h)
+        class(QPainter), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        integer, intent(in) :: w
+        integer, intent(in) :: h
+        call qtf_qpainter_setClipRect(self%ptr, real(x, c_double), real(y, c_double), real(w, c_double), real(h, &
+                c_double))
+    end subroutine qpainter_setClipRect_i
+
+    !> Draw only inside the path.
+    subroutine qpainter_setClipPath(self, path)
+        class(QPainter), intent(in) :: self
+        class(QPainterPath), intent(in) :: path
+        call qtf_qpainter_setClipPath(self%ptr, path%ptr)
+    end subroutine qpainter_setClipPath
+
+    !> Turn clipping on or off (off: draw everywhere).
+    subroutine qpainter_setClipping(self, enable)
+        class(QPainter), intent(in) :: self
+        logical, intent(in) :: enable
+        call qtf_qpainter_setClipping(self%ptr, qtf_int(enable))
+    end subroutine qpainter_setClipping
+
+    !> True if clipping is on.
+    function qpainter_hasClipping(self) result(res)
+        class(QPainter), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qpainter_hasClipping(self%ptr))
+    end function qpainter_hasClipping
+
+    !> Shear the coordinate system by (sh, sv).
+    subroutine qpainter_shear(self, sh, sv)
+        class(QPainter), intent(in) :: self
+        real(c_double), intent(in) :: sh
+        real(c_double), intent(in) :: sv
+        call qtf_qpainter_shear(self%ptr, sh, sv)
+    end subroutine qpainter_shear
+
+    !> Set the coordinate transform (`combine`: multiply it onto the current one).
+    subroutine qpainter_setTransform(self, transform, combine)
+        class(QPainter), intent(in) :: self
+        class(QTransform), intent(in) :: transform
+        logical, intent(in), optional :: combine
+        logical :: combine_
+        combine_ = .false.
+        if (present(combine)) combine_ = combine
+        call qtf_qpainter_setTransform(self%ptr, transform%ptr, qtf_int(combine_))
+    end subroutine qpainter_setTransform
+
+    !> A copy of the current coordinate transform (delete it when done).
+    function qpainter_transform(self) result(res)
+        class(QPainter), intent(in) :: self
+        type(QTransform) :: res
+        res%ptr = qtf_qpainter_transform(self%ptr)
+    end function qpainter_transform
+
+    !> Metrics of the current font (delete them when done).
+    function qpainter_fontMetrics(self) result(res)
+        class(QPainter), intent(in) :: self
+        type(QFontMetrics) :: res
+        res%ptr = qtf_qpainter_fontMetrics(self%ptr)
+    end function qpainter_fontMetrics
 
     !> Width in pixels of `text` in the current font.
     function qpainter_textWidth(self, text) result(res)
@@ -1454,6 +2073,1405 @@ contains
         res = qtf_qcontextmenuevent_modifiers(self%ptr)
     end function qcontextmenuevent_modifiers
 
+    !> An empty path.
+    function qpainterpath_new() result(res)
+        type(QPainterPath) :: res
+        res%ptr = qtf_qpainterpath_new()
+    end function qpainterpath_new
+
+    !> Start a new subpath at (x, y).
+    subroutine qpainterpath_moveTo_d(self, x, y)
+        class(QPainterPath), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        call qtf_qpainterpath_moveTo(self%ptr, x, y)
+    end subroutine qpainterpath_moveTo_d
+
+    !> Start a new subpath at (x, y).
+    subroutine qpainterpath_moveTo_i(self, x, y)
+        class(QPainterPath), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        call qtf_qpainterpath_moveTo(self%ptr, real(x, c_double), real(y, c_double))
+    end subroutine qpainterpath_moveTo_i
+
+    !> A straight line to (x, y).
+    subroutine qpainterpath_lineTo_d(self, x, y)
+        class(QPainterPath), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        call qtf_qpainterpath_lineTo(self%ptr, x, y)
+    end subroutine qpainterpath_lineTo_d
+
+    !> A straight line to (x, y).
+    subroutine qpainterpath_lineTo_i(self, x, y)
+        class(QPainterPath), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        call qtf_qpainterpath_lineTo(self%ptr, real(x, c_double), real(y, c_double))
+    end subroutine qpainterpath_lineTo_i
+
+    !> A quadratic Bezier curve to (x, y) with control point (cx, cy).
+    subroutine qpainterpath_quadTo_d(self, cx, cy, x, y)
+        class(QPainterPath), intent(in) :: self
+        real(c_double), intent(in) :: cx
+        real(c_double), intent(in) :: cy
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        call qtf_qpainterpath_quadTo(self%ptr, cx, cy, x, y)
+    end subroutine qpainterpath_quadTo_d
+
+    !> A quadratic Bezier curve to (x, y) with control point (cx, cy).
+    subroutine qpainterpath_quadTo_i(self, cx, cy, x, y)
+        class(QPainterPath), intent(in) :: self
+        integer, intent(in) :: cx
+        integer, intent(in) :: cy
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        call qtf_qpainterpath_quadTo(self%ptr, real(cx, c_double), real(cy, c_double), real(x, c_double), real(y, &
+                c_double))
+    end subroutine qpainterpath_quadTo_i
+
+    !> A cubic Bezier curve to (x, y) with control points (c1x, c1y) and (c2x, c2y).
+    subroutine qpainterpath_cubicTo_d(self, c1x, c1y, c2x, c2y, x, y)
+        class(QPainterPath), intent(in) :: self
+        real(c_double), intent(in) :: c1x
+        real(c_double), intent(in) :: c1y
+        real(c_double), intent(in) :: c2x
+        real(c_double), intent(in) :: c2y
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        call qtf_qpainterpath_cubicTo(self%ptr, c1x, c1y, c2x, c2y, x, y)
+    end subroutine qpainterpath_cubicTo_d
+
+    !> A cubic Bezier curve to (x, y) with control points (c1x, c1y) and (c2x, c2y).
+    subroutine qpainterpath_cubicTo_i(self, c1x, c1y, c2x, c2y, x, y)
+        class(QPainterPath), intent(in) :: self
+        integer, intent(in) :: c1x
+        integer, intent(in) :: c1y
+        integer, intent(in) :: c2x
+        integer, intent(in) :: c2y
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        call qtf_qpainterpath_cubicTo(self%ptr, real(c1x, c_double), real(c1y, c_double), real(c2x, c_double), &
+                real(c2y, c_double), real(x, c_double), real(y, c_double))
+    end subroutine qpainterpath_cubicTo_i
+
+    !> An arc of the ellipse inscribed in (x, y, w, h), joined to the current point by a line; angles in degrees, counterclockwise from 3 o'clock.
+    subroutine qpainterpath_arcTo_d(self, x, y, w, h, startAngle, sweepLength)
+        class(QPainterPath), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        real(c_double), intent(in) :: w
+        real(c_double), intent(in) :: h
+        real(c_double), intent(in) :: startAngle
+        real(c_double), intent(in) :: sweepLength
+        call qtf_qpainterpath_arcTo(self%ptr, x, y, w, h, startAngle, sweepLength)
+    end subroutine qpainterpath_arcTo_d
+
+    !> An arc of the ellipse inscribed in (x, y, w, h), joined to the current point by a line; angles in degrees, counterclockwise from 3 o'clock.
+    subroutine qpainterpath_arcTo_i(self, x, y, w, h, startAngle, sweepLength)
+        class(QPainterPath), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        integer, intent(in) :: w
+        integer, intent(in) :: h
+        real(c_double), intent(in) :: startAngle
+        real(c_double), intent(in) :: sweepLength
+        call qtf_qpainterpath_arcTo(self%ptr, real(x, c_double), real(y, c_double), real(w, c_double), real(h, &
+                c_double), startAngle, sweepLength)
+    end subroutine qpainterpath_arcTo_i
+
+    !> Close the current subpath with a line to its start.
+    subroutine qpainterpath_closeSubpath(self)
+        class(QPainterPath), intent(in) :: self
+        call qtf_qpainterpath_closeSubpath(self%ptr)
+    end subroutine qpainterpath_closeSubpath
+
+    !> Add a rectangle (a closed subpath).
+    subroutine qpainterpath_addRect_d(self, x, y, w, h)
+        class(QPainterPath), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        real(c_double), intent(in) :: w
+        real(c_double), intent(in) :: h
+        call qtf_qpainterpath_addRect(self%ptr, x, y, w, h)
+    end subroutine qpainterpath_addRect_d
+
+    !> Add a rectangle (a closed subpath).
+    subroutine qpainterpath_addRect_i(self, x, y, w, h)
+        class(QPainterPath), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        integer, intent(in) :: w
+        integer, intent(in) :: h
+        call qtf_qpainterpath_addRect(self%ptr, real(x, c_double), real(y, c_double), real(w, c_double), real(h, &
+                c_double))
+    end subroutine qpainterpath_addRect_i
+
+    !> Add a rectangle with corners rounded by radii (rx, ry).
+    subroutine qpainterpath_addRoundedRect_d(self, x, y, w, h, rx, ry)
+        class(QPainterPath), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        real(c_double), intent(in) :: w
+        real(c_double), intent(in) :: h
+        real(c_double), intent(in) :: rx
+        real(c_double), intent(in) :: ry
+        call qtf_qpainterpath_addRoundedRect(self%ptr, x, y, w, h, rx, ry)
+    end subroutine qpainterpath_addRoundedRect_d
+
+    !> Add a rectangle with corners rounded by radii (rx, ry).
+    subroutine qpainterpath_addRoundedRect_i(self, x, y, w, h, rx, ry)
+        class(QPainterPath), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        integer, intent(in) :: w
+        integer, intent(in) :: h
+        integer, intent(in) :: rx
+        integer, intent(in) :: ry
+        call qtf_qpainterpath_addRoundedRect(self%ptr, real(x, c_double), real(y, c_double), real(w, c_double), &
+                real(h, c_double), real(rx, c_double), real(ry, c_double))
+    end subroutine qpainterpath_addRoundedRect_i
+
+    !> Add the ellipse inscribed in (x, y, w, h).
+    subroutine qpainterpath_addEllipse_d(self, x, y, w, h)
+        class(QPainterPath), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        real(c_double), intent(in) :: w
+        real(c_double), intent(in) :: h
+        call qtf_qpainterpath_addEllipse(self%ptr, x, y, w, h)
+    end subroutine qpainterpath_addEllipse_d
+
+    !> Add the ellipse inscribed in (x, y, w, h).
+    subroutine qpainterpath_addEllipse_i(self, x, y, w, h)
+        class(QPainterPath), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        integer, intent(in) :: w
+        integer, intent(in) :: h
+        call qtf_qpainterpath_addEllipse(self%ptr, real(x, c_double), real(y, c_double), real(w, c_double), real(h, &
+                c_double))
+    end subroutine qpainterpath_addEllipse_i
+
+    !> Add a polygon through the points (x(i), y(i)) (not closed: call closeSubpath).
+    subroutine qpainterpath_addPolygon_d(self, x, y)
+        class(QPainterPath), intent(in) :: self
+        real(c_double), intent(in) :: x(:)
+        real(c_double), intent(in) :: y(:)
+        call qtf_qpainterpath_addPolygon(self%ptr, x, y, int(min(size(x), size(y)), c_int))
+    end subroutine qpainterpath_addPolygon_d
+
+    !> Add a polygon through the points (x(i), y(i)) (not closed: call closeSubpath).
+    subroutine qpainterpath_addPolygon_i(self, x, y)
+        class(QPainterPath), intent(in) :: self
+        integer, intent(in) :: x(:)
+        integer, intent(in) :: y(:)
+        call qtf_qpainterpath_addPolygon(self%ptr, real(x, c_double), real(y, c_double), int(min(size(x), size(y)), &
+                c_int))
+    end subroutine qpainterpath_addPolygon_i
+
+    !> Add the outline of `text` with its baseline starting at (x, y) (default: the application font).
+    subroutine qpainterpath_addText_d(self, x, y, text, family, pointSize, bold)
+        class(QPainterPath), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        character(len=*), intent(in) :: text
+        character(len=*), intent(in), optional :: family
+        real(c_double), intent(in), optional :: pointSize
+        logical, intent(in), optional :: bold
+        character(len=:), allocatable :: family_
+        real(c_double) :: pointSize_
+        logical :: bold_
+        family_ = ''
+        if (present(family)) family_ = family
+        pointSize_ = -1.0_c_double
+        if (present(pointSize)) pointSize_ = pointSize
+        bold_ = .false.
+        if (present(bold)) bold_ = bold
+        call qtf_qpainterpath_addText(self%ptr, x, y, text, len(text, c_int), family_, len(family_, c_int), &
+                pointSize_, qtf_int(bold_))
+    end subroutine qpainterpath_addText_d
+
+    !> Add the outline of `text` with its baseline starting at (x, y) (default: the application font).
+    subroutine qpainterpath_addText_i(self, x, y, text, family, pointSize, bold)
+        class(QPainterPath), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        character(len=*), intent(in) :: text
+        character(len=*), intent(in), optional :: family
+        real(c_double), intent(in), optional :: pointSize
+        logical, intent(in), optional :: bold
+        character(len=:), allocatable :: family_
+        real(c_double) :: pointSize_
+        logical :: bold_
+        family_ = ''
+        if (present(family)) family_ = family
+        pointSize_ = -1.0_c_double
+        if (present(pointSize)) pointSize_ = pointSize
+        bold_ = .false.
+        if (present(bold)) bold_ = bold
+        call qtf_qpainterpath_addText(self%ptr, real(x, c_double), real(y, c_double), text, len(text, c_int), &
+                family_, len(family_, c_int), pointSize_, qtf_int(bold_))
+    end subroutine qpainterpath_addText_i
+
+    !> Add the subpaths of another path.
+    subroutine qpainterpath_addPath(self, other)
+        class(QPainterPath), intent(in) :: self
+        class(QPainterPath), intent(in) :: other
+        call qtf_qpainterpath_addPath(self%ptr, other%ptr)
+    end subroutine qpainterpath_addPath
+
+    !> Move the whole path by (dx, dy).
+    subroutine qpainterpath_translate_d(self, dx, dy)
+        class(QPainterPath), intent(in) :: self
+        real(c_double), intent(in) :: dx
+        real(c_double), intent(in) :: dy
+        call qtf_qpainterpath_translate(self%ptr, dx, dy)
+    end subroutine qpainterpath_translate_d
+
+    !> Move the whole path by (dx, dy).
+    subroutine qpainterpath_translate_i(self, dx, dy)
+        class(QPainterPath), intent(in) :: self
+        integer, intent(in) :: dx
+        integer, intent(in) :: dy
+        call qtf_qpainterpath_translate(self%ptr, real(dx, c_double), real(dy, c_double))
+    end subroutine qpainterpath_translate_i
+
+    !> How overlapping subpaths fill: Qt_OddEvenFill (default) or Qt_WindingFill.
+    subroutine qpainterpath_setFillRule(self, rule)
+        class(QPainterPath), intent(in) :: self
+        integer, intent(in) :: rule
+        call qtf_qpainterpath_setFillRule(self%ptr, int(rule, c_int))
+    end subroutine qpainterpath_setFillRule
+
+    !> True if (x, y) is inside the path.
+    function qpainterpath_containsPoint(self, x, y) result(res)
+        class(QPainterPath), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        logical :: res
+        res = qtf_logical(qtf_qpainterpath_containsPoint(self%ptr, x, y))
+    end function qpainterpath_containsPoint
+
+    !> True if the path has no elements.
+    function qpainterpath_isEmpty(self) result(res)
+        class(QPainterPath), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qpainterpath_isEmpty(self%ptr))
+    end function qpainterpath_isEmpty
+
+    !> The length of the path.
+    function qpainterpath_length(self) result(res)
+        class(QPainterPath), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qpainterpath_length(self%ptr)
+    end function qpainterpath_length
+
+    !> The number of path elements (move-to, line-to and curve points).
+    function qpainterpath_elementCount(self) result(res)
+        class(QPainterPath), intent(in) :: self
+        integer :: res
+        res = qtf_qpainterpath_elementCount(self%ptr)
+    end function qpainterpath_elementCount
+
+    !> x of the point at fraction `t` (0..1) of the path's length.
+    function qpainterpath_pointAtPercentX(self, t) result(res)
+        class(QPainterPath), intent(in) :: self
+        real(c_double), intent(in) :: t
+        real(c_double) :: res
+        res = qtf_qpainterpath_pointAtPercentX(self%ptr, t)
+    end function qpainterpath_pointAtPercentX
+
+    !> y of the point at fraction `t` (0..1) of the path's length.
+    function qpainterpath_pointAtPercentY(self, t) result(res)
+        class(QPainterPath), intent(in) :: self
+        real(c_double), intent(in) :: t
+        real(c_double) :: res
+        res = qtf_qpainterpath_pointAtPercentY(self%ptr, t)
+    end function qpainterpath_pointAtPercentY
+
+    !> Left of the bounding rectangle.
+    function qpainterpath_boundingX(self) result(res)
+        class(QPainterPath), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qpainterpath_boundingX(self%ptr)
+    end function qpainterpath_boundingX
+
+    !> Top of the bounding rectangle.
+    function qpainterpath_boundingY(self) result(res)
+        class(QPainterPath), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qpainterpath_boundingY(self%ptr)
+    end function qpainterpath_boundingY
+
+    !> Width of the bounding rectangle.
+    function qpainterpath_boundingWidth(self) result(res)
+        class(QPainterPath), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qpainterpath_boundingWidth(self%ptr)
+    end function qpainterpath_boundingWidth
+
+    !> Height of the bounding rectangle.
+    function qpainterpath_boundingHeight(self) result(res)
+        class(QPainterPath), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qpainterpath_boundingHeight(self%ptr)
+    end function qpainterpath_boundingHeight
+
+    !> A copy of the path (delete it when done).
+    function qpainterpath_copy(self) result(res)
+        class(QPainterPath), intent(in) :: self
+        type(QPainterPath) :: res
+        res%ptr = qtf_qpainterpath_copy(self%ptr)
+    end function qpainterpath_copy
+
+    !> A new path: the union of the two filled areas.
+    function qpainterpath_united(self, other) result(res)
+        class(QPainterPath), intent(in) :: self
+        class(QPainterPath), intent(in) :: other
+        type(QPainterPath) :: res
+        res%ptr = qtf_qpainterpath_united(self%ptr, other%ptr)
+    end function qpainterpath_united
+
+    !> A new path: the intersection of the two filled areas.
+    function qpainterpath_intersected(self, other) result(res)
+        class(QPainterPath), intent(in) :: self
+        class(QPainterPath), intent(in) :: other
+        type(QPainterPath) :: res
+        res%ptr = qtf_qpainterpath_intersected(self%ptr, other%ptr)
+    end function qpainterpath_intersected
+
+    !> A new path: this area minus the other.
+    function qpainterpath_subtracted(self, other) result(res)
+        class(QPainterPath), intent(in) :: self
+        class(QPainterPath), intent(in) :: other
+        type(QPainterPath) :: res
+        res%ptr = qtf_qpainterpath_subtracted(self%ptr, other%ptr)
+    end function qpainterpath_subtracted
+
+    !> Release the path.
+    subroutine qpainterpath_delete(self)
+        class(QPainterPath), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qpainterpath_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qpainterpath_delete
+
+    !> The color at `position` (0..1) along the gradient.
+    subroutine qgradient_setColorAt(self, position, color)
+        class(QGradient), intent(in) :: self
+        real(c_double), intent(in) :: position
+        type(QColor), intent(in) :: color
+        call qtf_qgradient_setColorAt(self%ptr, position, int(color%r, c_int), int(color%g, c_int), int(color%b, &
+                c_int), int(color%a, c_int))
+    end subroutine qgradient_setColorAt
+
+    !> Beyond the ends: QGradient_PadSpread (default), _ReflectSpread or _RepeatSpread.
+    subroutine qgradient_setSpread(self, spread)
+        class(QGradient), intent(in) :: self
+        integer, intent(in) :: spread
+        call qtf_qgradient_setSpread(self%ptr, int(spread, c_int))
+    end subroutine qgradient_setSpread
+
+    !> QGradient_LogicalMode (default: painter coordinates) or QGradient_ObjectMode (0..1 across each filled shape).
+    subroutine qgradient_setCoordinateMode(self, mode)
+        class(QGradient), intent(in) :: self
+        integer, intent(in) :: mode
+        call qtf_qgradient_setCoordinateMode(self%ptr, int(mode, c_int))
+    end subroutine qgradient_setCoordinateMode
+
+    !> Release the gradient.
+    subroutine qgradient_delete(self)
+        class(QGradient), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qgradient_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qgradient_delete
+
+    !> A linear gradient from (x1, y1) (position 0) to (x2, y2) (position 1).
+    function qlineargradient_new(x1, y1, x2, y2) result(res)
+        real(c_double), intent(in) :: x1
+        real(c_double), intent(in) :: y1
+        real(c_double), intent(in) :: x2
+        real(c_double), intent(in) :: y2
+        type(QLinearGradient) :: res
+        res%ptr = qtf_qlineargradient_new(x1, y1, x2, y2)
+    end function qlineargradient_new
+
+    !> The start point (position 0).
+    subroutine qlineargradient_setStart(self, x, y)
+        class(QLinearGradient), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        call qtf_qlineargradient_setStart(self%ptr, x, y)
+    end subroutine qlineargradient_setStart
+
+    !> The end point (position 1).
+    subroutine qlineargradient_setFinalStop(self, x, y)
+        class(QLinearGradient), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        call qtf_qlineargradient_setFinalStop(self%ptr, x, y)
+    end subroutine qlineargradient_setFinalStop
+
+    !> A radial gradient: position 0 at the center (cx, cy), 1 at `radius`.
+    function qradialgradient_new(cx, cy, radius) result(res)
+        real(c_double), intent(in) :: cx
+        real(c_double), intent(in) :: cy
+        real(c_double), intent(in) :: radius
+        type(QRadialGradient) :: res
+        res%ptr = qtf_qradialgradient_new(cx, cy, radius)
+    end function qradialgradient_new
+
+    !> The center of the circle.
+    subroutine qradialgradient_setCenter(self, x, y)
+        class(QRadialGradient), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        call qtf_qradialgradient_setCenter(self%ptr, x, y)
+    end subroutine qradialgradient_setCenter
+
+    !> The radius (position 1).
+    subroutine qradialgradient_setRadius(self, radius)
+        class(QRadialGradient), intent(in) :: self
+        real(c_double), intent(in) :: radius
+        call qtf_qradialgradient_setRadius(self%ptr, radius)
+    end subroutine qradialgradient_setRadius
+
+    !> The focal point (position 0); by default the center.
+    subroutine qradialgradient_setFocalPoint(self, x, y)
+        class(QRadialGradient), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        call qtf_qradialgradient_setFocalPoint(self%ptr, x, y)
+    end subroutine qradialgradient_setFocalPoint
+
+    !> A conical gradient around (cx, cy), starting at `angle` degrees (counterclockwise from 3 o'clock).
+    function qconicalgradient_new(cx, cy, angle) result(res)
+        real(c_double), intent(in) :: cx
+        real(c_double), intent(in) :: cy
+        real(c_double), intent(in) :: angle
+        type(QConicalGradient) :: res
+        res%ptr = qtf_qconicalgradient_new(cx, cy, angle)
+    end function qconicalgradient_new
+
+    !> The center.
+    subroutine qconicalgradient_setCenter(self, x, y)
+        class(QConicalGradient), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        call qtf_qconicalgradient_setCenter(self%ptr, x, y)
+    end subroutine qconicalgradient_setCenter
+
+    !> The start angle in degrees.
+    subroutine qconicalgradient_setAngle(self, angle)
+        class(QConicalGradient), intent(in) :: self
+        real(c_double), intent(in) :: angle
+        call qtf_qconicalgradient_setAngle(self%ptr, angle)
+    end subroutine qconicalgradient_setAngle
+
+    !> The identity transform.
+    function qtransform_new() result(res)
+        type(QTransform) :: res
+        res%ptr = qtf_qtransform_new()
+    end function qtransform_new
+
+    !> An affine transform: x' = m11 x + m21 y + dx, y' = m12 x + m22 y + dy.
+    function qtransform_fromAffine(m11, m12, m21, m22, dx, dy) result(res)
+        real(c_double), intent(in) :: m11
+        real(c_double), intent(in) :: m12
+        real(c_double), intent(in) :: m21
+        real(c_double), intent(in) :: m22
+        real(c_double), intent(in) :: dx
+        real(c_double), intent(in) :: dy
+        type(QTransform) :: res
+        res%ptr = qtf_qtransform_fromAffine(m11, m12, m21, m22, dx, dy)
+    end function qtransform_fromAffine
+
+    !> Move by (dx, dy).
+    subroutine qtransform_translate(self, dx, dy)
+        class(QTransform), intent(in) :: self
+        real(c_double), intent(in) :: dx
+        real(c_double), intent(in) :: dy
+        call qtf_qtransform_translate(self%ptr, dx, dy)
+    end subroutine qtransform_translate
+
+    !> Rotate clockwise (on screen, where y points down) by `degrees`.
+    subroutine qtransform_rotate(self, degrees)
+        class(QTransform), intent(in) :: self
+        real(c_double), intent(in) :: degrees
+        call qtf_qtransform_rotate(self%ptr, degrees)
+    end subroutine qtransform_rotate
+
+    !> Scale by (sx, sy).
+    subroutine qtransform_scale(self, sx, sy)
+        class(QTransform), intent(in) :: self
+        real(c_double), intent(in) :: sx
+        real(c_double), intent(in) :: sy
+        call qtf_qtransform_scale(self%ptr, sx, sy)
+    end subroutine qtransform_scale
+
+    !> Shear by (sh, sv).
+    subroutine qtransform_shear(self, sh, sv)
+        class(QTransform), intent(in) :: self
+        real(c_double), intent(in) :: sh
+        real(c_double), intent(in) :: sv
+        call qtf_qtransform_shear(self%ptr, sh, sv)
+    end subroutine qtransform_shear
+
+    !> Back to the identity.
+    subroutine qtransform_reset(self)
+        class(QTransform), intent(in) :: self
+        call qtf_qtransform_reset(self%ptr)
+    end subroutine qtransform_reset
+
+    !> True for the identity.
+    function qtransform_isIdentity(self) result(res)
+        class(QTransform), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtransform_isIdentity(self%ptr))
+    end function qtransform_isIdentity
+
+    !> True if the transform can be inverted.
+    function qtransform_isInvertible(self) result(res)
+        class(QTransform), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtransform_isInvertible(self%ptr))
+    end function qtransform_isInvertible
+
+    !> The determinant of the 2x2 part.
+    function qtransform_determinant(self) result(res)
+        class(QTransform), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qtransform_determinant(self%ptr)
+    end function qtransform_determinant
+
+    !> Matrix element (1, 1): x scale.
+    function qtransform_m11(self) result(res)
+        class(QTransform), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qtransform_m11(self%ptr)
+    end function qtransform_m11
+
+    !> Matrix element (1, 2): y shear.
+    function qtransform_m12(self) result(res)
+        class(QTransform), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qtransform_m12(self%ptr)
+    end function qtransform_m12
+
+    !> Matrix element (2, 1): x shear.
+    function qtransform_m21(self) result(res)
+        class(QTransform), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qtransform_m21(self%ptr)
+    end function qtransform_m21
+
+    !> Matrix element (2, 2): y scale.
+    function qtransform_m22(self) result(res)
+        class(QTransform), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qtransform_m22(self%ptr)
+    end function qtransform_m22
+
+    !> The x translation.
+    function qtransform_dx(self) result(res)
+        class(QTransform), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qtransform_dx(self%ptr)
+    end function qtransform_dx
+
+    !> The y translation.
+    function qtransform_dy(self) result(res)
+        class(QTransform), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qtransform_dy(self%ptr)
+    end function qtransform_dy
+
+    !> x of the transformed point (x, y).
+    function qtransform_mapX(self, x, y) result(res)
+        class(QTransform), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        real(c_double) :: res
+        res = qtf_qtransform_mapX(self%ptr, x, y)
+    end function qtransform_mapX
+
+    !> y of the transformed point (x, y).
+    function qtransform_mapY(self, x, y) result(res)
+        class(QTransform), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        real(c_double) :: res
+        res = qtf_qtransform_mapY(self%ptr, x, y)
+    end function qtransform_mapY
+
+    !> A new transform: the inverse (the identity if not invertible; then `ok` is false).
+    function qtransform_inverted(self, ok) result(res)
+        class(QTransform), intent(in) :: self
+        logical, intent(out), optional :: ok
+        type(QTransform) :: res
+        integer(c_int) :: ok_
+        res%ptr = qtf_qtransform_inverted(self%ptr, ok_)
+        if (present(ok)) ok = qtf_logical(ok_)
+    end function qtransform_inverted
+
+    !> A new transform: this one, then `other`.
+    function qtransform_multiplied(self, other) result(res)
+        class(QTransform), intent(in) :: self
+        class(QTransform), intent(in) :: other
+        type(QTransform) :: res
+        res%ptr = qtf_qtransform_multiplied(self%ptr, other%ptr)
+    end function qtransform_multiplied
+
+    !> A copy (delete it when done).
+    function qtransform_copy(self) result(res)
+        class(QTransform), intent(in) :: self
+        type(QTransform) :: res
+        res%ptr = qtf_qtransform_copy(self%ptr)
+    end function qtransform_copy
+
+    !> Release the transform.
+    subroutine qtransform_delete(self)
+        class(QTransform), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qtransform_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qtransform_delete
+
+    !> Metrics of the application's default font.
+    function qfontmetrics_new() result(res)
+        type(QFontMetrics) :: res
+        res%ptr = qtf_qfontmetrics_new()
+    end function qfontmetrics_new
+
+    !> Width of `text` (the advance to where the next text would start).
+    function qfontmetrics_horizontalAdvance(self, text) result(res)
+        class(QFontMetrics), intent(in) :: self
+        character(len=*), intent(in) :: text
+        integer :: res
+        res = qtf_qfontmetrics_horizontalAdvance(self%ptr, text, len(text, c_int))
+    end function qfontmetrics_horizontalAdvance
+
+    !> Width of the ink of `text` (its bounding rectangle).
+    function qfontmetrics_boundingWidth(self, text) result(res)
+        class(QFontMetrics), intent(in) :: self
+        character(len=*), intent(in) :: text
+        integer :: res
+        res = qtf_qfontmetrics_boundingWidth(self%ptr, text, len(text, c_int))
+    end function qfontmetrics_boundingWidth
+
+    !> Line height (ascent + descent).
+    function qfontmetrics_height(self) result(res)
+        class(QFontMetrics), intent(in) :: self
+        integer :: res
+        res = qtf_qfontmetrics_height(self%ptr)
+    end function qfontmetrics_height
+
+    !> Distance from the baseline to the top of the tallest glyphs.
+    function qfontmetrics_ascent(self) result(res)
+        class(QFontMetrics), intent(in) :: self
+        integer :: res
+        res = qtf_qfontmetrics_ascent(self%ptr)
+    end function qfontmetrics_ascent
+
+    !> Distance from the baseline to the bottom of the lowest glyphs.
+    function qfontmetrics_descent(self) result(res)
+        class(QFontMetrics), intent(in) :: self
+        integer :: res
+        res = qtf_qfontmetrics_descent(self%ptr)
+    end function qfontmetrics_descent
+
+    !> Extra space between lines.
+    function qfontmetrics_leading(self) result(res)
+        class(QFontMetrics), intent(in) :: self
+        integer :: res
+        res = qtf_qfontmetrics_leading(self%ptr)
+    end function qfontmetrics_leading
+
+    !> Distance from one baseline to the next.
+    function qfontmetrics_lineSpacing(self) result(res)
+        class(QFontMetrics), intent(in) :: self
+        integer :: res
+        res = qtf_qfontmetrics_lineSpacing(self%ptr)
+    end function qfontmetrics_lineSpacing
+
+    !> Average character width.
+    function qfontmetrics_averageCharWidth(self) result(res)
+        class(QFontMetrics), intent(in) :: self
+        integer :: res
+        res = qtf_qfontmetrics_averageCharWidth(self%ptr)
+    end function qfontmetrics_averageCharWidth
+
+    !> Width of the widest character.
+    function qfontmetrics_maxWidth(self) result(res)
+        class(QFontMetrics), intent(in) :: self
+        integer :: res
+        res = qtf_qfontmetrics_maxWidth(self%ptr)
+    end function qfontmetrics_maxWidth
+
+    !> Height of capital letters.
+    function qfontmetrics_capHeight(self) result(res)
+        class(QFontMetrics), intent(in) :: self
+        integer :: res
+        res = qtf_qfontmetrics_capHeight(self%ptr)
+    end function qfontmetrics_capHeight
+
+    !> Height of lowercase letters (without ascenders).
+    function qfontmetrics_xHeight(self) result(res)
+        class(QFontMetrics), intent(in) :: self
+        integer :: res
+        res = qtf_qfontmetrics_xHeight(self%ptr)
+    end function qfontmetrics_xHeight
+
+    !> `text` shortened with an ellipsis (Qt_ElideRight, _ElideLeft, _ElideMiddle) to fit `width` pixels.
+    function qfontmetrics_elidedText(self, text, mode, width) result(res)
+        class(QFontMetrics), intent(in) :: self
+        character(len=*), intent(in) :: text
+        integer, intent(in) :: mode
+        integer, intent(in) :: width
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qfontmetrics_elidedText(self%ptr, text, len(text, c_int), int(mode, c_int), int(width, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function qfontmetrics_elidedText
+
+    !> Release the metrics.
+    subroutine qfontmetrics_delete(self)
+        class(QFontMetrics), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qfontmetrics_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qfontmetrics_delete
+
+    !> Metrics of `font` (unset fields take the application font's values).
+    function qfontmetrics_fromFont(font) result(res)
+        type(QFont), intent(in) :: font
+        type(QFontMetrics) :: res
+        if (allocated(font%family)) then
+            res%ptr = qtf_qfontmetrics_fromFont(font%family, len(font%family, c_int), font%pointSize, &
+                                                qtf_int(font%bold), qtf_int(font%italic))
+        else
+            res%ptr = qtf_qfontmetrics_fromFont('', 0_c_int, font%pointSize, qtf_int(font%bold), &
+                                                qtf_int(font%italic))
+        end if
+    end function qfontmetrics_fromFont
+
+    !> Empty data.
+    function qmimedata_new() result(res)
+        type(QMimeData) :: res
+        call res%attach(qtf_qmimedata_new())
+    end function qmimedata_new
+
+    !> Set the plain text (text/plain).
+    subroutine qmimedata_setText(self, text)
+        class(QMimeData), intent(in) :: self
+        character(len=*), intent(in) :: text
+        call qtf_qmimedata_setText(qtf_live(self, 'QMimeData%setText'), text, len(text, c_int))
+    end subroutine qmimedata_setText
+
+    !> The plain text.
+    function qmimedata_text(self) result(res)
+        class(QMimeData), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qmimedata_text(qtf_live(self, 'QMimeData%text'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qmimedata_text
+
+    !> True if there is plain text.
+    function qmimedata_hasText(self) result(res)
+        class(QMimeData), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qmimedata_hasText(qtf_live(self, 'QMimeData%hasText')))
+    end function qmimedata_hasText
+
+    !> Set HTML (text/html).
+    subroutine qmimedata_setHtml(self, html)
+        class(QMimeData), intent(in) :: self
+        character(len=*), intent(in) :: html
+        call qtf_qmimedata_setHtml(qtf_live(self, 'QMimeData%setHtml'), html, len(html, c_int))
+    end subroutine qmimedata_setHtml
+
+    !> The HTML.
+    function qmimedata_html(self) result(res)
+        class(QMimeData), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qmimedata_html(qtf_live(self, 'QMimeData%html'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qmimedata_html
+
+    !> True if there is HTML.
+    function qmimedata_hasHtml(self) result(res)
+        class(QMimeData), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qmimedata_hasHtml(qtf_live(self, 'QMimeData%hasHtml')))
+    end function qmimedata_hasHtml
+
+    !> Set URLs (text/uri-list): file paths, or URLs such as 'https://...'.
+    subroutine qmimedata_setUrls(self, urls)
+        class(QMimeData), intent(in) :: self
+        character(len=*), intent(in) :: urls(:)
+        call qtf_qmimedata_setUrls(qtf_live(self, 'QMimeData%setUrls'), urls, len(urls, c_int), int(size(urls), c_int))
+    end subroutine qmimedata_setUrls
+
+    !> The URLs: local files as paths.
+    function qmimedata_urls(self) result(res)
+        class(QMimeData), intent(in) :: self
+        type(qt_string), allocatable :: res(:)
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qmimedata_urls(qtf_live(self, 'QMimeData%urls'), n_)
+        res = qtf_take_string_list(p_, n_)
+    end function qmimedata_urls
+
+    !> True if there are URLs (e.g. files dropped from the desktop).
+    function qmimedata_hasUrls(self) result(res)
+        class(QMimeData), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qmimedata_hasUrls(qtf_live(self, 'QMimeData%hasUrls')))
+    end function qmimedata_hasUrls
+
+    !> Set an image (copied).
+    subroutine qmimedata_setImage(self, image)
+        class(QMimeData), intent(in) :: self
+        class(QImage), intent(in) :: image
+        call qtf_qmimedata_setImage(qtf_live(self, 'QMimeData%setImage'), image%ptr)
+    end subroutine qmimedata_setImage
+
+    !> A copy of the image (null if none; delete it when done).
+    function qmimedata_image(self) result(res)
+        class(QMimeData), intent(in) :: self
+        type(QImage) :: res
+        res%ptr = qtf_qmimedata_image(qtf_live(self, 'QMimeData%image'))
+    end function qmimedata_image
+
+    !> True if there is an image.
+    function qmimedata_hasImage(self) result(res)
+        class(QMimeData), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qmimedata_hasImage(qtf_live(self, 'QMimeData%hasImage')))
+    end function qmimedata_hasImage
+
+    !> Set data of any MIME type `format` (e.g. 'application/x-mydata') as UTF-8 text.
+    subroutine qmimedata_setData(self, format, data)
+        class(QMimeData), intent(in) :: self
+        character(len=*), intent(in) :: format
+        character(len=*), intent(in) :: data
+        call qtf_qmimedata_setData(qtf_live(self, 'QMimeData%setData'), format, len(format, c_int), data, len(data, &
+                c_int))
+    end subroutine qmimedata_setData
+
+    !> The data of `format` as text (empty if none).
+    function qmimedata_data(self, format) result(res)
+        class(QMimeData), intent(in) :: self
+        character(len=*), intent(in) :: format
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qmimedata_data(qtf_live(self, 'QMimeData%data'), format, len(format, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function qmimedata_data
+
+    !> True if there is data of MIME type `format`.
+    function qmimedata_hasFormat(self, format) result(res)
+        class(QMimeData), intent(in) :: self
+        character(len=*), intent(in) :: format
+        logical :: res
+        res = qtf_logical(qtf_qmimedata_hasFormat(qtf_live(self, 'QMimeData%hasFormat'), format, len(format, c_int)))
+    end function qmimedata_hasFormat
+
+    !> The MIME types present.
+    function qmimedata_formats(self) result(res)
+        class(QMimeData), intent(in) :: self
+        type(qt_string), allocatable :: res(:)
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qmimedata_formats(qtf_live(self, 'QMimeData%formats'), n_)
+        res = qtf_take_string_list(p_, n_)
+    end function qmimedata_formats
+
+    !> Remove all data.
+    subroutine qmimedata_clear(self)
+        class(QMimeData), intent(in) :: self
+        call qtf_qmimedata_clear(qtf_live(self, 'QMimeData%clear'))
+    end subroutine qmimedata_clear
+
+    !> A synthetic QEvent_DragEnter, QEvent_DragMove or QEvent_Drop event carrying `mimeData` (not owned: delete both after use), e.g. to test drop handling with QCoreApplication_sendEvent. As in a real drag, a widget gets moves and the drop only after accepting a drag-enter.
+    function qdropevent_new(type, x, y, mimeData, actions, buttons, modifiers) result(res)
+        integer, intent(in) :: type
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        class(QMimeData), intent(in) :: mimeData
+        integer, intent(in), optional :: actions
+        integer, intent(in), optional :: buttons
+        integer, intent(in), optional :: modifiers
+        type(QDropEvent) :: res
+        integer(c_int) :: actions_
+        integer(c_int) :: buttons_
+        integer(c_int) :: modifiers_
+        actions_ = Qt_CopyAction
+        if (present(actions)) actions_ = int(actions, c_int)
+        buttons_ = Qt_LeftButton
+        if (present(buttons)) buttons_ = int(buttons, c_int)
+        modifiers_ = Qt_NoModifier
+        if (present(modifiers)) modifiers_ = int(modifiers, c_int)
+        res%ptr = qtf_qdropevent_new(int(type, c_int), x, y, qtf_live(mimeData, 'QDropEvent%new'), actions_, &
+                buttons_, modifiers_)
+    end function qdropevent_new
+
+    !> Horizontal position in widget coordinates.
+    function qdropevent_x(self) result(res)
+        class(QDropEvent), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qdropevent_x(self%ptr)
+    end function qdropevent_x
+
+    !> Vertical position in widget coordinates.
+    function qdropevent_y(self) result(res)
+        class(QDropEvent), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qdropevent_y(self%ptr)
+    end function qdropevent_y
+
+    !> The action the user asks for (Qt_CopyAction, _MoveAction, _LinkAction).
+    function qdropevent_proposedAction(self) result(res)
+        class(QDropEvent), intent(in) :: self
+        integer :: res
+        res = qtf_qdropevent_proposedAction(self%ptr)
+    end function qdropevent_proposedAction
+
+    !> The actions the source allows (a combination of Qt_*Action).
+    function qdropevent_possibleActions(self) result(res)
+        class(QDropEvent), intent(in) :: self
+        integer :: res
+        res = qtf_qdropevent_possibleActions(self%ptr)
+    end function qdropevent_possibleActions
+
+    !> The action that will be taken.
+    function qdropevent_dropAction(self) result(res)
+        class(QDropEvent), intent(in) :: self
+        integer :: res
+        res = qtf_qdropevent_dropAction(self%ptr)
+    end function qdropevent_dropAction
+
+    !> Take another (possible) action than the proposed one; then `accept()` the event.
+    subroutine qdropevent_setDropAction(self, action)
+        class(QDropEvent), intent(in) :: self
+        integer, intent(in) :: action
+        call qtf_qdropevent_setDropAction(self%ptr, int(action, c_int))
+    end subroutine qdropevent_setDropAction
+
+    !> Accept the drag or drop with the proposed action.
+    subroutine qdropevent_acceptProposedAction(self)
+        class(QDropEvent), intent(in) :: self
+        call qtf_qdropevent_acceptProposedAction(self%ptr)
+    end subroutine qdropevent_acceptProposedAction
+
+    !> Mouse buttons held.
+    function qdropevent_buttons(self) result(res)
+        class(QDropEvent), intent(in) :: self
+        integer :: res
+        res = qtf_qdropevent_buttons(self%ptr)
+    end function qdropevent_buttons
+
+    !> Keyboard modifiers held (e.g. Ctrl to copy).
+    function qdropevent_modifiers(self) result(res)
+        class(QDropEvent), intent(in) :: self
+        integer :: res
+        res = qtf_qdropevent_modifiers(self%ptr)
+    end function qdropevent_modifiers
+
+    !> The dragged data (valid during the slot).
+    function qdropevent_mimeData(self) result(res)
+        class(QDropEvent), intent(in) :: self
+        type(QMimeData) :: res
+        call res%attach(qtf_qdropevent_mimeData(self%ptr))
+    end function qdropevent_mimeData
+
+    !> True if the drag carries plain text.
+    function qdropevent_hasText(self) result(res)
+        class(QDropEvent), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qdropevent_hasText(self%ptr))
+    end function qdropevent_hasText
+
+    !> The dragged plain text.
+    function qdropevent_text(self) result(res)
+        class(QDropEvent), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qdropevent_text(self%ptr, n_)
+        res = qtf_take_string(p_, n_)
+    end function qdropevent_text
+
+    !> True if the drag carries URLs (e.g. files from the desktop).
+    function qdropevent_hasUrls(self) result(res)
+        class(QDropEvent), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qdropevent_hasUrls(self%ptr))
+    end function qdropevent_hasUrls
+
+    !> The dragged URLs: local files as paths.
+    function qdropevent_urls(self) result(res)
+        class(QDropEvent), intent(in) :: self
+        type(qt_string), allocatable :: res(:)
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qdropevent_urls(self%ptr, n_)
+        res = qtf_take_string_list(p_, n_)
+    end function qdropevent_urls
+
+    !> True if the drag carries an image.
+    function qdropevent_hasImage(self) result(res)
+        class(QDropEvent), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qdropevent_hasImage(self%ptr))
+    end function qdropevent_hasImage
+
+    !> True if the drag carries data of MIME type `format`.
+    function qdropevent_hasFormat(self, format) result(res)
+        class(QDropEvent), intent(in) :: self
+        character(len=*), intent(in) :: format
+        logical :: res
+        res = qtf_logical(qtf_qdropevent_hasFormat(self%ptr, format, len(format, c_int)))
+    end function qdropevent_hasFormat
+
+    !> The dragged data of `format`, as text.
+    function qdropevent_data(self, format) result(res)
+        class(QDropEvent), intent(in) :: self
+        character(len=*), intent(in) :: format
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qdropevent_data(self%ptr, format, len(format, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function qdropevent_data
+
+    !> A drag from `source` (the widget dragged from).
+    function qdrag_new(source) result(res)
+        class(QObject), intent(in) :: source
+        type(QDrag) :: res
+        call res%attach(qtf_qdrag_new(qtf_live(source, 'QDrag%new')))
+    end function qdrag_new
+
+    !> The data to drag (the drag takes ownership).
+    subroutine qdrag_setMimeData(self, data)
+        class(QDrag), intent(in) :: self
+        class(QMimeData), intent(in) :: data
+        call qtf_qdrag_setMimeData(qtf_live(self, 'QDrag%setMimeData'), qtf_live(data, 'QDrag%setMimeData'))
+    end subroutine qdrag_setMimeData
+
+    !> The image shown under the cursor (copied).
+    subroutine qdrag_setPixmap(self, pixmap)
+        class(QDrag), intent(in) :: self
+        class(QPixmap), intent(in) :: pixmap
+        call qtf_qdrag_setPixmap(qtf_live(self, 'QDrag%setPixmap'), pixmap%ptr)
+    end subroutine qdrag_setPixmap
+
+    !> Where the cursor is on the pixmap.
+    subroutine qdrag_setHotSpot(self, x, y)
+        class(QDrag), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        call qtf_qdrag_setHotSpot(qtf_live(self, 'QDrag%setHotSpot'), int(x, c_int), int(y, c_int))
+    end subroutine qdrag_setHotSpot
+
+    !> Run the drag (blocks until it ends); returns the action taken, Qt_IgnoreAction if cancelled.
+    function qdrag_exec(self, supportedActions, defaultAction) result(res)
+        class(QDrag), intent(in) :: self
+        integer, intent(in), optional :: supportedActions
+        integer, intent(in), optional :: defaultAction
+        integer :: res
+        integer(c_int) :: supportedActions_
+        integer(c_int) :: defaultAction_
+        supportedActions_ = Qt_CopyAction
+        if (present(supportedActions)) supportedActions_ = int(supportedActions, c_int)
+        defaultAction_ = Qt_IgnoreAction
+        if (present(defaultAction)) defaultAction_ = int(defaultAction, c_int)
+        res = qtf_qdrag_exec(qtf_live(self, 'QDrag%exec'), supportedActions_, defaultAction_)
+    end function qdrag_exec
+
+    !> Bind to a C++ QClipboard and its signals.
+    subroutine qclipboard_attach(self, ptr)
+        class(QClipboard), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QObject%attach(ptr)
+        self%dataChanged = QSignal(ptr, QTF_SIG_QCLIPBOARD_DATACHANGED, self%serial)
+    end subroutine qclipboard_attach
+
+    !> Put text on the clipboard.
+    subroutine qclipboard_setText(self, text, mode)
+        class(QClipboard), intent(in) :: self
+        character(len=*), intent(in) :: text
+        integer, intent(in), optional :: mode
+        integer(c_int) :: mode_
+        mode_ = QClipboard_Clipboard
+        if (present(mode)) mode_ = int(mode, c_int)
+        call qtf_qclipboard_setText(qtf_live(self, 'QClipboard%setText'), text, len(text, c_int), mode_)
+    end subroutine qclipboard_setText
+
+    !> The clipboard's text (empty if none).
+    function qclipboard_text(self, mode) result(res)
+        class(QClipboard), intent(in) :: self
+        integer, intent(in), optional :: mode
+        character(len=:), allocatable :: res
+        integer(c_int) :: mode_
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        mode_ = QClipboard_Clipboard
+        if (present(mode)) mode_ = int(mode, c_int)
+        p_ = qtf_qclipboard_text(qtf_live(self, 'QClipboard%text'), mode_, n_)
+        res = qtf_take_string(p_, n_)
+    end function qclipboard_text
+
+    !> True if the clipboard holds text.
+    function qclipboard_hasText(self, mode) result(res)
+        class(QClipboard), intent(in) :: self
+        integer, intent(in), optional :: mode
+        logical :: res
+        integer(c_int) :: mode_
+        mode_ = QClipboard_Clipboard
+        if (present(mode)) mode_ = int(mode, c_int)
+        res = qtf_logical(qtf_qclipboard_hasText(qtf_live(self, 'QClipboard%hasText'), mode_))
+    end function qclipboard_hasText
+
+    !> Put an image on the clipboard (copied).
+    subroutine qclipboard_setImage(self, image, mode)
+        class(QClipboard), intent(in) :: self
+        class(QImage), intent(in) :: image
+        integer, intent(in), optional :: mode
+        integer(c_int) :: mode_
+        mode_ = QClipboard_Clipboard
+        if (present(mode)) mode_ = int(mode, c_int)
+        call qtf_qclipboard_setImage(qtf_live(self, 'QClipboard%setImage'), image%ptr, mode_)
+    end subroutine qclipboard_setImage
+
+    !> The clipboard's image (null if none; delete it when done).
+    function qclipboard_image(self, mode) result(res)
+        class(QClipboard), intent(in) :: self
+        integer, intent(in), optional :: mode
+        type(QImage) :: res
+        integer(c_int) :: mode_
+        mode_ = QClipboard_Clipboard
+        if (present(mode)) mode_ = int(mode, c_int)
+        res%ptr = qtf_qclipboard_image(qtf_live(self, 'QClipboard%image'), mode_)
+    end function qclipboard_image
+
+    !> True if the clipboard holds an image.
+    function qclipboard_hasImage(self, mode) result(res)
+        class(QClipboard), intent(in) :: self
+        integer, intent(in), optional :: mode
+        logical :: res
+        integer(c_int) :: mode_
+        mode_ = QClipboard_Clipboard
+        if (present(mode)) mode_ = int(mode, c_int)
+        res = qtf_logical(qtf_qclipboard_hasImage(qtf_live(self, 'QClipboard%hasImage'), mode_))
+    end function qclipboard_hasImage
+
+    !> Put mime data on the clipboard (it takes ownership).
+    subroutine qclipboard_setMimeData(self, data, mode)
+        class(QClipboard), intent(in) :: self
+        class(QMimeData), intent(in) :: data
+        integer, intent(in), optional :: mode
+        integer(c_int) :: mode_
+        mode_ = QClipboard_Clipboard
+        if (present(mode)) mode_ = int(mode, c_int)
+        call qtf_qclipboard_setMimeData(qtf_live(self, 'QClipboard%setMimeData'), qtf_live(data, &
+                'QClipboard%setMimeData'), mode_)
+    end subroutine qclipboard_setMimeData
+
+    !> The clipboard's data (owned by the clipboard; valid until it changes).
+    function qclipboard_mimeData(self, mode) result(res)
+        class(QClipboard), intent(in) :: self
+        integer, intent(in), optional :: mode
+        type(QMimeData) :: res
+        integer(c_int) :: mode_
+        mode_ = QClipboard_Clipboard
+        if (present(mode)) mode_ = int(mode, c_int)
+        call res%attach(qtf_qclipboard_mimeData(qtf_live(self, 'QClipboard%mimeData'), mode_))
+    end function qclipboard_mimeData
+
+    !> Empty the clipboard.
+    subroutine qclipboard_clear(self, mode)
+        class(QClipboard), intent(in) :: self
+        integer, intent(in), optional :: mode
+        integer(c_int) :: mode_
+        mode_ = QClipboard_Clipboard
+        if (present(mode)) mode_ = int(mode, c_int)
+        call qtf_qclipboard_clear(qtf_live(self, 'QClipboard%clear'), mode_)
+    end subroutine qclipboard_clear
+
+    !> Bind to a C++ QScreen and its signals.
+    subroutine qscreen_attach(self, ptr)
+        class(QScreen), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QObject%attach(ptr)
+        self%geometryChanged = QSignal(ptr, QTF_SIG_QSCREEN_GEOMETRYCHANGED, self%serial)
+        self%logicalDotsPerInchChanged = QSignalDouble(ptr, QTF_SIG_QSCREEN_LOGICALDOTSPERINCHCHANGED, self%serial)
+    end subroutine qscreen_attach
+
+    !> The screen's name (e.g. its connector).
+    function qscreen_name(self) result(res)
+        class(QScreen), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qscreen_name(qtf_live(self, 'QScreen%name'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qscreen_name
+
+    !> The manufacturer (may be empty).
+    function qscreen_manufacturer(self) result(res)
+        class(QScreen), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qscreen_manufacturer(qtf_live(self, 'QScreen%manufacturer'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qscreen_manufacturer
+
+    !> The model (may be empty).
+    function qscreen_model(self) result(res)
+        class(QScreen), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qscreen_model(qtf_live(self, 'QScreen%model'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qscreen_model
+
+    !> Left of the screen in the virtual desktop.
+    function qscreen_x(self) result(res)
+        class(QScreen), intent(in) :: self
+        integer :: res
+        res = qtf_qscreen_x(qtf_live(self, 'QScreen%x'))
+    end function qscreen_x
+
+    !> Top of the screen in the virtual desktop.
+    function qscreen_y(self) result(res)
+        class(QScreen), intent(in) :: self
+        integer :: res
+        res = qtf_qscreen_y(qtf_live(self, 'QScreen%y'))
+    end function qscreen_y
+
+    !> Width in logical pixels.
+    function qscreen_width(self) result(res)
+        class(QScreen), intent(in) :: self
+        integer :: res
+        res = qtf_qscreen_width(qtf_live(self, 'QScreen%width'))
+    end function qscreen_width
+
+    !> Height in logical pixels.
+    function qscreen_height(self) result(res)
+        class(QScreen), intent(in) :: self
+        integer :: res
+        res = qtf_qscreen_height(qtf_live(self, 'QScreen%height'))
+    end function qscreen_height
+
+    !> Left of the area available to windows (without docks and task bars).
+    function qscreen_availableX(self) result(res)
+        class(QScreen), intent(in) :: self
+        integer :: res
+        res = qtf_qscreen_availableX(qtf_live(self, 'QScreen%availableX'))
+    end function qscreen_availableX
+
+    !> Top of the available area.
+    function qscreen_availableY(self) result(res)
+        class(QScreen), intent(in) :: self
+        integer :: res
+        res = qtf_qscreen_availableY(qtf_live(self, 'QScreen%availableY'))
+    end function qscreen_availableY
+
+    !> Width of the available area.
+    function qscreen_availableWidth(self) result(res)
+        class(QScreen), intent(in) :: self
+        integer :: res
+        res = qtf_qscreen_availableWidth(qtf_live(self, 'QScreen%availableWidth'))
+    end function qscreen_availableWidth
+
+    !> Height of the available area.
+    function qscreen_availableHeight(self) result(res)
+        class(QScreen), intent(in) :: self
+        integer :: res
+        res = qtf_qscreen_availableHeight(qtf_live(self, 'QScreen%availableHeight'))
+    end function qscreen_availableHeight
+
+    !> Physical pixels per logical pixel (2 on a typical HiDPI display).
+    function qscreen_devicePixelRatio(self) result(res)
+        class(QScreen), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qscreen_devicePixelRatio(qtf_live(self, 'QScreen%devicePixelRatio'))
+    end function qscreen_devicePixelRatio
+
+    !> Logical resolution (what font sizes in points are based on).
+    function qscreen_logicalDotsPerInch(self) result(res)
+        class(QScreen), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qscreen_logicalDotsPerInch(qtf_live(self, 'QScreen%logicalDotsPerInch'))
+    end function qscreen_logicalDotsPerInch
+
+    !> Physical resolution of the display.
+    function qscreen_physicalDotsPerInch(self) result(res)
+        class(QScreen), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qscreen_physicalDotsPerInch(qtf_live(self, 'QScreen%physicalDotsPerInch'))
+    end function qscreen_physicalDotsPerInch
+
+    !> Physical width in millimeters (0 if unknown).
+    function qscreen_physicalWidth(self) result(res)
+        class(QScreen), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qscreen_physicalWidth(qtf_live(self, 'QScreen%physicalWidth'))
+    end function qscreen_physicalWidth
+
+    !> Physical height in millimeters (0 if unknown).
+    function qscreen_physicalHeight(self) result(res)
+        class(QScreen), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qscreen_physicalHeight(qtf_live(self, 'QScreen%physicalHeight'))
+    end function qscreen_physicalHeight
+
+    !> Refresh rate in Hz.
+    function qscreen_refreshRate(self) result(res)
+        class(QScreen), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qscreen_refreshRate(qtf_live(self, 'QScreen%refreshRate'))
+    end function qscreen_refreshRate
+
+    !> Color depth in bits.
+    function qscreen_depth(self) result(res)
+        class(QScreen), intent(in) :: self
+        integer :: res
+        res = qtf_qscreen_depth(qtf_live(self, 'QScreen%depth'))
+    end function qscreen_depth
+
+    !> A screenshot of (part of) the screen (default: all of it); delete it when done. May be blank where the system does not allow it.
+    function qscreen_grab(self, x, y, width, height) result(res)
+        class(QScreen), intent(in) :: self
+        integer, intent(in), optional :: x
+        integer, intent(in), optional :: y
+        integer, intent(in), optional :: width
+        integer, intent(in), optional :: height
+        type(QPixmap) :: res
+        integer(c_int) :: x_
+        integer(c_int) :: y_
+        integer(c_int) :: width_
+        integer(c_int) :: height_
+        x_ = 0
+        if (present(x)) x_ = int(x, c_int)
+        y_ = 0
+        if (present(y)) y_ = int(y, c_int)
+        width_ = -1
+        if (present(width)) width_ = int(width, c_int)
+        height_ = -1
+        if (present(height)) height_ = int(height, c_int)
+        res%ptr = qtf_qscreen_grab(qtf_live(self, 'QScreen%grab'), x_, y_, width_, height_)
+    end function qscreen_grab
+
     !> Bind to a C++ QAction and its signals.
     subroutine qaction_attach(self, ptr)
         class(QAction), intent(inout) :: self
@@ -1570,7 +3588,7 @@ contains
     !> Set the icon shown in menus and tool bars (the icon is copied).
     subroutine qaction_setIcon(self, icon)
         class(QAction), intent(in) :: self
-        type(QIcon), intent(in) :: icon
+        class(QIcon), intent(in) :: icon
         call qtf_qaction_setIcon(qtf_live(self, 'QAction%setIcon'), icon%ptr)
     end subroutine qaction_setIcon
 
@@ -1815,11 +3833,93 @@ contains
         res = qtf_take_string(p_, n_)
     end function qwindow_title
 
+    !> The screen the window is on.
+    function qwindow_screen(self) result(res)
+        class(QWindow), intent(in) :: self
+        type(QScreen) :: res
+        call res%attach(qtf_qwindow_screen(qtf_live(self, 'QWindow%screen')))
+    end function qwindow_screen
+
     !> Ask for an UpdateRequest event (a QtfEventFilter's `updateRequest`) at the next frame, for render loops on the GUI thread.
     subroutine qwindow_requestUpdate(self)
         class(QWindow), intent(in) :: self
         call qtf_qwindow_requestUpdate(qtf_live(self, 'QWindow%requestUpdate'))
     end subroutine qwindow_requestUpdate
+
+    !> The system clipboard (needs the application object).
+    function QGuiApplication_clipboard() result(res)
+        type(QClipboard) :: res
+        call res%attach(qtf_QGuiApplication_clipboard())
+    end function QGuiApplication_clipboard
+
+    !> The primary screen.
+    function QGuiApplication_primaryScreen() result(res)
+        type(QScreen) :: res
+        call res%attach(qtf_QGuiApplication_primaryScreen())
+    end function QGuiApplication_primaryScreen
+
+    !> The number of screens.
+    function QGuiApplication_screenCount() result(res)
+        integer :: res
+        res = qtf_QGuiApplication_screenCount()
+    end function QGuiApplication_screenCount
+
+    !> Screen `index` (0-based; a null handle if out of range).
+    function QGuiApplication_screen(index) result(res)
+        integer, intent(in) :: index
+        type(QScreen) :: res
+        call res%attach(qtf_QGuiApplication_screen(int(index, c_int)))
+    end function QGuiApplication_screen
+
+    !> The screen containing the point (x, y) of the virtual desktop (a null handle if none).
+    function QGuiApplication_screenAt(x, y) result(res)
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        type(QScreen) :: res
+        call res%attach(qtf_QGuiApplication_screenAt(int(x, c_int), int(y, c_int)))
+    end function QGuiApplication_screenAt
+
+    !> Show cursor `shape` (e.g. Qt_WaitCursor) over all windows until QGuiApplication_restoreOverrideCursor; calls nest.
+    subroutine QGuiApplication_setOverrideCursor(shape)
+        integer, intent(in) :: shape
+        call qtf_QGuiApplication_setOverrideCursor(int(shape, c_int))
+    end subroutine QGuiApplication_setOverrideCursor
+
+    !> Change the current override cursor.
+    subroutine QGuiApplication_changeOverrideCursor(shape)
+        integer, intent(in) :: shape
+        call qtf_QGuiApplication_changeOverrideCursor(int(shape, c_int))
+    end subroutine QGuiApplication_changeOverrideCursor
+
+    !> Undo the last QGuiApplication_setOverrideCursor.
+    subroutine QGuiApplication_restoreOverrideCursor()
+        call qtf_QGuiApplication_restoreOverrideCursor()
+    end subroutine QGuiApplication_restoreOverrideCursor
+
+    !> The override cursor's shape (-1 if none is set).
+    function QGuiApplication_overrideCursorShape() result(res)
+        integer :: res
+        res = qtf_QGuiApplication_overrideCursorShape()
+    end function QGuiApplication_overrideCursorShape
+
+    !> The mouse cursor's x position on the screen (virtual desktop).
+    function QCursor_x() result(res)
+        integer :: res
+        res = qtf_QCursor_x()
+    end function QCursor_x
+
+    !> The mouse cursor's y position on the screen.
+    function QCursor_y() result(res)
+        integer :: res
+        res = qtf_QCursor_y()
+    end function QCursor_y
+
+    !> Move the mouse cursor to (x, y) on the screen (where the system allows it).
+    subroutine QCursor_setPos(x, y)
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        call qtf_QCursor_setPos(int(x, c_int), int(y, c_int))
+    end subroutine QCursor_setPos
 
     !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalpainter_connect(self, slot, data, connection)
@@ -1981,6 +4081,31 @@ contains
         h%f => slot
         call qt_connect_handler(self, h, data, connection)
     end subroutine qsignalcontextmenuevent_connect
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignaldropevent_connect(self, slot, data, connection)
+        class(QSignalDropEvent), intent(in) :: self
+        procedure(qt_slot_drop_event) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
+        type(drop_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self, h, data, connection)
+    end subroutine qsignaldropevent_connect
+
+    !> Call the slot with the raw pointer wrapped as a QDropEvent.
+    subroutine drop_handler_invoke(self, args, data)
+        class(drop_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QDropEvent) :: e
+        e%ptr = args%p
+        if (associated(data)) then
+            call self%f(e, data)
+        else
+            call self%f(e)
+        end if
+    end subroutine drop_handler_invoke
 
     !> Call the slot with the raw pointer wrapped as a QContextMenuEvent.
     subroutine context_menu_handler_invoke(self, args, data)

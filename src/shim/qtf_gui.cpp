@@ -9,23 +9,39 @@
 #include "qtf_common.h"
 
 #include <QAction>
+#include <QClipboard>
 #include <QCloseEvent>
+#include <QConicalGradient>
 #include <QContextMenuEvent>
+#include <QCursor>
 #include <QDoubleValidator>
+#include <QDrag>
+#include <QDragEnterEvent>
+#include <QDragMoveEvent>
+#include <QDropEvent>
+#include <QFont>
 #include <QFontMetrics>
+#include <QGuiApplication>
 #include <QIcon>
 #include <QImage>
 #include <QIntValidator>
 #include <QKeyEvent>
 #include <QKeySequence>
+#include <QLinearGradient>
 #include <QLocale>
+#include <QMimeData>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPainterPath>
 #include <QPixmap>
 #include <QPolygonF>
+#include <QRadialGradient>
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
 #include <QResizeEvent>
+#include <QScreen>
+#include <QTransform>
+#include <QUrl>
 #include <QValidator>
 #include <QWheelEvent>
 #include <QWindow>
@@ -36,12 +52,15 @@ template <typename T> static T *as(void *p) { return static_cast<T *>(p); }
 
 // Signal ids (shared with Fortran through the generated raw module).
 enum : int {
-    QTF_SIG_QACTION_TRIGGERED = 2000,
-    QTF_SIG_QACTION_TOGGLED = 2001,
-    QTF_SIG_QWINDOW_WIDTHCHANGED = 2002,
-    QTF_SIG_QWINDOW_HEIGHTCHANGED = 2003,
-    QTF_SIG_QWINDOW_VISIBLECHANGED = 2004,
-    QTF_SIG_QWINDOW_ACTIVECHANGED = 2005,
+    QTF_SIG_QCLIPBOARD_DATACHANGED = 2000,
+    QTF_SIG_QSCREEN_GEOMETRYCHANGED = 2001,
+    QTF_SIG_QSCREEN_LOGICALDOTSPERINCHCHANGED = 2002,
+    QTF_SIG_QACTION_TRIGGERED = 2003,
+    QTF_SIG_QACTION_TOGGLED = 2004,
+    QTF_SIG_QWINDOW_WIDTHCHANGED = 2005,
+    QTF_SIG_QWINDOW_HEIGHTCHANGED = 2006,
+    QTF_SIG_QWINDOW_VISIBLECHANGED = 2007,
+    QTF_SIG_QWINDOW_ACTIVECHANGED = 2008,
 };
 
 // Validate `text` with a validator: QValidator_Invalid, _Intermediate or _Acceptable.
@@ -140,6 +159,58 @@ QTF_API void *qtf_qimage_colorbar(const char *cmap, int len, int width, int heig
         }
     }
     return img;
+}
+
+// A font from the fields of a Fortran QFont, starting from the application font
+// (an empty family or pointSize <= 0 keeps the default).
+static QFont qtf_font(const QString &family, double pointSize, bool bold, bool italic) {
+    QFont f = QGuiApplication::font();
+    if (!family.isEmpty()) f.setFamily(family);
+    if (pointSize > 0) f.setPointSizeF(pointSize);
+    f.setBold(bold);
+    f.setItalic(italic);
+    return f;
+}
+
+// URLs from strings: "scheme://..." as given, anything else as a local file path.
+static QList<QUrl> qtf_urls(const QStringList &items) {
+    QList<QUrl> urls;
+    for (const QString &s : items) urls << (s.contains(QLatin1String("://")) ? QUrl(s) : QUrl::fromLocalFile(s));
+    return urls;
+}
+
+// URLs as strings: local files as paths, others as URLs.
+static QStringList qtf_url_strings(const QList<QUrl> &urls) {
+    QStringList out;
+    for (const QUrl &u : urls) out << (u.isLocalFile() ? u.toLocalFile() : u.toString());
+    return out;
+}
+
+// A synthetic drag-enter, drag-move or drop event.
+static QDropEvent *qtf_drop_event(QEvent::Type type, double x, double y, QMimeData *mime, Qt::DropActions actions,
+                                  Qt::MouseButtons buttons, Qt::KeyboardModifiers modifiers) {
+    const QPoint p(qRound(x), qRound(y));
+    switch (type) {
+    case QEvent::DragEnter: return new QDragEnterEvent(p, actions, mime, buttons, modifiers);
+    case QEvent::DragMove: return new QDragMoveEvent(p, actions, mime, buttons, modifiers);
+    default: return new QDropEvent(QPointF(x, y), actions, mime, buttons, modifiers);
+    }
+}
+
+// The mime data of a drag-and-drop event (never null).
+static const QMimeData *qtf_mime(const QDropEvent *e) {
+    static const QMimeData empty;
+    return e->mimeData() ? e->mimeData() : &empty;
+}
+
+// Release a gradient (QGradient has no virtual destructor: delete the actual type).
+static void qtf_delete_gradient(QGradient *g) {
+    switch (g->type()) {
+    case QGradient::LinearGradient: delete static_cast<QLinearGradient *>(g); break;
+    case QGradient::RadialGradient: delete static_cast<QRadialGradient *>(g); break;
+    case QGradient::ConicalGradient: delete static_cast<QConicalGradient *>(g); break;
+    default: delete g; break;
+    }
 }
 
 static QPolygonF qtf_polygon(const double *xs, const double *ys, int n) {
@@ -378,6 +449,90 @@ QTF_API void qtf_qpainter_drawImageRect(void *self, double x, double y, double w
     as<QPainter>(self)->drawImage(QRectF(x, y, w, h), *as<QImage>(image));
 }
 
+// Draw `pixmap` with its top-left corner at (x, y).
+QTF_API void qtf_qpainter_drawPixmap(void *self, int x, int y, void *pixmap) {
+    as<QPainter>(self)->drawPixmap(QPoint(x, y), *as<QPixmap>(pixmap));
+}
+
+// Draw an arc of the ellipse inscribed in (x, y, w, h): angles in degrees, counterclockwise from 3 o'clock.
+QTF_API void qtf_qpainter_drawArc(void *self, double x, double y, double w, double h, double startAngle, double spanAngle) {
+    as<QPainter>(self)->drawArc(QRectF(x, y, w, h), qRound(startAngle * 16), qRound(spanAngle * 16));
+}
+
+// Draw a pie segment (filled with the brush); angles as for `drawArc`.
+QTF_API void qtf_qpainter_drawPie(void *self, double x, double y, double w, double h, double startAngle, double spanAngle) {
+    as<QPainter>(self)->drawPie(QRectF(x, y, w, h), qRound(startAngle * 16), qRound(spanAngle * 16));
+}
+
+// Draw a chord (an arc closed by a straight line); angles as for `drawArc`.
+QTF_API void qtf_qpainter_drawChord(void *self, double x, double y, double w, double h, double startAngle, double spanAngle) {
+    as<QPainter>(self)->drawChord(QRectF(x, y, w, h), qRound(startAngle * 16), qRound(spanAngle * 16));
+}
+
+// Draw a path: outlined with the pen, filled with the brush.
+QTF_API void qtf_qpainter_drawPath(void *self, void *path) {
+    as<QPainter>(self)->drawPath(*as<QPainterPath>(path));
+}
+
+// Fill a path with `color` (no outline).
+QTF_API void qtf_qpainter_fillPath(void *self, void *path, int color_r, int color_g, int color_b, int color_a) {
+    as<QPainter>(self)->fillPath(*as<QPainterPath>(path), QBrush(QColor(color_r, color_g, color_b, color_a)));
+}
+
+// Fill a path with a gradient (no outline).
+QTF_API void qtf_qpainter_fillPathGradient(void *self, void *path, void *gradient) {
+    as<QPainter>(self)->fillPath(*as<QPainterPath>(path), QBrush(*as<QGradient>(gradient)));
+}
+
+// Draw the outline of a path with `pen` (no fill).
+QTF_API void qtf_qpainter_strokePath(void *self, void *path, int pen_color_r, int pen_color_g, int pen_color_b, int pen_color_a, double pen_width, int pen_style) {
+    as<QPainter>(self)->strokePath(*as<QPainterPath>(path), qtf_pen(QColor(pen_color_r, pen_color_g, pen_color_b, pen_color_a), pen_width, pen_style));
+}
+
+// Fill shapes with a gradient (copied).
+QTF_API void qtf_qpainter_setBrushGradient(void *self, void *gradient) {
+    as<QPainter>(self)->setBrush(QBrush(*as<QGradient>(gradient)));
+}
+
+// Fill a rectangle with a gradient.
+QTF_API void qtf_qpainter_fillRectGradient(void *self, double x, double y, double w, double h, void *gradient) {
+    as<QPainter>(self)->fillRect(QRectF(x, y, w, h), QBrush(*as<QGradient>(gradient)));
+}
+
+// Draw only inside the rectangle (in the current coordinates).
+QTF_API void qtf_qpainter_setClipRect(void *self, double x, double y, double w, double h) {
+    as<QPainter>(self)->setClipRect(QRectF(x, y, w, h));
+}
+
+// Draw only inside the path.
+QTF_API void qtf_qpainter_setClipPath(void *self, void *path) {
+    as<QPainter>(self)->setClipPath(*as<QPainterPath>(path));
+}
+
+// Turn clipping on or off (off: draw everywhere).
+QTF_API void qtf_qpainter_setClipping(void *self, int enable) {
+    as<QPainter>(self)->setClipping((enable != 0));
+}
+
+// True if clipping is on.
+QTF_API int qtf_qpainter_hasClipping(void *self) { return qtf_bool(as<QPainter>(self)->hasClipping()); }
+
+// Shear the coordinate system by (sh, sv).
+QTF_API void qtf_qpainter_shear(void *self, double sh, double sv) { as<QPainter>(self)->shear(sh, sv); }
+
+// Set the coordinate transform (`combine`: multiply it onto the current one).
+QTF_API void qtf_qpainter_setTransform(void *self, void *transform, int combine) {
+    as<QPainter>(self)->setTransform(*as<QTransform>(transform), (combine != 0));
+}
+
+// A copy of the current coordinate transform (delete it when done).
+QTF_API void *qtf_qpainter_transform(void *self) { return new QTransform(as<QPainter>(self)->transform()); }
+
+// Metrics of the current font (delete them when done).
+QTF_API void *qtf_qpainter_fontMetrics(void *self) {
+    return new QFontMetrics(as<QPainter>(self)->fontMetrics());
+}
+
 // Width in pixels of `text` in the current font.
 QTF_API int qtf_qpainter_textWidth(void *self, const char *text, int text_len) {
     return as<QPainter>(self)->fontMetrics().horizontalAdvance(qtf_qstring(text, text_len));
@@ -507,6 +662,651 @@ QTF_API int qtf_qcontextmenuevent_reason(void *self) { return int(as<QContextMen
 // Keyboard modifiers held (a combination of Qt_*Modifier).
 QTF_API int qtf_qcontextmenuevent_modifiers(void *self) {
     return int(as<QContextMenuEvent>(self)->modifiers());
+}
+
+// ---------------------------------------------------------------------------
+// QPainterPath
+
+// Release a path.
+QTF_API void qtf_qpainterpath_delete(void *self) { delete as<QPainterPath>(self); }
+
+// An empty path.
+QTF_API void *qtf_qpainterpath_new(void) { return new QPainterPath(); }
+
+// Start a new subpath at (x, y).
+QTF_API void qtf_qpainterpath_moveTo(void *self, double x, double y) { as<QPainterPath>(self)->moveTo(x, y); }
+
+// A straight line to (x, y).
+QTF_API void qtf_qpainterpath_lineTo(void *self, double x, double y) { as<QPainterPath>(self)->lineTo(x, y); }
+
+// A quadratic Bezier curve to (x, y) with control point (cx, cy).
+QTF_API void qtf_qpainterpath_quadTo(void *self, double cx, double cy, double x, double y) {
+    as<QPainterPath>(self)->quadTo(cx, cy, x, y);
+}
+
+// A cubic Bezier curve to (x, y) with control points (c1x, c1y) and (c2x, c2y).
+QTF_API void qtf_qpainterpath_cubicTo(void *self, double c1x, double c1y, double c2x, double c2y, double x, double y) {
+    as<QPainterPath>(self)->cubicTo(c1x, c1y, c2x, c2y, x, y);
+}
+
+// An arc of the ellipse inscribed in (x, y, w, h), joined to the current point by a line; angles in degrees, counterclockwise from 3 o'clock.
+QTF_API void qtf_qpainterpath_arcTo(void *self, double x, double y, double w, double h, double startAngle, double sweepLength) {
+    as<QPainterPath>(self)->arcTo(QRectF(x, y, w, h), startAngle, sweepLength);
+}
+
+// Close the current subpath with a line to its start.
+QTF_API void qtf_qpainterpath_closeSubpath(void *self) { as<QPainterPath>(self)->closeSubpath(); }
+
+// Add a rectangle (a closed subpath).
+QTF_API void qtf_qpainterpath_addRect(void *self, double x, double y, double w, double h) {
+    as<QPainterPath>(self)->addRect(QRectF(x, y, w, h));
+}
+
+// Add a rectangle with corners rounded by radii (rx, ry).
+QTF_API void qtf_qpainterpath_addRoundedRect(void *self, double x, double y, double w, double h, double rx, double ry) {
+    as<QPainterPath>(self)->addRoundedRect(QRectF(x, y, w, h), rx, ry);
+}
+
+// Add the ellipse inscribed in (x, y, w, h).
+QTF_API void qtf_qpainterpath_addEllipse(void *self, double x, double y, double w, double h) {
+    as<QPainterPath>(self)->addEllipse(QRectF(x, y, w, h));
+}
+
+// Add a polygon through the points (x(i), y(i)) (not closed: call closeSubpath).
+QTF_API void qtf_qpainterpath_addPolygon(void *self, const double *x, const double *y, int n) {
+    as<QPainterPath>(self)->addPolygon(qtf_polygon(x, y, n));
+}
+
+// Add the outline of `text` with its baseline starting at (x, y) (default: the application font).
+QTF_API void qtf_qpainterpath_addText(void *self, double x, double y, const char *text, int text_len, const char *family, int family_len, double pointSize, int bold) {
+    as<QPainterPath>(self)->addText(QPointF(x, y), qtf_font(qtf_qstring(family, family_len), pointSize, (bold != 0), false), qtf_qstring(text, text_len));
+}
+
+// Add the subpaths of another path.
+QTF_API void qtf_qpainterpath_addPath(void *self, void *other) {
+    as<QPainterPath>(self)->addPath(*as<QPainterPath>(other));
+}
+
+// Move the whole path by (dx, dy).
+QTF_API void qtf_qpainterpath_translate(void *self, double dx, double dy) {
+    as<QPainterPath>(self)->translate(dx, dy);
+}
+
+// How overlapping subpaths fill: Qt_OddEvenFill (default) or Qt_WindingFill.
+QTF_API void qtf_qpainterpath_setFillRule(void *self, int rule) {
+    as<QPainterPath>(self)->setFillRule(Qt::FillRule(rule));
+}
+
+// True if (x, y) is inside the path.
+QTF_API int qtf_qpainterpath_containsPoint(void *self, double x, double y) {
+    return qtf_bool(as<QPainterPath>(self)->contains(QPointF(x, y)));
+}
+
+// True if the path has no elements.
+QTF_API int qtf_qpainterpath_isEmpty(void *self) { return qtf_bool(as<QPainterPath>(self)->isEmpty()); }
+
+// The length of the path.
+QTF_API double qtf_qpainterpath_length(void *self) { return as<QPainterPath>(self)->length(); }
+
+// The number of path elements (move-to, line-to and curve points).
+QTF_API int qtf_qpainterpath_elementCount(void *self) { return as<QPainterPath>(self)->elementCount(); }
+
+// x of the point at fraction `t` (0..1) of the path's length.
+QTF_API double qtf_qpainterpath_pointAtPercentX(void *self, double t) {
+    return as<QPainterPath>(self)->pointAtPercent(t).x();
+}
+
+// y of the point at fraction `t` (0..1) of the path's length.
+QTF_API double qtf_qpainterpath_pointAtPercentY(void *self, double t) {
+    return as<QPainterPath>(self)->pointAtPercent(t).y();
+}
+
+// Left of the bounding rectangle.
+QTF_API double qtf_qpainterpath_boundingX(void *self) { return as<QPainterPath>(self)->boundingRect().x(); }
+
+// Top of the bounding rectangle.
+QTF_API double qtf_qpainterpath_boundingY(void *self) { return as<QPainterPath>(self)->boundingRect().y(); }
+
+// Width of the bounding rectangle.
+QTF_API double qtf_qpainterpath_boundingWidth(void *self) {
+    return as<QPainterPath>(self)->boundingRect().width();
+}
+
+// Height of the bounding rectangle.
+QTF_API double qtf_qpainterpath_boundingHeight(void *self) {
+    return as<QPainterPath>(self)->boundingRect().height();
+}
+
+// A copy of the path (delete it when done).
+QTF_API void *qtf_qpainterpath_copy(void *self) { return new QPainterPath(*as<QPainterPath>(self)); }
+
+// A new path: the union of the two filled areas.
+QTF_API void *qtf_qpainterpath_united(void *self, void *other) {
+    return new QPainterPath(as<QPainterPath>(self)->united(*as<QPainterPath>(other)));
+}
+
+// A new path: the intersection of the two filled areas.
+QTF_API void *qtf_qpainterpath_intersected(void *self, void *other) {
+    return new QPainterPath(as<QPainterPath>(self)->intersected(*as<QPainterPath>(other)));
+}
+
+// A new path: this area minus the other.
+QTF_API void *qtf_qpainterpath_subtracted(void *self, void *other) {
+    return new QPainterPath(as<QPainterPath>(self)->subtracted(*as<QPainterPath>(other)));
+}
+
+// ---------------------------------------------------------------------------
+// QGradient
+
+// Release a gradient.
+QTF_API void qtf_qgradient_delete(void *self) { qtf_delete_gradient(as<QGradient>(self)); }
+
+// The color at `position` (0..1) along the gradient.
+QTF_API void qtf_qgradient_setColorAt(void *self, double position, int color_r, int color_g, int color_b, int color_a) {
+    as<QGradient>(self)->setColorAt(position, QColor(color_r, color_g, color_b, color_a));
+}
+
+// Beyond the ends: QGradient_PadSpread (default), _ReflectSpread or _RepeatSpread.
+QTF_API void qtf_qgradient_setSpread(void *self, int spread) {
+    as<QGradient>(self)->setSpread(QGradient::Spread(spread));
+}
+
+// QGradient_LogicalMode (default: painter coordinates) or QGradient_ObjectMode (0..1 across each filled shape).
+QTF_API void qtf_qgradient_setCoordinateMode(void *self, int mode) {
+    as<QGradient>(self)->setCoordinateMode(QGradient::CoordinateMode(mode));
+}
+
+// ---------------------------------------------------------------------------
+// QLinearGradient
+
+// A linear gradient from (x1, y1) (position 0) to (x2, y2) (position 1).
+QTF_API void *qtf_qlineargradient_new(double x1, double y1, double x2, double y2) {
+    return new QLinearGradient(x1, y1, x2, y2);
+}
+
+// The start point (position 0).
+QTF_API void qtf_qlineargradient_setStart(void *self, double x, double y) {
+    as<QLinearGradient>(self)->setStart(x, y);
+}
+
+// The end point (position 1).
+QTF_API void qtf_qlineargradient_setFinalStop(void *self, double x, double y) {
+    as<QLinearGradient>(self)->setFinalStop(x, y);
+}
+
+// ---------------------------------------------------------------------------
+// QRadialGradient
+
+// A radial gradient: position 0 at the center (cx, cy), 1 at `radius`.
+QTF_API void *qtf_qradialgradient_new(double cx, double cy, double radius) {
+    return new QRadialGradient(cx, cy, radius);
+}
+
+// The center of the circle.
+QTF_API void qtf_qradialgradient_setCenter(void *self, double x, double y) {
+    as<QRadialGradient>(self)->setCenter(x, y);
+}
+
+// The radius (position 1).
+QTF_API void qtf_qradialgradient_setRadius(void *self, double radius) {
+    as<QRadialGradient>(self)->setRadius(radius);
+}
+
+// The focal point (position 0); by default the center.
+QTF_API void qtf_qradialgradient_setFocalPoint(void *self, double x, double y) {
+    as<QRadialGradient>(self)->setFocalPoint(x, y);
+}
+
+// ---------------------------------------------------------------------------
+// QConicalGradient
+
+// A conical gradient around (cx, cy), starting at `angle` degrees (counterclockwise from 3 o'clock).
+QTF_API void *qtf_qconicalgradient_new(double cx, double cy, double angle) {
+    return new QConicalGradient(cx, cy, angle);
+}
+
+// The center.
+QTF_API void qtf_qconicalgradient_setCenter(void *self, double x, double y) {
+    as<QConicalGradient>(self)->setCenter(x, y);
+}
+
+// The start angle in degrees.
+QTF_API void qtf_qconicalgradient_setAngle(void *self, double angle) {
+    as<QConicalGradient>(self)->setAngle(angle);
+}
+
+// ---------------------------------------------------------------------------
+// QTransform
+
+// Release a transform.
+QTF_API void qtf_qtransform_delete(void *self) { delete as<QTransform>(self); }
+
+// The identity transform.
+QTF_API void *qtf_qtransform_new(void) { return new QTransform(); }
+
+// An affine transform: x' = m11 x + m21 y + dx, y' = m12 x + m22 y + dy.
+QTF_API void *qtf_qtransform_fromAffine(double m11, double m12, double m21, double m22, double dx, double dy) {
+    return new QTransform(m11, m12, m21, m22, dx, dy);
+}
+
+// Move by (dx, dy).
+QTF_API void qtf_qtransform_translate(void *self, double dx, double dy) {
+    as<QTransform>(self)->translate(dx, dy);
+}
+
+// Rotate clockwise (on screen, where y points down) by `degrees`.
+QTF_API void qtf_qtransform_rotate(void *self, double degrees) { as<QTransform>(self)->rotate(degrees); }
+
+// Scale by (sx, sy).
+QTF_API void qtf_qtransform_scale(void *self, double sx, double sy) { as<QTransform>(self)->scale(sx, sy); }
+
+// Shear by (sh, sv).
+QTF_API void qtf_qtransform_shear(void *self, double sh, double sv) { as<QTransform>(self)->shear(sh, sv); }
+
+// Back to the identity.
+QTF_API void qtf_qtransform_reset(void *self) { as<QTransform>(self)->reset(); }
+
+// True for the identity.
+QTF_API int qtf_qtransform_isIdentity(void *self) { return qtf_bool(as<QTransform>(self)->isIdentity()); }
+
+// True if the transform can be inverted.
+QTF_API int qtf_qtransform_isInvertible(void *self) { return qtf_bool(as<QTransform>(self)->isInvertible()); }
+
+// The determinant of the 2x2 part.
+QTF_API double qtf_qtransform_determinant(void *self) { return as<QTransform>(self)->determinant(); }
+
+// Matrix element (1, 1): x scale.
+QTF_API double qtf_qtransform_m11(void *self) { return as<QTransform>(self)->m11(); }
+
+// Matrix element (1, 2): y shear.
+QTF_API double qtf_qtransform_m12(void *self) { return as<QTransform>(self)->m12(); }
+
+// Matrix element (2, 1): x shear.
+QTF_API double qtf_qtransform_m21(void *self) { return as<QTransform>(self)->m21(); }
+
+// Matrix element (2, 2): y scale.
+QTF_API double qtf_qtransform_m22(void *self) { return as<QTransform>(self)->m22(); }
+
+// The x translation.
+QTF_API double qtf_qtransform_dx(void *self) { return as<QTransform>(self)->dx(); }
+
+// The y translation.
+QTF_API double qtf_qtransform_dy(void *self) { return as<QTransform>(self)->dy(); }
+
+// x of the transformed point (x, y).
+QTF_API double qtf_qtransform_mapX(void *self, double x, double y) {
+    return as<QTransform>(self)->map(QPointF(x, y)).x();
+}
+
+// y of the transformed point (x, y).
+QTF_API double qtf_qtransform_mapY(void *self, double x, double y) {
+    return as<QTransform>(self)->map(QPointF(x, y)).y();
+}
+
+// A new transform: the inverse (the identity if not invertible; then `ok` is false).
+QTF_API void *qtf_qtransform_inverted(void *self, int *ok) {
+    bool ok_b = false;
+    const auto r_ = new QTransform(as<QTransform>(self)->inverted(&ok_b));
+    if (ok) *ok = ok_b ? 1 : 0;
+    return r_;
+}
+
+// A new transform: this one, then `other`.
+QTF_API void *qtf_qtransform_multiplied(void *self, void *other) {
+    return new QTransform(*as<QTransform>(self) * *as<QTransform>(other));
+}
+
+// A copy (delete it when done).
+QTF_API void *qtf_qtransform_copy(void *self) { return new QTransform(*as<QTransform>(self)); }
+
+// ---------------------------------------------------------------------------
+// QFontMetrics
+
+// Release font metrics.
+QTF_API void qtf_qfontmetrics_delete(void *self) { delete as<QFontMetrics>(self); }
+
+// Metrics of a font given by the fields of a Fortran QFont.
+QTF_API void *qtf_qfontmetrics_fromFont(const char *family, int len, double pointSize, int bold, int italic) {
+    return new QFontMetrics(qtf_font(qtf_qstring(family, len), pointSize, bold != 0, italic != 0));
+}
+
+// Metrics of the application's default font.
+QTF_API void *qtf_qfontmetrics_new(void) { return new QFontMetrics(QGuiApplication::font()); }
+
+// Width of `text` (the advance to where the next text would start).
+QTF_API int qtf_qfontmetrics_horizontalAdvance(void *self, const char *text, int text_len) {
+    return as<QFontMetrics>(self)->horizontalAdvance(qtf_qstring(text, text_len));
+}
+
+// Width of the ink of `text` (its bounding rectangle).
+QTF_API int qtf_qfontmetrics_boundingWidth(void *self, const char *text, int text_len) {
+    return as<QFontMetrics>(self)->boundingRect(qtf_qstring(text, text_len)).width();
+}
+
+// Line height (ascent + descent).
+QTF_API int qtf_qfontmetrics_height(void *self) { return as<QFontMetrics>(self)->height(); }
+
+// Distance from the baseline to the top of the tallest glyphs.
+QTF_API int qtf_qfontmetrics_ascent(void *self) { return as<QFontMetrics>(self)->ascent(); }
+
+// Distance from the baseline to the bottom of the lowest glyphs.
+QTF_API int qtf_qfontmetrics_descent(void *self) { return as<QFontMetrics>(self)->descent(); }
+
+// Extra space between lines.
+QTF_API int qtf_qfontmetrics_leading(void *self) { return as<QFontMetrics>(self)->leading(); }
+
+// Distance from one baseline to the next.
+QTF_API int qtf_qfontmetrics_lineSpacing(void *self) { return as<QFontMetrics>(self)->lineSpacing(); }
+
+// Average character width.
+QTF_API int qtf_qfontmetrics_averageCharWidth(void *self) {
+    return as<QFontMetrics>(self)->averageCharWidth();
+}
+
+// Width of the widest character.
+QTF_API int qtf_qfontmetrics_maxWidth(void *self) { return as<QFontMetrics>(self)->maxWidth(); }
+
+// Height of capital letters.
+QTF_API int qtf_qfontmetrics_capHeight(void *self) { return as<QFontMetrics>(self)->capHeight(); }
+
+// Height of lowercase letters (without ascenders).
+QTF_API int qtf_qfontmetrics_xHeight(void *self) { return as<QFontMetrics>(self)->xHeight(); }
+
+// `text` shortened with an ellipsis (Qt_ElideRight, _ElideLeft, _ElideMiddle) to fit `width` pixels.
+QTF_API char *qtf_qfontmetrics_elidedText(void *self, const char *text, int text_len, int mode, int width, int *len) {
+    return qtf_to_c(as<QFontMetrics>(self)->elidedText(qtf_qstring(text, text_len), Qt::TextElideMode(mode), width), len);
+}
+
+// ---------------------------------------------------------------------------
+// QMimeData
+
+// Empty data.
+QTF_API void *qtf_qmimedata_new(void) { return new QMimeData(); }
+
+// Set the plain text (text/plain).
+QTF_API void qtf_qmimedata_setText(void *self, const char *text, int text_len) {
+    as<QMimeData>(self)->setText(qtf_qstring(text, text_len));
+}
+
+// The plain text.
+QTF_API char *qtf_qmimedata_text(void *self, int *len) { return qtf_to_c(as<QMimeData>(self)->text(), len); }
+
+// True if there is plain text.
+QTF_API int qtf_qmimedata_hasText(void *self) { return qtf_bool(as<QMimeData>(self)->hasText()); }
+
+// Set HTML (text/html).
+QTF_API void qtf_qmimedata_setHtml(void *self, const char *html, int html_len) {
+    as<QMimeData>(self)->setHtml(qtf_qstring(html, html_len));
+}
+
+// The HTML.
+QTF_API char *qtf_qmimedata_html(void *self, int *len) { return qtf_to_c(as<QMimeData>(self)->html(), len); }
+
+// True if there is HTML.
+QTF_API int qtf_qmimedata_hasHtml(void *self) { return qtf_bool(as<QMimeData>(self)->hasHtml()); }
+
+// Set URLs (text/uri-list): file paths, or URLs such as 'https://...'.
+QTF_API void qtf_qmimedata_setUrls(void *self, const char *urls, int urls_len, int n) {
+    as<QMimeData>(self)->setUrls(qtf_urls(qtf_qstringlist(urls, urls_len, n)));
+}
+
+// The URLs: local files as paths.
+QTF_API char *qtf_qmimedata_urls(void *self, int *len) {
+    return qtf_list_to_c(qtf_url_strings(as<QMimeData>(self)->urls()), len);
+}
+
+// True if there are URLs (e.g. files dropped from the desktop).
+QTF_API int qtf_qmimedata_hasUrls(void *self) { return qtf_bool(as<QMimeData>(self)->hasUrls()); }
+
+// Set an image (copied).
+QTF_API void qtf_qmimedata_setImage(void *self, void *image) {
+    as<QMimeData>(self)->setImageData(*as<QImage>(image));
+}
+
+// A copy of the image (null if none; delete it when done).
+QTF_API void *qtf_qmimedata_image(void *self) {
+    return new QImage(qvariant_cast<QImage>(as<QMimeData>(self)->imageData()));
+}
+
+// True if there is an image.
+QTF_API int qtf_qmimedata_hasImage(void *self) { return qtf_bool(as<QMimeData>(self)->hasImage()); }
+
+// Set data of any MIME type `format` (e.g. 'application/x-mydata') as UTF-8 text.
+QTF_API void qtf_qmimedata_setData(void *self, const char *format, int format_len, const char *data, int data_len) {
+    as<QMimeData>(self)->setData(qtf_qstring(format, format_len), qtf_qstring(data, data_len).toUtf8());
+}
+
+// The data of `format` as text (empty if none).
+QTF_API char *qtf_qmimedata_data(void *self, const char *format, int format_len, int *len) {
+    return qtf_to_c(QString::fromUtf8(as<QMimeData>(self)->data(qtf_qstring(format, format_len))), len);
+}
+
+// True if there is data of MIME type `format`.
+QTF_API int qtf_qmimedata_hasFormat(void *self, const char *format, int format_len) {
+    return qtf_bool(as<QMimeData>(self)->hasFormat(qtf_qstring(format, format_len)));
+}
+
+// The MIME types present.
+QTF_API char *qtf_qmimedata_formats(void *self, int *len) {
+    return qtf_list_to_c(as<QMimeData>(self)->formats(), len);
+}
+
+// Remove all data.
+QTF_API void qtf_qmimedata_clear(void *self) { as<QMimeData>(self)->clear(); }
+
+// ---------------------------------------------------------------------------
+// QDropEvent
+
+// A synthetic QEvent_DragEnter, QEvent_DragMove or QEvent_Drop event carrying `mimeData` (not owned: delete both after use), e.g. to test drop handling with QCoreApplication_sendEvent. As in a real drag, a widget gets moves and the drop only after accepting a drag-enter.
+QTF_API void *qtf_qdropevent_new(int type, double x, double y, void *mimeData, int actions, int buttons, int modifiers) {
+    return qtf_drop_event(QEvent::Type(type), x, y, as<QMimeData>(mimeData), Qt::DropActions(actions), Qt::MouseButtons(buttons), Qt::KeyboardModifiers(modifiers));
+}
+
+// Horizontal position in widget coordinates.
+QTF_API double qtf_qdropevent_x(void *self) { return as<QDropEvent>(self)->position().x(); }
+
+// Vertical position in widget coordinates.
+QTF_API double qtf_qdropevent_y(void *self) { return as<QDropEvent>(self)->position().y(); }
+
+// The action the user asks for (Qt_CopyAction, _MoveAction, _LinkAction).
+QTF_API int qtf_qdropevent_proposedAction(void *self) { return int(as<QDropEvent>(self)->proposedAction()); }
+
+// The actions the source allows (a combination of Qt_*Action).
+QTF_API int qtf_qdropevent_possibleActions(void *self) {
+    return int(as<QDropEvent>(self)->possibleActions());
+}
+
+// The action that will be taken.
+QTF_API int qtf_qdropevent_dropAction(void *self) { return int(as<QDropEvent>(self)->dropAction()); }
+
+// Take another (possible) action than the proposed one; then `accept()` the event.
+QTF_API void qtf_qdropevent_setDropAction(void *self, int action) {
+    as<QDropEvent>(self)->setDropAction(Qt::DropAction(action));
+}
+
+// Accept the drag or drop with the proposed action.
+QTF_API void qtf_qdropevent_acceptProposedAction(void *self) { as<QDropEvent>(self)->acceptProposedAction(); }
+
+// Mouse buttons held.
+QTF_API int qtf_qdropevent_buttons(void *self) { return int(as<QDropEvent>(self)->buttons()); }
+
+// Keyboard modifiers held (e.g. Ctrl to copy).
+QTF_API int qtf_qdropevent_modifiers(void *self) { return int(as<QDropEvent>(self)->modifiers()); }
+
+// The dragged data (valid during the slot).
+QTF_API void *qtf_qdropevent_mimeData(void *self) {
+    return const_cast<QMimeData *>(qtf_mime(as<QDropEvent>(self)));
+}
+
+// True if the drag carries plain text.
+QTF_API int qtf_qdropevent_hasText(void *self) { return qtf_bool(qtf_mime(as<QDropEvent>(self))->hasText()); }
+
+// The dragged plain text.
+QTF_API char *qtf_qdropevent_text(void *self, int *len) {
+    return qtf_to_c(qtf_mime(as<QDropEvent>(self))->text(), len);
+}
+
+// True if the drag carries URLs (e.g. files from the desktop).
+QTF_API int qtf_qdropevent_hasUrls(void *self) { return qtf_bool(qtf_mime(as<QDropEvent>(self))->hasUrls()); }
+
+// The dragged URLs: local files as paths.
+QTF_API char *qtf_qdropevent_urls(void *self, int *len) {
+    return qtf_list_to_c(qtf_url_strings(qtf_mime(as<QDropEvent>(self))->urls()), len);
+}
+
+// True if the drag carries an image.
+QTF_API int qtf_qdropevent_hasImage(void *self) {
+    return qtf_bool(qtf_mime(as<QDropEvent>(self))->hasImage());
+}
+
+// True if the drag carries data of MIME type `format`.
+QTF_API int qtf_qdropevent_hasFormat(void *self, const char *format, int format_len) {
+    return qtf_bool(qtf_mime(as<QDropEvent>(self))->hasFormat(qtf_qstring(format, format_len)));
+}
+
+// The dragged data of `format`, as text.
+QTF_API char *qtf_qdropevent_data(void *self, const char *format, int format_len, int *len) {
+    return qtf_to_c(QString::fromUtf8(qtf_mime(as<QDropEvent>(self))->data(qtf_qstring(format, format_len))), len);
+}
+
+// ---------------------------------------------------------------------------
+// QDrag
+
+// A drag from `source` (the widget dragged from).
+QTF_API void *qtf_qdrag_new(void *source) { return new QDrag(as<QObject>(source)); }
+
+// The data to drag (the drag takes ownership).
+QTF_API void qtf_qdrag_setMimeData(void *self, void *data) {
+    as<QDrag>(self)->setMimeData(as<QMimeData>(data));
+}
+
+// The image shown under the cursor (copied).
+QTF_API void qtf_qdrag_setPixmap(void *self, void *pixmap) {
+    as<QDrag>(self)->setPixmap(*as<QPixmap>(pixmap));
+}
+
+// Where the cursor is on the pixmap.
+QTF_API void qtf_qdrag_setHotSpot(void *self, int x, int y) { as<QDrag>(self)->setHotSpot(QPoint(x, y)); }
+
+// Run the drag (blocks until it ends); returns the action taken, Qt_IgnoreAction if cancelled.
+QTF_API int qtf_qdrag_exec(void *self, int supportedActions, int defaultAction) {
+    return int(as<QDrag>(self)->exec(Qt::DropActions(supportedActions), Qt::DropAction(defaultAction)));
+}
+
+// ---------------------------------------------------------------------------
+// QClipboard
+
+// Put text on the clipboard.
+QTF_API void qtf_qclipboard_setText(void *self, const char *text, int text_len, int mode) {
+    as<QClipboard>(self)->setText(qtf_qstring(text, text_len), QClipboard::Mode(mode));
+}
+
+// The clipboard's text (empty if none).
+QTF_API char *qtf_qclipboard_text(void *self, int mode, int *len) {
+    return qtf_to_c(as<QClipboard>(self)->text(QClipboard::Mode(mode)), len);
+}
+
+// True if the clipboard holds text.
+QTF_API int qtf_qclipboard_hasText(void *self, int mode) {
+    return qtf_bool(as<QClipboard>(self)->mimeData(QClipboard::Mode(mode)) && as<QClipboard>(self)->mimeData(QClipboard::Mode(mode))->hasText());
+}
+
+// Put an image on the clipboard (copied).
+QTF_API void qtf_qclipboard_setImage(void *self, void *image, int mode) {
+    as<QClipboard>(self)->setImage(*as<QImage>(image), QClipboard::Mode(mode));
+}
+
+// The clipboard's image (null if none; delete it when done).
+QTF_API void *qtf_qclipboard_image(void *self, int mode) {
+    return new QImage(as<QClipboard>(self)->image(QClipboard::Mode(mode)));
+}
+
+// True if the clipboard holds an image.
+QTF_API int qtf_qclipboard_hasImage(void *self, int mode) {
+    return qtf_bool(as<QClipboard>(self)->mimeData(QClipboard::Mode(mode)) && as<QClipboard>(self)->mimeData(QClipboard::Mode(mode))->hasImage());
+}
+
+// Put mime data on the clipboard (it takes ownership).
+QTF_API void qtf_qclipboard_setMimeData(void *self, void *data, int mode) {
+    as<QClipboard>(self)->setMimeData(as<QMimeData>(data), QClipboard::Mode(mode));
+}
+
+// The clipboard's data (owned by the clipboard; valid until it changes).
+QTF_API void *qtf_qclipboard_mimeData(void *self, int mode) {
+    return const_cast<QMimeData *>(as<QClipboard>(self)->mimeData(QClipboard::Mode(mode)));
+}
+
+// Empty the clipboard.
+QTF_API void qtf_qclipboard_clear(void *self, int mode) {
+    as<QClipboard>(self)->clear(QClipboard::Mode(mode));
+}
+
+// ---------------------------------------------------------------------------
+// QScreen
+
+// The screen's name (e.g. its connector).
+QTF_API char *qtf_qscreen_name(void *self, int *len) { return qtf_to_c(as<QScreen>(self)->name(), len); }
+
+// The manufacturer (may be empty).
+QTF_API char *qtf_qscreen_manufacturer(void *self, int *len) {
+    return qtf_to_c(as<QScreen>(self)->manufacturer(), len);
+}
+
+// The model (may be empty).
+QTF_API char *qtf_qscreen_model(void *self, int *len) { return qtf_to_c(as<QScreen>(self)->model(), len); }
+
+// Left of the screen in the virtual desktop.
+QTF_API int qtf_qscreen_x(void *self) { return as<QScreen>(self)->geometry().x(); }
+
+// Top of the screen in the virtual desktop.
+QTF_API int qtf_qscreen_y(void *self) { return as<QScreen>(self)->geometry().y(); }
+
+// Width in logical pixels.
+QTF_API int qtf_qscreen_width(void *self) { return as<QScreen>(self)->geometry().width(); }
+
+// Height in logical pixels.
+QTF_API int qtf_qscreen_height(void *self) { return as<QScreen>(self)->geometry().height(); }
+
+// Left of the area available to windows (without docks and task bars).
+QTF_API int qtf_qscreen_availableX(void *self) { return as<QScreen>(self)->availableGeometry().x(); }
+
+// Top of the available area.
+QTF_API int qtf_qscreen_availableY(void *self) { return as<QScreen>(self)->availableGeometry().y(); }
+
+// Width of the available area.
+QTF_API int qtf_qscreen_availableWidth(void *self) { return as<QScreen>(self)->availableGeometry().width(); }
+
+// Height of the available area.
+QTF_API int qtf_qscreen_availableHeight(void *self) {
+    return as<QScreen>(self)->availableGeometry().height();
+}
+
+// Physical pixels per logical pixel (2 on a typical HiDPI display).
+QTF_API double qtf_qscreen_devicePixelRatio(void *self) { return as<QScreen>(self)->devicePixelRatio(); }
+
+// Logical resolution (what font sizes in points are based on).
+QTF_API double qtf_qscreen_logicalDotsPerInch(void *self) { return as<QScreen>(self)->logicalDotsPerInch(); }
+
+// Physical resolution of the display.
+QTF_API double qtf_qscreen_physicalDotsPerInch(void *self) {
+    return as<QScreen>(self)->physicalDotsPerInch();
+}
+
+// Physical width in millimeters (0 if unknown).
+QTF_API double qtf_qscreen_physicalWidth(void *self) { return as<QScreen>(self)->physicalSize().width(); }
+
+// Physical height in millimeters (0 if unknown).
+QTF_API double qtf_qscreen_physicalHeight(void *self) { return as<QScreen>(self)->physicalSize().height(); }
+
+// Refresh rate in Hz.
+QTF_API double qtf_qscreen_refreshRate(void *self) { return as<QScreen>(self)->refreshRate(); }
+
+// Color depth in bits.
+QTF_API int qtf_qscreen_depth(void *self) { return as<QScreen>(self)->depth(); }
+
+// A screenshot of (part of) the screen (default: all of it); delete it when done. May be blank where the system does not allow it.
+QTF_API void *qtf_qscreen_grab(void *self, int x, int y, int width, int height) {
+    return new QPixmap(as<QScreen>(self)->grabWindow(0, x, y, width, height));
 }
 
 // ---------------------------------------------------------------------------
@@ -704,13 +1504,72 @@ QTF_API void qtf_qwindow_setTitle(void *self, const char *title, int title_len) 
 // The window title.
 QTF_API char *qtf_qwindow_title(void *self, int *len) { return qtf_to_c(as<QWindow>(self)->title(), len); }
 
+// The screen the window is on.
+QTF_API void *qtf_qwindow_screen(void *self) { return as<QWindow>(self)->screen(); }
+
 // Ask for an UpdateRequest event (a QtfEventFilter's `updateRequest`) at the next frame, for render loops on the GUI thread.
 QTF_API void qtf_qwindow_requestUpdate(void *self) { as<QWindow>(self)->requestUpdate(); }
+
+// ---------------------------------------------------------------------------
+// functions
+
+// The system clipboard (needs the application object).
+QTF_API void *qtf_QGuiApplication_clipboard(void) { return QGuiApplication::clipboard(); }
+
+// The primary screen.
+QTF_API void *qtf_QGuiApplication_primaryScreen(void) { return QGuiApplication::primaryScreen(); }
+
+// The number of screens.
+QTF_API int qtf_QGuiApplication_screenCount(void) { return int(QGuiApplication::screens().size()); }
+
+// Screen `index` (0-based; a null handle if out of range).
+QTF_API void *qtf_QGuiApplication_screen(int index) {
+    return QGuiApplication::screens().value(index, nullptr);
+}
+
+// The screen containing the point (x, y) of the virtual desktop (a null handle if none).
+QTF_API void *qtf_QGuiApplication_screenAt(int x, int y) { return QGuiApplication::screenAt(QPoint(x, y)); }
+
+// Show cursor `shape` (e.g. Qt_WaitCursor) over all windows until QGuiApplication_restoreOverrideCursor; calls nest.
+QTF_API void qtf_QGuiApplication_setOverrideCursor(int shape) {
+    QGuiApplication::setOverrideCursor(QCursor(Qt::CursorShape(shape)));
+}
+
+// Change the current override cursor.
+QTF_API void qtf_QGuiApplication_changeOverrideCursor(int shape) {
+    QGuiApplication::changeOverrideCursor(QCursor(Qt::CursorShape(shape)));
+}
+
+// Undo the last QGuiApplication_setOverrideCursor.
+QTF_API void qtf_QGuiApplication_restoreOverrideCursor(void) { QGuiApplication::restoreOverrideCursor(); }
+
+// The override cursor's shape (-1 if none is set).
+QTF_API int qtf_QGuiApplication_overrideCursorShape(void) {
+    return QGuiApplication::overrideCursor() ? int(QGuiApplication::overrideCursor()->shape()) : -1;
+}
+
+// The mouse cursor's x position on the screen (virtual desktop).
+QTF_API int qtf_QCursor_x(void) { return QCursor::pos().x(); }
+
+// The mouse cursor's y position on the screen.
+QTF_API int qtf_QCursor_y(void) { return QCursor::pos().y(); }
+
+// Move the mouse cursor to (x, y) on the screen (where the system allows it).
+QTF_API void qtf_QCursor_setPos(int x, int y) { QCursor::setPos(x, y); }
 
 // ---------------------------------------------------------------------------
 // signal connectors
 
 static const bool qtf_gui_registered = [] {
+    qtf_register_connector(QTF_SIG_QCLIPBOARD_DATACHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QClipboard>(s), &QClipboard::dataChanged, as<QClipboard>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QSCREEN_GEOMETRYCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QScreen>(s), &QScreen::geometryChanged, as<QScreen>(s), [ref](const QRect &) { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QSCREEN_LOGICALDOTSPERINCHCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QScreen>(s), &QScreen::logicalDotsPerInchChanged, as<QScreen>(s), [ref](qreal d) { qtf_emit_double(ref, d); }));
+    });
     qtf_register_connector(QTF_SIG_QACTION_TRIGGERED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QAction>(s), &QAction::triggered, as<QAction>(s), [ref]() { qtf_emit(ref); }));
     });

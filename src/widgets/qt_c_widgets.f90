@@ -8,139 +8,146 @@ module qt_c_widgets
     private
 
     ! Signal ids: must match `enum qtf_signal` in src/shim/qtf_common.h.
-    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_CLOSEEVENT = 1000
-    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_CONTEXTMENUEVENT = 1001
-    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_ENTEREVENT = 1002
-    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_LEAVEEVENT = 1003
-    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_FOCUSINEVENT = 1004
-    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_FOCUSOUTEVENT = 1005
-    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_SHOWEVENT = 1006
-    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_HIDEEVENT = 1007
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_PAINTEVENT = 1008
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEPRESSEVENT = 1009
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSERELEASEEVENT = 1010
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEMOVEEVENT = 1011
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEDOUBLECLICKEVENT = 1012
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_WHEELEVENT = 1013
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_KEYPRESSEVENT = 1014
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_KEYRELEASEEVENT = 1015
-    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_RESIZEEVENT = 1016
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_CLICKED = 1017
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_TOGGLED = 1018
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_PRESSED = 1019
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_RELEASED = 1020
-    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_TEXTCHANGED = 1021
-    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_TEXTEDITED = 1022
-    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_INPUTREJECTED = 1023
-    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_RETURNPRESSED = 1024
-    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1025
-    integer(c_int), parameter, public :: QTF_SIG_QSPINBOX_VALUECHANGED = 1026
-    integer(c_int), parameter, public :: QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1027
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1028
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1029
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1030
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1031
-    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1032
-    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1033
-    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_ACTIVATED = 1034
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_ACCEPTED = 1035
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_REJECTED = 1036
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_FINISHED = 1037
-    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1038
-    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1039
-    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_SORTREQUESTED = 1040
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1041
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1042
-    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1043
-    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_NODECLICKED = 1044
-    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_NODEACTIVATED = 1045
-    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_CURRENTNODECHANGED = 1046
-    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_CURRENTFILECHANGED = 1047
-    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_FILEACTIVATED = 1048
-    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_EXPANDEDNODE = 1049
-    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_COLLAPSEDNODE = 1050
-    integer(c_int), parameter, public :: QTF_SIG_QTFTREEMODEL_DATAREQUESTED = 1051
-    integer(c_int), parameter, public :: QTF_SIG_QTFTREEMODEL_DATAEDITED = 1052
-    integer(c_int), parameter, public :: QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED = 1053
-    integer(c_int), parameter, public :: QTF_SIG_QFILESYSTEMMODEL_ROOTPATHCHANGED = 1054
-    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1055
-    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1056
-    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1057
-    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1058
-    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1059
-    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1060
-    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1061
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1062
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1063
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1064
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1065
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1066
-    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1067
-    integer(c_int), parameter, public :: QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1068
-    integer(c_int), parameter, public :: QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1069
-    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1070
-    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1071
-    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABBARCLICKED = 1072
-    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1073
-    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1074
-    integer(c_int), parameter, public :: QTF_SIG_QSPLITTER_SPLITTERMOVED = 1075
-    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_TOGGLED = 1076
-    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_CLICKED = 1077
-    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1078
-    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1079
-    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1080
-    integer(c_int), parameter, public :: QTF_SIG_QBUTTONGROUP_IDCLICKED = 1081
-    integer(c_int), parameter, public :: QTF_SIG_QDATEEDIT_DATECHANGED = 1082
-    integer(c_int), parameter, public :: QTF_SIG_QTIMEEDIT_TIMECHANGED = 1083
-    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1084
-    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_CLICKED = 1085
-    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1086
-    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSDIALOG_CANCELED = 1087
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED = 1088
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_REJECTED = 1089
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED = 1090
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_CLICKED = 1091
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE = 1092
-    integer(c_int), parameter, public :: QTF_SIG_QCOMPLETER_ACTIVATED = 1093
-    integer(c_int), parameter, public :: QTF_SIG_QCOMPLETER_HIGHLIGHTED = 1094
-    integer(c_int), parameter, public :: QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED = 1095
-    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_ANCHORCLICKED = 1096
-    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_SOURCECHANGED = 1097
-    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE = 1098
-    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE = 1099
-    integer(c_int), parameter, public :: QTF_SIG_QTOOLBOX_CURRENTCHANGED = 1100
-    integer(c_int), parameter, public :: QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED = 1101
-    integer(c_int), parameter, public :: QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE = 1102
-    integer(c_int), parameter, public :: QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED = 1103
-    integer(c_int), parameter, public :: QTF_SIG_QWIZARDPAGE_COMPLETECHANGED = 1104
-    integer(c_int), parameter, public :: QTF_SIG_QWIZARD_CURRENTIDCHANGED = 1105
-    integer(c_int), parameter, public :: QTF_SIG_QWIZARD_HELPREQUESTED = 1106
-    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_REDOREQUESTED = 1107
-    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_UNDOREQUESTED = 1108
-    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_CANUNDOCHANGED = 1109
-    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_CANREDOCHANGED = 1110
-    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_INDEXCHANGED = 1111
-    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1112
-    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1113
-    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1114
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT = 1115
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT = 1116
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT = 1117
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT = 1118
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_WHEELEVENT = 1119
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT = 1120
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT = 1121
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_RESIZEEVENT = 1122
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT = 1123
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST = 1124
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_ENTEREVENT = 1125
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_LEAVEEVENT = 1126
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT = 1127
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1128
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1129
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1130
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_SURFACECREATED = 1131
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED = 1132
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_DRAGENTEREVENT = 1000
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_DRAGMOVEEVENT = 1001
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_DRAGLEAVEEVENT = 1002
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_DROPEVENT = 1003
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_CLOSEEVENT = 1004
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_CONTEXTMENUEVENT = 1005
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_ENTEREVENT = 1006
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_LEAVEEVENT = 1007
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_FOCUSINEVENT = 1008
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_FOCUSOUTEVENT = 1009
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_SHOWEVENT = 1010
+    integer(c_int), parameter, public :: QTF_SIG_QWIDGET_HIDEEVENT = 1011
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_PAINTEVENT = 1012
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEPRESSEVENT = 1013
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSERELEASEEVENT = 1014
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEMOVEEVENT = 1015
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_MOUSEDOUBLECLICKEVENT = 1016
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_WHEELEVENT = 1017
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_KEYPRESSEVENT = 1018
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_KEYRELEASEEVENT = 1019
+    integer(c_int), parameter, public :: QTF_SIG_QTFWIDGET_RESIZEEVENT = 1020
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_CLICKED = 1021
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_TOGGLED = 1022
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_PRESSED = 1023
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTBUTTON_RELEASED = 1024
+    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_TEXTCHANGED = 1025
+    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_TEXTEDITED = 1026
+    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_INPUTREJECTED = 1027
+    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_RETURNPRESSED = 1028
+    integer(c_int), parameter, public :: QTF_SIG_QLINEEDIT_EDITINGFINISHED = 1029
+    integer(c_int), parameter, public :: QTF_SIG_QSPINBOX_VALUECHANGED = 1030
+    integer(c_int), parameter, public :: QTF_SIG_QDOUBLESPINBOX_VALUECHANGED = 1031
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_VALUECHANGED = 1032
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1033
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1034
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1035
+    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1036
+    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1037
+    integer(c_int), parameter, public :: QTF_SIG_QCOMBOBOX_ACTIVATED = 1038
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_ACCEPTED = 1039
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_REJECTED = 1040
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOG_FINISHED = 1041
+    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1042
+    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1043
+    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_SORTREQUESTED = 1044
+    integer(c_int), parameter, public :: QTF_SIG_QTFTABLEMODEL_CHECKCHANGED = 1045
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1046
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1047
+    integer(c_int), parameter, public :: QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1048
+    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_NODECLICKED = 1049
+    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_NODEACTIVATED = 1050
+    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_CURRENTNODECHANGED = 1051
+    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_CURRENTFILECHANGED = 1052
+    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_FILEACTIVATED = 1053
+    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_EXPANDEDNODE = 1054
+    integer(c_int), parameter, public :: QTF_SIG_QTREEVIEW_COLLAPSEDNODE = 1055
+    integer(c_int), parameter, public :: QTF_SIG_QTFTREEMODEL_DATAREQUESTED = 1056
+    integer(c_int), parameter, public :: QTF_SIG_QTFTREEMODEL_DATAEDITED = 1057
+    integer(c_int), parameter, public :: QTF_SIG_QTFTREEMODEL_CHECKCHANGED = 1058
+    integer(c_int), parameter, public :: QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED = 1059
+    integer(c_int), parameter, public :: QTF_SIG_QFILESYSTEMMODEL_ROOTPATHCHANGED = 1060
+    integer(c_int), parameter, public :: QTF_SIG_QTFITEMDELEGATE_PAINTCELL = 1061
+    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1062
+    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1063
+    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1064
+    integer(c_int), parameter, public :: QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1065
+    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1066
+    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1067
+    integer(c_int), parameter, public :: QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1068
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1069
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1070
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1071
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1072
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1073
+    integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1074
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1075
+    integer(c_int), parameter, public :: QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1076
+    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1077
+    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1078
+    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABBARCLICKED = 1079
+    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1080
+    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1081
+    integer(c_int), parameter, public :: QTF_SIG_QSPLITTER_SPLITTERMOVED = 1082
+    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_TOGGLED = 1083
+    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_CLICKED = 1084
+    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1085
+    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1086
+    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1087
+    integer(c_int), parameter, public :: QTF_SIG_QBUTTONGROUP_IDCLICKED = 1088
+    integer(c_int), parameter, public :: QTF_SIG_QDATEEDIT_DATECHANGED = 1089
+    integer(c_int), parameter, public :: QTF_SIG_QTIMEEDIT_TIMECHANGED = 1090
+    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1091
+    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_CLICKED = 1092
+    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1093
+    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSDIALOG_CANCELED = 1094
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED = 1095
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_REJECTED = 1096
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED = 1097
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_CLICKED = 1098
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE = 1099
+    integer(c_int), parameter, public :: QTF_SIG_QCOMPLETER_ACTIVATED = 1100
+    integer(c_int), parameter, public :: QTF_SIG_QCOMPLETER_HIGHLIGHTED = 1101
+    integer(c_int), parameter, public :: QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED = 1102
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_ANCHORCLICKED = 1103
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_SOURCECHANGED = 1104
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE = 1105
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE = 1106
+    integer(c_int), parameter, public :: QTF_SIG_QTOOLBOX_CURRENTCHANGED = 1107
+    integer(c_int), parameter, public :: QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED = 1108
+    integer(c_int), parameter, public :: QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE = 1109
+    integer(c_int), parameter, public :: QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED = 1110
+    integer(c_int), parameter, public :: QTF_SIG_QWIZARDPAGE_COMPLETECHANGED = 1111
+    integer(c_int), parameter, public :: QTF_SIG_QWIZARD_CURRENTIDCHANGED = 1112
+    integer(c_int), parameter, public :: QTF_SIG_QWIZARD_HELPREQUESTED = 1113
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_REDOREQUESTED = 1114
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_UNDOREQUESTED = 1115
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_CANUNDOCHANGED = 1116
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_CANREDOCHANGED = 1117
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_INDEXCHANGED = 1118
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1119
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1120
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1121
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT = 1122
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT = 1123
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT = 1124
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT = 1125
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_WHEELEVENT = 1126
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT = 1127
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT = 1128
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_RESIZEEVENT = 1129
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT = 1130
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST = 1131
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_ENTEREVENT = 1132
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_LEAVEEVENT = 1133
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT = 1134
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1135
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1136
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1137
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_SURFACECREATED = 1138
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED = 1139
 
     interface
 
@@ -725,6 +732,77 @@ module qt_c_widgets
             type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qwidget_isWindow
+
+        !> The mouse cursor over the widget (a Qt_*Cursor shape).
+        !>
+        !> C: `void qtf_qwidget_setCursor(void *self, int shape)`
+        subroutine qtf_qwidget_setCursor(self, shape) bind(C, name='qtf_qwidget_setCursor')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: shape
+        end subroutine qtf_qwidget_setCursor
+
+        !> A cursor from an image, with its hot spot at (hotX, hotY) (default: the center).
+        !>
+        !> C: `void qtf_qwidget_setCursorPixmap(void *self, void *pixmap, int hotX, int hotY)`
+        subroutine qtf_qwidget_setCursorPixmap(self, pixmap, hotX, hotY) bind(C, name='qtf_qwidget_setCursorPixmap')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: pixmap
+            integer(c_int), value :: hotX
+            integer(c_int), value :: hotY
+        end subroutine qtf_qwidget_setCursorPixmap
+
+        !> Back to the parent's cursor.
+        !>
+        !> C: `void qtf_qwidget_unsetCursor(void *self)`
+        subroutine qtf_qwidget_unsetCursor(self) bind(C, name='qtf_qwidget_unsetCursor')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qwidget_unsetCursor
+
+        !> The cursor shape over the widget (a Qt_*Cursor constant).
+        !>
+        !> C: `int qtf_qwidget_cursorShape(void *self)`
+        function qtf_qwidget_cursorShape(self) result(res) bind(C, name='qtf_qwidget_cursorShape')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwidget_cursorShape
+
+        !> Accept drag and drop (then connect dragEnterEvent and dropEvent).
+        !>
+        !> C: `void qtf_qwidget_setAcceptDrops(void *self, int on)`
+        subroutine qtf_qwidget_setAcceptDrops(self, on) bind(C, name='qtf_qwidget_setAcceptDrops')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: on
+        end subroutine qtf_qwidget_setAcceptDrops
+
+        !> True if the widget accepts drops.
+        !>
+        !> C: `int qtf_qwidget_acceptDrops(void *self)`
+        function qtf_qwidget_acceptDrops(self) result(res) bind(C, name='qtf_qwidget_acceptDrops')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwidget_acceptDrops
+
+        !> The screen the widget is on.
+        !>
+        !> C: `void *qtf_qwidget_screen(void *self)`
+        function qtf_qwidget_screen(self) result(res) bind(C, name='qtf_qwidget_screen')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qwidget_screen
 
         !> Physical pixels per logical pixel of the widget's screen (2 on a typical HiDPI display).
         !>
@@ -2785,6 +2863,134 @@ module qt_c_widgets
             integer(c_int), value :: value
         end subroutine qtf_qtfmodelrequest_setInt
 
+        !> Show an icon before the text (copied).
+        !>
+        !> C: `void qtf_qtfmodelrequest_setIcon(void *self, void *icon)`
+        subroutine qtf_qtfmodelrequest_setIcon(self, icon) bind(C, name='qtf_qtfmodelrequest_setIcon')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: icon
+        end subroutine qtf_qtfmodelrequest_setIcon
+
+        !> Show a color swatch before the text.
+        !>
+        !> C: `void qtf_qtfmodelrequest_setIconColor(void *self, int color_r, int color_g, int color_b, int color_a, int color_valid)`
+        subroutine qtf_qtfmodelrequest_setIconColor(self, color_r, color_g, color_b, color_a, color_valid) &
+                bind(C, name='qtf_qtfmodelrequest_setIconColor')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: color_r
+            integer(c_int), value :: color_g
+            integer(c_int), value :: color_b
+            integer(c_int), value :: color_a
+            integer(c_int), value :: color_valid
+        end subroutine qtf_qtfmodelrequest_setIconColor
+
+        !> Give the cell a check box, checked or not; clicks arrive at the model's `checkChanged`.
+        !>
+        !> C: `void qtf_qtfmodelrequest_setChecked(void *self, int checked)`
+        subroutine qtf_qtfmodelrequest_setChecked(self, checked) bind(C, name='qtf_qtfmodelrequest_setChecked')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: checked
+        end subroutine qtf_qtfmodelrequest_setChecked
+
+        !> The tool tip shown when hovering over the cell.
+        !>
+        !> C: `void qtf_qtfmodelrequest_setToolTip(void *self, const char *text, int text_len)`
+        subroutine qtf_qtfmodelrequest_setToolTip(self, text, text_len) bind(C, name='qtf_qtfmodelrequest_setToolTip')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+        end subroutine qtf_qtfmodelrequest_setToolTip
+
+        !> The text shown in the status bar when hovering over the cell.
+        !>
+        !> C: `void qtf_qtfmodelrequest_setStatusTip(void *self, const char *text, int text_len)`
+        subroutine qtf_qtfmodelrequest_setStatusTip(self, text, text_len) &
+                bind(C, name='qtf_qtfmodelrequest_setStatusTip')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+        end subroutine qtf_qtfmodelrequest_setStatusTip
+
+        !> The text color.
+        !>
+        !> C: `void qtf_qtfmodelrequest_setForeground(void *self, int color_r, int color_g, int color_b, int color_a, int color_valid)`
+        subroutine qtf_qtfmodelrequest_setForeground(self, color_r, color_g, color_b, color_a, color_valid) &
+                bind(C, name='qtf_qtfmodelrequest_setForeground')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: color_r
+            integer(c_int), value :: color_g
+            integer(c_int), value :: color_b
+            integer(c_int), value :: color_a
+            integer(c_int), value :: color_valid
+        end subroutine qtf_qtfmodelrequest_setForeground
+
+        !> The background color.
+        !>
+        !> C: `void qtf_qtfmodelrequest_setBackground(void *self, int color_r, int color_g, int color_b, int color_a, int color_valid)`
+        subroutine qtf_qtfmodelrequest_setBackground(self, color_r, color_g, color_b, color_a, color_valid) &
+                bind(C, name='qtf_qtfmodelrequest_setBackground')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: color_r
+            integer(c_int), value :: color_g
+            integer(c_int), value :: color_b
+            integer(c_int), value :: color_a
+            integer(c_int), value :: color_valid
+        end subroutine qtf_qtfmodelrequest_setBackground
+
+        !> Align the text (Qt_Align* flags, e.g. ior(Qt_AlignRight, Qt_AlignVCenter) for numbers).
+        !>
+        !> C: `void qtf_qtfmodelrequest_setAlignment(void *self, int flags)`
+        subroutine qtf_qtfmodelrequest_setAlignment(self, flags) bind(C, name='qtf_qtfmodelrequest_setAlignment')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: flags
+        end subroutine qtf_qtfmodelrequest_setAlignment
+
+        !> Show the text in bold.
+        !>
+        !> C: `void qtf_qtfmodelrequest_setBold(void *self, int bold)`
+        subroutine qtf_qtfmodelrequest_setBold(self, bold) bind(C, name='qtf_qtfmodelrequest_setBold')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: bold
+        end subroutine qtf_qtfmodelrequest_setBold
+
+        !> Show the text in italics.
+        !>
+        !> C: `void qtf_qtfmodelrequest_setItalic(void *self, int italic)`
+        subroutine qtf_qtfmodelrequest_setItalic(self, italic) bind(C, name='qtf_qtfmodelrequest_setItalic')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: italic
+        end subroutine qtf_qtfmodelrequest_setItalic
+
+        !> The part being asked for (Qt_DisplayRole, Qt_DecorationRole, ...); slots may skip expensive work for the others.
+        !>
+        !> C: `int qtf_qtfmodelrequest_role(void *self)`
+        function qtf_qtfmodelrequest_role(self) result(res) bind(C, name='qtf_qtfmodelrequest_role')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfmodelrequest_role
+
         !> A table model of the given shape.
         !>
         !> C: `void *qtf_qtftablemodel_new(int rows, int columns, void *parent)`
@@ -2902,6 +3108,69 @@ module qt_c_widgets
             integer(c_int) :: res
         end function qtf_qtftablemodel_setDataText
 
+        !> True if the cell has a check box (its slot calls `request%setChecked`).
+        !>
+        !> C: `int qtf_qtftablemodel_isCheckable(void *self, int row, int column)`
+        function qtf_qtftablemodel_isCheckable(self, row, column) &
+                result(res) bind(C, name='qtf_qtftablemodel_isCheckable')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: row
+            integer(c_int), value :: column
+            integer(c_int) :: res
+        end function qtf_qtftablemodel_isCheckable
+
+        !> True if the cell's check box is checked, as the view would show it.
+        !>
+        !> C: `int qtf_qtftablemodel_isChecked(void *self, int row, int column)`
+        function qtf_qtftablemodel_isChecked(self, row, column) result(res) bind(C, name='qtf_qtftablemodel_isChecked')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: row
+            integer(c_int), value :: column
+            integer(c_int) :: res
+        end function qtf_qtftablemodel_isChecked
+
+        !> Click a check box as the user would (calls the `checkChanged` slots); false if nobody listens.
+        !>
+        !> C: `int qtf_qtftablemodel_setChecked(void *self, int row, int column, int checked)`
+        function qtf_qtftablemodel_setChecked(self, row, column, checked) &
+                result(res) bind(C, name='qtf_qtftablemodel_setChecked')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: row
+            integer(c_int), value :: column
+            integer(c_int), value :: checked
+            integer(c_int) :: res
+        end function qtf_qtftablemodel_setChecked
+
+        !> The tool tip of a cell, as the view would show it.
+        !>
+        !> C: `char *qtf_qtftablemodel_toolTip(void *self, int row, int column, int *len)`
+        function qtf_qtftablemodel_toolTip(self, row, column, len) result(res) bind(C, name='qtf_qtftablemodel_toolTip')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: row
+            integer(c_int), value :: column
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qtftablemodel_toolTip
+
+        !> A list model with `rows` rows.
+        !>
+        !> C: `void *qtf_qtflistmodel_new(int rows, void *parent)`
+        function qtf_qtflistmodel_new(rows, parent) result(res) bind(C, name='qtf_qtflistmodel_new')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), value :: rows
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qtflistmodel_new
+
         !> Show `model` (the view does not take ownership). Not for the item widgets (QTableWidget, ...), which have their own model.
         !>
         !> C: `void qtf_qabstractitemview_setModel(void *self, void *model)`
@@ -2956,6 +3225,18 @@ module qt_c_widgets
             type(c_ptr), value :: self
             integer(c_int), value :: enable
         end subroutine qtf_qabstractitemview_setAlternatingRowColors
+
+        !> The size of the items' icons.
+        !>
+        !> C: `void qtf_qabstractitemview_setIconSize(void *self, int width, int height)`
+        subroutine qtf_qabstractitemview_setIconSize(self, width, height) &
+                bind(C, name='qtf_qabstractitemview_setIconSize')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: width
+            integer(c_int), value :: height
+        end subroutine qtf_qabstractitemview_setIconSize
 
         !> Single, multiple, ... selection (QAbstractItemView_* constants).
         !>
@@ -3182,6 +3463,158 @@ module qt_c_widgets
             integer(c_int), value :: column
             integer(c_int), value :: hide
         end subroutine qtf_qtableview_setColumnHidden
+
+        !> Create a list view.
+        !>
+        !> C: `void *qtf_qlistview_new(void *parent)`
+        function qtf_qlistview_new(parent) result(res) bind(C, name='qtf_qlistview_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qlistview_new
+
+        !> QListView_ListMode (default) or QListView_IconMode (large icons in a grid).
+        !>
+        !> C: `void qtf_qlistview_setViewMode(void *self, int mode)`
+        subroutine qtf_qlistview_setViewMode(self, mode) bind(C, name='qtf_qlistview_setViewMode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: mode
+        end subroutine qtf_qlistview_setViewMode
+
+        !> Lay items out QListView_TopToBottom (list mode default) or QListView_LeftToRight (icon mode default).
+        !>
+        !> C: `void qtf_qlistview_setFlow(void *self, int flow)`
+        subroutine qtf_qlistview_setFlow(self, flow) bind(C, name='qtf_qlistview_setFlow')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: flow
+        end subroutine qtf_qlistview_setFlow
+
+        !> Wrap items into more rows or columns when the flow reaches the edge.
+        !>
+        !> C: `void qtf_qlistview_setWrapping(void *self, int enable)`
+        subroutine qtf_qlistview_setWrapping(self, enable) bind(C, name='qtf_qlistview_setWrapping')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enable
+        end subroutine qtf_qlistview_setWrapping
+
+        !> Space around each item, in pixels.
+        !>
+        !> C: `void qtf_qlistview_setSpacing(void *self, int space)`
+        subroutine qtf_qlistview_setSpacing(self, space) bind(C, name='qtf_qlistview_setSpacing')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: space
+        end subroutine qtf_qlistview_setSpacing
+
+        !> Lay items out on a fixed grid (icon mode).
+        !>
+        !> C: `void qtf_qlistview_setGridSize(void *self, int width, int height)`
+        subroutine qtf_qlistview_setGridSize(self, width, height) bind(C, name='qtf_qlistview_setGridSize')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: width
+            integer(c_int), value :: height
+        end subroutine qtf_qlistview_setGridSize
+
+        !> Promise equal item sizes (faster for long lists).
+        !>
+        !> C: `void qtf_qlistview_setUniformItemSizes(void *self, int enable)`
+        subroutine qtf_qlistview_setUniformItemSizes(self, enable) bind(C, name='qtf_qlistview_setUniformItemSizes')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enable
+        end subroutine qtf_qlistview_setUniformItemSizes
+
+        !> QListView_Adjust: lay items out again when the view is resized.
+        !>
+        !> C: `void qtf_qlistview_setResizeMode(void *self, int mode)`
+        subroutine qtf_qlistview_setResizeMode(self, mode) bind(C, name='qtf_qlistview_setResizeMode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: mode
+        end subroutine qtf_qlistview_setResizeMode
+
+        !> Whether the user can move items (QListView_Static, _Free, _Snap).
+        !>
+        !> C: `void qtf_qlistview_setMovement(void *self, int movement)`
+        subroutine qtf_qlistview_setMovement(self, movement) bind(C, name='qtf_qlistview_setMovement')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: movement
+        end subroutine qtf_qlistview_setMovement
+
+        !> Wrap long item text.
+        !>
+        !> C: `void qtf_qlistview_setWordWrap(void *self, int on)`
+        subroutine qtf_qlistview_setWordWrap(self, on) bind(C, name='qtf_qlistview_setWordWrap')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: on
+        end subroutine qtf_qlistview_setWordWrap
+
+        !> The column of the model to show (default 0).
+        !>
+        !> C: `void qtf_qlistview_setModelColumn(void *self, int column)`
+        subroutine qtf_qlistview_setModelColumn(self, column) bind(C, name='qtf_qlistview_setModelColumn')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: column
+        end subroutine qtf_qlistview_setModelColumn
+
+        !> Hide or show a row.
+        !>
+        !> C: `void qtf_qlistview_setRowHidden(void *self, int row, int hide)`
+        subroutine qtf_qlistview_setRowHidden(self, row, hide) bind(C, name='qtf_qlistview_setRowHidden')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: row
+            integer(c_int), value :: hide
+        end subroutine qtf_qlistview_setRowHidden
+
+        !> The current row (-1 if none).
+        !>
+        !> C: `int qtf_qlistview_currentRow(void *self)`
+        function qtf_qlistview_currentRow(self) result(res) bind(C, name='qtf_qlistview_currentRow')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qlistview_currentRow
+
+        !> Make `row` the current item.
+        !>
+        !> C: `void qtf_qlistview_setCurrentRow(void *self, int row)`
+        subroutine qtf_qlistview_setCurrentRow(self, row) bind(C, name='qtf_qlistview_setCurrentRow')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: row
+        end subroutine qtf_qlistview_setCurrentRow
+
+        !> Scroll so that `row` is visible.
+        !>
+        !> C: `void qtf_qlistview_scrollToRow(void *self, int row)`
+        subroutine qtf_qlistview_scrollToRow(self, row) bind(C, name='qtf_qlistview_scrollToRow')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: row
+        end subroutine qtf_qlistview_scrollToRow
 
         !> Create a tree view.
         !>
@@ -3798,6 +4231,17 @@ module qt_c_widgets
             type(c_ptr) :: res
         end function qtf_qtfitemdelegate_new
 
+        !> The size of each cell (-1: Qt's default for that dimension).
+        !>
+        !> C: `void qtf_qtfitemdelegate_setSizeHint(void *self, int width, int height)`
+        subroutine qtf_qtfitemdelegate_setSizeHint(self, width, height) bind(C, name='qtf_qtfitemdelegate_setSizeHint')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: width
+            integer(c_int), value :: height
+        end subroutine qtf_qtfitemdelegate_setSizeHint
+
         !> Edit with a combo box offering `choices`.
         !>
         !> C: `void qtf_qtfitemdelegate_setChoices(void *self, const char *choices, int choices_len, int n)`
@@ -3832,6 +4276,180 @@ module qt_c_widgets
             implicit none
             type(c_ptr), value :: self
         end subroutine qtf_qtfitemdelegate_clear
+
+        !> The painter (do not `end` it).
+        !>
+        !> C: `void *qtf_qtfpaintcell_painter(void *self)`
+        function qtf_qtfpaintcell_painter(self) result(res) bind(C, name='qtf_qtfpaintcell_painter')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qtfpaintcell_painter
+
+        !> The cell's row in the model (for a tree: its row under its parent).
+        !>
+        !> C: `int qtf_qtfpaintcell_row(void *self)`
+        function qtf_qtfpaintcell_row(self) result(res) bind(C, name='qtf_qtfpaintcell_row')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfpaintcell_row
+
+        !> The cell's column.
+        !>
+        !> C: `int qtf_qtfpaintcell_column(void *self)`
+        function qtf_qtfpaintcell_column(self) result(res) bind(C, name='qtf_qtfpaintcell_column')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfpaintcell_column
+
+        !> The cell's node, for a QtfTreeModel (-1 otherwise).
+        !>
+        !> C: `int qtf_qtfpaintcell_node(void *self)`
+        function qtf_qtfpaintcell_node(self) result(res) bind(C, name='qtf_qtfpaintcell_node')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfpaintcell_node
+
+        !> The cell's row in the view (differs from `row()` behind a sorting proxy).
+        !>
+        !> C: `int qtf_qtfpaintcell_viewRow(void *self)`
+        function qtf_qtfpaintcell_viewRow(self) result(res) bind(C, name='qtf_qtfpaintcell_viewRow')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfpaintcell_viewRow
+
+        !> Left of the cell.
+        !>
+        !> C: `int qtf_qtfpaintcell_x(void *self)`
+        function qtf_qtfpaintcell_x(self) result(res) bind(C, name='qtf_qtfpaintcell_x')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfpaintcell_x
+
+        !> Top of the cell.
+        !>
+        !> C: `int qtf_qtfpaintcell_y(void *self)`
+        function qtf_qtfpaintcell_y(self) result(res) bind(C, name='qtf_qtfpaintcell_y')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfpaintcell_y
+
+        !> Width of the cell.
+        !>
+        !> C: `int qtf_qtfpaintcell_width(void *self)`
+        function qtf_qtfpaintcell_width(self) result(res) bind(C, name='qtf_qtfpaintcell_width')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfpaintcell_width
+
+        !> Height of the cell.
+        !>
+        !> C: `int qtf_qtfpaintcell_height(void *self)`
+        function qtf_qtfpaintcell_height(self) result(res) bind(C, name='qtf_qtfpaintcell_height')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfpaintcell_height
+
+        !> The cell's text (from the model).
+        !>
+        !> C: `char *qtf_qtfpaintcell_text(void *self, int *len)`
+        function qtf_qtfpaintcell_text(self, len) result(res) bind(C, name='qtf_qtfpaintcell_text')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qtfpaintcell_text
+
+        !> The color for text in this cell's state (the highlight text color when selected).
+        !>
+        !> C: `void qtf_qtfpaintcell_textColor(void *self, int *res_r, int *res_g, int *res_b, int *res_a, int *res_valid)`
+        subroutine qtf_qtfpaintcell_textColor(self, res_r, res_g, res_b, res_a, res_valid) &
+                bind(C, name='qtf_qtfpaintcell_textColor')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_r
+            integer(c_int), intent(out) :: res_g
+            integer(c_int), intent(out) :: res_b
+            integer(c_int), intent(out) :: res_a
+            integer(c_int), intent(out) :: res_valid
+        end subroutine qtf_qtfpaintcell_textColor
+
+        !> True if the cell is selected.
+        !>
+        !> C: `int qtf_qtfpaintcell_isSelected(void *self)`
+        function qtf_qtfpaintcell_isSelected(self) result(res) bind(C, name='qtf_qtfpaintcell_isSelected')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfpaintcell_isSelected
+
+        !> True if the cell is the current one and the view has focus.
+        !>
+        !> C: `int qtf_qtfpaintcell_hasFocus(void *self)`
+        function qtf_qtfpaintcell_hasFocus(self) result(res) bind(C, name='qtf_qtfpaintcell_hasFocus')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfpaintcell_hasFocus
+
+        !> True if the mouse is over the cell.
+        !>
+        !> C: `int qtf_qtfpaintcell_isHovered(void *self)`
+        function qtf_qtfpaintcell_isHovered(self) result(res) bind(C, name='qtf_qtfpaintcell_isHovered')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfpaintcell_isHovered
+
+        !> True if the view is enabled.
+        !>
+        !> C: `int qtf_qtfpaintcell_isEnabled(void *self)`
+        function qtf_qtfpaintcell_isEnabled(self) result(res) bind(C, name='qtf_qtfpaintcell_isEnabled')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfpaintcell_isEnabled
+
+        !> Draw the cell's background: selection, hover and the model's background color.
+        !>
+        !> C: `void qtf_qtfpaintcell_drawBackground(void *self)`
+        subroutine qtf_qtfpaintcell_drawBackground(self) bind(C, name='qtf_qtfpaintcell_drawBackground')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtfpaintcell_drawBackground
+
+        !> Draw the cell as Qt normally would (background, icon, text, check box).
+        !>
+        !> C: `void qtf_qtfpaintcell_drawDefault(void *self)`
+        subroutine qtf_qtfpaintcell_drawDefault(self) bind(C, name='qtf_qtfpaintcell_drawDefault')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtfpaintcell_drawDefault
 
         !> A cell item with `text`.
         !>
@@ -8158,15 +8776,17 @@ module qt_c_widgets
     public :: qtf_qwidget_setMaximumHeight, qtf_qwidget_setFixedWidth, qtf_qwidget_setFixedHeight
     public :: qtf_qwidget_setSizePolicy, qtf_qwidget_setContentsMargins, qtf_qwidget_setWindowIcon
     public :: qtf_qwidget_saveGeometry, qtf_qwidget_restoreGeometry, qtf_qwidget_isWindow
-    public :: qtf_qwidget_devicePixelRatio, qtf_qwidget_createWindowContainer, qtf_qwidget_showMaximized
-    public :: qtf_qwidget_showMinimized, qtf_qwidget_showNormal, qtf_qwidget_showFullScreen
-    public :: qtf_qwidget_isMaximized, qtf_qwidget_isMinimized, qtf_qwidget_activateWindow, qtf_qwidget_raise
-    public :: qtf_qwidget_repolish, qtf_qwidget_x, qtf_qwidget_y, qtf_qwidget_move, qtf_qtfwidget_new
-    public :: qtf_qframe_new, qtf_qframe_setFrameShape, qtf_qframe_frameShape, qtf_qframe_setFrameShadow
-    public :: qtf_qframe_setLineWidth, qtf_qlabel_new, qtf_qlabel_setText, qtf_qlabel_text
-    public :: qtf_qlabel_setAlignment, qtf_qlabel_setWordWrap, qtf_qlabel_setPixmap
-    public :: qtf_qlabel_setScaledContents, qtf_qabstractbutton_setText, qtf_qabstractbutton_text
-    public :: qtf_qabstractbutton_setCheckable, qtf_qabstractbutton_isCheckable
+    public :: qtf_qwidget_setCursor, qtf_qwidget_setCursorPixmap, qtf_qwidget_unsetCursor
+    public :: qtf_qwidget_cursorShape, qtf_qwidget_setAcceptDrops, qtf_qwidget_acceptDrops
+    public :: qtf_qwidget_screen, qtf_qwidget_devicePixelRatio, qtf_qwidget_createWindowContainer
+    public :: qtf_qwidget_showMaximized, qtf_qwidget_showMinimized, qtf_qwidget_showNormal
+    public :: qtf_qwidget_showFullScreen, qtf_qwidget_isMaximized, qtf_qwidget_isMinimized
+    public :: qtf_qwidget_activateWindow, qtf_qwidget_raise, qtf_qwidget_repolish, qtf_qwidget_x
+    public :: qtf_qwidget_y, qtf_qwidget_move, qtf_qtfwidget_new, qtf_qframe_new, qtf_qframe_setFrameShape
+    public :: qtf_qframe_frameShape, qtf_qframe_setFrameShadow, qtf_qframe_setLineWidth, qtf_qlabel_new
+    public :: qtf_qlabel_setText, qtf_qlabel_text, qtf_qlabel_setAlignment, qtf_qlabel_setWordWrap
+    public :: qtf_qlabel_setPixmap, qtf_qlabel_setScaledContents, qtf_qabstractbutton_setText
+    public :: qtf_qabstractbutton_text, qtf_qabstractbutton_setCheckable, qtf_qabstractbutton_isCheckable
     public :: qtf_qabstractbutton_setChecked, qtf_qabstractbutton_isChecked, qtf_qabstractbutton_click
     public :: qtf_qabstractbutton_toggle, qtf_qabstractbutton_setIcon, qtf_qabstractbutton_setIconSize
     public :: qtf_qpushbutton_new, qtf_qpushbutton_setDefault, qtf_qcheckbox_new, qtf_qradiobutton_new
@@ -8216,13 +8836,19 @@ module qt_c_widgets
     public :: qtf_qfiledialog_getOpenFileNames, qtf_qfiledialog_getSaveFileName
     public :: qtf_qfiledialog_getExistingDirectory, qtf_qabstractitemmodel_rowCount
     public :: qtf_qabstractitemmodel_columnCount, qtf_qtfmodelrequest_setText, qtf_qtfmodelrequest_setNumber
-    public :: qtf_qtfmodelrequest_setInt, qtf_qtftablemodel_new, qtf_qtftablemodel_setRowCount
-    public :: qtf_qtftablemodel_setColumnCount, qtf_qtftablemodel_setHorizontalHeaderLabels
-    public :: qtf_qtftablemodel_setVerticalHeaderLabels, qtf_qtftablemodel_setEditable
-    public :: qtf_qtftablemodel_refresh, qtf_qtftablemodel_refreshCell, qtf_qtftablemodel_dataText
-    public :: qtf_qtftablemodel_setDataText, qtf_qabstractitemview_setModel
-    public :: qtf_qabstractitemview_setItemDelegate, qtf_qabstractitemview_setItemDelegateForColumn
-    public :: qtf_qabstractitemview_edit, qtf_qabstractitemview_setAlternatingRowColors
+    public :: qtf_qtfmodelrequest_setInt, qtf_qtfmodelrequest_setIcon, qtf_qtfmodelrequest_setIconColor
+    public :: qtf_qtfmodelrequest_setChecked, qtf_qtfmodelrequest_setToolTip
+    public :: qtf_qtfmodelrequest_setStatusTip, qtf_qtfmodelrequest_setForeground
+    public :: qtf_qtfmodelrequest_setBackground, qtf_qtfmodelrequest_setAlignment
+    public :: qtf_qtfmodelrequest_setBold, qtf_qtfmodelrequest_setItalic, qtf_qtfmodelrequest_role
+    public :: qtf_qtftablemodel_new, qtf_qtftablemodel_setRowCount, qtf_qtftablemodel_setColumnCount
+    public :: qtf_qtftablemodel_setHorizontalHeaderLabels, qtf_qtftablemodel_setVerticalHeaderLabels
+    public :: qtf_qtftablemodel_setEditable, qtf_qtftablemodel_refresh, qtf_qtftablemodel_refreshCell
+    public :: qtf_qtftablemodel_dataText, qtf_qtftablemodel_setDataText, qtf_qtftablemodel_isCheckable
+    public :: qtf_qtftablemodel_isChecked, qtf_qtftablemodel_setChecked, qtf_qtftablemodel_toolTip
+    public :: qtf_qtflistmodel_new, qtf_qabstractitemview_setModel, qtf_qabstractitemview_setItemDelegate
+    public :: qtf_qabstractitemview_setItemDelegateForColumn, qtf_qabstractitemview_edit
+    public :: qtf_qabstractitemview_setAlternatingRowColors, qtf_qabstractitemview_setIconSize
     public :: qtf_qabstractitemview_setSelectionMode, qtf_qabstractitemview_setSelectionBehavior
     public :: qtf_qabstractitemview_setEditTriggers, qtf_qabstractitemview_clearSelection
     public :: qtf_qabstractitemview_scrollToTop, qtf_qabstractitemview_scrollToBottom, qtf_qtableview_new
@@ -8231,7 +8857,12 @@ module qt_c_widgets
     public :: qtf_qtableview_setHorizontalHeaderVisible, qtf_qtableview_setVerticalHeaderVisible
     public :: qtf_qtableview_currentRow, qtf_qtableview_currentColumn, qtf_qtableview_setCurrentCell
     public :: qtf_qtableview_selectRow, qtf_qtableview_setWordWrap, qtf_qtableview_setSortingEnabled
-    public :: qtf_qtableview_sortByColumn, qtf_qtableview_setColumnHidden, qtf_qtreeview_new
+    public :: qtf_qtableview_sortByColumn, qtf_qtableview_setColumnHidden, qtf_qlistview_new
+    public :: qtf_qlistview_setViewMode, qtf_qlistview_setFlow, qtf_qlistview_setWrapping
+    public :: qtf_qlistview_setSpacing, qtf_qlistview_setGridSize, qtf_qlistview_setUniformItemSizes
+    public :: qtf_qlistview_setResizeMode, qtf_qlistview_setMovement, qtf_qlistview_setWordWrap
+    public :: qtf_qlistview_setModelColumn, qtf_qlistview_setRowHidden, qtf_qlistview_currentRow
+    public :: qtf_qlistview_setCurrentRow, qtf_qlistview_scrollToRow, qtf_qtreeview_new
     public :: qtf_qtreeview_currentNode, qtf_qtreeview_setCurrentNode, qtf_qtreeview_expandNode
     public :: qtf_qtreeview_collapseNode, qtf_qtreeview_isNodeExpanded, qtf_qtreeview_scrollToNode
     public :: qtf_qtreeview_currentFilePath, qtf_qtreeview_setCurrentFile, qtf_qtreeview_setRootPath
@@ -8257,9 +8888,14 @@ module qt_c_widgets
     public :: qtf_qfilesystemmodel_setRootPath, qtf_qfilesystemmodel_rootPath
     public :: qtf_qfilesystemmodel_setNameFilters, qtf_qfilesystemmodel_setNameFilterDisables
     public :: qtf_qfilesystemmodel_setReadOnly, qtf_qfilesystemmodel_childCount, qtf_qtfitemdelegate_new
-    public :: qtf_qtfitemdelegate_setChoices, qtf_qtfitemdelegate_setRange, qtf_qtfitemdelegate_clear
-    public :: qtf_qtablewidgetitem_new, qtf_qtablewidgetitem_setText, qtf_qtablewidgetitem_text
-    public :: qtf_qtablewidgetitem_setTextAlignment, qtf_qtablewidgetitem_setFlags
+    public :: qtf_qtfitemdelegate_setSizeHint, qtf_qtfitemdelegate_setChoices, qtf_qtfitemdelegate_setRange
+    public :: qtf_qtfitemdelegate_clear, qtf_qtfpaintcell_painter, qtf_qtfpaintcell_row
+    public :: qtf_qtfpaintcell_column, qtf_qtfpaintcell_node, qtf_qtfpaintcell_viewRow, qtf_qtfpaintcell_x
+    public :: qtf_qtfpaintcell_y, qtf_qtfpaintcell_width, qtf_qtfpaintcell_height, qtf_qtfpaintcell_text
+    public :: qtf_qtfpaintcell_textColor, qtf_qtfpaintcell_isSelected, qtf_qtfpaintcell_hasFocus
+    public :: qtf_qtfpaintcell_isHovered, qtf_qtfpaintcell_isEnabled, qtf_qtfpaintcell_drawBackground
+    public :: qtf_qtfpaintcell_drawDefault, qtf_qtablewidgetitem_new, qtf_qtablewidgetitem_setText
+    public :: qtf_qtablewidgetitem_text, qtf_qtablewidgetitem_setTextAlignment, qtf_qtablewidgetitem_setFlags
     public :: qtf_qtablewidgetitem_flags, qtf_qtablewidgetitem_setToolTip, qtf_qtablewidgetitem_setIcon
     public :: qtf_qtablewidgetitem_setBackground, qtf_qtablewidgetitem_setForeground
     public :: qtf_qtablewidgetitem_row, qtf_qtablewidgetitem_column, qtf_qtablewidget_new
