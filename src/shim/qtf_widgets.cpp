@@ -65,6 +65,7 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QMetaEnum>
+#include <QMimeData>
 #include <QPainter>
 #include <QPainter>
 #include <QPixmap>
@@ -109,6 +110,7 @@
 #include <QWindow>
 #include <QWizard>
 #include <QWizardPage>
+#include <algorithm>
 #include <array>
 #include <map>
 #include <string>
@@ -164,100 +166,108 @@ enum : int {
     QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1043,
     QTF_SIG_QTFTABLEMODEL_SORTREQUESTED = 1044,
     QTF_SIG_QTFTABLEMODEL_CHECKCHANGED = 1045,
-    QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1046,
-    QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1047,
-    QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1048,
-    QTF_SIG_QTREEVIEW_NODECLICKED = 1049,
-    QTF_SIG_QTREEVIEW_NODEACTIVATED = 1050,
-    QTF_SIG_QTREEVIEW_CURRENTNODECHANGED = 1051,
-    QTF_SIG_QTREEVIEW_CURRENTFILECHANGED = 1052,
-    QTF_SIG_QTREEVIEW_FILEACTIVATED = 1053,
-    QTF_SIG_QTREEVIEW_EXPANDEDNODE = 1054,
-    QTF_SIG_QTREEVIEW_COLLAPSEDNODE = 1055,
-    QTF_SIG_QTFTREEMODEL_DATAREQUESTED = 1056,
-    QTF_SIG_QTFTREEMODEL_DATAEDITED = 1057,
-    QTF_SIG_QTFTREEMODEL_CHECKCHANGED = 1058,
-    QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED = 1059,
-    QTF_SIG_QFILESYSTEMMODEL_ROOTPATHCHANGED = 1060,
-    QTF_SIG_QTFITEMDELEGATE_PAINTCELL = 1061,
-    QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1062,
-    QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1063,
-    QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1064,
-    QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1065,
-    QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1066,
-    QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1067,
-    QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1068,
-    QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1069,
-    QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1070,
-    QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1071,
-    QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1072,
-    QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1073,
-    QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1074,
-    QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1075,
-    QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1076,
-    QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1077,
-    QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1078,
-    QTF_SIG_QTABWIDGET_TABBARCLICKED = 1079,
-    QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1080,
-    QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1081,
-    QTF_SIG_QSPLITTER_SPLITTERMOVED = 1082,
-    QTF_SIG_QGROUPBOX_TOGGLED = 1083,
-    QTF_SIG_QGROUPBOX_CLICKED = 1084,
-    QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1085,
-    QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1086,
-    QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1087,
-    QTF_SIG_QBUTTONGROUP_IDCLICKED = 1088,
-    QTF_SIG_QDATEEDIT_DATECHANGED = 1089,
-    QTF_SIG_QTIMEEDIT_TIMECHANGED = 1090,
-    QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1091,
-    QTF_SIG_QCALENDARWIDGET_CLICKED = 1092,
-    QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1093,
-    QTF_SIG_QPROGRESSDIALOG_CANCELED = 1094,
-    QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED = 1095,
-    QTF_SIG_QDIALOGBUTTONBOX_REJECTED = 1096,
-    QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED = 1097,
-    QTF_SIG_QDIALOGBUTTONBOX_CLICKED = 1098,
-    QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE = 1099,
-    QTF_SIG_QCOMPLETER_ACTIVATED = 1100,
-    QTF_SIG_QCOMPLETER_HIGHLIGHTED = 1101,
-    QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED = 1102,
-    QTF_SIG_QTEXTBROWSER_ANCHORCLICKED = 1103,
-    QTF_SIG_QTEXTBROWSER_SOURCECHANGED = 1104,
-    QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE = 1105,
-    QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE = 1106,
-    QTF_SIG_QTOOLBOX_CURRENTCHANGED = 1107,
-    QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED = 1108,
-    QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE = 1109,
-    QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED = 1110,
-    QTF_SIG_QWIZARDPAGE_COMPLETECHANGED = 1111,
-    QTF_SIG_QWIZARD_CURRENTIDCHANGED = 1112,
-    QTF_SIG_QWIZARD_HELPREQUESTED = 1113,
-    QTF_SIG_QUNDOSTACK_REDOREQUESTED = 1114,
-    QTF_SIG_QUNDOSTACK_UNDOREQUESTED = 1115,
-    QTF_SIG_QUNDOSTACK_CANUNDOCHANGED = 1116,
-    QTF_SIG_QUNDOSTACK_CANREDOCHANGED = 1117,
-    QTF_SIG_QUNDOSTACK_INDEXCHANGED = 1118,
-    QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1119,
-    QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1120,
-    QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1121,
-    QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT = 1122,
-    QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT = 1123,
-    QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT = 1124,
-    QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT = 1125,
-    QTF_SIG_QTFEVENTFILTER_WHEELEVENT = 1126,
-    QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT = 1127,
-    QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT = 1128,
-    QTF_SIG_QTFEVENTFILTER_RESIZEEVENT = 1129,
-    QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT = 1130,
-    QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST = 1131,
-    QTF_SIG_QTFEVENTFILTER_ENTEREVENT = 1132,
-    QTF_SIG_QTFEVENTFILTER_LEAVEEVENT = 1133,
-    QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT = 1134,
-    QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1135,
-    QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1136,
-    QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1137,
-    QTF_SIG_QTFEVENTFILTER_SURFACECREATED = 1138,
-    QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED = 1139,
+    QTF_SIG_QTFTABLEMODEL_DRAGSTARTED = 1046,
+    QTF_SIG_QTFTABLEMODEL_DROPPED = 1047,
+    QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1048,
+    QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1049,
+    QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1050,
+    QTF_SIG_QTREEVIEW_NODECLICKED = 1051,
+    QTF_SIG_QTREEVIEW_NODEACTIVATED = 1052,
+    QTF_SIG_QTREEVIEW_CURRENTNODECHANGED = 1053,
+    QTF_SIG_QTREEVIEW_CURRENTFILECHANGED = 1054,
+    QTF_SIG_QTREEVIEW_FILEACTIVATED = 1055,
+    QTF_SIG_QTREEVIEW_EXPANDEDNODE = 1056,
+    QTF_SIG_QTREEVIEW_COLLAPSEDNODE = 1057,
+    QTF_SIG_QTFTREEMODEL_DATAREQUESTED = 1058,
+    QTF_SIG_QTFTREEMODEL_DATAEDITED = 1059,
+    QTF_SIG_QTFTREEMODEL_CHECKCHANGED = 1060,
+    QTF_SIG_QTFTREEMODEL_DRAGSTARTED = 1061,
+    QTF_SIG_QTFTREEMODEL_DROPPED = 1062,
+    QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED = 1063,
+    QTF_SIG_QFILESYSTEMMODEL_ROOTPATHCHANGED = 1064,
+    QTF_SIG_QTFITEMDELEGATE_PAINTCELL = 1065,
+    QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1066,
+    QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1067,
+    QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1068,
+    QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1069,
+    QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1070,
+    QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1071,
+    QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1072,
+    QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1073,
+    QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1074,
+    QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1075,
+    QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1076,
+    QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1077,
+    QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1078,
+    QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1079,
+    QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1080,
+    QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1081,
+    QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1082,
+    QTF_SIG_QTABWIDGET_TABBARCLICKED = 1083,
+    QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1084,
+    QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1085,
+    QTF_SIG_QSPLITTER_SPLITTERMOVED = 1086,
+    QTF_SIG_QGROUPBOX_TOGGLED = 1087,
+    QTF_SIG_QGROUPBOX_CLICKED = 1088,
+    QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1089,
+    QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1090,
+    QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1091,
+    QTF_SIG_QBUTTONGROUP_IDCLICKED = 1092,
+    QTF_SIG_QDATEEDIT_DATECHANGED = 1093,
+    QTF_SIG_QTIMEEDIT_TIMECHANGED = 1094,
+    QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1095,
+    QTF_SIG_QCALENDARWIDGET_CLICKED = 1096,
+    QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1097,
+    QTF_SIG_QPROGRESSDIALOG_CANCELED = 1098,
+    QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED = 1099,
+    QTF_SIG_QDIALOGBUTTONBOX_REJECTED = 1100,
+    QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED = 1101,
+    QTF_SIG_QDIALOGBUTTONBOX_CLICKED = 1102,
+    QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE = 1103,
+    QTF_SIG_QCOMPLETER_ACTIVATED = 1104,
+    QTF_SIG_QCOMPLETER_HIGHLIGHTED = 1105,
+    QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED = 1106,
+    QTF_SIG_QTEXTBROWSER_ANCHORCLICKED = 1107,
+    QTF_SIG_QTEXTBROWSER_SOURCECHANGED = 1108,
+    QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE = 1109,
+    QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE = 1110,
+    QTF_SIG_QTOOLBOX_CURRENTCHANGED = 1111,
+    QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED = 1112,
+    QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE = 1113,
+    QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED = 1114,
+    QTF_SIG_QWIZARDPAGE_COMPLETECHANGED = 1115,
+    QTF_SIG_QWIZARD_CURRENTIDCHANGED = 1116,
+    QTF_SIG_QWIZARD_HELPREQUESTED = 1117,
+    QTF_SIG_QUNDOSTACK_REDOREQUESTED = 1118,
+    QTF_SIG_QUNDOSTACK_UNDOREQUESTED = 1119,
+    QTF_SIG_QUNDOSTACK_CANUNDOCHANGED = 1120,
+    QTF_SIG_QUNDOSTACK_CANREDOCHANGED = 1121,
+    QTF_SIG_QUNDOSTACK_INDEXCHANGED = 1122,
+    QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1123,
+    QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1124,
+    QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1125,
+    QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT = 1126,
+    QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT = 1127,
+    QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT = 1128,
+    QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT = 1129,
+    QTF_SIG_QTFEVENTFILTER_WHEELEVENT = 1130,
+    QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT = 1131,
+    QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT = 1132,
+    QTF_SIG_QTFEVENTFILTER_DRAGENTEREVENT = 1133,
+    QTF_SIG_QTFEVENTFILTER_DRAGMOVEEVENT = 1134,
+    QTF_SIG_QTFEVENTFILTER_DRAGLEAVEEVENT = 1135,
+    QTF_SIG_QTFEVENTFILTER_DROPEVENT = 1136,
+    QTF_SIG_QTFEVENTFILTER_RESIZEEVENT = 1137,
+    QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT = 1138,
+    QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST = 1139,
+    QTF_SIG_QTFEVENTFILTER_ENTEREVENT = 1140,
+    QTF_SIG_QTFEVENTFILTER_LEAVEEVENT = 1141,
+    QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT = 1142,
+    QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1143,
+    QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1144,
+    QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1145,
+    QTF_SIG_QTFEVENTFILTER_SURFACECREATED = 1146,
+    QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED = 1147,
 };
 
 // QApplication keeps references to argc/argv, so they must outlive it.
@@ -365,9 +375,10 @@ static QIcon *qtf_standard_icon(const QString &name) {
 }
 
 // QtfEventFilter: forwards the events of any QObject (a QWindow, a widget, a
-// widget's viewport, the application) to Fortran slots. Input events can be
-// consumed: before the slots run the event is marked ignored, and a slot that
-// calls event%accept() stops it there. The other events are only observed.
+// widget's viewport, the application) to Fortran slots. Input and drag-and-drop
+// events can be consumed: before the slots run the event is marked ignored,
+// and a slot that calls event%accept() stops it there. The other events are
+// only observed.
 enum qtf_any_event {
     QTF_ANY_MOUSEPRESS,
     QTF_ANY_MOUSERELEASE,
@@ -375,7 +386,11 @@ enum qtf_any_event {
     QTF_ANY_MOUSEDOUBLECLICK,
     QTF_ANY_WHEEL,
     QTF_ANY_KEYPRESS,
-    QTF_ANY_KEYRELEASE,          // last consumable event
+    QTF_ANY_KEYRELEASE,
+    QTF_ANY_DRAGENTER,
+    QTF_ANY_DRAGMOVE,
+    QTF_ANY_DROP,                // last consumable event
+    QTF_ANY_DRAGLEAVE,
     QTF_ANY_RESIZE,
     QTF_ANY_EXPOSE,
     QTF_ANY_UPDATEREQUEST,
@@ -405,6 +420,10 @@ class QtfEventFilter : public QObject {
         case QEvent::Wheel: return QTF_ANY_WHEEL;
         case QEvent::KeyPress: return QTF_ANY_KEYPRESS;
         case QEvent::KeyRelease: return QTF_ANY_KEYRELEASE;
+        case QEvent::DragEnter: return QTF_ANY_DRAGENTER;
+        case QEvent::DragMove: return QTF_ANY_DRAGMOVE;
+        case QEvent::Drop: return QTF_ANY_DROP;
+        case QEvent::DragLeave: return QTF_ANY_DRAGLEAVE;
         case QEvent::Resize: return QTF_ANY_RESIZE;
         case QEvent::Expose: return QTF_ANY_EXPOSE;
         case QEvent::UpdateRequest: return QTF_ANY_UPDATEREQUEST;
@@ -432,7 +451,7 @@ class QtfEventFilter : public QObject {
         qtf_args a{};
         a.p = e;
         if (k == QTF_ANY_FOCUSIN || k == QTF_ANY_FOCUSOUT) a.i[0] = static_cast<QFocusEvent *>(e)->reason();
-        if (k <= QTF_ANY_KEYRELEASE) {
+        if (k <= QTF_ANY_DROP) {
             const bool accepted = e->isAccepted();
             e->ignore();
             if (qtf_emit_all(handlers[k], a) > 0 && e->isAccepted()) return true;   // consumed
@@ -625,10 +644,79 @@ struct QtfModelRequest {
     }
 };
 
+// URLs as strings: local files as paths, others as URLs.
+static QStringList qtf_drop_urls(const QMimeData *mime) {
+    QStringList out;
+    for (const QUrl &u : mime->urls()) out << (u.isLocalFile() ? u.toLocalFile() : u.toString());
+    return out;
+}
+
+// A drop on a Fortran-backed model, as its `dropped` slots see it (QtfModelDrop).
+struct QtfModelDrop {
+    const QMimeData *mime = nullptr;
+    const QAbstractItemModel *model = nullptr;   // the model dropped on
+    int action = Qt::CopyAction;
+    int row = 0, column = 0;                     // table: the row inserted before, or dropped on
+    int parent_node = 0, node = 0;               // tree: insert under parent_node at row; node dropped on
+    bool on_item = false;
+    bool accepted = true;
+};
+
 // The Fortran slots of a Fortran-backed model (QtfTableModel, QtfTreeModel).
 struct QtfModelHandlers {
     virtual ~QtfModelHandlers() = default;
     std::vector<qtf_slot> data_handlers, edit_handlers, sort_handlers, check_handlers;
+    std::vector<qtf_slot> drag_handlers, drop_handlers;
+
+    // drag and drop
+    bool drag_enabled = false, drop_enabled = false, drop_on_items = false;
+    QStringList drop_formats{QStringLiteral(QTF_MIME_ITEMS), QStringLiteral("text/plain"),
+                             QStringLiteral("text/uri-list")};
+
+    // Drag-and-drop flags of an item (or, for an invalid index, of the space between items).
+    Qt::ItemFlags dndFlags(const QModelIndex &i) const {
+        Qt::ItemFlags f;
+        if (i.isValid() && drag_enabled) f |= Qt::ItemIsDragEnabled;
+        if (drop_enabled && (!i.isValid() || drop_on_items)) f |= Qt::ItemIsDropEnabled;
+        return f;
+    }
+
+    // The drag data of some items (by key: row or node, in order): their keys,
+    // and their cells as text/plain (columns separated by tabs, items by
+    // newlines); then the dragStarted slots may add more.
+    QMimeData *dragData(const QAbstractItemModel *model, const QList<int> &keys, int ncols) const {
+        auto *mime = new QMimeData;
+        QStringList lines;
+        for (int k : keys) {
+            QStringList cells;
+            for (int c = 0; c < ncols; ++c) cells << request(k, c).toString();
+            lines << cells.join(QLatin1Char('\t'));
+        }
+        mime->setText(lines.join(QLatin1Char('\n')));
+        qtf_set_items(mime, model, keys);
+        qtf_args a{};
+        a.p = mime;
+        qtf_emit_all(drag_handlers, a);
+        return mime;
+    }
+
+    // The keys (sorted, without duplicates) of the dragged indexes.
+    template <class KeyFn> static QList<int> keysOf(const QModelIndexList &indexes, KeyFn key) {
+        QList<int> keys;
+        for (const QModelIndex &i : indexes)
+            if (i.isValid()) keys << key(i);
+        std::sort(keys.begin(), keys.end());
+        keys.erase(std::unique(keys.begin(), keys.end()), keys.end());
+        return keys;
+    }
+
+    // Report a drop to the dropped slots; true if a slot took it.
+    bool drop(QtfModelDrop &d) const {
+        if (!drop_enabled || drop_handlers.empty()) return false;
+        qtf_args a{};
+        a.p = &d;
+        return qtf_emit_all(drop_handlers, a) > 0 && d.accepted;
+    }
 
     // Roles any slot has set so far (bit r: role r). Others are not asked for,
     // so a model showing only text calls its slots once per cell.
@@ -735,7 +823,8 @@ class QtfTableModel : public QAbstractTableModel, public QtfModelHandlers {
     }
 
     bool setData(const QModelIndex &i, const QVariant &v, int role) override {
-        if (!i.isValid()) return false;
+        // (an invalid value: a view clearing the cells moved away by a drag)
+        if (!i.isValid() || !v.isValid()) return false;
         if (role == Qt::CheckStateRole ? !check(i.row(), i.column(), v)
                                        : role != Qt::EditRole || !edit(i.row(), i.column(), v))
             return false;
@@ -744,10 +833,39 @@ class QtfTableModel : public QAbstractTableModel, public QtfModelHandlers {
     }
 
     Qt::ItemFlags flags(const QModelIndex &i) const override {
-        Qt::ItemFlags f = QAbstractTableModel::flags(i);
+        Qt::ItemFlags f = QAbstractTableModel::flags(i) | dndFlags(i);
         if (editable && i.isValid()) f |= Qt::ItemIsEditable;
         if (i.isValid()) f |= requestFlags(i.row(), i.column());
         return f;
+    }
+
+    QStringList mimeTypes() const override { return drop_formats; }
+    Qt::DropActions supportedDragActions() const override { return Qt::CopyAction | Qt::MoveAction; }
+    Qt::DropActions supportedDropActions() const override { return Qt::CopyAction | Qt::MoveAction; }
+
+    QMimeData *mimeData(const QModelIndexList &indexes) const override {
+        return rowsData(keysOf(indexes, [](const QModelIndex &i) { return i.row(); }));
+    }
+
+    QMimeData *rowsData(const QList<int> &rows) const { return dragData(this, rows, ncols); }
+
+    bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                         const QModelIndex &parent) const override {
+        return drop_enabled && QAbstractTableModel::canDropMimeData(data, action, row, column, parent);
+    }
+
+    // Dropped between rows (before `row`; at the end on empty space) or on a cell.
+    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                      const QModelIndex &parent) override {
+        if (action == Qt::IgnoreAction) return true;
+        QtfModelDrop d;
+        d.mime = data;
+        d.model = this;
+        d.action = action;
+        d.on_item = parent.isValid();
+        d.row = d.on_item ? parent.row() : row < 0 ? nrows : row;
+        d.column = d.on_item ? parent.column() : qMax(column, 0);
+        return drop(d);
     }
 
     void rolesLearned() const override {
@@ -858,7 +976,7 @@ class QtfTreeModel : public QAbstractItemModel, public QtfModelHandlers {
     }
 
     bool setData(const QModelIndex &i, const QVariant &v, int role) override {
-        if (!i.isValid()) return false;
+        if (!i.isValid() || !v.isValid()) return false;
         const int node = int(i.internalId());
         if (role == Qt::CheckStateRole ? !check(node, i.column(), v)
                                        : role != Qt::EditRole || !edit(node, i.column(), v))
@@ -868,10 +986,44 @@ class QtfTreeModel : public QAbstractItemModel, public QtfModelHandlers {
     }
 
     Qt::ItemFlags flags(const QModelIndex &i) const override {
-        Qt::ItemFlags f = QAbstractItemModel::flags(i);
+        Qt::ItemFlags f = QAbstractItemModel::flags(i) | dndFlags(i);
         if (editable && i.isValid()) f |= Qt::ItemIsEditable;
         if (i.isValid()) f |= requestFlags(int(i.internalId()), i.column());
         return f;
+    }
+
+    QStringList mimeTypes() const override { return drop_formats; }
+    Qt::DropActions supportedDragActions() const override { return Qt::CopyAction | Qt::MoveAction; }
+    Qt::DropActions supportedDropActions() const override { return Qt::CopyAction | Qt::MoveAction; }
+
+    QMimeData *mimeData(const QModelIndexList &indexes) const override {
+        return nodesData(keysOf(indexes, [](const QModelIndex &i) { return int(i.internalId()); }));
+    }
+
+    QMimeData *nodesData(const QList<int> &nodes) const { return dragData(this, nodes, ncols); }
+
+    bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                         const QModelIndex &parent) const override {
+        return drop_enabled && QAbstractItemModel::canDropMimeData(data, action, row, column, parent);
+    }
+
+    // Dropped between nodes (before child `row` of `parent`; at the end if row
+    // is -1) or onto a node (row -1, parent the node): then it goes in as the
+    // node's last child.
+    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                      const QModelIndex &parent) override {
+        if (action == Qt::IgnoreAction) return true;
+        QtfModelDrop d;
+        d.mime = data;
+        d.model = this;
+        d.action = action;
+        d.column = qMax(column, 0);
+        d.parent_node = parent.isValid() ? int(parent.internalId()) : 0;
+        if (d.parent_node < 0 || d.parent_node > nodeCount()) return false;
+        d.on_item = parent.isValid() && row < 0;
+        if (d.on_item) d.node = d.parent_node;
+        d.row = row < 0 ? int(children[d.parent_node].size()) : row;
+        return drop(d);
     }
 
     void rolesLearned() const override {
@@ -915,15 +1067,17 @@ class QtfListModel : public QtfTableModel {
     QtfListModel(int rows, QObject *parent) : QtfTableModel(rows, 1, parent) {}
 };
 
-// Attach a slot to a Fortran-backed model's data (WHICH = 0), edit (1), sort (2)
-// or check-box (3) requests.
+// Attach a slot to a Fortran-backed model's data (WHICH = 0), edit (1), sort (2),
+// check-box (3), drag (4) or drop (5) requests.
 template <int WHICH> static bool connect_model(void *s, const qtf_slot &ref) {
     auto *m = dynamic_cast<QtfModelHandlers *>(static_cast<QObject *>(s));
     if (!m) return false;
     (WHICH == 0   ? m->data_handlers
      : WHICH == 1 ? m->edit_handlers
      : WHICH == 2 ? m->sort_handlers
-                  : m->check_handlers)
+     : WHICH == 3 ? m->check_handlers
+     : WHICH == 4 ? m->drag_handlers
+                  : m->drop_handlers)
         .push_back(ref);
     return true;
 }
@@ -2278,6 +2432,11 @@ QTF_API int qtf_qabstractitemmodel_columnCount(void *self) {
     return as<QAbstractItemModel>(self)->columnCount();
 }
 
+// True if `data` holds items dragged from this model (a QtfTableModel, QtfListModel or QtfTreeModel; through a proxy, the source model): then `data%items()` are its rows or nodes.
+QTF_API int qtf_qabstractitemmodel_isDragSource(void *self, void *data) {
+    return qtf_bool(qtf_items_from(as<QMimeData>(data), static_cast<const QAbstractItemModel *>(as<QAbstractItemModel>(self))));
+}
+
 // ---------------------------------------------------------------------------
 // QtfModelRequest
 
@@ -2350,6 +2509,76 @@ QTF_API void qtf_qtfmodelrequest_setItalic(void *self, int italic) {
 QTF_API int qtf_qtfmodelrequest_role(void *self) { return as<QtfModelRequest>(self)->role; }
 
 // ---------------------------------------------------------------------------
+// QtfModelDrop
+
+// The dropped data (valid during the slot).
+QTF_API void *qtf_qtfmodeldrop_mimeData(void *self) {
+    return const_cast<QMimeData *>(as<QtfModelDrop>(self)->mime);
+}
+
+// True if the drop carries plain text.
+QTF_API int qtf_qtfmodeldrop_hasText(void *self) { return qtf_bool(as<QtfModelDrop>(self)->mime->hasText()); }
+
+// The dropped plain text (from a model: the cells of the dragged items, columns separated by tabs, items by newlines).
+QTF_API char *qtf_qtfmodeldrop_text(void *self, int *len) {
+    return qtf_to_c(as<QtfModelDrop>(self)->mime->text(), len);
+}
+
+// True if the drop carries URLs (e.g. files from the desktop).
+QTF_API int qtf_qtfmodeldrop_hasUrls(void *self) { return qtf_bool(as<QtfModelDrop>(self)->mime->hasUrls()); }
+
+// The dropped URLs: local files as paths.
+QTF_API char *qtf_qtfmodeldrop_urls(void *self, int *len) {
+    return qtf_list_to_c(qtf_drop_urls(as<QtfModelDrop>(self)->mime), len);
+}
+
+// True if the drop carries data of MIME type `format`.
+QTF_API int qtf_qtfmodeldrop_hasFormat(void *self, const char *format, int format_len) {
+    return qtf_bool(as<QtfModelDrop>(self)->mime->hasFormat(qtf_qstring(format, format_len)));
+}
+
+// The dropped data of `format`, as text.
+QTF_API char *qtf_qtfmodeldrop_data(void *self, const char *format, int format_len, int *len) {
+    return qtf_to_c(QString::fromUtf8(as<QtfModelDrop>(self)->mime->data(qtf_qstring(format, format_len))), len);
+}
+
+// True if items of a Fortran-backed model were dropped.
+QTF_API int qtf_qtfmodeldrop_hasItems(void *self) {
+    return qtf_bool(as<QtfModelDrop>(self)->mime->hasFormat(QStringLiteral(QTF_MIME_ITEMS)));
+}
+
+// The dropped rows (table, list) or nodes (tree) of the model they were dragged from.
+QTF_API int *qtf_qtfmodeldrop_items(void *self, int *len) {
+    return qtf_ints_to_c(qtf_items(as<QtfModelDrop>(self)->mime), len);
+}
+
+// True if the dropped items come from this same model (e.g. reordering).
+QTF_API int qtf_qtfmodeldrop_isInternal(void *self) {
+    return qtf_bool(qtf_items_from(as<QtfModelDrop>(self)->mime, as<QtfModelDrop>(self)->model));
+}
+
+// Qt_CopyAction or Qt_MoveAction (Qt_LinkAction if the source asks for it).
+QTF_API int qtf_qtfmodeldrop_action(void *self) { return int(as<QtfModelDrop>(self)->action); }
+
+// Table/list: the row the drop goes before, or the row dropped on (`onItem`). Tree: the child position under `parentNode()`.
+QTF_API int qtf_qtfmodeldrop_row(void *self) { return as<QtfModelDrop>(self)->row; }
+
+// The column dropped on (0 between rows).
+QTF_API int qtf_qtfmodeldrop_column(void *self) { return as<QtfModelDrop>(self)->column; }
+
+// Tree: the node the drop goes under (0: top level).
+QTF_API int qtf_qtfmodeldrop_parentNode(void *self) { return as<QtfModelDrop>(self)->parent_node; }
+
+// Tree: the node dropped onto (0 if dropped between nodes).
+QTF_API int qtf_qtfmodeldrop_node(void *self) { return as<QtfModelDrop>(self)->node; }
+
+// True if dropped onto an item (a cell, or a tree node) rather than between items (needs `setDropEnabled(.true., onItems=.true.)`).
+QTF_API int qtf_qtfmodeldrop_onItem(void *self) { return qtf_bool(as<QtfModelDrop>(self)->on_item); }
+
+// Refuse the drop (it is accepted by default).
+QTF_API void qtf_qtfmodeldrop_ignore(void *self) { as<QtfModelDrop>(self)->accepted = false; }
+
+// ---------------------------------------------------------------------------
 // QtfTableModel
 
 // A table model of the given shape.
@@ -2418,6 +2647,26 @@ QTF_API int qtf_qtftablemodel_setChecked(void *self, int row, int column, int ch
 // The tool tip of a cell, as the view would show it.
 QTF_API char *qtf_qtftablemodel_toolTip(void *self, int row, int column, int *len) {
     return qtf_to_c(as<QtfTableModel>(self)->data(as<QtfTableModel>(self)->index(row, column), Qt::ToolTipRole).toString(), len);
+}
+
+// Let the user drag rows out of a view (the view needs `setDragEnabled(.true.)` or a `setDragDropMode` too).
+QTF_API void qtf_qtftablemodel_setDragEnabled(void *self, int enable) {
+    as<QtfTableModel>(self)->drag_enabled = (enable != 0);
+}
+
+// Take drops (reported to `dropped`): between rows, and with `onItems` also onto cells. The view must accept drops (`setDragDropMode` or `setAcceptDrops`).
+QTF_API void qtf_qtftablemodel_setDropEnabled(void *self, int enable, int onItems) {
+    as<QtfTableModel>(self)->drop_enabled = (enable != 0); as<QtfTableModel>(self)->drop_on_items = (onItems != 0);
+}
+
+// The MIME types the model takes (default: 'application/x-qtf-items' (rows of a Fortran-backed model), 'text/plain', 'text/uri-list'); drags with none of them are refused.
+QTF_API void qtf_qtftablemodel_setDropFormats(void *self, const char *formats, int formats_len, int n) {
+    as<QtfTableModel>(self)->drop_formats = qtf_qstringlist(formats, formats_len, n);
+}
+
+// The data a drag of these rows (in this order) carries (cells as text, the rows as items, and what the `dragStarted` slots add), e.g. to copy them to the clipboard. Yours to delete (or give to a QDrag or QClipboard).
+QTF_API void *qtf_qtftablemodel_mimeData(void *self, const int *rows, int n) {
+    return as<QtfTableModel>(self)->rowsData(qtf_intlist(rows, n));
 }
 
 // ---------------------------------------------------------------------------
@@ -2489,6 +2738,59 @@ QTF_API void qtf_qabstractitemview_scrollToBottom(void *self) {
     as<QAbstractItemView>(self)->scrollToBottom();
 }
 
+// The widget the items are drawn on: mouse and drop positions are relative to it (e.g. for a QtfEventFilter).
+QTF_API void *qtf_qabstractitemview_viewport(void *self) { return as<QAbstractItemView>(self)->viewport(); }
+
+// Let the user drag the selected items (the model must allow it: e.g. QtfTableModel%setDragEnabled).
+QTF_API void qtf_qabstractitemview_setDragEnabled(void *self, int enable) {
+    as<QAbstractItemView>(self)->setDragEnabled((enable != 0));
+}
+
+// True if items can be dragged.
+QTF_API int qtf_qabstractitemview_dragEnabled(void *self) {
+    return qtf_bool(as<QAbstractItemView>(self)->dragEnabled());
+}
+
+// QAbstractItemView_DragOnly, _DropOnly, _DragDrop, _InternalMove (reorder within the view only) or _NoDragDrop; sets dragEnabled and acceptDrops to match.
+QTF_API void qtf_qabstractitemview_setDragDropMode(void *self, int mode) {
+    as<QAbstractItemView>(self)->setDragDropMode(QAbstractItemView::DragDropMode(mode));
+}
+
+// The drag-and-drop mode.
+QTF_API int qtf_qabstractitemview_dragDropMode(void *self) {
+    return int(as<QAbstractItemView>(self)->dragDropMode());
+}
+
+// The action of a drag from this view without modifier keys (Qt_CopyAction or Qt_MoveAction).
+QTF_API void qtf_qabstractitemview_setDefaultDropAction(void *self, int action) {
+    as<QAbstractItemView>(self)->setDefaultDropAction(Qt::DropAction(action));
+}
+
+// The default action of drags from this view.
+QTF_API int qtf_qabstractitemview_defaultDropAction(void *self) {
+    return int(as<QAbstractItemView>(self)->defaultDropAction());
+}
+
+// Show where a drop would go (default: shown).
+QTF_API void qtf_qabstractitemview_setDropIndicatorShown(void *self, int enable) {
+    as<QAbstractItemView>(self)->setDropIndicatorShown((enable != 0));
+}
+
+// True if the drop indicator is shown.
+QTF_API int qtf_qabstractitemview_showDropIndicator(void *self) {
+    return qtf_bool(as<QAbstractItemView>(self)->showDropIndicator());
+}
+
+// Drop onto items (true; QTableView default) rather than between them (QListView, QTreeView default).
+QTF_API void qtf_qabstractitemview_setDragDropOverwriteMode(void *self, int overwrite) {
+    as<QAbstractItemView>(self)->setDragDropOverwriteMode((overwrite != 0));
+}
+
+// True if drops go onto items.
+QTF_API int qtf_qabstractitemview_dragDropOverwriteMode(void *self) {
+    return qtf_bool(as<QAbstractItemView>(self)->dragDropOverwriteMode());
+}
+
 // ---------------------------------------------------------------------------
 // QTableView
 
@@ -2512,6 +2814,9 @@ QTF_API void qtf_qtableview_setColumnWidth(void *self, int column, int width) {
 QTF_API int qtf_qtableview_columnWidth(void *self, int column) {
     return as<QTableView>(self)->columnWidth(column);
 }
+
+// A row height in pixels.
+QTF_API int qtf_qtableview_rowHeight(void *self, int row) { return as<QTableView>(self)->rowHeight(row); }
 
 // Stretch the last column to fill the view.
 QTF_API void qtf_qtableview_setStretchLastSection(void *self, int stretch) {
@@ -2793,6 +3098,26 @@ QTF_API void qtf_qtftreemodel_refreshNode(void *self, int node) { as<QtfTreeMode
 // The text of a cell, as a view would show it.
 QTF_API char *qtf_qtftreemodel_dataText(void *self, int node, int column, int *len) {
     return qtf_to_c(as<QtfTreeModel>(self)->data(as<QtfTreeModel>(self)->nodeIndex(node, column), Qt::DisplayRole).toString(), len);
+}
+
+// Let the user drag nodes out of a view (the view needs `setDragEnabled(.true.)` or a `setDragDropMode` too).
+QTF_API void qtf_qtftreemodel_setDragEnabled(void *self, int enable) {
+    as<QtfTreeModel>(self)->drag_enabled = (enable != 0);
+}
+
+// Take drops (reported to `dropped`): between nodes, and unless `onItems` is false also onto nodes. The view must accept drops (`setDragDropMode` or `setAcceptDrops`).
+QTF_API void qtf_qtftreemodel_setDropEnabled(void *self, int enable, int onItems) {
+    as<QtfTreeModel>(self)->drop_enabled = (enable != 0); as<QtfTreeModel>(self)->drop_on_items = (onItems != 0);
+}
+
+// The MIME types the model takes (default: 'application/x-qtf-items', 'text/plain', 'text/uri-list').
+QTF_API void qtf_qtftreemodel_setDropFormats(void *self, const char *formats, int formats_len, int n) {
+    as<QtfTreeModel>(self)->drop_formats = qtf_qstringlist(formats, formats_len, n);
+}
+
+// The data a drag of these nodes carries (see QtfTableModel%mimeData). Yours to delete.
+QTF_API void *qtf_qtftreemodel_mimeData(void *self, const int *nodes, int n) {
+    return as<QtfTreeModel>(self)->nodesData(qtf_intlist(nodes, n));
 }
 
 // ---------------------------------------------------------------------------
@@ -4968,6 +5293,8 @@ static const bool qtf_widgets_registered = [] {
     qtf_register_connector(QTF_SIG_QTFTABLEMODEL_DATAEDITED, connect_model<1>);
     qtf_register_connector(QTF_SIG_QTFTABLEMODEL_SORTREQUESTED, connect_model<2>);
     qtf_register_connector(QTF_SIG_QTFTABLEMODEL_CHECKCHANGED, connect_model<3>);
+    qtf_register_connector(QTF_SIG_QTFTABLEMODEL_DRAGSTARTED, connect_model<4>);
+    qtf_register_connector(QTF_SIG_QTFTABLEMODEL_DROPPED, connect_model<5>);
     qtf_register_connector(QTF_SIG_QABSTRACTITEMVIEW_CLICKED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QAbstractItemView>(s), &QAbstractItemView::clicked, as<QAbstractItemView>(s), [ref](const QModelIndex &i) { qtf_emit_ints(ref, {i.row(), i.column()}); }));
     });
@@ -4997,6 +5324,8 @@ static const bool qtf_widgets_registered = [] {
     qtf_register_connector(QTF_SIG_QTFTREEMODEL_DATAREQUESTED, connect_model<0>);
     qtf_register_connector(QTF_SIG_QTFTREEMODEL_DATAEDITED, connect_model<1>);
     qtf_register_connector(QTF_SIG_QTFTREEMODEL_CHECKCHANGED, connect_model<3>);
+    qtf_register_connector(QTF_SIG_QTFTREEMODEL_DRAGSTARTED, connect_model<4>);
+    qtf_register_connector(QTF_SIG_QTFTREEMODEL_DROPPED, connect_model<5>);
     qtf_register_connector(QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QFileSystemModel>(s), &QFileSystemModel::directoryLoaded, as<QFileSystemModel>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
     });
@@ -5187,6 +5516,10 @@ static const bool qtf_widgets_registered = [] {
     qtf_register_connector(QTF_SIG_QTFEVENTFILTER_WHEELEVENT, connect_any<QTF_ANY_WHEEL>);
     qtf_register_connector(QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT, connect_any<QTF_ANY_KEYPRESS>);
     qtf_register_connector(QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT, connect_any<QTF_ANY_KEYRELEASE>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_DRAGENTEREVENT, connect_any<QTF_ANY_DRAGENTER>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_DRAGMOVEEVENT, connect_any<QTF_ANY_DRAGMOVE>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_DRAGLEAVEEVENT, connect_any<QTF_ANY_DRAGLEAVE>);
+    qtf_register_connector(QTF_SIG_QTFEVENTFILTER_DROPEVENT, connect_any<QTF_ANY_DROP>);
     qtf_register_connector(QTF_SIG_QTFEVENTFILTER_RESIZEEVENT, connect_any<QTF_ANY_RESIZE>);
     qtf_register_connector(QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT, connect_any<QTF_ANY_EXPOSE>);
     qtf_register_connector(QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST, connect_any<QTF_ANY_UPDATEREQUEST>);

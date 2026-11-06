@@ -513,6 +513,21 @@ spec-only work now; items marked *(design)* need new machinery.
   widget event filter. A slot that accepts the event takes the drag or drop;
   otherwise the widget's own handling runs. As in Qt, a widget gets moves and
   the drop only after accepting a drag-enter.
+  - **Done:** drag and drop on any object through `QtfEventFilter`
+    (`dragEnterEvent`, `dragMoveEvent`, `dragLeaveEvent`, `dropEvent`;
+    consumable like input events), e.g. a QWindow rendered by an external
+    engine. Item views: `setDragEnabled`, `setDragDropMode`,
+    `setDefaultDropAction`, `setDropIndicatorShown`,
+    `setDragDropOverwriteMode`, `viewport`. Fortran-backed models
+    (QtfTableModel/ListModel/TreeModel): `setDragEnabled`, `setDropEnabled`,
+    `setDropFormats`, `mimeData(rows)`, `dragStarted` (add formats) and
+    `dropped` (a `QtfModelDrop`). Dragged rows/nodes travel as
+    'application/x-qtf-items' (process, model and keys), read with
+    `QMimeData%items()` / `QDropEvent%items()`, with the source given by
+    `isDragSource`. Moves are done by the drop slot: the models refuse the
+    view's removeRows and ignore its clearing of moved cells (an invalid
+    value to setData). Tested with synthetic events on views
+    (test_drag_drop); real QDrag exec is still untested.
   - **Done:** `enterEvent`, `leaveEvent`, `focusInEvent(reason)`,
     `focusOutEvent(reason)`, `showEvent`, `hideEvent` on every QWidget, through
     the same `QtfEventFilter` as close/context-menu (one handler list per event;

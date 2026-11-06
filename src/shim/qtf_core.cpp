@@ -12,6 +12,7 @@
 #include <QEnterEvent>
 #include <QEvent>
 #include <QFocusEvent>
+#include <QMimeData>
 #include <QShowEvent>
 #include <QHideEvent>
 #include <QVariant>
@@ -52,6 +53,39 @@ int *qtf_ints_to_c(const QList<int> &list, int *len) {
     int *p = static_cast<int *>(std::malloc(sizeof(int) * (list.size() + 1)));
     for (qsizetype i = 0; i < list.size(); ++i) p[i] = list[i];
     return p;
+}
+
+// QTF_MIME_ITEMS data: "<process id> <source address>\n<item> <item> ...".
+void qtf_set_items(QMimeData *mime, const void *source, const QList<int> &items) {
+    QByteArray b = QByteArray::number(QCoreApplication::applicationPid()) + ' ' +
+                   QByteArray::number(quint64(reinterpret_cast<quintptr>(source))) + '\n';
+    for (qsizetype i = 0; i < items.size(); ++i) {
+        if (i > 0) b += ' ';
+        b += QByteArray::number(items[i]);
+    }
+    mime->setData(QStringLiteral(QTF_MIME_ITEMS), b);
+}
+
+QList<int> qtf_items(const QMimeData *mime) {
+    QList<int> items;
+    if (!mime || !mime->hasFormat(QStringLiteral(QTF_MIME_ITEMS))) return items;
+    const QByteArray b = mime->data(QStringLiteral(QTF_MIME_ITEMS));
+    const qsizetype nl = b.indexOf('\n');
+    if (nl < 0) return items;
+    for (const QByteArray &t : b.mid(nl + 1).split(' ')) {
+        bool ok = false;
+        const int v = t.toInt(&ok);
+        if (ok) items << v;
+    }
+    return items;
+}
+
+bool qtf_items_from(const QMimeData *mime, const void *source) {
+    if (!mime || !source || !mime->hasFormat(QStringLiteral(QTF_MIME_ITEMS))) return false;
+    const QByteArray b = mime->data(QStringLiteral(QTF_MIME_ITEMS));
+    const QList<QByteArray> head = b.left(b.indexOf('\n')).split(' ');
+    return head.size() == 2 && head[0].toLongLong() == QCoreApplication::applicationPid() &&
+           head[1].toULongLong() == quint64(reinterpret_cast<quintptr>(source));
 }
 
 QStringList qtf_qstringlist(const char *s, int itemlen, int n) {

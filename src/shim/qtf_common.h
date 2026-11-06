@@ -101,6 +101,15 @@ QStringList qtf_qstringlist(const char *s, int itemlen, int n);
 // A Fortran integer array as a list.
 QList<int> qtf_intlist(const int *v, int n);
 
+// Items dragged from a Fortran-backed model (QtfTableModel, QtfListModel,
+// QtfTreeModel): their rows or nodes, under MIME type QTF_MIME_ITEMS, together
+// with the process and model they come from.
+#define QTF_MIME_ITEMS "application/x-qtf-items"
+class QMimeData;
+void qtf_set_items(QMimeData *mime, const void *source, const QList<int> &items);
+QList<int> qtf_items(const QMimeData *mime);                    // empty if none
+bool qtf_items_from(const QMimeData *mime, const void *source);   // dragged from `source`?
+
 inline QString qtf_qstring(const char *s, int len) { return QString::fromUtf8(s, len); }
 
 inline int qtf_bool(bool b) { return b ? 1 : 0; }

@@ -1419,6 +1419,8 @@ methods = [
     "hasFormat(format: string) -> bool -- True if there is data of MIME type `format`.",
     "formats() -> strings -- The MIME types present.",
     "clear() -- Remove all data.",
+    { sig = "hasItems() -> bool", cpp = "{self}->hasFormat(QStringLiteral(QTF_MIME_ITEMS))", doc = "True if the data holds items dragged from a QtfTableModel, QtfListModel or QtfTreeModel (MIME type 'application/x-qtf-items')." },
+    { sig = "items() -> int[]", cpp = "qtf_items({self})", doc = "The rows (table, list) or nodes (tree) of the dragged items, in order (empty if none). The model's `isDragSource` tells which model they come from." },
 ]
 
 [[class]]
@@ -1451,6 +1453,8 @@ methods = [
     { sig = "hasImage() -> bool", cpp = "qtf_mime({self})->hasImage()", doc = "True if the drag carries an image." },
     { sig = "hasFormat(format: string) -> bool", cpp = "qtf_mime({self})->hasFormat({format})", doc = "True if the drag carries data of MIME type `format`." },
     { sig = "data(format: string) -> string", cpp = "QString::fromUtf8(qtf_mime({self})->data({format}))", doc = "The dragged data of `format`, as text." },
+    { sig = "hasItems() -> bool", cpp = "qtf_mime({self})->hasFormat(QStringLiteral(QTF_MIME_ITEMS))", doc = "True if the drag carries items of a QtfTableModel, QtfListModel or QtfTreeModel (dragged from a view)." },
+    { sig = "items() -> int[]", cpp = "qtf_items(qtf_mime({self}))", doc = "The rows (table, list) or nodes (tree) being dragged from a Fortran-backed model (empty if none)." },
 ]
 
 [[class]]

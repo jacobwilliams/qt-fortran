@@ -107,8 +107,8 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 | Painting | `QPainter` (shapes, text, images, arcs and pies, clipping, transforms), `QPainterPath` (curves, boolean operations), `QLinearGradient`, `QRadialGradient`, `QConicalGradient`, `QTransform`, `QFontMetrics`, `QImage`, `QPixmap`, `QColor`, `QPen`, `QBrush`, `QFont` |
 | Arrays as images | `QImage_fromArray` (a 2D Fortran array through a colormap: viridis, magma, inferno, plasma, coolwarm, gray; NaN transparent), `QImage_colorbar` |
 | Icons | `QIcon` (files or generated images), `QStyle_standardIcon`, icons on actions, buttons, tabs, items and windows |
-| Events | `QMouseEvent`, `QKeyEvent`, `QWheelEvent`, `QResizeEvent`; on any widget: `QCloseEvent` (veto closing), `QContextMenuEvent`, enter/leave, focus in/out, show/hide, drag and drop; on any object: `QtfEventFilter` (input events can be consumed) |
-| Desktop | `QClipboard` (text, images, any data), drag and drop (`QMimeData`, `QDropEvent`, `QDrag`; files from the desktop arrive as paths), cursors (per widget, override cursor), `QScreen` (size, available area, DPI, pixel ratio) |
+| Events | `QMouseEvent`, `QKeyEvent`, `QWheelEvent`, `QResizeEvent`; on any widget: `QCloseEvent` (veto closing), `QContextMenuEvent`, enter/leave, focus in/out, show/hide, drag and drop; on any object (e.g. a `QWindow`): `QtfEventFilter` (input and drag-and-drop events can be consumed) |
+| Desktop | `QClipboard` (text, images, any data), drag and drop (`QMimeData`, `QDropEvent`, `QDrag`; files from the desktop arrive as paths; rows and nodes dragged out of, reordered in and dropped on item views with Fortran models), cursors (per widget, override cursor), `QScreen` (size, available area, DPI, pixel ratio) |
 | OpenGL | `QtfOpenGLWidget`, `QOpenGLShaderProgram`, `QOpenGLBuffer`, `QOpenGLVertexArrayObject`, `QSurfaceFormat`, `QMatrix4x4`, and `glClear`, `glDrawArrays`, `glDrawElements`, ...; for external engines: `QWindow`, `QOpenGLContext`, `QWidget_createWindowContainer` |
 
 ## Getting started
@@ -430,6 +430,31 @@ A few conventions to know (the full list is in [plans/plan.md](plans/plan.md)):
   files, or `event%data(format)`). To start a drag, fill a `QMimeData` and
   call `QDrag(w)`'s `exec`. The clipboard (`QGuiApplication_clipboard()`)
   takes the same `QMimeData`.
+  - *Windows* (e.g. one an external engine renders into): connect the same
+    four events on a `QtfEventFilter(window)`. Inside a
+    `QWidget_createWindowContainer`, some platforms send the drag to the
+    container widget instead, so handle it there too.
+  - *Item views*: `view%setDragDropMode(QAbstractItemView_DragDrop)` (or
+    `_DragOnly`, `_DropOnly`, `_InternalMove`), and on a Fortran model
+    `model%setDragEnabled(.true.)` and/or `model%setDropEnabled(.true.)`.
+    A drag carries the rows' cells as text and the row (or node) numbers as
+    `mime%items()`, so a drop target anywhere can tell what was dragged
+    (`model%isDragSource(mime)` says from which model). `dragStarted` slots
+    can add formats of their own. Drops arrive at the model's `dropped`
+    slot as a `QtfModelDrop`: what came (`text`, `urls`, `items`,
+    `isInternal`), and where it goes (`row`, `onItem`; for trees,
+    `parentNode` and `node`). The slot updates the Fortran data, moves
+    included, then the model.
+
+    ```fortran
+    subroutine on_dropped(drop, data)     ! reorder a list (InternalMove)
+        type(QtfModelDrop), intent(in) :: drop
+        class(*), intent(inout), optional :: data
+        integer, allocatable :: rows(:)
+        rows = drop%items()               ! the dragged rows (0-based)
+        ! ... move them before row drop%row() in your arrays, then model%refresh()
+    end subroutine on_dropped
+    ```
 - **Undo/redo**: a command is a text and an integer id of your choosing.
   `stack%push('Set value', id)` records it and immediately calls your
   `redoRequested(id)` slot, which performs it. `undo` calls your

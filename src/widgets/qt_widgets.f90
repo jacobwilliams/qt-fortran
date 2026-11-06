@@ -141,7 +141,7 @@ module qt_widgets
     integer(c_int), parameter, public :: Qt_ToolButtonTextUnderIcon = 3
     integer(c_int), parameter, public :: Qt_ToolButtonFollowStyle = 4
 
-    ! QAbstractItemView::SelectionMode, SelectionBehavior and EditTrigger
+    ! QAbstractItemView::SelectionMode, SelectionBehavior, EditTrigger and DragDropMode
     integer(c_int), parameter, public :: QAbstractItemView_NoSelection = 0
     integer(c_int), parameter, public :: QAbstractItemView_SingleSelection = 1
     integer(c_int), parameter, public :: QAbstractItemView_MultiSelection = 2
@@ -157,6 +157,11 @@ module qt_widgets
     integer(c_int), parameter, public :: QAbstractItemView_EditKeyPressed = 8
     integer(c_int), parameter, public :: QAbstractItemView_AnyKeyPressed = 16
     integer(c_int), parameter, public :: QAbstractItemView_AllEditTriggers = 31
+    integer(c_int), parameter, public :: QAbstractItemView_NoDragDrop = 0
+    integer(c_int), parameter, public :: QAbstractItemView_DragOnly = 1
+    integer(c_int), parameter, public :: QAbstractItemView_DropOnly = 2
+    integer(c_int), parameter, public :: QAbstractItemView_DragDrop = 3
+    integer(c_int), parameter, public :: QAbstractItemView_InternalMove = 4
 
     ! QTabWidget::TabPosition
     integer(c_int), parameter, public :: QTabWidget_North = 0
@@ -308,6 +313,18 @@ module qt_widgets
     contains
         procedure :: connect => qsignaltreeitemint_connect
     end type QSignalTreeItemInt
+
+    !> Items are being dragged from a model: slots get the drag's data (and may add to it).
+    type, extends(QtfSignal), public :: QSignalMimeData
+    contains
+        procedure :: connect => qsignalmimedata_connect
+    end type QSignalMimeData
+
+    !> Something was dropped on a model: slots get (drop).
+    type, extends(QtfSignal), public :: QSignalModelDrop
+    contains
+        procedure :: connect => qsignalmodeldrop_connect
+    end type QSignalModelDrop
 
     !> A cell to paint: slots get (cell) and draw it with `cell%painter()`.
     type, extends(QtfSignal), public :: QSignalPaintCell
@@ -810,6 +827,7 @@ module qt_widgets
     contains
         procedure :: rowCount => qabstractitemmodel_rowCount
         procedure :: columnCount => qabstractitemmodel_columnCount
+        procedure :: isDragSource => qabstractitemmodel_isDragSource
     end type QAbstractItemModel
 
     !> The cell being requested from a `dataRequested` slot (QtfTableModel,
@@ -836,6 +854,45 @@ module qt_widgets
         procedure :: role => qtfmodelrequest_role
     end type QtfModelRequest
 
+    !> A drop on a QtfTableModel, QtfListModel or QtfTreeModel, as its `dropped`
+    !> slots get it: what was dropped (`text`, `urls`, `items`, any format of
+    !> `mimeData`), the action and where it went. Update your Fortran data, then
+    !> the model's shape (`setRowCount`, `appendNode`, `setParents`, ...) and
+    !> `refresh`. The drop is accepted unless a slot calls `ignore`.
+    !>
+    !> Where: in a table or list, `row()` is the row the drop goes before
+    !> (`rowCount()` at the end, or on empty space), or with `onItem()` the cell
+    !> (`row()`, `column()`) it was dropped on. In a tree, the drop goes under
+    !> `parentNode()` (0: top level) before its child number `row()` (0-based; the
+    !> child count at the end). A drop onto a node (`onItem()`, the node is
+    !> `node()`) makes it the node's last child.
+    !>
+    !> Moves: with a move (`action() == Qt_MoveAction`, e.g. an
+    !> `QAbstractItemView_InternalMove` view) the slot moves the data itself. Use
+    !> `items()` for the dragged rows or nodes, and `isInternal()` to tell whether
+    !> they come from this model. The source view does not remove anything.
+    type, public :: QtfModelDrop
+        type(c_ptr) :: ptr = c_null_ptr
+    contains
+        procedure :: mimeData => qtfmodeldrop_mimeData
+        procedure :: hasText => qtfmodeldrop_hasText
+        procedure :: text => qtfmodeldrop_text
+        procedure :: hasUrls => qtfmodeldrop_hasUrls
+        procedure :: urls => qtfmodeldrop_urls
+        procedure :: hasFormat => qtfmodeldrop_hasFormat
+        procedure :: data => qtfmodeldrop_data
+        procedure :: hasItems => qtfmodeldrop_hasItems
+        procedure :: items => qtfmodeldrop_items
+        procedure :: isInternal => qtfmodeldrop_isInternal
+        procedure :: action => qtfmodeldrop_action
+        procedure :: row => qtfmodeldrop_row
+        procedure :: column => qtfmodeldrop_column
+        procedure :: parentNode => qtfmodeldrop_parentNode
+        procedure :: node => qtfmodeldrop_node
+        procedure :: onItem => qtfmodeldrop_onItem
+        procedure :: ignore => qtfmodeldrop_ignore
+    end type QtfModelDrop
+
     !> A table model whose cells come from Fortran on demand (`Qtf` marks a
     !> qt-fortran class): connect a slot to `dataRequested` and fill in each cell it
     !> is asked for. Only visible cells are requested, so a QTableView can show large
@@ -846,11 +903,21 @@ module qt_widgets
     !> emits `sortRequested(column, order)`; reorder the Fortran data (e.g. through a
     !> permutation array) in the slot, and the view is refreshed. Alternatively put a
     !> QSortFilterProxyModel between model and view.
+    !>
+    !> Drag and drop: `setDragEnabled(.true.)` lets the user drag rows out of a view
+    !> (also `view%setDragEnabled(.true.)`, or a `setDragDropMode`). The drag carries
+    !> the rows' cells as text and the row numbers (`mime%items()`, for drops on
+    !> other widgets, windows or models), and `dragStarted` slots may add their own
+    !> formats. `setDropEnabled(.true.)` takes drops (also on the view:
+    !> `setDragDropMode`, or `setAcceptDrops(.true.)` on it), reported to `dropped`
+    !> (see QtfModelDrop).
     type, extends(QAbstractItemModel), public :: QtfTableModel
         type(QSignalModelData) :: dataRequested   !! A cell is needed: slots get (row, column, request) and set the request's value.
         type(QSignalModelEdit) :: dataEdited   !! The user edited a cell: slots get (row, column, text); store the new value.
         type(QSignalInt2) :: sortRequested   !! Sort by a column: slots get (column, order) with order Qt_AscendingOrder or Qt_DescendingOrder, and reorder the data.
         type(QSignalInt3) :: checkChanged   !! The user clicked a cell's check box (see `request%setChecked`): slots get (row, column, checked) with checked 1 or 0; store the new state.
+        type(QSignalMimeData) :: dragStarted   !! Rows are being dragged (see `setDragEnabled`): slots get the drag's data, with the rows in `mime%items()`, and may add formats (`mime%setData`).
+        type(QSignalModelDrop) :: dropped   !! Something was dropped on the model (see `setDropEnabled`): slots get (drop) and update the data.
     contains
         procedure :: attach => qtftablemodel_attach
         procedure :: setRowCount => qtftablemodel_setRowCount
@@ -866,6 +933,10 @@ module qt_widgets
         procedure :: isChecked => qtftablemodel_isChecked
         procedure :: setChecked => qtftablemodel_setChecked
         procedure :: toolTip => qtftablemodel_toolTip
+        procedure :: setDragEnabled => qtftablemodel_setDragEnabled
+        procedure :: setDropEnabled => qtftablemodel_setDropEnabled
+        procedure :: setDropFormats => qtftablemodel_setDropFormats
+        procedure :: mimeData => qtftablemodel_mimeData
     end type QtfTableModel
     !> Constructor: `QtfTableModel([rows, columns, parent])`.
     interface QtfTableModel
@@ -900,6 +971,17 @@ module qt_widgets
         procedure :: clearSelection => qabstractitemview_clearSelection
         procedure :: scrollToTop => qabstractitemview_scrollToTop
         procedure :: scrollToBottom => qabstractitemview_scrollToBottom
+        procedure :: viewport => qabstractitemview_viewport
+        procedure :: setDragEnabled => qabstractitemview_setDragEnabled
+        procedure :: dragEnabled => qabstractitemview_dragEnabled
+        procedure :: setDragDropMode => qabstractitemview_setDragDropMode
+        procedure :: dragDropMode => qabstractitemview_dragDropMode
+        procedure :: setDefaultDropAction => qabstractitemview_setDefaultDropAction
+        procedure :: defaultDropAction => qabstractitemview_defaultDropAction
+        procedure :: setDropIndicatorShown => qabstractitemview_setDropIndicatorShown
+        procedure :: showDropIndicator => qabstractitemview_showDropIndicator
+        procedure :: setDragDropOverwriteMode => qabstractitemview_setDragDropOverwriteMode
+        procedure :: dragDropOverwriteMode => qabstractitemview_dragDropOverwriteMode
     end type QAbstractItemView
 
     !> A table view of a model (use QtfTableModel to show Fortran data).
@@ -909,6 +991,7 @@ module qt_widgets
         procedure :: resizeRowsToContents => qtableview_resizeRowsToContents
         procedure :: setColumnWidth => qtableview_setColumnWidth
         procedure :: columnWidth => qtableview_columnWidth
+        procedure :: rowHeight => qtableview_rowHeight
         procedure :: setStretchLastSection => qtableview_setStretchLastSection
         procedure :: setHorizontalHeaderVisible => qtableview_setHorizontalHeaderVisible
         procedure :: setVerticalHeaderVisible => qtableview_setVerticalHeaderVisible
@@ -1002,10 +1085,17 @@ module qt_widgets
     !> node), and a parent comes before its children. Children appear in node order.
     !> Connect `dataRequested` (slots get (node, column, request)) as for
     !> QtfTableModel; only visible cells are requested.
+    !>
+    !> Drag and drop works as for QtfTableModel, with nodes for rows: dragged nodes
+    !> are `mime%items()`, and a drop (QtfModelDrop) goes under a parent node, or
+    !> onto a node (the default: `setDropEnabled(.true.)` takes both). To move
+    !> nodes, rebuild the parent array and `setParents`.
     type, extends(QAbstractItemModel), public :: QtfTreeModel
         type(QSignalModelData) :: dataRequested   !! A cell is needed: slots get (node, column, request) and set the request's value.
         type(QSignalModelEdit) :: dataEdited   !! The user edited a cell: slots get (node, column, text).
         type(QSignalInt3) :: checkChanged   !! The user clicked a cell's check box: slots get (node, column, checked) with checked 1 or 0.
+        type(QSignalMimeData) :: dragStarted   !! Nodes are being dragged (see `setDragEnabled`): slots get the drag's data, with the nodes in `mime%items()`, and may add formats (`mime%setData`).
+        type(QSignalModelDrop) :: dropped   !! Something was dropped on the model (see `setDropEnabled`): slots get (drop) and update the data.
     contains
         procedure :: attach => qtftreemodel_attach
         procedure :: setParents => qtftreemodel_setParents
@@ -1019,6 +1109,10 @@ module qt_widgets
         procedure :: refresh => qtftreemodel_refresh
         procedure :: refreshNode => qtftreemodel_refreshNode
         procedure :: dataText => qtftreemodel_dataText
+        procedure :: setDragEnabled => qtftreemodel_setDragEnabled
+        procedure :: setDropEnabled => qtftreemodel_setDropEnabled
+        procedure :: setDropFormats => qtftreemodel_setDropFormats
+        procedure :: mimeData => qtftreemodel_mimeData
     end type QtfTreeModel
     !> Constructor: `QtfTreeModel([columns, parent])`.
     interface QtfTreeModel
@@ -1920,6 +2014,14 @@ module qt_widgets
     !> object never sees it); otherwise it continues as usual. The other events are
     !> only observed.
     !>
+    !> Drag and drop works the same way: accept the drag in `dragEnterEvent`
+    !> (`event%acceptProposedAction()`), otherwise no moves and no drop follow, then
+    !> read the data in `dropEvent` and accept it. A QWindow takes drops without a
+    !> `setAcceptDrops`. A QWindow embedded with `QWidget_createWindowContainer` may
+    !> get the drag itself or leave it to the container widget, depending on the
+    !> platform. To be safe, handle both: this filter on the window, and
+    !> `setAcceptDrops(.true.)` plus `dragEnterEvent`/`dropEvent` on the container.
+    !>
     !> Slots run on the thread the object belongs to (the GUI thread for windows
     !> and widgets).
     type, extends(QObject), public :: QtfEventFilter
@@ -1930,6 +2032,10 @@ module qt_widgets
         type(QSignalWheelEvent) :: wheelEvent   !! Wheel turned (accept to consume).
         type(QSignalKeyEvent) :: keyPressEvent   !! Key pressed (accept to consume).
         type(QSignalKeyEvent) :: keyReleaseEvent   !! Key released (accept to consume).
+        type(QSignalDropEvent) :: dragEnterEvent   !! A drag entered: accept it (`event%acceptProposedAction()`) to take it; then moves and the drop follow.
+        type(QSignalDropEvent) :: dragMoveEvent   !! An accepted drag moved; accept it to allow a drop at this position.
+        type(QSignal) :: dragLeaveEvent   !! The drag left.
+        type(QSignalDropEvent) :: dropEvent   !! Something was dropped: read it (`event%text()`, `event%urls()`, `event%items()`, ...) and accept the event.
         type(QSignalResizeEvent) :: resizeEvent   !! The object was resized (logical pixels).
         type(QSignal) :: exposeEvent   !! A window was exposed or hidden on screen: check its `isExposed()`.
         type(QSignal) :: updateRequest   !! A window's `requestUpdate` came due: render a frame.
@@ -1970,6 +2076,20 @@ module qt_widgets
             character(len=*), intent(in) :: text
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_model_edit
+        !> Slot receiving the data of items being dragged from a model.
+        subroutine qt_slot_mime_data(mime, data)
+            import :: QMimeData
+            implicit none
+            type(QMimeData), intent(in) :: mime
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_mime_data
+        !> Slot receiving a drop on a model.
+        subroutine qt_slot_model_drop(drop, data)
+            import :: QtfModelDrop
+            implicit none
+            type(QtfModelDrop), intent(in) :: drop
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_model_drop
         !> Slot painting one cell of an item view (QtfItemDelegate%paintCell).
         subroutine qt_slot_paint_cell(cell, data)
             import :: QtfPaintCell
@@ -1994,7 +2114,21 @@ module qt_widgets
         end subroutine qt_slot_tree_item_int
     end interface
     public :: qt_slot_model_data, qt_slot_model_edit, qt_slot_tree_item, qt_slot_tree_item_int
-    public :: qt_slot_paint_cell
+    public :: qt_slot_paint_cell, qt_slot_mime_data, qt_slot_model_drop
+
+    !> Slot handler for QSignalMimeData.
+    type, extends(qt_slot_handler) :: mime_data_handler
+        procedure(qt_slot_mime_data), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => mime_data_handler_invoke
+    end type mime_data_handler
+
+    !> Slot handler for QSignalModelDrop.
+    type, extends(qt_slot_handler) :: model_drop_handler
+        procedure(qt_slot_model_drop), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => model_drop_handler_invoke
+    end type model_drop_handler
 
     !> Slot handler for QSignalPaintCell.
     type, extends(qt_slot_handler) :: paint_cell_handler
@@ -4227,6 +4361,15 @@ contains
         res = qtf_qabstractitemmodel_columnCount(qtf_live(self, 'QAbstractItemModel%columnCount'))
     end function qabstractitemmodel_columnCount
 
+    !> True if `data` holds items dragged from this model (a QtfTableModel, QtfListModel or QtfTreeModel; through a proxy, the source model): then `data%items()` are its rows or nodes.
+    function qabstractitemmodel_isDragSource(self, data) result(res)
+        class(QAbstractItemModel), intent(in) :: self
+        class(QMimeData), intent(in) :: data
+        logical :: res
+        res = qtf_logical(qtf_qabstractitemmodel_isDragSource(qtf_live(self, 'QAbstractItemModel%isDragSource'), &
+                qtf_live(data, 'QAbstractItemModel%isDragSource')))
+    end function qabstractitemmodel_isDragSource
+
     !> Show `text` in the cell.
     subroutine qtfmodelrequest_setText(self, text)
         class(QtfModelRequest), intent(in) :: self
@@ -4334,6 +4477,138 @@ contains
         res = qtf_qtfmodelrequest_role(self%ptr)
     end function qtfmodelrequest_role
 
+    !> The dropped data (valid during the slot).
+    function qtfmodeldrop_mimeData(self) result(res)
+        class(QtfModelDrop), intent(in) :: self
+        type(QMimeData) :: res
+        call res%attach(qtf_qtfmodeldrop_mimeData(self%ptr))
+    end function qtfmodeldrop_mimeData
+
+    !> True if the drop carries plain text.
+    function qtfmodeldrop_hasText(self) result(res)
+        class(QtfModelDrop), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtfmodeldrop_hasText(self%ptr))
+    end function qtfmodeldrop_hasText
+
+    !> The dropped plain text (from a model: the cells of the dragged items, columns separated by tabs, items by newlines).
+    function qtfmodeldrop_text(self) result(res)
+        class(QtfModelDrop), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qtfmodeldrop_text(self%ptr, n_)
+        res = qtf_take_string(p_, n_)
+    end function qtfmodeldrop_text
+
+    !> True if the drop carries URLs (e.g. files from the desktop).
+    function qtfmodeldrop_hasUrls(self) result(res)
+        class(QtfModelDrop), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtfmodeldrop_hasUrls(self%ptr))
+    end function qtfmodeldrop_hasUrls
+
+    !> The dropped URLs: local files as paths.
+    function qtfmodeldrop_urls(self) result(res)
+        class(QtfModelDrop), intent(in) :: self
+        type(qt_string), allocatable :: res(:)
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qtfmodeldrop_urls(self%ptr, n_)
+        res = qtf_take_string_list(p_, n_)
+    end function qtfmodeldrop_urls
+
+    !> True if the drop carries data of MIME type `format`.
+    function qtfmodeldrop_hasFormat(self, format) result(res)
+        class(QtfModelDrop), intent(in) :: self
+        character(len=*), intent(in) :: format
+        logical :: res
+        res = qtf_logical(qtf_qtfmodeldrop_hasFormat(self%ptr, format, len(format, c_int)))
+    end function qtfmodeldrop_hasFormat
+
+    !> The dropped data of `format`, as text.
+    function qtfmodeldrop_data(self, format) result(res)
+        class(QtfModelDrop), intent(in) :: self
+        character(len=*), intent(in) :: format
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qtfmodeldrop_data(self%ptr, format, len(format, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function qtfmodeldrop_data
+
+    !> True if items of a Fortran-backed model were dropped.
+    function qtfmodeldrop_hasItems(self) result(res)
+        class(QtfModelDrop), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtfmodeldrop_hasItems(self%ptr))
+    end function qtfmodeldrop_hasItems
+
+    !> The dropped rows (table, list) or nodes (tree) of the model they were dragged from.
+    function qtfmodeldrop_items(self) result(res)
+        class(QtfModelDrop), intent(in) :: self
+        integer, allocatable :: res(:)
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qtfmodeldrop_items(self%ptr, n_)
+        res = qtf_take_ints(p_, n_)
+    end function qtfmodeldrop_items
+
+    !> True if the dropped items come from this same model (e.g. reordering).
+    function qtfmodeldrop_isInternal(self) result(res)
+        class(QtfModelDrop), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtfmodeldrop_isInternal(self%ptr))
+    end function qtfmodeldrop_isInternal
+
+    !> Qt_CopyAction or Qt_MoveAction (Qt_LinkAction if the source asks for it).
+    function qtfmodeldrop_action(self) result(res)
+        class(QtfModelDrop), intent(in) :: self
+        integer :: res
+        res = qtf_qtfmodeldrop_action(self%ptr)
+    end function qtfmodeldrop_action
+
+    !> Table/list: the row the drop goes before, or the row dropped on (`onItem`). Tree: the child position under `parentNode()`.
+    function qtfmodeldrop_row(self) result(res)
+        class(QtfModelDrop), intent(in) :: self
+        integer :: res
+        res = qtf_qtfmodeldrop_row(self%ptr)
+    end function qtfmodeldrop_row
+
+    !> The column dropped on (0 between rows).
+    function qtfmodeldrop_column(self) result(res)
+        class(QtfModelDrop), intent(in) :: self
+        integer :: res
+        res = qtf_qtfmodeldrop_column(self%ptr)
+    end function qtfmodeldrop_column
+
+    !> Tree: the node the drop goes under (0: top level).
+    function qtfmodeldrop_parentNode(self) result(res)
+        class(QtfModelDrop), intent(in) :: self
+        integer :: res
+        res = qtf_qtfmodeldrop_parentNode(self%ptr)
+    end function qtfmodeldrop_parentNode
+
+    !> Tree: the node dropped onto (0 if dropped between nodes).
+    function qtfmodeldrop_node(self) result(res)
+        class(QtfModelDrop), intent(in) :: self
+        integer :: res
+        res = qtf_qtfmodeldrop_node(self%ptr)
+    end function qtfmodeldrop_node
+
+    !> True if dropped onto an item (a cell, or a tree node) rather than between items (needs `setDropEnabled(.true., onItems=.true.)`).
+    function qtfmodeldrop_onItem(self) result(res)
+        class(QtfModelDrop), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtfmodeldrop_onItem(self%ptr))
+    end function qtfmodeldrop_onItem
+
+    !> Refuse the drop (it is accepted by default).
+    subroutine qtfmodeldrop_ignore(self)
+        class(QtfModelDrop), intent(in) :: self
+        call qtf_qtfmodeldrop_ignore(self%ptr)
+    end subroutine qtfmodeldrop_ignore
+
     !> Bind to a C++ QtfTableModel and its signals.
     subroutine qtftablemodel_attach(self, ptr)
         class(QtfTableModel), intent(inout) :: self
@@ -4343,6 +4618,8 @@ contains
         self%dataEdited = QSignalModelEdit(ptr, QTF_SIG_QTFTABLEMODEL_DATAEDITED, self%serial)
         self%sortRequested = QSignalInt2(ptr, QTF_SIG_QTFTABLEMODEL_SORTREQUESTED, self%serial)
         self%checkChanged = QSignalInt3(ptr, QTF_SIG_QTFTABLEMODEL_CHECKCHANGED, self%serial)
+        self%dragStarted = QSignalMimeData(ptr, QTF_SIG_QTFTABLEMODEL_DRAGSTARTED, self%serial)
+        self%dropped = QSignalModelDrop(ptr, QTF_SIG_QTFTABLEMODEL_DROPPED, self%serial)
     end subroutine qtftablemodel_attach
 
     !> A table model of the given shape.
@@ -4479,6 +4756,42 @@ contains
         res = qtf_take_string(p_, n_)
     end function qtftablemodel_toolTip
 
+    !> Let the user drag rows out of a view (the view needs `setDragEnabled(.true.)` or a `setDragDropMode` too).
+    subroutine qtftablemodel_setDragEnabled(self, enable)
+        class(QtfTableModel), intent(in) :: self
+        logical, intent(in) :: enable
+        call qtf_qtftablemodel_setDragEnabled(qtf_live(self, 'QtfTableModel%setDragEnabled'), qtf_int(enable))
+    end subroutine qtftablemodel_setDragEnabled
+
+    !> Take drops (reported to `dropped`): between rows, and with `onItems` also onto cells. The view must accept drops (`setDragDropMode` or `setAcceptDrops`).
+    subroutine qtftablemodel_setDropEnabled(self, enable, onItems)
+        class(QtfTableModel), intent(in) :: self
+        logical, intent(in) :: enable
+        logical, intent(in), optional :: onItems
+        logical :: onItems_
+        onItems_ = .false.
+        if (present(onItems)) onItems_ = onItems
+        call qtf_qtftablemodel_setDropEnabled(qtf_live(self, 'QtfTableModel%setDropEnabled'), qtf_int(enable), &
+                qtf_int(onItems_))
+    end subroutine qtftablemodel_setDropEnabled
+
+    !> The MIME types the model takes (default: 'application/x-qtf-items' (rows of a Fortran-backed model), 'text/plain', 'text/uri-list'); drags with none of them are refused.
+    subroutine qtftablemodel_setDropFormats(self, formats)
+        class(QtfTableModel), intent(in) :: self
+        character(len=*), intent(in) :: formats(:)
+        call qtf_qtftablemodel_setDropFormats(qtf_live(self, 'QtfTableModel%setDropFormats'), formats, len(formats, &
+                c_int), int(size(formats), c_int))
+    end subroutine qtftablemodel_setDropFormats
+
+    !> The data a drag of these rows (in this order) carries (cells as text, the rows as items, and what the `dragStarted` slots add), e.g. to copy them to the clipboard. Yours to delete (or give to a QDrag or QClipboard).
+    function qtftablemodel_mimeData(self, rows) result(res)
+        class(QtfTableModel), intent(in) :: self
+        integer, intent(in) :: rows(:)
+        type(QMimeData) :: res
+        call res%attach(qtf_qtftablemodel_mimeData(qtf_live(self, 'QtfTableModel%mimeData'), int(rows, c_int), &
+                int(size(rows), c_int)))
+    end function qtftablemodel_mimeData
+
     !> A list model with `rows` rows.
     function qtflistmodel_new(rows, parent) result(res)
         integer, intent(in), optional :: rows
@@ -4593,6 +4906,89 @@ contains
         call qtf_qabstractitemview_scrollToBottom(qtf_live(self, 'QAbstractItemView%scrollToBottom'))
     end subroutine qabstractitemview_scrollToBottom
 
+    !> The widget the items are drawn on: mouse and drop positions are relative to it (e.g. for a QtfEventFilter).
+    function qabstractitemview_viewport(self) result(res)
+        class(QAbstractItemView), intent(in) :: self
+        type(QWidget) :: res
+        call res%attach(qtf_qabstractitemview_viewport(qtf_live(self, 'QAbstractItemView%viewport')))
+    end function qabstractitemview_viewport
+
+    !> Let the user drag the selected items (the model must allow it: e.g. QtfTableModel%setDragEnabled).
+    subroutine qabstractitemview_setDragEnabled(self, enable)
+        class(QAbstractItemView), intent(in) :: self
+        logical, intent(in) :: enable
+        call qtf_qabstractitemview_setDragEnabled(qtf_live(self, 'QAbstractItemView%setDragEnabled'), qtf_int(enable))
+    end subroutine qabstractitemview_setDragEnabled
+
+    !> True if items can be dragged.
+    function qabstractitemview_dragEnabled(self) result(res)
+        class(QAbstractItemView), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qabstractitemview_dragEnabled(qtf_live(self, 'QAbstractItemView%dragEnabled')))
+    end function qabstractitemview_dragEnabled
+
+    !> QAbstractItemView_DragOnly, _DropOnly, _DragDrop, _InternalMove (reorder within the view only) or _NoDragDrop; sets dragEnabled and acceptDrops to match.
+    subroutine qabstractitemview_setDragDropMode(self, mode)
+        class(QAbstractItemView), intent(in) :: self
+        integer, intent(in) :: mode
+        call qtf_qabstractitemview_setDragDropMode(qtf_live(self, 'QAbstractItemView%setDragDropMode'), int(mode, &
+                c_int))
+    end subroutine qabstractitemview_setDragDropMode
+
+    !> The drag-and-drop mode.
+    function qabstractitemview_dragDropMode(self) result(res)
+        class(QAbstractItemView), intent(in) :: self
+        integer :: res
+        res = qtf_qabstractitemview_dragDropMode(qtf_live(self, 'QAbstractItemView%dragDropMode'))
+    end function qabstractitemview_dragDropMode
+
+    !> The action of a drag from this view without modifier keys (Qt_CopyAction or Qt_MoveAction).
+    subroutine qabstractitemview_setDefaultDropAction(self, action)
+        class(QAbstractItemView), intent(in) :: self
+        integer, intent(in) :: action
+        call qtf_qabstractitemview_setDefaultDropAction(qtf_live(self, 'QAbstractItemView%setDefaultDropAction'), &
+                int(action, c_int))
+    end subroutine qabstractitemview_setDefaultDropAction
+
+    !> The default action of drags from this view.
+    function qabstractitemview_defaultDropAction(self) result(res)
+        class(QAbstractItemView), intent(in) :: self
+        integer :: res
+        res = qtf_qabstractitemview_defaultDropAction(qtf_live(self, 'QAbstractItemView%defaultDropAction'))
+    end function qabstractitemview_defaultDropAction
+
+    !> Show where a drop would go (default: shown).
+    subroutine qabstractitemview_setDropIndicatorShown(self, enable)
+        class(QAbstractItemView), intent(in) :: self
+        logical, intent(in) :: enable
+        call qtf_qabstractitemview_setDropIndicatorShown(qtf_live(self, 'QAbstractItemView%setDropIndicatorShown'), &
+                qtf_int(enable))
+    end subroutine qabstractitemview_setDropIndicatorShown
+
+    !> True if the drop indicator is shown.
+    function qabstractitemview_showDropIndicator(self) result(res)
+        class(QAbstractItemView), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qabstractitemview_showDropIndicator(qtf_live(self, &
+                'QAbstractItemView%showDropIndicator')))
+    end function qabstractitemview_showDropIndicator
+
+    !> Drop onto items (true; QTableView default) rather than between them (QListView, QTreeView default).
+    subroutine qabstractitemview_setDragDropOverwriteMode(self, overwrite)
+        class(QAbstractItemView), intent(in) :: self
+        logical, intent(in) :: overwrite
+        call qtf_qabstractitemview_setDragDropOverwriteMode(qtf_live(self, &
+                'QAbstractItemView%setDragDropOverwriteMode'), qtf_int(overwrite))
+    end subroutine qabstractitemview_setDragDropOverwriteMode
+
+    !> True if drops go onto items.
+    function qabstractitemview_dragDropOverwriteMode(self) result(res)
+        class(QAbstractItemView), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qabstractitemview_dragDropOverwriteMode(qtf_live(self, &
+                'QAbstractItemView%dragDropOverwriteMode')))
+    end function qabstractitemview_dragDropOverwriteMode
+
     !> Create a table view.
     function qtableview_new(parent) result(res)
         class(QWidget), intent(in), optional :: parent
@@ -4628,6 +5024,14 @@ contains
         integer :: res
         res = qtf_qtableview_columnWidth(qtf_live(self, 'QTableView%columnWidth'), int(column, c_int))
     end function qtableview_columnWidth
+
+    !> A row height in pixels.
+    function qtableview_rowHeight(self, row) result(res)
+        class(QTableView), intent(in) :: self
+        integer, intent(in) :: row
+        integer :: res
+        res = qtf_qtableview_rowHeight(qtf_live(self, 'QTableView%rowHeight'), int(row, c_int))
+    end function qtableview_rowHeight
 
     !> Stretch the last column to fill the view.
     subroutine qtableview_setStretchLastSection(self, stretch)
@@ -5012,6 +5416,8 @@ contains
         self%dataRequested = QSignalModelData(ptr, QTF_SIG_QTFTREEMODEL_DATAREQUESTED, self%serial)
         self%dataEdited = QSignalModelEdit(ptr, QTF_SIG_QTFTREEMODEL_DATAEDITED, self%serial)
         self%checkChanged = QSignalInt3(ptr, QTF_SIG_QTFTREEMODEL_CHECKCHANGED, self%serial)
+        self%dragStarted = QSignalMimeData(ptr, QTF_SIG_QTFTREEMODEL_DRAGSTARTED, self%serial)
+        self%dropped = QSignalModelDrop(ptr, QTF_SIG_QTFTREEMODEL_DROPPED, self%serial)
     end subroutine qtftreemodel_attach
 
     !> An empty tree model with `columns` columns.
@@ -5111,6 +5517,42 @@ contains
                 n_)
         res = qtf_take_string(p_, n_)
     end function qtftreemodel_dataText
+
+    !> Let the user drag nodes out of a view (the view needs `setDragEnabled(.true.)` or a `setDragDropMode` too).
+    subroutine qtftreemodel_setDragEnabled(self, enable)
+        class(QtfTreeModel), intent(in) :: self
+        logical, intent(in) :: enable
+        call qtf_qtftreemodel_setDragEnabled(qtf_live(self, 'QtfTreeModel%setDragEnabled'), qtf_int(enable))
+    end subroutine qtftreemodel_setDragEnabled
+
+    !> Take drops (reported to `dropped`): between nodes, and unless `onItems` is false also onto nodes. The view must accept drops (`setDragDropMode` or `setAcceptDrops`).
+    subroutine qtftreemodel_setDropEnabled(self, enable, onItems)
+        class(QtfTreeModel), intent(in) :: self
+        logical, intent(in) :: enable
+        logical, intent(in), optional :: onItems
+        logical :: onItems_
+        onItems_ = .true.
+        if (present(onItems)) onItems_ = onItems
+        call qtf_qtftreemodel_setDropEnabled(qtf_live(self, 'QtfTreeModel%setDropEnabled'), qtf_int(enable), &
+                qtf_int(onItems_))
+    end subroutine qtftreemodel_setDropEnabled
+
+    !> The MIME types the model takes (default: 'application/x-qtf-items', 'text/plain', 'text/uri-list').
+    subroutine qtftreemodel_setDropFormats(self, formats)
+        class(QtfTreeModel), intent(in) :: self
+        character(len=*), intent(in) :: formats(:)
+        call qtf_qtftreemodel_setDropFormats(qtf_live(self, 'QtfTreeModel%setDropFormats'), formats, len(formats, &
+                c_int), int(size(formats), c_int))
+    end subroutine qtftreemodel_setDropFormats
+
+    !> The data a drag of these nodes carries (see QtfTableModel%mimeData). Yours to delete.
+    function qtftreemodel_mimeData(self, nodes) result(res)
+        class(QtfTreeModel), intent(in) :: self
+        integer, intent(in) :: nodes(:)
+        type(QMimeData) :: res
+        call res%attach(qtf_qtftreemodel_mimeData(qtf_live(self, 'QtfTreeModel%mimeData'), int(nodes, c_int), &
+                int(size(nodes), c_int)))
+    end function qtftreemodel_mimeData
 
     !> A proxy model (set its source model).
     function qsortfilterproxymodel_new(parent) result(res)
@@ -8920,6 +9362,10 @@ contains
         self%wheelEvent = QSignalWheelEvent(ptr, QTF_SIG_QTFEVENTFILTER_WHEELEVENT, self%serial)
         self%keyPressEvent = QSignalKeyEvent(ptr, QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT, self%serial)
         self%keyReleaseEvent = QSignalKeyEvent(ptr, QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT, self%serial)
+        self%dragEnterEvent = QSignalDropEvent(ptr, QTF_SIG_QTFEVENTFILTER_DRAGENTEREVENT, self%serial)
+        self%dragMoveEvent = QSignalDropEvent(ptr, QTF_SIG_QTFEVENTFILTER_DRAGMOVEEVENT, self%serial)
+        self%dragLeaveEvent = QSignal(ptr, QTF_SIG_QTFEVENTFILTER_DRAGLEAVEEVENT, self%serial)
+        self%dropEvent = QSignalDropEvent(ptr, QTF_SIG_QTFEVENTFILTER_DROPEVENT, self%serial)
         self%resizeEvent = QSignalResizeEvent(ptr, QTF_SIG_QTFEVENTFILTER_RESIZEEVENT, self%serial)
         self%exposeEvent = QSignal(ptr, QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT, self%serial)
         self%updateRequest = QSignal(ptr, QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST, self%serial)
@@ -8984,6 +9430,56 @@ contains
             call self%f(int(args%i(1)), int(args%i(2)), request)
         end if
     end subroutine model_data_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalmimedata_connect(self, slot, data, connection)
+        class(QSignalMimeData), intent(in) :: self
+        procedure(qt_slot_mime_data) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
+        type(mime_data_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self, h, data, connection)
+    end subroutine qsignalmimedata_connect
+
+    !> Call the slot with the mime data (borrowed: valid during the call).
+    subroutine mime_data_handler_invoke(self, args, data)
+        class(mime_data_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QMimeData) :: mime
+        call mime%attach(args%p)
+        if (associated(data)) then
+            call self%f(mime, data)
+        else
+            call self%f(mime)
+        end if
+    end subroutine mime_data_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalmodeldrop_connect(self, slot, data, connection)
+        class(QSignalModelDrop), intent(in) :: self
+        procedure(qt_slot_model_drop) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
+        type(model_drop_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self, h, data, connection)
+    end subroutine qsignalmodeldrop_connect
+
+    !> Call the slot with the drop (borrowed: valid during the call).
+    subroutine model_drop_handler_invoke(self, args, data)
+        class(model_drop_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QtfModelDrop) :: drop
+        drop%ptr = args%p
+        if (associated(data)) then
+            call self%f(drop, data)
+        else
+            call self%f(drop)
+        end if
+    end subroutine model_drop_handler_invoke
 
     !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalpaintcell_connect(self, slot, data, connection)

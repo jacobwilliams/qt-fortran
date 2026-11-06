@@ -591,6 +591,8 @@ module qt_gui
         procedure :: hasFormat => qmimedata_hasFormat
         procedure :: formats => qmimedata_formats
         procedure :: clear => qmimedata_clear
+        procedure :: hasItems => qmimedata_hasItems
+        procedure :: items => qmimedata_items
     end type QMimeData
     !> Constructor: `QMimeData()`.
     interface QMimeData
@@ -621,6 +623,8 @@ module qt_gui
         procedure :: hasImage => qdropevent_hasImage
         procedure :: hasFormat => qdropevent_hasFormat
         procedure :: data => qdropevent_data
+        procedure :: hasItems => qdropevent_hasItems
+        procedure :: items => qdropevent_items
     end type QDropEvent
     !> Constructor: `QDropEvent(type, x, y, mimeData [, actions, buttons, modifiers])`.
     interface QDropEvent
@@ -2999,6 +3003,23 @@ contains
         call qtf_qmimedata_clear(qtf_live(self, 'QMimeData%clear'))
     end subroutine qmimedata_clear
 
+    !> True if the data holds items dragged from a QtfTableModel, QtfListModel or QtfTreeModel (MIME type 'application/x-qtf-items').
+    function qmimedata_hasItems(self) result(res)
+        class(QMimeData), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qmimedata_hasItems(qtf_live(self, 'QMimeData%hasItems')))
+    end function qmimedata_hasItems
+
+    !> The rows (table, list) or nodes (tree) of the dragged items, in order (empty if none). The model's `isDragSource` tells which model they come from.
+    function qmimedata_items(self) result(res)
+        class(QMimeData), intent(in) :: self
+        integer, allocatable :: res(:)
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qmimedata_items(qtf_live(self, 'QMimeData%items'), n_)
+        res = qtf_take_ints(p_, n_)
+    end function qmimedata_items
+
     !> A synthetic QEvent_DragEnter, QEvent_DragMove or QEvent_Drop event carrying `mimeData` (not owned: delete both after use), e.g. to test drop handling with QCoreApplication_sendEvent. As in a real drag, a widget gets moves and the drop only after accepting a drag-enter.
     function qdropevent_new(type, x, y, mimeData, actions, buttons, modifiers) result(res)
         integer, intent(in) :: type
@@ -3150,6 +3171,23 @@ contains
         p_ = qtf_qdropevent_data(self%ptr, format, len(format, c_int), n_)
         res = qtf_take_string(p_, n_)
     end function qdropevent_data
+
+    !> True if the drag carries items of a QtfTableModel, QtfListModel or QtfTreeModel (dragged from a view).
+    function qdropevent_hasItems(self) result(res)
+        class(QDropEvent), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qdropevent_hasItems(self%ptr))
+    end function qdropevent_hasItems
+
+    !> The rows (table, list) or nodes (tree) being dragged from a Fortran-backed model (empty if none).
+    function qdropevent_items(self) result(res)
+        class(QDropEvent), intent(in) :: self
+        integer, allocatable :: res(:)
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qdropevent_items(self%ptr, n_)
+        res = qtf_take_ints(p_, n_)
+    end function qdropevent_items
 
     !> A drag from `source` (the widget dragged from).
     function qdrag_new(source) result(res)

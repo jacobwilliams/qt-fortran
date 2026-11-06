@@ -2329,6 +2329,27 @@ module qt_c_gui
             type(c_ptr), value :: self
         end subroutine qtf_qmimedata_clear
 
+        !> True if the data holds items dragged from a QtfTableModel, QtfListModel or QtfTreeModel (MIME type 'application/x-qtf-items').
+        !>
+        !> C: `int qtf_qmimedata_hasItems(void *self)`
+        function qtf_qmimedata_hasItems(self) result(res) bind(C, name='qtf_qmimedata_hasItems')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qmimedata_hasItems
+
+        !> The rows (table, list) or nodes (tree) of the dragged items, in order (empty if none). The model's `isDragSource` tells which model they come from.
+        !>
+        !> C: `int *qtf_qmimedata_items(void *self, int *len)`
+        function qtf_qmimedata_items(self, len) result(res) bind(C, name='qtf_qmimedata_items')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qmimedata_items
+
         !> A synthetic QEvent_DragEnter, QEvent_DragMove or QEvent_Drop event carrying `mimeData` (not owned: delete both after use), e.g. to test drop handling with QCoreApplication_sendEvent. As in a real drag, a widget gets moves and the drop only after accepting a drag-enter.
         !>
         !> C: `void *qtf_qdropevent_new(int type, double x, double y, void *mimeData, int actions, int buttons, int modifiers)`
@@ -2521,6 +2542,27 @@ module qt_c_gui
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qdropevent_data
+
+        !> True if the drag carries items of a QtfTableModel, QtfListModel or QtfTreeModel (dragged from a view).
+        !>
+        !> C: `int qtf_qdropevent_hasItems(void *self)`
+        function qtf_qdropevent_hasItems(self) result(res) bind(C, name='qtf_qdropevent_hasItems')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qdropevent_hasItems
+
+        !> The rows (table, list) or nodes (tree) being dragged from a Fortran-backed model (empty if none).
+        !>
+        !> C: `int *qtf_qdropevent_items(void *self, int *len)`
+        function qtf_qdropevent_items(self, len) result(res) bind(C, name='qtf_qdropevent_items')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qdropevent_items
 
         !> A drag from `source` (the widget dragged from).
         !>
@@ -3539,29 +3581,29 @@ module qt_c_gui
     public :: qtf_qmimedata_setHtml, qtf_qmimedata_html, qtf_qmimedata_hasHtml, qtf_qmimedata_setUrls
     public :: qtf_qmimedata_urls, qtf_qmimedata_hasUrls, qtf_qmimedata_setImage, qtf_qmimedata_image
     public :: qtf_qmimedata_hasImage, qtf_qmimedata_setData, qtf_qmimedata_data, qtf_qmimedata_hasFormat
-    public :: qtf_qmimedata_formats, qtf_qmimedata_clear, qtf_qdropevent_new, qtf_qdropevent_x
-    public :: qtf_qdropevent_y, qtf_qdropevent_proposedAction, qtf_qdropevent_possibleActions
-    public :: qtf_qdropevent_dropAction, qtf_qdropevent_setDropAction, qtf_qdropevent_acceptProposedAction
-    public :: qtf_qdropevent_buttons, qtf_qdropevent_modifiers, qtf_qdropevent_mimeData
-    public :: qtf_qdropevent_hasText, qtf_qdropevent_text, qtf_qdropevent_hasUrls, qtf_qdropevent_urls
-    public :: qtf_qdropevent_hasImage, qtf_qdropevent_hasFormat, qtf_qdropevent_data, qtf_qdrag_new
-    public :: qtf_qdrag_setMimeData, qtf_qdrag_setPixmap, qtf_qdrag_setHotSpot, qtf_qdrag_exec
-    public :: qtf_qclipboard_setText, qtf_qclipboard_text, qtf_qclipboard_hasText, qtf_qclipboard_setImage
-    public :: qtf_qclipboard_image, qtf_qclipboard_hasImage, qtf_qclipboard_setMimeData
-    public :: qtf_qclipboard_mimeData, qtf_qclipboard_clear, qtf_qscreen_name, qtf_qscreen_manufacturer
-    public :: qtf_qscreen_model, qtf_qscreen_x, qtf_qscreen_y, qtf_qscreen_width, qtf_qscreen_height
-    public :: qtf_qscreen_availableX, qtf_qscreen_availableY, qtf_qscreen_availableWidth
-    public :: qtf_qscreen_availableHeight, qtf_qscreen_devicePixelRatio, qtf_qscreen_logicalDotsPerInch
-    public :: qtf_qscreen_physicalDotsPerInch, qtf_qscreen_physicalWidth, qtf_qscreen_physicalHeight
-    public :: qtf_qscreen_refreshRate, qtf_qscreen_depth, qtf_qscreen_grab, qtf_qaction_new
-    public :: qtf_qaction_setText, qtf_qaction_text, qtf_qaction_setShortcut, qtf_qaction_shortcut
-    public :: qtf_qaction_setCheckable, qtf_qaction_isCheckable, qtf_qaction_setChecked
-    public :: qtf_qaction_isChecked, qtf_qaction_setEnabled, qtf_qaction_isEnabled, qtf_qaction_setStatusTip
-    public :: qtf_qaction_setToolTip, qtf_qaction_trigger, qtf_qaction_setIcon, qtf_qvalidator_validate
-    public :: qtf_qintvalidator_new, qtf_qintvalidator_setRange, qtf_qintvalidator_bottom
-    public :: qtf_qintvalidator_top, qtf_qdoublevalidator_new, qtf_qdoublevalidator_setRange
-    public :: qtf_qdoublevalidator_setNotation, qtf_qdoublevalidator_bottom, qtf_qdoublevalidator_top
-    public :: qtf_qdoublevalidator_decimals, qtf_qregularexpressionvalidator_new
+    public :: qtf_qmimedata_formats, qtf_qmimedata_clear, qtf_qmimedata_hasItems, qtf_qmimedata_items
+    public :: qtf_qdropevent_new, qtf_qdropevent_x, qtf_qdropevent_y, qtf_qdropevent_proposedAction
+    public :: qtf_qdropevent_possibleActions, qtf_qdropevent_dropAction, qtf_qdropevent_setDropAction
+    public :: qtf_qdropevent_acceptProposedAction, qtf_qdropevent_buttons, qtf_qdropevent_modifiers
+    public :: qtf_qdropevent_mimeData, qtf_qdropevent_hasText, qtf_qdropevent_text, qtf_qdropevent_hasUrls
+    public :: qtf_qdropevent_urls, qtf_qdropevent_hasImage, qtf_qdropevent_hasFormat, qtf_qdropevent_data
+    public :: qtf_qdropevent_hasItems, qtf_qdropevent_items, qtf_qdrag_new, qtf_qdrag_setMimeData
+    public :: qtf_qdrag_setPixmap, qtf_qdrag_setHotSpot, qtf_qdrag_exec, qtf_qclipboard_setText
+    public :: qtf_qclipboard_text, qtf_qclipboard_hasText, qtf_qclipboard_setImage, qtf_qclipboard_image
+    public :: qtf_qclipboard_hasImage, qtf_qclipboard_setMimeData, qtf_qclipboard_mimeData
+    public :: qtf_qclipboard_clear, qtf_qscreen_name, qtf_qscreen_manufacturer, qtf_qscreen_model
+    public :: qtf_qscreen_x, qtf_qscreen_y, qtf_qscreen_width, qtf_qscreen_height, qtf_qscreen_availableX
+    public :: qtf_qscreen_availableY, qtf_qscreen_availableWidth, qtf_qscreen_availableHeight
+    public :: qtf_qscreen_devicePixelRatio, qtf_qscreen_logicalDotsPerInch, qtf_qscreen_physicalDotsPerInch
+    public :: qtf_qscreen_physicalWidth, qtf_qscreen_physicalHeight, qtf_qscreen_refreshRate
+    public :: qtf_qscreen_depth, qtf_qscreen_grab, qtf_qaction_new, qtf_qaction_setText, qtf_qaction_text
+    public :: qtf_qaction_setShortcut, qtf_qaction_shortcut, qtf_qaction_setCheckable
+    public :: qtf_qaction_isCheckable, qtf_qaction_setChecked, qtf_qaction_isChecked, qtf_qaction_setEnabled
+    public :: qtf_qaction_isEnabled, qtf_qaction_setStatusTip, qtf_qaction_setToolTip, qtf_qaction_trigger
+    public :: qtf_qaction_setIcon, qtf_qvalidator_validate, qtf_qintvalidator_new, qtf_qintvalidator_setRange
+    public :: qtf_qintvalidator_bottom, qtf_qintvalidator_top, qtf_qdoublevalidator_new
+    public :: qtf_qdoublevalidator_setRange, qtf_qdoublevalidator_setNotation, qtf_qdoublevalidator_bottom
+    public :: qtf_qdoublevalidator_top, qtf_qdoublevalidator_decimals, qtf_qregularexpressionvalidator_new
     public :: qtf_qregularexpressionvalidator_setPattern, qtf_qregularexpressionvalidator_pattern
     public :: qtf_qwindow_new, qtf_qwindow_setSurfaceType, qtf_qwindow_surfaceType, qtf_qwindow_create
     public :: qtf_qwindow_destroy, qtf_qwindow_show, qtf_qwindow_hide, qtf_qwindow_isVisible

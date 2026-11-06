@@ -1094,6 +1094,16 @@ QTF_API char *qtf_qmimedata_formats(void *self, int *len) {
 // Remove all data.
 QTF_API void qtf_qmimedata_clear(void *self) { as<QMimeData>(self)->clear(); }
 
+// True if the data holds items dragged from a QtfTableModel, QtfListModel or QtfTreeModel (MIME type 'application/x-qtf-items').
+QTF_API int qtf_qmimedata_hasItems(void *self) {
+    return qtf_bool(as<QMimeData>(self)->hasFormat(QStringLiteral(QTF_MIME_ITEMS)));
+}
+
+// The rows (table, list) or nodes (tree) of the dragged items, in order (empty if none). The model's `isDragSource` tells which model they come from.
+QTF_API int *qtf_qmimedata_items(void *self, int *len) {
+    return qtf_ints_to_c(qtf_items(as<QMimeData>(self)), len);
+}
+
 // ---------------------------------------------------------------------------
 // QDropEvent
 
@@ -1167,6 +1177,16 @@ QTF_API int qtf_qdropevent_hasFormat(void *self, const char *format, int format_
 // The dragged data of `format`, as text.
 QTF_API char *qtf_qdropevent_data(void *self, const char *format, int format_len, int *len) {
     return qtf_to_c(QString::fromUtf8(qtf_mime(as<QDropEvent>(self))->data(qtf_qstring(format, format_len))), len);
+}
+
+// True if the drag carries items of a QtfTableModel, QtfListModel or QtfTreeModel (dragged from a view).
+QTF_API int qtf_qdropevent_hasItems(void *self) {
+    return qtf_bool(qtf_mime(as<QDropEvent>(self))->hasFormat(QStringLiteral(QTF_MIME_ITEMS)));
+}
+
+// The rows (table, list) or nodes (tree) being dragged from a Fortran-backed model (empty if none).
+QTF_API int *qtf_qdropevent_items(void *self, int *len) {
+    return qtf_ints_to_c(qtf_items(qtf_mime(as<QDropEvent>(self))), len);
 }
 
 // ---------------------------------------------------------------------------
