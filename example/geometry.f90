@@ -111,14 +111,23 @@ contains
             call painter%drawLine(b)
             if (kind /= QLineF_NoIntersection) then
                 call painter%setPen(QPen(Qt_black, 1.0_dp))
-                call painter%setBrush(merge(QColor(30, 170, 60), Qt_white, kind == QLineF_BoundedIntersection))
+                ! (plain ifs rather than merge() of QColors, which crashes ifx 2025.3)
+                if (kind == QLineF_BoundedIntersection) then
+                    call painter%setBrush(QColor(30, 170, 60))
+                else
+                    call painter%setBrush(Qt_white)
+                end if
                 call painter%drawEllipse(ip, 5.0_dp, 5.0_dp)
             end if
 
             ! handles (the one under the mouse in yellow)
             do i = 1, size(s%handle)
                 call painter%setPen(QPen(Qt_black, 1.0_dp))
-                call painter%setBrush(merge(Qt_yellow, Qt_lightGray, i == handle_at(s, s%mouse2d) .or. i == s%dragging))
+                if (i == handle_at(s, s%mouse2d) .or. i == s%dragging) then
+                    call painter%setBrush(Qt_yellow)
+                else
+                    call painter%setBrush(Qt_lightGray)
+                end if
                 call painter%drawEllipse(s%handle(i), 6.0_dp, 6.0_dp)
             end do
 
