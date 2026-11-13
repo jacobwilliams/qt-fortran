@@ -250,6 +250,13 @@ QTF_API int qtf_qimage_width(void *self) { return as<QImage>(self)->width(); }
 // Height in pixels.
 QTF_API int qtf_qimage_height(void *self) { return as<QImage>(self)->height(); }
 
+// The size in pixels.
+QTF_API void qtf_qimage_size(void *self, int *res_width, int *res_height) {
+    const auto v_ = as<QImage>(self)->size();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
 // Fill the whole image with `color`.
 QTF_API void qtf_qimage_fill(void *self, int color_r, int color_g, int color_b, int color_a) {
     as<QImage>(self)->fill(QColor(color_r, color_g, color_b, color_a));
@@ -279,6 +286,13 @@ QTF_API int qtf_qpixmap_width(void *self) { return as<QPixmap>(self)->width(); }
 
 // Height in pixels.
 QTF_API int qtf_qpixmap_height(void *self) { return as<QPixmap>(self)->height(); }
+
+// The size in pixels.
+QTF_API void qtf_qpixmap_size(void *self, int *res_width, int *res_height) {
+    const auto v_ = as<QPixmap>(self)->size();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
 
 // A new image with the pixmap's contents (delete it when done).
 QTF_API void *qtf_qpixmap_toImage(void *self) { return new QImage(as<QPixmap>(self)->toImage()); }
@@ -504,6 +518,56 @@ QTF_API void qtf_qpainter_setClipRect(void *self, double x, double y, double w, 
     as<QPainter>(self)->setClipRect(QRectF(x, y, w, h));
 }
 
+// Draw only inside `rect` (in the current coordinates).
+QTF_API void qtf_qpainter_setClipRectF(void *self, double rect_x, double rect_y, double rect_width, double rect_height) {
+    as<QPainter>(self)->setClipRect(QRectF(rect_x, rect_y, rect_width, rect_height));
+}
+
+// Draw a point at `p` with the pen.
+QTF_API void qtf_qpainter_drawPointF(void *self, double p_x, double p_y) {
+    as<QPainter>(self)->drawPoint(QPointF(p_x, p_y));
+}
+
+// Draw a line from `p1` to `p2`.
+QTF_API void qtf_qpainter_drawLinePoints(void *self, double p1_x, double p1_y, double p2_x, double p2_y) {
+    as<QPainter>(self)->drawLine(QPointF(p1_x, p1_y), QPointF(p2_x, p2_y));
+}
+
+// Draw `line`.
+QTF_API void qtf_qpainter_drawLineF(void *self, double line_x1, double line_y1, double line_x2, double line_y2) {
+    as<QPainter>(self)->drawLine(QLineF(line_x1, line_y1, line_x2, line_y2));
+}
+
+// Draw `rect`: outlined with the pen, filled with the brush.
+QTF_API void qtf_qpainter_drawRectF(void *self, double rect_x, double rect_y, double rect_width, double rect_height) {
+    as<QPainter>(self)->drawRect(QRectF(rect_x, rect_y, rect_width, rect_height));
+}
+
+// Draw the ellipse inscribed in `rect`.
+QTF_API void qtf_qpainter_drawEllipseF(void *self, double rect_x, double rect_y, double rect_width, double rect_height) {
+    as<QPainter>(self)->drawEllipse(QRectF(rect_x, rect_y, rect_width, rect_height));
+}
+
+// Draw the ellipse at `center` with radii `rx` and `ry`.
+QTF_API void qtf_qpainter_drawEllipseCenter(void *self, double center_x, double center_y, double rx, double ry) {
+    as<QPainter>(self)->drawEllipse(QPointF(center_x, center_y), rx, ry);
+}
+
+// Draw text with its baseline starting at `p`.
+QTF_API void qtf_qpainter_drawTextAt(void *self, double p_x, double p_y, const char *text, int text_len) {
+    as<QPainter>(self)->drawText(QPointF(p_x, p_y), qtf_qstring(text, text_len));
+}
+
+// Draw text inside `rect`, aligned by `flags` (e.g. Qt_AlignCenter).
+QTF_API void qtf_qpainter_drawTextInRect(void *self, double rect_x, double rect_y, double rect_width, double rect_height, int flags, const char *text, int text_len) {
+    as<QPainter>(self)->drawText(QRectF(rect_x, rect_y, rect_width, rect_height), flags, qtf_qstring(text, text_len));
+}
+
+// Fill `rect` with `color` (ignores pen and brush).
+QTF_API void qtf_qpainter_fillRectF(void *self, double rect_x, double rect_y, double rect_width, double rect_height, int color_r, int color_g, int color_b, int color_a) {
+    as<QPainter>(self)->fillRect(QRectF(rect_x, rect_y, rect_width, rect_height), QColor(color_r, color_g, color_b, color_a));
+}
+
 // Draw only inside the path.
 QTF_API void qtf_qpainter_setClipPath(void *self, void *path) {
     as<QPainter>(self)->setClipPath(*as<QPainterPath>(path));
@@ -555,6 +619,20 @@ QTF_API double qtf_qmouseevent_x(void *self) { return as<QMouseEvent>(self)->pos
 // Vertical position in widget coordinates.
 QTF_API double qtf_qmouseevent_y(void *self) { return as<QMouseEvent>(self)->position().y(); }
 
+// The position in widget coordinates.
+QTF_API void qtf_qmouseevent_position(void *self, double *res_x, double *res_y) {
+    const auto v_ = as<QMouseEvent>(self)->position();
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// The position on the screen (virtual desktop).
+QTF_API void qtf_qmouseevent_globalPosition(void *self, double *res_x, double *res_y) {
+    const auto v_ = as<QMouseEvent>(self)->globalPosition();
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
 // The button that caused the event (Qt_NoButton for moves).
 QTF_API int qtf_qmouseevent_button(void *self) { return int(as<QMouseEvent>(self)->button()); }
 
@@ -604,6 +682,27 @@ QTF_API int qtf_qwheelevent_angleDeltaX(void *self) { return as<QWheelEvent>(sel
 // Vertical wheel rotation in eighths of a degree (+120 per notch away from the user).
 QTF_API int qtf_qwheelevent_angleDeltaY(void *self) { return as<QWheelEvent>(self)->angleDelta().y(); }
 
+// The cursor position in widget coordinates.
+QTF_API void qtf_qwheelevent_position(void *self, double *res_x, double *res_y) {
+    const auto v_ = as<QWheelEvent>(self)->position();
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// The wheel rotation in eighths of a degree (y: +120 per notch away from the user).
+QTF_API void qtf_qwheelevent_angleDelta(void *self, int *res_x, int *res_y) {
+    const auto v_ = as<QWheelEvent>(self)->angleDelta();
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// The scrolling distance in pixels on devices that report it (e.g. trackpads; otherwise (0, 0)).
+QTF_API void qtf_qwheelevent_pixelDelta(void *self, int *res_x, int *res_y) {
+    const auto v_ = as<QWheelEvent>(self)->pixelDelta();
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
 // Mouse buttons held during the event.
 QTF_API int qtf_qwheelevent_buttons(void *self) { return int(as<QWheelEvent>(self)->buttons()); }
 
@@ -630,6 +729,20 @@ QTF_API int qtf_qresizeevent_oldWidth(void *self) { return as<QResizeEvent>(self
 // The previous height.
 QTF_API int qtf_qresizeevent_oldHeight(void *self) { return as<QResizeEvent>(self)->oldSize().height(); }
 
+// The new size.
+QTF_API void qtf_qresizeevent_size(void *self, int *res_width, int *res_height) {
+    const auto v_ = as<QResizeEvent>(self)->size();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// The previous size (-1 x -1 before the first resize).
+QTF_API void qtf_qresizeevent_oldSize(void *self, int *res_width, int *res_height) {
+    const auto v_ = as<QResizeEvent>(self)->oldSize();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
 // ---------------------------------------------------------------------------
 // QCloseEvent
 
@@ -655,6 +768,20 @@ QTF_API int qtf_qcontextmenuevent_globalX(void *self) { return as<QContextMenuEv
 
 // Vertical position in screen coordinates.
 QTF_API int qtf_qcontextmenuevent_globalY(void *self) { return as<QContextMenuEvent>(self)->globalY(); }
+
+// The position in widget coordinates.
+QTF_API void qtf_qcontextmenuevent_pos(void *self, int *res_x, int *res_y) {
+    const auto v_ = as<QContextMenuEvent>(self)->pos();
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// The position in screen coordinates (e.g. for `menu%popup(event%globalPos())`).
+QTF_API void qtf_qcontextmenuevent_globalPos(void *self, int *res_x, int *res_y) {
+    const auto v_ = as<QContextMenuEvent>(self)->globalPos();
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
 
 // What caused the request (QContextMenuEvent_Mouse, _Keyboard or _Other).
 QTF_API int qtf_qcontextmenuevent_reason(void *self) { return int(as<QContextMenuEvent>(self)->reason()); }
@@ -740,6 +867,54 @@ QTF_API void qtf_qpainterpath_setFillRule(void *self, int rule) {
 // True if (x, y) is inside the path.
 QTF_API int qtf_qpainterpath_containsPoint(void *self, double x, double y) {
     return qtf_bool(as<QPainterPath>(self)->contains(QPointF(x, y)));
+}
+
+// True if `p` is inside the path.
+QTF_API int qtf_qpainterpath_containsPointF(void *self, double p_x, double p_y) {
+    return qtf_bool(as<QPainterPath>(self)->contains(QPointF(p_x, p_y)));
+}
+
+// Start a new subpath at `p`.
+QTF_API void qtf_qpainterpath_moveToPoint(void *self, double p_x, double p_y) {
+    as<QPainterPath>(self)->moveTo(QPointF(p_x, p_y));
+}
+
+// A straight line to `p`.
+QTF_API void qtf_qpainterpath_lineToPoint(void *self, double p_x, double p_y) {
+    as<QPainterPath>(self)->lineTo(QPointF(p_x, p_y));
+}
+
+// Add `rect` (a closed subpath).
+QTF_API void qtf_qpainterpath_addRectF(void *self, double rect_x, double rect_y, double rect_width, double rect_height) {
+    as<QPainterPath>(self)->addRect(QRectF(rect_x, rect_y, rect_width, rect_height));
+}
+
+// Add the ellipse inscribed in `rect`.
+QTF_API void qtf_qpainterpath_addEllipseF(void *self, double rect_x, double rect_y, double rect_width, double rect_height) {
+    as<QPainterPath>(self)->addEllipse(QRectF(rect_x, rect_y, rect_width, rect_height));
+}
+
+// The end point of the last subpath (where the next lineTo starts).
+QTF_API void qtf_qpainterpath_currentPosition(void *self, double *res_x, double *res_y) {
+    const auto v_ = as<QPainterPath>(self)->currentPosition();
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// The point at fraction `t` (0..1) of the path's length.
+QTF_API void qtf_qpainterpath_pointAtPercent(void *self, double t, double *res_x, double *res_y) {
+    const auto v_ = as<QPainterPath>(self)->pointAtPercent(t);
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// The bounding rectangle (including control points).
+QTF_API void qtf_qpainterpath_boundingRect(void *self, double *res_x, double *res_y, double *res_width, double *res_height) {
+    const auto v_ = as<QPainterPath>(self)->boundingRect();
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
 }
 
 // True if the path has no elements.
@@ -943,6 +1118,22 @@ QTF_API double qtf_qtransform_mapY(void *self, double x, double y) {
     return as<QTransform>(self)->map(QPointF(x, y)).y();
 }
 
+// The transformed point.
+QTF_API void qtf_qtransform_map(void *self, double p_x, double p_y, double *res_x, double *res_y) {
+    const auto v_ = as<QTransform>(self)->map(QPointF(p_x, p_y));
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// The bounding rectangle of the transformed rectangle.
+QTF_API void qtf_qtransform_mapRect(void *self, double rect_x, double rect_y, double rect_width, double rect_height, double *res_x, double *res_y, double *res_width, double *res_height) {
+    const auto v_ = as<QTransform>(self)->mapRect(QRectF(rect_x, rect_y, rect_width, rect_height));
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
 // A new transform: the inverse (the identity if not invertible; then `ok` is false).
 QTF_API void *qtf_qtransform_inverted(void *self, int *ok) {
     bool ok_b = false;
@@ -981,6 +1172,22 @@ QTF_API int qtf_qfontmetrics_horizontalAdvance(void *self, const char *text, int
 // Width of the ink of `text` (its bounding rectangle).
 QTF_API int qtf_qfontmetrics_boundingWidth(void *self, const char *text, int text_len) {
     return as<QFontMetrics>(self)->boundingRect(qtf_qstring(text, text_len)).width();
+}
+
+// The rectangle covered by the ink of `text`, relative to its baseline origin (so `y` is negative).
+QTF_API void qtf_qfontmetrics_boundingRect(void *self, const char *text, int text_len, int *res_x, int *res_y, int *res_width, int *res_height) {
+    const auto v_ = as<QFontMetrics>(self)->boundingRect(qtf_qstring(text, text_len));
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// The size of `text` laid out with `flags` (e.g. 0, or Qt_TextSingleLine).
+QTF_API void qtf_qfontmetrics_size(void *self, int flags, const char *text, int text_len, int *res_width, int *res_height) {
+    const auto v_ = as<QFontMetrics>(self)->size(flags, qtf_qstring(text, text_len));
+    *res_width = v_.width();
+    *res_height = v_.height();
 }
 
 // Line height (ascent + descent).
@@ -1118,6 +1325,13 @@ QTF_API double qtf_qdropevent_x(void *self) { return as<QDropEvent>(self)->posit
 // Vertical position in widget coordinates.
 QTF_API double qtf_qdropevent_y(void *self) { return as<QDropEvent>(self)->position().y(); }
 
+// The position in widget coordinates.
+QTF_API void qtf_qdropevent_position(void *self, double *res_x, double *res_y) {
+    const auto v_ = as<QDropEvent>(self)->position();
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
 // The action the user asks for (Qt_CopyAction, _MoveAction, _LinkAction).
 QTF_API int qtf_qdropevent_proposedAction(void *self) { return int(as<QDropEvent>(self)->proposedAction()); }
 
@@ -1207,6 +1421,11 @@ QTF_API void qtf_qdrag_setPixmap(void *self, void *pixmap) {
 
 // Where the cursor is on the pixmap.
 QTF_API void qtf_qdrag_setHotSpot(void *self, int x, int y) { as<QDrag>(self)->setHotSpot(QPoint(x, y)); }
+
+// Where the cursor is on the pixmap.
+QTF_API void qtf_qdrag_setHotSpotPoint(void *self, int hotSpot_x, int hotSpot_y) {
+    as<QDrag>(self)->setHotSpot(QPoint(hotSpot_x, hotSpot_y));
+}
 
 // Run the drag (blocks until it ends); returns the action taken, Qt_IgnoreAction if cancelled.
 QTF_API int qtf_qdrag_exec(void *self, int supportedActions, int defaultAction) {
@@ -1299,6 +1518,38 @@ QTF_API int qtf_qscreen_availableWidth(void *self) { return as<QScreen>(self)->a
 // Height of the available area.
 QTF_API int qtf_qscreen_availableHeight(void *self) {
     return as<QScreen>(self)->availableGeometry().height();
+}
+
+// The screen's position and size in the virtual desktop (logical pixels).
+QTF_API void qtf_qscreen_geometry(void *self, int *res_x, int *res_y, int *res_width, int *res_height) {
+    const auto v_ = as<QScreen>(self)->geometry();
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// The area available to windows (without docks and task bars).
+QTF_API void qtf_qscreen_availableGeometry(void *self, int *res_x, int *res_y, int *res_width, int *res_height) {
+    const auto v_ = as<QScreen>(self)->availableGeometry();
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// The size in logical pixels.
+QTF_API void qtf_qscreen_size(void *self, int *res_width, int *res_height) {
+    const auto v_ = as<QScreen>(self)->size();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// The physical size in millimeters (0 x 0 if unknown).
+QTF_API void qtf_qscreen_physicalSize(void *self, double *res_width, double *res_height) {
+    const auto v_ = as<QScreen>(self)->physicalSize();
+    *res_width = v_.width();
+    *res_height = v_.height();
 }
 
 // Physical pixels per logical pixel (2 on a typical HiDPI display).
@@ -1510,6 +1761,58 @@ QTF_API int qtf_qwindow_width(void *self) { return as<QWindow>(self)->width(); }
 // Height in logical pixels.
 QTF_API int qtf_qwindow_height(void *self) { return as<QWindow>(self)->height(); }
 
+// Resize, in logical pixels.
+QTF_API void qtf_qwindow_resizeSize(void *self, int size_width, int size_height) {
+    as<QWindow>(self)->resize(QSize(size_width, size_height));
+}
+
+// The size in logical pixels.
+QTF_API void qtf_qwindow_size(void *self, int *res_width, int *res_height) {
+    const auto v_ = as<QWindow>(self)->size();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// The position of the window (on the screen for a top-level window).
+QTF_API void qtf_qwindow_position(void *self, int *res_x, int *res_y) {
+    const auto v_ = as<QWindow>(self)->position();
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// Move the window.
+QTF_API void qtf_qwindow_setPosition(void *self, int position_x, int position_y) {
+    as<QWindow>(self)->setPosition(QPoint(position_x, position_y));
+}
+
+// The window's position and size (without the frame).
+QTF_API void qtf_qwindow_geometry(void *self, int *res_x, int *res_y, int *res_width, int *res_height) {
+    const auto v_ = as<QWindow>(self)->geometry();
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// Set the window's position and size (without the frame).
+QTF_API void qtf_qwindow_setGeometry(void *self, int rect_x, int rect_y, int rect_width, int rect_height) {
+    as<QWindow>(self)->setGeometry(QRect(rect_x, rect_y, rect_width, rect_height));
+}
+
+// A point in window coordinates as screen coordinates.
+QTF_API void qtf_qwindow_mapToGlobal(void *self, int p_x, int p_y, int *res_x, int *res_y) {
+    const auto v_ = as<QWindow>(self)->mapToGlobal(QPoint(p_x, p_y));
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// A point in screen coordinates as window coordinates.
+QTF_API void qtf_qwindow_mapFromGlobal(void *self, int p_x, int p_y, int *res_x, int *res_y) {
+    const auto v_ = as<QWindow>(self)->mapFromGlobal(QPoint(p_x, p_y));
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
 // Physical pixels per logical pixel (2 on a typical HiDPI display).
 QTF_API double qtf_qwindow_devicePixelRatio(void *self) { return as<QWindow>(self)->devicePixelRatio(); }
 
@@ -1576,6 +1879,13 @@ QTF_API int qtf_QCursor_y(void) { return QCursor::pos().y(); }
 
 // Move the mouse cursor to (x, y) on the screen (where the system allows it).
 QTF_API void qtf_QCursor_setPos(int x, int y) { QCursor::setPos(x, y); }
+
+// The mouse cursor's position on the screen (virtual desktop).
+QTF_API void qtf_QCursor_pos(int *res_x, int *res_y) {
+    const auto v_ = QCursor::pos();
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
 
 // ---------------------------------------------------------------------------
 // signal connectors

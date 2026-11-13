@@ -33,9 +33,11 @@ uses = [
     "use qt_gui",
     "use qt_widgets",
     "use qt_matrix",
+    "use qt_vectors",
 ]
 handle_types = ["QImage"]
 cpp_includes = [
+    "QVector2D", "QVector3D", "QVector4D",
     "QColor", "QGenericMatrix", "QImage", "QKeyEvent", "QMatrix4x4", "QMouseEvent", "QOpenGLBuffer",
     "QOpenGLContext", "QOpenGLFunctions", "QOpenGLShaderProgram", "QOpenGLVertexArrayObject", "QWindow",
     "QOpenGLWidget", "QSurfaceFormat", "QVector3D", "QVector4D", "QWheelEvent", "array", "vector",
@@ -242,6 +244,18 @@ out = { r = "{v}.red()", g = "{v}.green()", b = "{v}.blue()", a = "{v}.alpha()" 
 fields = ["m: double[16]"]
 cpp = "qtf_mat4({m})"
 
+[value_types.QVector2D]
+fields = ["x: double", "y: double"]
+cpp = "QVector2D(float({x}), float({y}))"
+
+[value_types.QVector3D]
+fields = ["x: double", "y: double", "z: double"]
+cpp = "QVector3D(float({x}), float({y}), float({z}))"
+
+[value_types.QVector4D]
+fields = ["x: double", "y: double", "z: double", "w: double"]
+cpp = "QVector4D(float({x}), float({y}), float({z}), float({w}))"
+
 # ---------------------------------------------------------------------------
 # enums
 
@@ -399,6 +413,10 @@ methods = [
     { sig = "setUniformValueInt(name: string, value: int)", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), GLint({value}))", doc = "Set an int (or sampler) uniform." },
     { sig = "setUniformValueVec3(name: string, x: double, y: double, z: double)", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), QVector3D({x}, {y}, {z}))", doc = "Set a vec3 uniform." },
     { sig = "setUniformValueVec4(name: string, x: double, y: double, z: double, w: double)", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), QVector4D({x}, {y}, {z}, {w}))", doc = "Set a vec4 uniform." },
+    { sig = "setUniformValueVec2(name: string, x: double, y: double)", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), QVector2D({x}, {y}))", doc = "Set a vec2 uniform." },
+    { sig = "setUniformValueVector2D(name: string, value: QVector2D)", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), {value})", doc = "Set a vec2 uniform." },
+    { sig = "setUniformValueVector3D(name: string, value: QVector3D)", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), {value})", doc = "Set a vec3 uniform (e.g. a light direction)." },
+    { sig = "setUniformValueVector4D(name: string, value: QVector4D)", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), {value})", doc = "Set a vec4 uniform." },
     { sig = "setUniformValueColor(name: string, color: QColor)", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), {color})", doc = "Set a vec4 uniform from a color (components scaled to 0..1)." },
     { sig = "setUniformValueMat4(name: string, value: QMatrix4x4)", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), {value})", doc = "Set a mat4 uniform." },
     { sig = "setUniformValueMat3(name: string, value: double[])", fortran_name = "setUniformValue", cpp = "{self}->setUniformValue({self}->uniformLocation({name}), qtf_mat3({value}))", doc = "Set a mat3 uniform from a 3x3 array (e.g. `QMatrix4x4%normalMatrix()`), passed as 9 values in column-major order." },

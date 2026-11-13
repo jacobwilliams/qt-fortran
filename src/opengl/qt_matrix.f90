@@ -9,10 +9,13 @@
 !>     call mvp%lookAt([0d0, 0d0, 5d0], [0d0, 0d0, 0d0], [0d0, 1d0, 0d0])
 !>     call mvp%rotate(angle, 0d0, 1d0, 0d0)
 !>
-!> Angles are in degrees.
+!> Angles are in degrees. Points, directions and rotations can also be given as
+!> QVector3D / QQuaternion (`call mvp%rotate(q)`, `p = mvp%map(v)`, `v4 = mvp * v4`).
 module qt_matrix
 
     use iso_c_binding, only: c_double
+    use qt_geometry, only: QRect
+    use qt_vectors, only: QVector3D, QVector4D, QQuaternion
     implicit none
     private
 
@@ -24,14 +27,20 @@ module qt_matrix
         real(dp) :: m(4, 4) = identity   !! the elements, column-major
     contains
         procedure :: setToIdentity => qmatrix4x4_setToIdentity
-        procedure :: translate => qmatrix4x4_translate
-        procedure, private :: qmatrix4x4_scale3, qmatrix4x4_scale1
-        generic :: scale => qmatrix4x4_scale3, qmatrix4x4_scale1
-        procedure :: rotate => qmatrix4x4_rotate
+        procedure, private :: qmatrix4x4_translate, qmatrix4x4_translate_v
+        generic :: translate => qmatrix4x4_translate, qmatrix4x4_translate_v
+        procedure, private :: qmatrix4x4_scale3, qmatrix4x4_scale1, qmatrix4x4_scale_v
+        generic :: scale => qmatrix4x4_scale3, qmatrix4x4_scale1, qmatrix4x4_scale_v
+        procedure, private :: qmatrix4x4_rotate, qmatrix4x4_rotate_v, qmatrix4x4_rotate_q
+        generic :: rotate => qmatrix4x4_rotate, qmatrix4x4_rotate_v, qmatrix4x4_rotate_q
         procedure :: perspective => qmatrix4x4_perspective
         procedure :: ortho => qmatrix4x4_ortho
-        procedure :: lookAt => qmatrix4x4_lookAt
-        procedure :: map => qmatrix4x4_map
+        procedure, private :: qmatrix4x4_lookAt, qmatrix4x4_lookAt_v
+        generic :: lookAt => qmatrix4x4_lookAt, qmatrix4x4_lookAt_v
+        procedure, private :: qmatrix4x4_map, qmatrix4x4_map_v3, qmatrix4x4_map_v4
+        generic :: map => qmatrix4x4_map, qmatrix4x4_map_v3, qmatrix4x4_map_v4
+        procedure, private :: qmatrix4x4_mapVector, qmatrix4x4_mapVector_v
+        generic :: mapVector => qmatrix4x4_mapVector, qmatrix4x4_mapVector_v
         procedure :: transposed => qmatrix4x4_transposed
         procedure :: inverted => qmatrix4x4_inverted
         procedure :: normalMatrix => qmatrix4x4_normalMatrix
@@ -43,11 +52,13 @@ module qt_matrix
         module procedure :: qmatrix4x4_new
     end interface QMatrix4x4
 
-    !> Matrix product `a * b` (apply `b` first, then `a`).
+    !> Matrix product `a * b` (apply `b` first, then `a`); `matrix * vector`
+    !> transforms a QVector4D, or a QVector3D point (as `map`).
     interface operator(*)
-        module procedure :: qmatrix4x4_multiply
+        module procedure :: qmatrix4x4_multiply, qmatrix4x4_mul_v4, qmatrix4x4_mul_v3
     end interface operator(*)
     public :: operator(*)
+    public :: QVector3D_project, QVector3D_unproject
 
 contains
 
@@ -85,6 +96,20 @@ contains
         self%m = matmul(self%m, t)
     end subroutine qmatrix4x4_scale3
 
+    !> Multiply by a translation by `v`.
+    subroutine qmatrix4x4_translate_v(self, v)
+        class(QMatrix4x4), intent(inout) :: self
+        type(QVector3D), intent(in) :: v
+        call self%translate(v%x, v%y, v%z)
+    end subroutine qmatrix4x4_translate_v
+
+    !> Multiply by a scaling by the components of `v`.
+    subroutine qmatrix4x4_scale_v(self, v)
+        class(QMatrix4x4), intent(inout) :: self
+        type(QVector3D), intent(in) :: v
+        call self%scale(v%x, v%y, v%z)
+    end subroutine qmatrix4x4_scale_v
+
     !> Multiply by a uniform scaling by `factor`.
     subroutine qmatrix4x4_scale1(self, factor)
         class(QMatrix4x4), intent(inout) :: self
@@ -109,6 +134,24 @@ contains
         r(3, 1:3) = [a(3) * a(1) * ic - a(2) * s, a(3) * a(2) * ic + a(1) * s, a(3) * a(3) * ic + c]
         self%m = matmul(self%m, r)
     end subroutine qmatrix4x4_rotate
+
+    !> Multiply by a rotation of `angle` degrees about `axis`.
+    subroutine qmatrix4x4_rotate_v(self, angle, axis)
+        class(QMatrix4x4), intent(inout) :: self
+        real(dp), intent(in) :: angle
+        type(QVector3D), intent(in) :: axis
+        call self%rotate(angle, axis%x, axis%y, axis%z)
+    end subroutine qmatrix4x4_rotate_v
+
+    !> Multiply by the rotation of the (unit) quaternion `q`.
+    subroutine qmatrix4x4_rotate_q(self, q)
+        class(QMatrix4x4), intent(inout) :: self
+        type(QQuaternion), intent(in) :: q
+        real(dp) :: r(4, 4)
+        r = identity
+        r(1:3, 1:3) = q%toRotationMatrix()
+        self%m = matmul(self%m, r)
+    end subroutine qmatrix4x4_rotate_q
 
     !> Multiply by a perspective projection: vertical field of view `verticalAngle`
     !> (degrees), width/height `aspectRatio`, and clipping planes `nearPlane` / `farPlane`.
@@ -165,6 +208,13 @@ contains
         call self%translate(-eye(1), -eye(2), -eye(3))
     end subroutine qmatrix4x4_lookAt
 
+    !> `lookAt` with QVector3D arguments.
+    subroutine qmatrix4x4_lookAt_v(self, eye, center, up)
+        class(QMatrix4x4), intent(inout) :: self
+        type(QVector3D), intent(in) :: eye, center, up
+        call self%lookAt(eye%toArray(), center%toArray(), up%toArray())
+    end subroutine qmatrix4x4_lookAt_v
+
     !> Cross product of two 3-vectors.
     pure function cross(a, b) result(c)
         real(dp), intent(in) :: a(3), b(3)
@@ -181,6 +231,39 @@ contains
         q = v(1:3)
         if (v(4) /= 0.0_dp .and. v(4) /= 1.0_dp) q = q / v(4)
     end function qmatrix4x4_map
+
+    !> Transform the point `p` (with perspective division).
+    function qmatrix4x4_map_v3(self, p) result(q)
+        class(QMatrix4x4), intent(in) :: self
+        type(QVector3D), intent(in) :: p
+        type(QVector3D) :: q
+        q = QVector3D(self%map(p%toArray()))
+    end function qmatrix4x4_map_v3
+
+    !> Transform the 4-vector `v` (`matrix * v`).
+    function qmatrix4x4_map_v4(self, v) result(r)
+        class(QMatrix4x4), intent(in) :: self
+        type(QVector4D), intent(in) :: v
+        type(QVector4D) :: r
+        r = QVector4D(matmul(self%m, v%toArray()))
+    end function qmatrix4x4_map_v4
+
+    !> Transform the direction `v` by the upper left 3x3 block (no translation
+    !> or perspective).
+    function qmatrix4x4_mapVector(self, v) result(r)
+        class(QMatrix4x4), intent(in) :: self
+        real(dp), intent(in) :: v(3)
+        real(dp) :: r(3)
+        r = matmul(self%m(1:3, 1:3), v)
+    end function qmatrix4x4_mapVector
+
+    !> Transform the direction `v` by the upper left 3x3 block.
+    function qmatrix4x4_mapVector_v(self, v) result(r)
+        class(QMatrix4x4), intent(in) :: self
+        type(QVector3D), intent(in) :: v
+        type(QVector3D) :: r
+        r = QVector3D(matmul(self%m(1:3, 1:3), v%toArray()))
+    end function qmatrix4x4_mapVector_v
 
     !> The transposed matrix.
     function qmatrix4x4_transposed(self) result(t)
@@ -252,5 +335,56 @@ contains
         type(QMatrix4x4) :: c
         c%m = matmul(a%m, b%m)
     end function qmatrix4x4_multiply
+
+    !> `matrix * v` for a 4-vector.
+    function qmatrix4x4_mul_v4(a, v) result(r)
+        type(QMatrix4x4), intent(in) :: a
+        type(QVector4D), intent(in) :: v
+        type(QVector4D) :: r
+        r = a%map(v)
+    end function qmatrix4x4_mul_v4
+
+    !> `matrix * p` for a point (w = 1, with perspective division).
+    function qmatrix4x4_mul_v3(a, p) result(r)
+        type(QMatrix4x4), intent(in) :: a
+        type(QVector3D), intent(in) :: p
+        type(QVector3D) :: r
+        r = a%map(p)
+    end function qmatrix4x4_mul_v3
+
+    !> The window coordinates of the object-space point `obj`, as Qt's
+    !> QVector3D::project: x and y in pixels within `viewport` (y up from its
+    !> bottom, as in OpenGL), z the depth (0 near to 1 far).
+    function QVector3D_project(obj, modelView, projection, viewport) result(win)
+        type(QVector3D), intent(in) :: obj
+        type(QMatrix4x4), intent(in) :: modelView, projection
+        type(QRect), intent(in) :: viewport
+        type(QVector3D) :: win
+        real(dp) :: v(4)
+        v = matmul(projection%m, matmul(modelView%m, [obj%toArray(), 1.0_dp]))
+        if (abs(v(4)) <= 1.0e-12_dp) v(4) = 1.0_dp
+        v = v / v(4) * 0.5_dp + 0.5_dp
+        win = QVector3D(v(1) * viewport%width + viewport%x, v(2) * viewport%height + viewport%y, v(3))
+    end function QVector3D_project
+
+    !> The object-space point at window coordinates `win` (the inverse of
+    !> QVector3D_project), e.g. to turn a mouse position at depths 0 and 1 into a
+    !> picking ray.
+    function QVector3D_unproject(win, modelView, projection, viewport) result(obj)
+        type(QVector3D), intent(in) :: win
+        type(QMatrix4x4), intent(in) :: modelView, projection
+        type(QRect), intent(in) :: viewport
+        type(QVector3D) :: obj
+        type(QMatrix4x4) :: inv
+        real(dp) :: v(4)
+        inv = projection * modelView
+        inv = inv%inverted()
+        v = [(win%x - viewport%x) / real(viewport%width, dp), (win%y - viewport%y) / real(viewport%height, dp), &
+             win%z, 1.0_dp]
+        v(1:3) = v(1:3) * 2 - 1
+        v = matmul(inv%m, v)
+        if (abs(v(4)) <= 1.0e-12_dp) v(4) = 1.0_dp
+        obj = QVector3D(v(1:3) / v(4))
+    end function QVector3D_unproject
 
 end module qt_matrix

@@ -144,6 +144,17 @@ module qt_c_gui
             integer(c_int) :: res
         end function qtf_qimage_height
 
+        !> The size in pixels.
+        !>
+        !> C: `void qtf_qimage_size(void *self, int *res_width, int *res_height)`
+        subroutine qtf_qimage_size(self, res_width, res_height) bind(C, name='qtf_qimage_size')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qimage_size
+
         !> Fill the whole image with `color`.
         !>
         !> C: `void qtf_qimage_fill(void *self, int color_r, int color_g, int color_b, int color_a)`
@@ -223,6 +234,17 @@ module qt_c_gui
             type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qpixmap_height
+
+        !> The size in pixels.
+        !>
+        !> C: `void qtf_qpixmap_size(void *self, int *res_width, int *res_height)`
+        subroutine qtf_qpixmap_size(self, res_width, res_height) bind(C, name='qtf_qpixmap_size')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qpixmap_size
 
         !> A new image with the pixmap's contents (delete it when done).
         !>
@@ -810,6 +832,148 @@ module qt_c_gui
             real(c_double), value :: h
         end subroutine qtf_qpainter_setClipRect
 
+        !> Draw only inside `rect` (in the current coordinates).
+        !>
+        !> C: `void qtf_qpainter_setClipRectF(void *self, double rect_x, double rect_y, double rect_width, double rect_height)`
+        subroutine qtf_qpainter_setClipRectF(self, rect_x, rect_y, rect_width, rect_height) &
+                bind(C, name='qtf_qpainter_setClipRectF')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: rect_x
+            real(c_double), value :: rect_y
+            real(c_double), value :: rect_width
+            real(c_double), value :: rect_height
+        end subroutine qtf_qpainter_setClipRectF
+
+        !> Draw a point at `p` with the pen.
+        !>
+        !> C: `void qtf_qpainter_drawPointF(void *self, double p_x, double p_y)`
+        subroutine qtf_qpainter_drawPointF(self, p_x, p_y) bind(C, name='qtf_qpainter_drawPointF')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: p_x
+            real(c_double), value :: p_y
+        end subroutine qtf_qpainter_drawPointF
+
+        !> Draw a line from `p1` to `p2`.
+        !>
+        !> C: `void qtf_qpainter_drawLinePoints(void *self, double p1_x, double p1_y, double p2_x, double p2_y)`
+        subroutine qtf_qpainter_drawLinePoints(self, p1_x, p1_y, p2_x, p2_y) bind(C, name='qtf_qpainter_drawLinePoints')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: p1_x
+            real(c_double), value :: p1_y
+            real(c_double), value :: p2_x
+            real(c_double), value :: p2_y
+        end subroutine qtf_qpainter_drawLinePoints
+
+        !> Draw `line`.
+        !>
+        !> C: `void qtf_qpainter_drawLineF(void *self, double line_x1, double line_y1, double line_x2, double line_y2)`
+        subroutine qtf_qpainter_drawLineF(self, line_x1, line_y1, line_x2, line_y2) &
+                bind(C, name='qtf_qpainter_drawLineF')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: line_x1
+            real(c_double), value :: line_y1
+            real(c_double), value :: line_x2
+            real(c_double), value :: line_y2
+        end subroutine qtf_qpainter_drawLineF
+
+        !> Draw `rect`: outlined with the pen, filled with the brush.
+        !>
+        !> C: `void qtf_qpainter_drawRectF(void *self, double rect_x, double rect_y, double rect_width, double rect_height)`
+        subroutine qtf_qpainter_drawRectF(self, rect_x, rect_y, rect_width, rect_height) &
+                bind(C, name='qtf_qpainter_drawRectF')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: rect_x
+            real(c_double), value :: rect_y
+            real(c_double), value :: rect_width
+            real(c_double), value :: rect_height
+        end subroutine qtf_qpainter_drawRectF
+
+        !> Draw the ellipse inscribed in `rect`.
+        !>
+        !> C: `void qtf_qpainter_drawEllipseF(void *self, double rect_x, double rect_y, double rect_width, double rect_height)`
+        subroutine qtf_qpainter_drawEllipseF(self, rect_x, rect_y, rect_width, rect_height) &
+                bind(C, name='qtf_qpainter_drawEllipseF')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: rect_x
+            real(c_double), value :: rect_y
+            real(c_double), value :: rect_width
+            real(c_double), value :: rect_height
+        end subroutine qtf_qpainter_drawEllipseF
+
+        !> Draw the ellipse at `center` with radii `rx` and `ry`.
+        !>
+        !> C: `void qtf_qpainter_drawEllipseCenter(void *self, double center_x, double center_y, double rx, double ry)`
+        subroutine qtf_qpainter_drawEllipseCenter(self, center_x, center_y, rx, ry) &
+                bind(C, name='qtf_qpainter_drawEllipseCenter')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: center_x
+            real(c_double), value :: center_y
+            real(c_double), value :: rx
+            real(c_double), value :: ry
+        end subroutine qtf_qpainter_drawEllipseCenter
+
+        !> Draw text with its baseline starting at `p`.
+        !>
+        !> C: `void qtf_qpainter_drawTextAt(void *self, double p_x, double p_y, const char *text, int text_len)`
+        subroutine qtf_qpainter_drawTextAt(self, p_x, p_y, text, text_len) bind(C, name='qtf_qpainter_drawTextAt')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: p_x
+            real(c_double), value :: p_y
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+        end subroutine qtf_qpainter_drawTextAt
+
+        !> Draw text inside `rect`, aligned by `flags` (e.g. Qt_AlignCenter).
+        !>
+        !> C: `void qtf_qpainter_drawTextInRect(void *self, double rect_x, double rect_y, double rect_width, double rect_height, int flags, const char *text, int text_len)`
+        subroutine qtf_qpainter_drawTextInRect(self, rect_x, rect_y, rect_width, rect_height, flags, text, text_len) &
+                bind(C, name='qtf_qpainter_drawTextInRect')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: rect_x
+            real(c_double), value :: rect_y
+            real(c_double), value :: rect_width
+            real(c_double), value :: rect_height
+            integer(c_int), value :: flags
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+        end subroutine qtf_qpainter_drawTextInRect
+
+        !> Fill `rect` with `color` (ignores pen and brush).
+        !>
+        !> C: `void qtf_qpainter_fillRectF(void *self, double rect_x, double rect_y, double rect_width, double rect_height, int color_r, int color_g, int color_b, int color_a)`
+        subroutine qtf_qpainter_fillRectF(self, rect_x, rect_y, rect_width, rect_height, color_r, color_g, color_b, color_a) &
+                bind(C, name='qtf_qpainter_fillRectF')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: rect_x
+            real(c_double), value :: rect_y
+            real(c_double), value :: rect_width
+            real(c_double), value :: rect_height
+            integer(c_int), value :: color_r
+            integer(c_int), value :: color_g
+            integer(c_int), value :: color_b
+            integer(c_int), value :: color_a
+        end subroutine qtf_qpainter_fillRectF
+
         !> Draw only inside the path.
         !>
         !> C: `void qtf_qpainter_setClipPath(void *self, void *path)`
@@ -939,6 +1103,28 @@ module qt_c_gui
             type(c_ptr), value :: self
             real(c_double) :: res
         end function qtf_qmouseevent_y
+
+        !> The position in widget coordinates.
+        !>
+        !> C: `void qtf_qmouseevent_position(void *self, double *res_x, double *res_y)`
+        subroutine qtf_qmouseevent_position(self, res_x, res_y) bind(C, name='qtf_qmouseevent_position')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), intent(out) :: res_x
+            real(c_double), intent(out) :: res_y
+        end subroutine qtf_qmouseevent_position
+
+        !> The position on the screen (virtual desktop).
+        !>
+        !> C: `void qtf_qmouseevent_globalPosition(void *self, double *res_x, double *res_y)`
+        subroutine qtf_qmouseevent_globalPosition(self, res_x, res_y) bind(C, name='qtf_qmouseevent_globalPosition')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), intent(out) :: res_x
+            real(c_double), intent(out) :: res_y
+        end subroutine qtf_qmouseevent_globalPosition
 
         !> The button that caused the event (Qt_NoButton for moves).
         !>
@@ -1081,6 +1267,39 @@ module qt_c_gui
             integer(c_int) :: res
         end function qtf_qwheelevent_angleDeltaY
 
+        !> The cursor position in widget coordinates.
+        !>
+        !> C: `void qtf_qwheelevent_position(void *self, double *res_x, double *res_y)`
+        subroutine qtf_qwheelevent_position(self, res_x, res_y) bind(C, name='qtf_qwheelevent_position')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), intent(out) :: res_x
+            real(c_double), intent(out) :: res_y
+        end subroutine qtf_qwheelevent_position
+
+        !> The wheel rotation in eighths of a degree (y: +120 per notch away from the user).
+        !>
+        !> C: `void qtf_qwheelevent_angleDelta(void *self, int *res_x, int *res_y)`
+        subroutine qtf_qwheelevent_angleDelta(self, res_x, res_y) bind(C, name='qtf_qwheelevent_angleDelta')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+        end subroutine qtf_qwheelevent_angleDelta
+
+        !> The scrolling distance in pixels on devices that report it (e.g. trackpads; otherwise (0, 0)).
+        !>
+        !> C: `void qtf_qwheelevent_pixelDelta(void *self, int *res_x, int *res_y)`
+        subroutine qtf_qwheelevent_pixelDelta(self, res_x, res_y) bind(C, name='qtf_qwheelevent_pixelDelta')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+        end subroutine qtf_qwheelevent_pixelDelta
+
         !> Mouse buttons held during the event.
         !>
         !> C: `int qtf_qwheelevent_buttons(void *self)`
@@ -1155,6 +1374,28 @@ module qt_c_gui
             integer(c_int) :: res
         end function qtf_qresizeevent_oldHeight
 
+        !> The new size.
+        !>
+        !> C: `void qtf_qresizeevent_size(void *self, int *res_width, int *res_height)`
+        subroutine qtf_qresizeevent_size(self, res_width, res_height) bind(C, name='qtf_qresizeevent_size')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qresizeevent_size
+
+        !> The previous size (-1 x -1 before the first resize).
+        !>
+        !> C: `void qtf_qresizeevent_oldSize(void *self, int *res_width, int *res_height)`
+        subroutine qtf_qresizeevent_oldSize(self, res_width, res_height) bind(C, name='qtf_qresizeevent_oldSize')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qresizeevent_oldSize
+
         !> A synthetic close event (e.g. for QCoreApplication_sendEvent); delete it after use.
         !>
         !> C: `void *qtf_qcloseevent_new(void)`
@@ -1218,6 +1459,28 @@ module qt_c_gui
             type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qcontextmenuevent_globalY
+
+        !> The position in widget coordinates.
+        !>
+        !> C: `void qtf_qcontextmenuevent_pos(void *self, int *res_x, int *res_y)`
+        subroutine qtf_qcontextmenuevent_pos(self, res_x, res_y) bind(C, name='qtf_qcontextmenuevent_pos')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+        end subroutine qtf_qcontextmenuevent_pos
+
+        !> The position in screen coordinates (e.g. for `menu%popup(event%globalPos())`).
+        !>
+        !> C: `void qtf_qcontextmenuevent_globalPos(void *self, int *res_x, int *res_y)`
+        subroutine qtf_qcontextmenuevent_globalPos(self, res_x, res_y) bind(C, name='qtf_qcontextmenuevent_globalPos')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+        end subroutine qtf_qcontextmenuevent_globalPos
 
         !> What caused the request (QContextMenuEvent_Mouse, _Keyboard or _Other).
         !>
@@ -1446,6 +1709,107 @@ module qt_c_gui
             real(c_double), value :: y
             integer(c_int) :: res
         end function qtf_qpainterpath_containsPoint
+
+        !> True if `p` is inside the path.
+        !>
+        !> C: `int qtf_qpainterpath_containsPointF(void *self, double p_x, double p_y)`
+        function qtf_qpainterpath_containsPointF(self, p_x, p_y) &
+                result(res) bind(C, name='qtf_qpainterpath_containsPointF')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: p_x
+            real(c_double), value :: p_y
+            integer(c_int) :: res
+        end function qtf_qpainterpath_containsPointF
+
+        !> Start a new subpath at `p`.
+        !>
+        !> C: `void qtf_qpainterpath_moveToPoint(void *self, double p_x, double p_y)`
+        subroutine qtf_qpainterpath_moveToPoint(self, p_x, p_y) bind(C, name='qtf_qpainterpath_moveToPoint')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: p_x
+            real(c_double), value :: p_y
+        end subroutine qtf_qpainterpath_moveToPoint
+
+        !> A straight line to `p`.
+        !>
+        !> C: `void qtf_qpainterpath_lineToPoint(void *self, double p_x, double p_y)`
+        subroutine qtf_qpainterpath_lineToPoint(self, p_x, p_y) bind(C, name='qtf_qpainterpath_lineToPoint')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: p_x
+            real(c_double), value :: p_y
+        end subroutine qtf_qpainterpath_lineToPoint
+
+        !> Add `rect` (a closed subpath).
+        !>
+        !> C: `void qtf_qpainterpath_addRectF(void *self, double rect_x, double rect_y, double rect_width, double rect_height)`
+        subroutine qtf_qpainterpath_addRectF(self, rect_x, rect_y, rect_width, rect_height) &
+                bind(C, name='qtf_qpainterpath_addRectF')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: rect_x
+            real(c_double), value :: rect_y
+            real(c_double), value :: rect_width
+            real(c_double), value :: rect_height
+        end subroutine qtf_qpainterpath_addRectF
+
+        !> Add the ellipse inscribed in `rect`.
+        !>
+        !> C: `void qtf_qpainterpath_addEllipseF(void *self, double rect_x, double rect_y, double rect_width, double rect_height)`
+        subroutine qtf_qpainterpath_addEllipseF(self, rect_x, rect_y, rect_width, rect_height) &
+                bind(C, name='qtf_qpainterpath_addEllipseF')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: rect_x
+            real(c_double), value :: rect_y
+            real(c_double), value :: rect_width
+            real(c_double), value :: rect_height
+        end subroutine qtf_qpainterpath_addEllipseF
+
+        !> The end point of the last subpath (where the next lineTo starts).
+        !>
+        !> C: `void qtf_qpainterpath_currentPosition(void *self, double *res_x, double *res_y)`
+        subroutine qtf_qpainterpath_currentPosition(self, res_x, res_y) bind(C, name='qtf_qpainterpath_currentPosition')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), intent(out) :: res_x
+            real(c_double), intent(out) :: res_y
+        end subroutine qtf_qpainterpath_currentPosition
+
+        !> The point at fraction `t` (0..1) of the path's length.
+        !>
+        !> C: `void qtf_qpainterpath_pointAtPercent(void *self, double t, double *res_x, double *res_y)`
+        subroutine qtf_qpainterpath_pointAtPercent(self, t, res_x, res_y) &
+                bind(C, name='qtf_qpainterpath_pointAtPercent')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: t
+            real(c_double), intent(out) :: res_x
+            real(c_double), intent(out) :: res_y
+        end subroutine qtf_qpainterpath_pointAtPercent
+
+        !> The bounding rectangle (including control points).
+        !>
+        !> C: `void qtf_qpainterpath_boundingRect(void *self, double *res_x, double *res_y, double *res_width, double *res_height)`
+        subroutine qtf_qpainterpath_boundingRect(self, res_x, res_y, res_width, res_height) &
+                bind(C, name='qtf_qpainterpath_boundingRect')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), intent(out) :: res_x
+            real(c_double), intent(out) :: res_y
+            real(c_double), intent(out) :: res_width
+            real(c_double), intent(out) :: res_height
+        end subroutine qtf_qpainterpath_boundingRect
 
         !> True if the path has no elements.
         !>
@@ -1938,6 +2302,37 @@ module qt_c_gui
             real(c_double) :: res
         end function qtf_qtransform_mapY
 
+        !> The transformed point.
+        !>
+        !> C: `void qtf_qtransform_map(void *self, double p_x, double p_y, double *res_x, double *res_y)`
+        subroutine qtf_qtransform_map(self, p_x, p_y, res_x, res_y) bind(C, name='qtf_qtransform_map')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: p_x
+            real(c_double), value :: p_y
+            real(c_double), intent(out) :: res_x
+            real(c_double), intent(out) :: res_y
+        end subroutine qtf_qtransform_map
+
+        !> The bounding rectangle of the transformed rectangle.
+        !>
+        !> C: `void qtf_qtransform_mapRect(void *self, double rect_x, double rect_y, double rect_width, double rect_height, double *res_x, double *res_y, double *res_width, double *res_height)`
+        subroutine qtf_qtransform_mapRect(self, rect_x, rect_y, rect_width, rect_height, res_x, res_y, res_width, res_height) &
+                bind(C, name='qtf_qtransform_mapRect')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: rect_x
+            real(c_double), value :: rect_y
+            real(c_double), value :: rect_width
+            real(c_double), value :: rect_height
+            real(c_double), intent(out) :: res_x
+            real(c_double), intent(out) :: res_y
+            real(c_double), intent(out) :: res_width
+            real(c_double), intent(out) :: res_height
+        end subroutine qtf_qtransform_mapRect
+
         !> A new transform: the inverse (the identity if not invertible; then `ok` is false).
         !>
         !> C: `void *qtf_qtransform_inverted(void *self, int *ok)`
@@ -2028,6 +2423,37 @@ module qt_c_gui
             integer(c_int), value :: text_len
             integer(c_int) :: res
         end function qtf_qfontmetrics_boundingWidth
+
+        !> The rectangle covered by the ink of `text`, relative to its baseline origin (so `y` is negative).
+        !>
+        !> C: `void qtf_qfontmetrics_boundingRect(void *self, const char *text, int text_len, int *res_x, int *res_y, int *res_width, int *res_height)`
+        subroutine qtf_qfontmetrics_boundingRect(self, text, text_len, res_x, res_y, res_width, res_height) &
+                bind(C, name='qtf_qfontmetrics_boundingRect')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qfontmetrics_boundingRect
+
+        !> The size of `text` laid out with `flags` (e.g. 0, or Qt_TextSingleLine).
+        !>
+        !> C: `void qtf_qfontmetrics_size(void *self, int flags, const char *text, int text_len, int *res_width, int *res_height)`
+        subroutine qtf_qfontmetrics_size(self, flags, text, text_len, res_width, res_height) &
+                bind(C, name='qtf_qfontmetrics_size')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: flags
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qfontmetrics_size
 
         !> Line height (ascent + descent).
         !>
@@ -2387,6 +2813,17 @@ module qt_c_gui
             real(c_double) :: res
         end function qtf_qdropevent_y
 
+        !> The position in widget coordinates.
+        !>
+        !> C: `void qtf_qdropevent_position(void *self, double *res_x, double *res_y)`
+        subroutine qtf_qdropevent_position(self, res_x, res_y) bind(C, name='qtf_qdropevent_position')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), intent(out) :: res_x
+            real(c_double), intent(out) :: res_y
+        end subroutine qtf_qdropevent_position
+
         !> The action the user asks for (Qt_CopyAction, _MoveAction, _LinkAction).
         !>
         !> C: `int qtf_qdropevent_proposedAction(void *self)`
@@ -2604,6 +3041,17 @@ module qt_c_gui
             integer(c_int), value :: x
             integer(c_int), value :: y
         end subroutine qtf_qdrag_setHotSpot
+
+        !> Where the cursor is on the pixmap.
+        !>
+        !> C: `void qtf_qdrag_setHotSpotPoint(void *self, int hotSpot_x, int hotSpot_y)`
+        subroutine qtf_qdrag_setHotSpotPoint(self, hotSpot_x, hotSpot_y) bind(C, name='qtf_qdrag_setHotSpotPoint')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: hotSpot_x
+            integer(c_int), value :: hotSpot_y
+        end subroutine qtf_qdrag_setHotSpotPoint
 
         !> Run the drag (blocks until it ends); returns the action taken, Qt_IgnoreAction if cancelled.
         !>
@@ -2829,6 +3277,55 @@ module qt_c_gui
             type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qscreen_availableHeight
+
+        !> The screen's position and size in the virtual desktop (logical pixels).
+        !>
+        !> C: `void qtf_qscreen_geometry(void *self, int *res_x, int *res_y, int *res_width, int *res_height)`
+        subroutine qtf_qscreen_geometry(self, res_x, res_y, res_width, res_height) bind(C, name='qtf_qscreen_geometry')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qscreen_geometry
+
+        !> The area available to windows (without docks and task bars).
+        !>
+        !> C: `void qtf_qscreen_availableGeometry(void *self, int *res_x, int *res_y, int *res_width, int *res_height)`
+        subroutine qtf_qscreen_availableGeometry(self, res_x, res_y, res_width, res_height) &
+                bind(C, name='qtf_qscreen_availableGeometry')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qscreen_availableGeometry
+
+        !> The size in logical pixels.
+        !>
+        !> C: `void qtf_qscreen_size(void *self, int *res_width, int *res_height)`
+        subroutine qtf_qscreen_size(self, res_width, res_height) bind(C, name='qtf_qscreen_size')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qscreen_size
+
+        !> The physical size in millimeters (0 x 0 if unknown).
+        !>
+        !> C: `void qtf_qscreen_physicalSize(void *self, double *res_width, double *res_height)`
+        subroutine qtf_qscreen_physicalSize(self, res_width, res_height) bind(C, name='qtf_qscreen_physicalSize')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), intent(out) :: res_width
+            real(c_double), intent(out) :: res_height
+        end subroutine qtf_qscreen_physicalSize
 
         !> Physical pixels per logical pixel (2 on a typical HiDPI display).
         !>
@@ -3347,6 +3844,103 @@ module qt_c_gui
             integer(c_int) :: res
         end function qtf_qwindow_height
 
+        !> Resize, in logical pixels.
+        !>
+        !> C: `void qtf_qwindow_resizeSize(void *self, int size_width, int size_height)`
+        subroutine qtf_qwindow_resizeSize(self, size_width, size_height) bind(C, name='qtf_qwindow_resizeSize')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: size_width
+            integer(c_int), value :: size_height
+        end subroutine qtf_qwindow_resizeSize
+
+        !> The size in logical pixels.
+        !>
+        !> C: `void qtf_qwindow_size(void *self, int *res_width, int *res_height)`
+        subroutine qtf_qwindow_size(self, res_width, res_height) bind(C, name='qtf_qwindow_size')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qwindow_size
+
+        !> The position of the window (on the screen for a top-level window).
+        !>
+        !> C: `void qtf_qwindow_position(void *self, int *res_x, int *res_y)`
+        subroutine qtf_qwindow_position(self, res_x, res_y) bind(C, name='qtf_qwindow_position')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+        end subroutine qtf_qwindow_position
+
+        !> Move the window.
+        !>
+        !> C: `void qtf_qwindow_setPosition(void *self, int position_x, int position_y)`
+        subroutine qtf_qwindow_setPosition(self, position_x, position_y) bind(C, name='qtf_qwindow_setPosition')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: position_x
+            integer(c_int), value :: position_y
+        end subroutine qtf_qwindow_setPosition
+
+        !> The window's position and size (without the frame).
+        !>
+        !> C: `void qtf_qwindow_geometry(void *self, int *res_x, int *res_y, int *res_width, int *res_height)`
+        subroutine qtf_qwindow_geometry(self, res_x, res_y, res_width, res_height) bind(C, name='qtf_qwindow_geometry')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qwindow_geometry
+
+        !> Set the window's position and size (without the frame).
+        !>
+        !> C: `void qtf_qwindow_setGeometry(void *self, int rect_x, int rect_y, int rect_width, int rect_height)`
+        subroutine qtf_qwindow_setGeometry(self, rect_x, rect_y, rect_width, rect_height) &
+                bind(C, name='qtf_qwindow_setGeometry')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: rect_x
+            integer(c_int), value :: rect_y
+            integer(c_int), value :: rect_width
+            integer(c_int), value :: rect_height
+        end subroutine qtf_qwindow_setGeometry
+
+        !> A point in window coordinates as screen coordinates.
+        !>
+        !> C: `void qtf_qwindow_mapToGlobal(void *self, int p_x, int p_y, int *res_x, int *res_y)`
+        subroutine qtf_qwindow_mapToGlobal(self, p_x, p_y, res_x, res_y) bind(C, name='qtf_qwindow_mapToGlobal')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: p_x
+            integer(c_int), value :: p_y
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+        end subroutine qtf_qwindow_mapToGlobal
+
+        !> A point in screen coordinates as window coordinates.
+        !>
+        !> C: `void qtf_qwindow_mapFromGlobal(void *self, int p_x, int p_y, int *res_x, int *res_y)`
+        subroutine qtf_qwindow_mapFromGlobal(self, p_x, p_y, res_x, res_y) bind(C, name='qtf_qwindow_mapFromGlobal')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: p_x
+            integer(c_int), value :: p_y
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+        end subroutine qtf_qwindow_mapFromGlobal
+
         !> Physical pixels per logical pixel (2 on a typical HiDPI display).
         !>
         !> C: `double qtf_qwindow_devicePixelRatio(void *self)`
@@ -3520,12 +4114,22 @@ module qt_c_gui
             integer(c_int), value :: y
         end subroutine qtf_QCursor_setPos
 
+        !> The mouse cursor's position on the screen (virtual desktop).
+        !>
+        !> C: `void qtf_QCursor_pos(int *res_x, int *res_y)`
+        subroutine qtf_QCursor_pos(res_x, res_y) bind(C, name='qtf_QCursor_pos')
+            import :: c_int
+            implicit none
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+        end subroutine qtf_QCursor_pos
+
     end interface
 
     public :: qtf_qcolor_fromString, qtf_qimage_fromArray, qtf_qimage_colorbar, qtf_qimage_delete
     public :: qtf_qimage_isNull, qtf_qimage_pixelColor, qtf_qimage_new, qtf_qimage_fromFile, qtf_qimage_width
-    public :: qtf_qimage_height, qtf_qimage_fill, qtf_qimage_setPixelColor, qtf_qimage_save
-    public :: qtf_qpixmap_delete, qtf_qpixmap_isNull, qtf_qpixmap_width, qtf_qpixmap_height
+    public :: qtf_qimage_height, qtf_qimage_size, qtf_qimage_fill, qtf_qimage_setPixelColor, qtf_qimage_save
+    public :: qtf_qpixmap_delete, qtf_qpixmap_isNull, qtf_qpixmap_width, qtf_qpixmap_height, qtf_qpixmap_size
     public :: qtf_qpixmap_toImage, qtf_qpixmap_fromImage, qtf_qpixmap_save, qtf_qicon_delete
     public :: qtf_qicon_isNull, qtf_qicon_new, qtf_qicon_fromPixmap, qtf_qpainter_delete
     public :: qtf_qpainter_isActive, qtf_qpainter_setFont, qtf_qpainter_new, qtf_qpainter_deviceWidth
@@ -3539,41 +4143,51 @@ module qt_c_gui
     public :: qtf_qpainter_drawImageRect, qtf_qpainter_drawPixmap, qtf_qpainter_drawArc, qtf_qpainter_drawPie
     public :: qtf_qpainter_drawChord, qtf_qpainter_drawPath, qtf_qpainter_fillPath
     public :: qtf_qpainter_fillPathGradient, qtf_qpainter_strokePath, qtf_qpainter_setBrushGradient
-    public :: qtf_qpainter_fillRectGradient, qtf_qpainter_setClipRect, qtf_qpainter_setClipPath
-    public :: qtf_qpainter_setClipping, qtf_qpainter_hasClipping, qtf_qpainter_shear
-    public :: qtf_qpainter_setTransform, qtf_qpainter_transform, qtf_qpainter_fontMetrics
+    public :: qtf_qpainter_fillRectGradient, qtf_qpainter_setClipRect, qtf_qpainter_setClipRectF
+    public :: qtf_qpainter_drawPointF, qtf_qpainter_drawLinePoints, qtf_qpainter_drawLineF
+    public :: qtf_qpainter_drawRectF, qtf_qpainter_drawEllipseF, qtf_qpainter_drawEllipseCenter
+    public :: qtf_qpainter_drawTextAt, qtf_qpainter_drawTextInRect, qtf_qpainter_fillRectF
+    public :: qtf_qpainter_setClipPath, qtf_qpainter_setClipping, qtf_qpainter_hasClipping
+    public :: qtf_qpainter_shear, qtf_qpainter_setTransform, qtf_qpainter_transform, qtf_qpainter_fontMetrics
     public :: qtf_qpainter_textWidth, qtf_qpainter_fontHeight, qtf_qmouseevent_new, qtf_qmouseevent_x
-    public :: qtf_qmouseevent_y, qtf_qmouseevent_button, qtf_qmouseevent_buttons, qtf_qmouseevent_modifiers
-    public :: qtf_qkeyevent_new, qtf_qkeyevent_key, qtf_qkeyevent_modifiers, qtf_qkeyevent_text
-    public :: qtf_qkeyevent_isAutoRepeat, qtf_qwheelevent_new, qtf_qwheelevent_x, qtf_qwheelevent_y
-    public :: qtf_qwheelevent_angleDeltaX, qtf_qwheelevent_angleDeltaY, qtf_qwheelevent_buttons
-    public :: qtf_qwheelevent_modifiers, qtf_qresizeevent_new, qtf_qresizeevent_width
-    public :: qtf_qresizeevent_height, qtf_qresizeevent_oldWidth, qtf_qresizeevent_oldHeight
-    public :: qtf_qcloseevent_new, qtf_qcontextmenuevent_new, qtf_qcontextmenuevent_x
-    public :: qtf_qcontextmenuevent_y, qtf_qcontextmenuevent_globalX, qtf_qcontextmenuevent_globalY
+    public :: qtf_qmouseevent_y, qtf_qmouseevent_position, qtf_qmouseevent_globalPosition
+    public :: qtf_qmouseevent_button, qtf_qmouseevent_buttons, qtf_qmouseevent_modifiers, qtf_qkeyevent_new
+    public :: qtf_qkeyevent_key, qtf_qkeyevent_modifiers, qtf_qkeyevent_text, qtf_qkeyevent_isAutoRepeat
+    public :: qtf_qwheelevent_new, qtf_qwheelevent_x, qtf_qwheelevent_y, qtf_qwheelevent_angleDeltaX
+    public :: qtf_qwheelevent_angleDeltaY, qtf_qwheelevent_position, qtf_qwheelevent_angleDelta
+    public :: qtf_qwheelevent_pixelDelta, qtf_qwheelevent_buttons, qtf_qwheelevent_modifiers
+    public :: qtf_qresizeevent_new, qtf_qresizeevent_width, qtf_qresizeevent_height
+    public :: qtf_qresizeevent_oldWidth, qtf_qresizeevent_oldHeight, qtf_qresizeevent_size
+    public :: qtf_qresizeevent_oldSize, qtf_qcloseevent_new, qtf_qcontextmenuevent_new
+    public :: qtf_qcontextmenuevent_x, qtf_qcontextmenuevent_y, qtf_qcontextmenuevent_globalX
+    public :: qtf_qcontextmenuevent_globalY, qtf_qcontextmenuevent_pos, qtf_qcontextmenuevent_globalPos
     public :: qtf_qcontextmenuevent_reason, qtf_qcontextmenuevent_modifiers, qtf_qpainterpath_delete
     public :: qtf_qpainterpath_new, qtf_qpainterpath_moveTo, qtf_qpainterpath_lineTo, qtf_qpainterpath_quadTo
     public :: qtf_qpainterpath_cubicTo, qtf_qpainterpath_arcTo, qtf_qpainterpath_closeSubpath
     public :: qtf_qpainterpath_addRect, qtf_qpainterpath_addRoundedRect, qtf_qpainterpath_addEllipse
     public :: qtf_qpainterpath_addPolygon, qtf_qpainterpath_addText, qtf_qpainterpath_addPath
     public :: qtf_qpainterpath_translate, qtf_qpainterpath_setFillRule, qtf_qpainterpath_containsPoint
-    public :: qtf_qpainterpath_isEmpty, qtf_qpainterpath_length, qtf_qpainterpath_elementCount
-    public :: qtf_qpainterpath_pointAtPercentX, qtf_qpainterpath_pointAtPercentY, qtf_qpainterpath_boundingX
-    public :: qtf_qpainterpath_boundingY, qtf_qpainterpath_boundingWidth, qtf_qpainterpath_boundingHeight
-    public :: qtf_qpainterpath_copy, qtf_qpainterpath_united, qtf_qpainterpath_intersected
-    public :: qtf_qpainterpath_subtracted, qtf_qgradient_delete, qtf_qgradient_setColorAt
-    public :: qtf_qgradient_setSpread, qtf_qgradient_setCoordinateMode, qtf_qlineargradient_new
-    public :: qtf_qlineargradient_setStart, qtf_qlineargradient_setFinalStop, qtf_qradialgradient_new
-    public :: qtf_qradialgradient_setCenter, qtf_qradialgradient_setRadius, qtf_qradialgradient_setFocalPoint
-    public :: qtf_qconicalgradient_new, qtf_qconicalgradient_setCenter, qtf_qconicalgradient_setAngle
-    public :: qtf_qtransform_delete, qtf_qtransform_new, qtf_qtransform_fromAffine, qtf_qtransform_translate
-    public :: qtf_qtransform_rotate, qtf_qtransform_scale, qtf_qtransform_shear, qtf_qtransform_reset
-    public :: qtf_qtransform_isIdentity, qtf_qtransform_isInvertible, qtf_qtransform_determinant
-    public :: qtf_qtransform_m11, qtf_qtransform_m12, qtf_qtransform_m21, qtf_qtransform_m22
-    public :: qtf_qtransform_dx, qtf_qtransform_dy, qtf_qtransform_mapX, qtf_qtransform_mapY
+    public :: qtf_qpainterpath_containsPointF, qtf_qpainterpath_moveToPoint, qtf_qpainterpath_lineToPoint
+    public :: qtf_qpainterpath_addRectF, qtf_qpainterpath_addEllipseF, qtf_qpainterpath_currentPosition
+    public :: qtf_qpainterpath_pointAtPercent, qtf_qpainterpath_boundingRect, qtf_qpainterpath_isEmpty
+    public :: qtf_qpainterpath_length, qtf_qpainterpath_elementCount, qtf_qpainterpath_pointAtPercentX
+    public :: qtf_qpainterpath_pointAtPercentY, qtf_qpainterpath_boundingX, qtf_qpainterpath_boundingY
+    public :: qtf_qpainterpath_boundingWidth, qtf_qpainterpath_boundingHeight, qtf_qpainterpath_copy
+    public :: qtf_qpainterpath_united, qtf_qpainterpath_intersected, qtf_qpainterpath_subtracted
+    public :: qtf_qgradient_delete, qtf_qgradient_setColorAt, qtf_qgradient_setSpread
+    public :: qtf_qgradient_setCoordinateMode, qtf_qlineargradient_new, qtf_qlineargradient_setStart
+    public :: qtf_qlineargradient_setFinalStop, qtf_qradialgradient_new, qtf_qradialgradient_setCenter
+    public :: qtf_qradialgradient_setRadius, qtf_qradialgradient_setFocalPoint, qtf_qconicalgradient_new
+    public :: qtf_qconicalgradient_setCenter, qtf_qconicalgradient_setAngle, qtf_qtransform_delete
+    public :: qtf_qtransform_new, qtf_qtransform_fromAffine, qtf_qtransform_translate, qtf_qtransform_rotate
+    public :: qtf_qtransform_scale, qtf_qtransform_shear, qtf_qtransform_reset, qtf_qtransform_isIdentity
+    public :: qtf_qtransform_isInvertible, qtf_qtransform_determinant, qtf_qtransform_m11, qtf_qtransform_m12
+    public :: qtf_qtransform_m21, qtf_qtransform_m22, qtf_qtransform_dx, qtf_qtransform_dy
+    public :: qtf_qtransform_mapX, qtf_qtransform_mapY, qtf_qtransform_map, qtf_qtransform_mapRect
     public :: qtf_qtransform_inverted, qtf_qtransform_multiplied, qtf_qtransform_copy
     public :: qtf_qfontmetrics_delete, qtf_qfontmetrics_fromFont, qtf_qfontmetrics_new
-    public :: qtf_qfontmetrics_horizontalAdvance, qtf_qfontmetrics_boundingWidth, qtf_qfontmetrics_height
+    public :: qtf_qfontmetrics_horizontalAdvance, qtf_qfontmetrics_boundingWidth
+    public :: qtf_qfontmetrics_boundingRect, qtf_qfontmetrics_size, qtf_qfontmetrics_height
     public :: qtf_qfontmetrics_ascent, qtf_qfontmetrics_descent, qtf_qfontmetrics_leading
     public :: qtf_qfontmetrics_lineSpacing, qtf_qfontmetrics_averageCharWidth, qtf_qfontmetrics_maxWidth
     public :: qtf_qfontmetrics_capHeight, qtf_qfontmetrics_xHeight, qtf_qfontmetrics_elidedText
@@ -3582,37 +4196,42 @@ module qt_c_gui
     public :: qtf_qmimedata_urls, qtf_qmimedata_hasUrls, qtf_qmimedata_setImage, qtf_qmimedata_image
     public :: qtf_qmimedata_hasImage, qtf_qmimedata_setData, qtf_qmimedata_data, qtf_qmimedata_hasFormat
     public :: qtf_qmimedata_formats, qtf_qmimedata_clear, qtf_qmimedata_hasItems, qtf_qmimedata_items
-    public :: qtf_qdropevent_new, qtf_qdropevent_x, qtf_qdropevent_y, qtf_qdropevent_proposedAction
-    public :: qtf_qdropevent_possibleActions, qtf_qdropevent_dropAction, qtf_qdropevent_setDropAction
-    public :: qtf_qdropevent_acceptProposedAction, qtf_qdropevent_buttons, qtf_qdropevent_modifiers
-    public :: qtf_qdropevent_mimeData, qtf_qdropevent_hasText, qtf_qdropevent_text, qtf_qdropevent_hasUrls
-    public :: qtf_qdropevent_urls, qtf_qdropevent_hasImage, qtf_qdropevent_hasFormat, qtf_qdropevent_data
-    public :: qtf_qdropevent_hasItems, qtf_qdropevent_items, qtf_qdrag_new, qtf_qdrag_setMimeData
-    public :: qtf_qdrag_setPixmap, qtf_qdrag_setHotSpot, qtf_qdrag_exec, qtf_qclipboard_setText
-    public :: qtf_qclipboard_text, qtf_qclipboard_hasText, qtf_qclipboard_setImage, qtf_qclipboard_image
-    public :: qtf_qclipboard_hasImage, qtf_qclipboard_setMimeData, qtf_qclipboard_mimeData
-    public :: qtf_qclipboard_clear, qtf_qscreen_name, qtf_qscreen_manufacturer, qtf_qscreen_model
-    public :: qtf_qscreen_x, qtf_qscreen_y, qtf_qscreen_width, qtf_qscreen_height, qtf_qscreen_availableX
-    public :: qtf_qscreen_availableY, qtf_qscreen_availableWidth, qtf_qscreen_availableHeight
-    public :: qtf_qscreen_devicePixelRatio, qtf_qscreen_logicalDotsPerInch, qtf_qscreen_physicalDotsPerInch
-    public :: qtf_qscreen_physicalWidth, qtf_qscreen_physicalHeight, qtf_qscreen_refreshRate
-    public :: qtf_qscreen_depth, qtf_qscreen_grab, qtf_qaction_new, qtf_qaction_setText, qtf_qaction_text
-    public :: qtf_qaction_setShortcut, qtf_qaction_shortcut, qtf_qaction_setCheckable
-    public :: qtf_qaction_isCheckable, qtf_qaction_setChecked, qtf_qaction_isChecked, qtf_qaction_setEnabled
-    public :: qtf_qaction_isEnabled, qtf_qaction_setStatusTip, qtf_qaction_setToolTip, qtf_qaction_trigger
-    public :: qtf_qaction_setIcon, qtf_qvalidator_validate, qtf_qintvalidator_new, qtf_qintvalidator_setRange
-    public :: qtf_qintvalidator_bottom, qtf_qintvalidator_top, qtf_qdoublevalidator_new
-    public :: qtf_qdoublevalidator_setRange, qtf_qdoublevalidator_setNotation, qtf_qdoublevalidator_bottom
-    public :: qtf_qdoublevalidator_top, qtf_qdoublevalidator_decimals, qtf_qregularexpressionvalidator_new
+    public :: qtf_qdropevent_new, qtf_qdropevent_x, qtf_qdropevent_y, qtf_qdropevent_position
+    public :: qtf_qdropevent_proposedAction, qtf_qdropevent_possibleActions, qtf_qdropevent_dropAction
+    public :: qtf_qdropevent_setDropAction, qtf_qdropevent_acceptProposedAction, qtf_qdropevent_buttons
+    public :: qtf_qdropevent_modifiers, qtf_qdropevent_mimeData, qtf_qdropevent_hasText, qtf_qdropevent_text
+    public :: qtf_qdropevent_hasUrls, qtf_qdropevent_urls, qtf_qdropevent_hasImage, qtf_qdropevent_hasFormat
+    public :: qtf_qdropevent_data, qtf_qdropevent_hasItems, qtf_qdropevent_items, qtf_qdrag_new
+    public :: qtf_qdrag_setMimeData, qtf_qdrag_setPixmap, qtf_qdrag_setHotSpot, qtf_qdrag_setHotSpotPoint
+    public :: qtf_qdrag_exec, qtf_qclipboard_setText, qtf_qclipboard_text, qtf_qclipboard_hasText
+    public :: qtf_qclipboard_setImage, qtf_qclipboard_image, qtf_qclipboard_hasImage
+    public :: qtf_qclipboard_setMimeData, qtf_qclipboard_mimeData, qtf_qclipboard_clear, qtf_qscreen_name
+    public :: qtf_qscreen_manufacturer, qtf_qscreen_model, qtf_qscreen_x, qtf_qscreen_y, qtf_qscreen_width
+    public :: qtf_qscreen_height, qtf_qscreen_availableX, qtf_qscreen_availableY, qtf_qscreen_availableWidth
+    public :: qtf_qscreen_availableHeight, qtf_qscreen_geometry, qtf_qscreen_availableGeometry
+    public :: qtf_qscreen_size, qtf_qscreen_physicalSize, qtf_qscreen_devicePixelRatio
+    public :: qtf_qscreen_logicalDotsPerInch, qtf_qscreen_physicalDotsPerInch, qtf_qscreen_physicalWidth
+    public :: qtf_qscreen_physicalHeight, qtf_qscreen_refreshRate, qtf_qscreen_depth, qtf_qscreen_grab
+    public :: qtf_qaction_new, qtf_qaction_setText, qtf_qaction_text, qtf_qaction_setShortcut
+    public :: qtf_qaction_shortcut, qtf_qaction_setCheckable, qtf_qaction_isCheckable, qtf_qaction_setChecked
+    public :: qtf_qaction_isChecked, qtf_qaction_setEnabled, qtf_qaction_isEnabled, qtf_qaction_setStatusTip
+    public :: qtf_qaction_setToolTip, qtf_qaction_trigger, qtf_qaction_setIcon, qtf_qvalidator_validate
+    public :: qtf_qintvalidator_new, qtf_qintvalidator_setRange, qtf_qintvalidator_bottom
+    public :: qtf_qintvalidator_top, qtf_qdoublevalidator_new, qtf_qdoublevalidator_setRange
+    public :: qtf_qdoublevalidator_setNotation, qtf_qdoublevalidator_bottom, qtf_qdoublevalidator_top
+    public :: qtf_qdoublevalidator_decimals, qtf_qregularexpressionvalidator_new
     public :: qtf_qregularexpressionvalidator_setPattern, qtf_qregularexpressionvalidator_pattern
     public :: qtf_qwindow_new, qtf_qwindow_setSurfaceType, qtf_qwindow_surfaceType, qtf_qwindow_create
     public :: qtf_qwindow_destroy, qtf_qwindow_show, qtf_qwindow_hide, qtf_qwindow_isVisible
     public :: qtf_qwindow_isExposed, qtf_qwindow_resize, qtf_qwindow_width, qtf_qwindow_height
-    public :: qtf_qwindow_devicePixelRatio, qtf_qwindow_winId, qtf_qwindow_setTitle, qtf_qwindow_title
-    public :: qtf_qwindow_screen, qtf_qwindow_requestUpdate, qtf_QGuiApplication_clipboard
-    public :: qtf_QGuiApplication_primaryScreen, qtf_QGuiApplication_screenCount, qtf_QGuiApplication_screen
-    public :: qtf_QGuiApplication_screenAt, qtf_QGuiApplication_setOverrideCursor
-    public :: qtf_QGuiApplication_changeOverrideCursor, qtf_QGuiApplication_restoreOverrideCursor
-    public :: qtf_QGuiApplication_overrideCursorShape, qtf_QCursor_x, qtf_QCursor_y, qtf_QCursor_setPos
+    public :: qtf_qwindow_resizeSize, qtf_qwindow_size, qtf_qwindow_position, qtf_qwindow_setPosition
+    public :: qtf_qwindow_geometry, qtf_qwindow_setGeometry, qtf_qwindow_mapToGlobal
+    public :: qtf_qwindow_mapFromGlobal, qtf_qwindow_devicePixelRatio, qtf_qwindow_winId
+    public :: qtf_qwindow_setTitle, qtf_qwindow_title, qtf_qwindow_screen, qtf_qwindow_requestUpdate
+    public :: qtf_QGuiApplication_clipboard, qtf_QGuiApplication_primaryScreen
+    public :: qtf_QGuiApplication_screenCount, qtf_QGuiApplication_screen, qtf_QGuiApplication_screenAt
+    public :: qtf_QGuiApplication_setOverrideCursor, qtf_QGuiApplication_changeOverrideCursor
+    public :: qtf_QGuiApplication_restoreOverrideCursor, qtf_QGuiApplication_overrideCursorShape
+    public :: qtf_QCursor_x, qtf_QCursor_y, qtf_QCursor_setPos, qtf_QCursor_pos
 
 end module qt_c_gui

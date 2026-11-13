@@ -109,6 +109,7 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 | Icons | `QIcon` (files or generated images), `QStyle_standardIcon`, icons on actions, buttons, tabs, items and windows |
 | Events | `QMouseEvent`, `QKeyEvent`, `QWheelEvent`, `QResizeEvent`; on any widget: `QCloseEvent` (veto closing), `QContextMenuEvent`, enter/leave, focus in/out, show/hide, drag and drop; on any object (e.g. a `QWindow`): `QtfEventFilter` (input and drag-and-drop events can be consumed) |
 | Desktop | `QClipboard` (text, images, any data), drag and drop (`QMimeData`, `QDropEvent`, `QDrag`; files from the desktop arrive as paths; rows and nodes dragged out of, reordered in and dropped on item views with Fortran models), cursors (per widget, override cursor), `QScreen` (size, available area, DPI, pixel ratio) |
+| Geometry and math | `QPoint`, `QPointF`, `QSize`, `QSizeF`, `QRect`, `QRectF`, `QLineF`, `QMargins`, `QVector2D`, `QVector3D`, `QVector4D`, `QQuaternion` (Euler angles, slerp, look-at rotations): plain Fortran types with Qt's methods and operators, taken and returned by widget geometry (`pos`, `size`, `geometry`, `mapToGlobal`, ...), painting, paths, transforms, events, screens, shader uniforms and `QMatrix4x4` (`rotate(quaternion)`, `matrix * vector`, `QVector3D_project`/`unproject`) |
 | OpenGL | `QtfOpenGLWidget`, `QOpenGLShaderProgram`, `QOpenGLBuffer`, `QOpenGLVertexArrayObject`, `QSurfaceFormat`, `QMatrix4x4`, and `glClear`, `glDrawArrays`, `glDrawElements`, ...; for external engines: `QWindow`, `QOpenGLContext`, `QWidget_createWindowContainer` |
 
 ## Getting started
@@ -304,6 +305,16 @@ A few conventions to know (the full list is in [plans/plan.md](plans/plan.md)):
 - **Indices are 0-based** (combo box items, grid rows/columns), as in Qt.
 - **Reals** are `real(c_double)` (i.e. real64); drawing methods accept integer
   or real coordinates.
+- **Value types** (`QColor`, `QPoint`, `QRect`, `QVector3D`, `QQuaternion`,
+  `QMatrix4x4`, ...) are plain Fortran types with public components, built with
+  their structure constructors: `r = QRect(0, 0, 100, 50)`, then `r%width`,
+  `r%center()`, `r%contains(QPoint(5, 5))`. Arithmetic uses operators
+  (`p1 + p2`, `2.0_dp * v`, `q1 * q2`), and the integer types round as Qt
+  does. Static functions follow the usual naming: `QVector3D_crossProduct`,
+  `QQuaternion_fromAxisAndAngle`. Floating-point types compare (`==`) to within
+  a relative 1e-12. Fortran doesn't allow calling a method directly on a
+  constructor or function result (`QRect(0, 0, 9, 9)%center()`), so assign it to a
+  variable first.
 - **Arrays as images**: `img = QImage_fromArray(field, 'viridis', flipY=.true.)`
   maps `field(i, j)` to pixel (x, y). `flipY` puts j = 1 at the bottom, as in a
   plot. Draw the image scaled with `painter%drawImage(x, y, w, h, img)`, or show

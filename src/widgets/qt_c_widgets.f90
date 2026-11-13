@@ -948,6 +948,307 @@ module qt_c_widgets
             integer(c_int), value :: y
         end subroutine qtf_qwidget_move
 
+        !> The position (relative to the parent, or on the screen for a window).
+        !>
+        !> C: `void qtf_qwidget_pos(void *self, int *res_x, int *res_y)`
+        subroutine qtf_qwidget_pos(self, res_x, res_y) bind(C, name='qtf_qwidget_pos')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+        end subroutine qtf_qwidget_pos
+
+        !> Move the widget to `p` (a window: on the screen).
+        !>
+        !> C: `void qtf_qwidget_movePoint(void *self, int p_x, int p_y)`
+        subroutine qtf_qwidget_movePoint(self, p_x, p_y) bind(C, name='qtf_qwidget_movePoint')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: p_x
+            integer(c_int), value :: p_y
+        end subroutine qtf_qwidget_movePoint
+
+        !> The size in pixels.
+        !>
+        !> C: `void qtf_qwidget_size(void *self, int *res_width, int *res_height)`
+        subroutine qtf_qwidget_size(self, res_width, res_height) bind(C, name='qtf_qwidget_size')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qwidget_size
+
+        !> Resize to `size`.
+        !>
+        !> C: `void qtf_qwidget_resizeSize(void *self, int size_width, int size_height)`
+        subroutine qtf_qwidget_resizeSize(self, size_width, size_height) bind(C, name='qtf_qwidget_resizeSize')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: size_width
+            integer(c_int), value :: size_height
+        end subroutine qtf_qwidget_resizeSize
+
+        !> The position and size (relative to the parent; for a window, without its frame).
+        !>
+        !> C: `void qtf_qwidget_geometry(void *self, int *res_x, int *res_y, int *res_width, int *res_height)`
+        subroutine qtf_qwidget_geometry(self, res_x, res_y, res_width, res_height) bind(C, name='qtf_qwidget_geometry')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qwidget_geometry
+
+        !> Set the position and size (relative to the parent; for a window, without its frame).
+        !>
+        !> C: `void qtf_qwidget_setGeometry(void *self, int rect_x, int rect_y, int rect_width, int rect_height)`
+        subroutine qtf_qwidget_setGeometry(self, rect_x, rect_y, rect_width, rect_height) &
+                bind(C, name='qtf_qwidget_setGeometry')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: rect_x
+            integer(c_int), value :: rect_y
+            integer(c_int), value :: rect_width
+            integer(c_int), value :: rect_height
+        end subroutine qtf_qwidget_setGeometry
+
+        !> The position and size including the window frame.
+        !>
+        !> C: `void qtf_qwidget_frameGeometry(void *self, int *res_x, int *res_y, int *res_width, int *res_height)`
+        subroutine qtf_qwidget_frameGeometry(self, res_x, res_y, res_width, res_height) &
+                bind(C, name='qtf_qwidget_frameGeometry')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qwidget_frameGeometry
+
+        !> The widget's own area: (0, 0, width, height).
+        !>
+        !> C: `void qtf_qwidget_rect(void *self, int *res_x, int *res_y, int *res_width, int *res_height)`
+        subroutine qtf_qwidget_rect(self, res_x, res_y, res_width, res_height) bind(C, name='qtf_qwidget_rect')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qwidget_rect
+
+        !> The area inside the contents margins.
+        !>
+        !> C: `void qtf_qwidget_contentsRect(void *self, int *res_x, int *res_y, int *res_width, int *res_height)`
+        subroutine qtf_qwidget_contentsRect(self, res_x, res_y, res_width, res_height) &
+                bind(C, name='qtf_qwidget_contentsRect')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qwidget_contentsRect
+
+        !> The recommended size (from the layout or the widget type).
+        !>
+        !> C: `void qtf_qwidget_sizeHint(void *self, int *res_width, int *res_height)`
+        subroutine qtf_qwidget_sizeHint(self, res_width, res_height) bind(C, name='qtf_qwidget_sizeHint')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qwidget_sizeHint
+
+        !> The smallest allowed size.
+        !>
+        !> C: `void qtf_qwidget_minimumSize(void *self, int *res_width, int *res_height)`
+        subroutine qtf_qwidget_minimumSize(self, res_width, res_height) bind(C, name='qtf_qwidget_minimumSize')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qwidget_minimumSize
+
+        !> The largest allowed size.
+        !>
+        !> C: `void qtf_qwidget_maximumSize(void *self, int *res_width, int *res_height)`
+        subroutine qtf_qwidget_maximumSize(self, res_width, res_height) bind(C, name='qtf_qwidget_maximumSize')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qwidget_maximumSize
+
+        !> Set the smallest allowed size.
+        !>
+        !> C: `void qtf_qwidget_setMinimumSizeSize(void *self, int size_width, int size_height)`
+        subroutine qtf_qwidget_setMinimumSizeSize(self, size_width, size_height) &
+                bind(C, name='qtf_qwidget_setMinimumSizeSize')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: size_width
+            integer(c_int), value :: size_height
+        end subroutine qtf_qwidget_setMinimumSizeSize
+
+        !> Set the largest allowed size.
+        !>
+        !> C: `void qtf_qwidget_setMaximumSizeSize(void *self, int size_width, int size_height)`
+        subroutine qtf_qwidget_setMaximumSizeSize(self, size_width, size_height) &
+                bind(C, name='qtf_qwidget_setMaximumSizeSize')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: size_width
+            integer(c_int), value :: size_height
+        end subroutine qtf_qwidget_setMaximumSizeSize
+
+        !> Fix the size (the user cannot resize it).
+        !>
+        !> C: `void qtf_qwidget_setFixedSizeSize(void *self, int size_width, int size_height)`
+        subroutine qtf_qwidget_setFixedSizeSize(self, size_width, size_height) &
+                bind(C, name='qtf_qwidget_setFixedSizeSize')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: size_width
+            integer(c_int), value :: size_height
+        end subroutine qtf_qwidget_setFixedSizeSize
+
+        !> The margins around the widget's contents.
+        !>
+        !> C: `void qtf_qwidget_contentsMargins(void *self, int *res_left, int *res_top, int *res_right, int *res_bottom)`
+        subroutine qtf_qwidget_contentsMargins(self, res_left, res_top, res_right, res_bottom) &
+                bind(C, name='qtf_qwidget_contentsMargins')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_left
+            integer(c_int), intent(out) :: res_top
+            integer(c_int), intent(out) :: res_right
+            integer(c_int), intent(out) :: res_bottom
+        end subroutine qtf_qwidget_contentsMargins
+
+        !> Set the margins around the widget's contents.
+        !>
+        !> C: `void qtf_qwidget_setContentsMarginsM(void *self, int margins_left, int margins_top, int margins_right, int margins_bottom)`
+        subroutine qtf_qwidget_setContentsMarginsM(self, margins_left, margins_top, margins_right, margins_bottom) &
+                bind(C, name='qtf_qwidget_setContentsMarginsM')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: margins_left
+            integer(c_int), value :: margins_top
+            integer(c_int), value :: margins_right
+            integer(c_int), value :: margins_bottom
+        end subroutine qtf_qwidget_setContentsMarginsM
+
+        !> A point in widget coordinates as screen coordinates.
+        !>
+        !> C: `void qtf_qwidget_mapToGlobal(void *self, int p_x, int p_y, int *res_x, int *res_y)`
+        subroutine qtf_qwidget_mapToGlobal(self, p_x, p_y, res_x, res_y) bind(C, name='qtf_qwidget_mapToGlobal')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: p_x
+            integer(c_int), value :: p_y
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+        end subroutine qtf_qwidget_mapToGlobal
+
+        !> A point in screen coordinates as widget coordinates.
+        !>
+        !> C: `void qtf_qwidget_mapFromGlobal(void *self, int p_x, int p_y, int *res_x, int *res_y)`
+        subroutine qtf_qwidget_mapFromGlobal(self, p_x, p_y, res_x, res_y) bind(C, name='qtf_qwidget_mapFromGlobal')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: p_x
+            integer(c_int), value :: p_y
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+        end subroutine qtf_qwidget_mapFromGlobal
+
+        !> A point in widget coordinates as the parent's coordinates.
+        !>
+        !> C: `void qtf_qwidget_mapToParent(void *self, int p_x, int p_y, int *res_x, int *res_y)`
+        subroutine qtf_qwidget_mapToParent(self, p_x, p_y, res_x, res_y) bind(C, name='qtf_qwidget_mapToParent')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: p_x
+            integer(c_int), value :: p_y
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+        end subroutine qtf_qwidget_mapToParent
+
+        !> A point in the parent's coordinates as widget coordinates.
+        !>
+        !> C: `void qtf_qwidget_mapFromParent(void *self, int p_x, int p_y, int *res_x, int *res_y)`
+        subroutine qtf_qwidget_mapFromParent(self, p_x, p_y, res_x, res_y) bind(C, name='qtf_qwidget_mapFromParent')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: p_x
+            integer(c_int), value :: p_y
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+        end subroutine qtf_qwidget_mapFromParent
+
+        !> A point in widget coordinates as coordinates of `parent` (an ancestor).
+        !>
+        !> C: `void qtf_qwidget_mapTo(void *self, void *parent, int p_x, int p_y, int *res_x, int *res_y)`
+        subroutine qtf_qwidget_mapTo(self, parent, p_x, p_y, res_x, res_y) bind(C, name='qtf_qwidget_mapTo')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: parent
+            integer(c_int), value :: p_x
+            integer(c_int), value :: p_y
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+        end subroutine qtf_qwidget_mapTo
+
+        !> A point in the coordinates of `parent` (an ancestor) as widget coordinates.
+        !>
+        !> C: `void qtf_qwidget_mapFrom(void *self, void *parent, int p_x, int p_y, int *res_x, int *res_y)`
+        subroutine qtf_qwidget_mapFrom(self, parent, p_x, p_y, res_x, res_y) bind(C, name='qtf_qwidget_mapFrom')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: parent
+            integer(c_int), value :: p_x
+            integer(c_int), value :: p_y
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+        end subroutine qtf_qwidget_mapFrom
+
+        !> The visible child widget at `p` (a null handle if none).
+        !>
+        !> C: `void *qtf_qwidget_childAt(void *self, int p_x, int p_y)`
+        function qtf_qwidget_childAt(self, p_x, p_y) result(res) bind(C, name='qtf_qwidget_childAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: p_x
+            integer(c_int), value :: p_y
+            type(c_ptr) :: res
+        end function qtf_qwidget_childAt
+
         !> Create a QtfWidget; without a parent it is a top-level window.
         !>
         !> C: `void *qtf_qtfwidget_new(void *parent)`
@@ -1887,6 +2188,34 @@ module qt_c_widgets
             integer(c_int), value :: bottom
         end subroutine qtf_qlayout_setContentsMargins
 
+        !> Set the margins around the layout.
+        !>
+        !> C: `void qtf_qlayout_setContentsMarginsM(void *self, int margins_left, int margins_top, int margins_right, int margins_bottom)`
+        subroutine qtf_qlayout_setContentsMarginsM(self, margins_left, margins_top, margins_right, margins_bottom) &
+                bind(C, name='qtf_qlayout_setContentsMarginsM')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: margins_left
+            integer(c_int), value :: margins_top
+            integer(c_int), value :: margins_right
+            integer(c_int), value :: margins_bottom
+        end subroutine qtf_qlayout_setContentsMarginsM
+
+        !> The margins around the layout.
+        !>
+        !> C: `void qtf_qlayout_contentsMargins(void *self, int *res_left, int *res_top, int *res_right, int *res_bottom)`
+        subroutine qtf_qlayout_contentsMargins(self, res_left, res_top, res_right, res_bottom) &
+                bind(C, name='qtf_qlayout_contentsMargins')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_left
+            integer(c_int), intent(out) :: res_top
+            integer(c_int), intent(out) :: res_right
+            integer(c_int), intent(out) :: res_bottom
+        end subroutine qtf_qlayout_contentsMargins
+
         !> Set the space between items, in pixels.
         !>
         !> C: `void qtf_qlayout_setSpacing(void *self, int spacing)`
@@ -2317,6 +2646,29 @@ module qt_c_widgets
             integer(c_int), value :: globalY
             type(c_ptr) :: res
         end function qtf_qmenu_exec
+
+        !> Show the menu at a screen position (e.g. `event%globalPos()`) and return at once.
+        !>
+        !> C: `void qtf_qmenu_popupAt(void *self, int pos_x, int pos_y)`
+        subroutine qtf_qmenu_popupAt(self, pos_x, pos_y) bind(C, name='qtf_qmenu_popupAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: pos_x
+            integer(c_int), value :: pos_y
+        end subroutine qtf_qmenu_popupAt
+
+        !> Show the menu at a screen position and wait; returns the chosen action (a null handle if none).
+        !>
+        !> C: `void *qtf_qmenu_execAt(void *self, int pos_x, int pos_y)`
+        function qtf_qmenu_execAt(self, pos_x, pos_y) result(res) bind(C, name='qtf_qmenu_execAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: pos_x
+            integer(c_int), value :: pos_y
+            type(c_ptr) :: res
+        end function qtf_qmenu_execAt
 
         !> Remove all actions (actions owned by the menu are deleted).
         !>
@@ -4787,6 +5139,20 @@ module qt_c_widgets
             type(c_ptr), value :: self
             integer(c_int) :: res
         end function qtf_qtfpaintcell_height
+
+        !> The cell's rectangle (in the view's coordinates).
+        !>
+        !> C: `void qtf_qtfpaintcell_rect(void *self, int *res_x, int *res_y, int *res_width, int *res_height)`
+        subroutine qtf_qtfpaintcell_rect(self, res_x, res_y, res_width, res_height) &
+                bind(C, name='qtf_qtfpaintcell_rect')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qtfpaintcell_rect
 
         !> The cell's text (from the model).
         !>
@@ -9203,7 +9569,14 @@ module qt_c_widgets
     public :: qtf_qwidget_showMaximized, qtf_qwidget_showMinimized, qtf_qwidget_showNormal
     public :: qtf_qwidget_showFullScreen, qtf_qwidget_isMaximized, qtf_qwidget_isMinimized
     public :: qtf_qwidget_activateWindow, qtf_qwidget_raise, qtf_qwidget_repolish, qtf_qwidget_x
-    public :: qtf_qwidget_y, qtf_qwidget_move, qtf_qtfwidget_new, qtf_qframe_new, qtf_qframe_setFrameShape
+    public :: qtf_qwidget_y, qtf_qwidget_move, qtf_qwidget_pos, qtf_qwidget_movePoint, qtf_qwidget_size
+    public :: qtf_qwidget_resizeSize, qtf_qwidget_geometry, qtf_qwidget_setGeometry
+    public :: qtf_qwidget_frameGeometry, qtf_qwidget_rect, qtf_qwidget_contentsRect, qtf_qwidget_sizeHint
+    public :: qtf_qwidget_minimumSize, qtf_qwidget_maximumSize, qtf_qwidget_setMinimumSizeSize
+    public :: qtf_qwidget_setMaximumSizeSize, qtf_qwidget_setFixedSizeSize, qtf_qwidget_contentsMargins
+    public :: qtf_qwidget_setContentsMarginsM, qtf_qwidget_mapToGlobal, qtf_qwidget_mapFromGlobal
+    public :: qtf_qwidget_mapToParent, qtf_qwidget_mapFromParent, qtf_qwidget_mapTo, qtf_qwidget_mapFrom
+    public :: qtf_qwidget_childAt, qtf_qtfwidget_new, qtf_qframe_new, qtf_qframe_setFrameShape
     public :: qtf_qframe_frameShape, qtf_qframe_setFrameShadow, qtf_qframe_setLineWidth, qtf_qlabel_new
     public :: qtf_qlabel_setText, qtf_qlabel_text, qtf_qlabel_setAlignment, qtf_qlabel_setWordWrap
     public :: qtf_qlabel_setPixmap, qtf_qlabel_setScaledContents, qtf_qabstractbutton_setText
@@ -9230,19 +9603,20 @@ module qt_c_widgets
     public :: qtf_qcombobox_clear, qtf_qcombobox_count, qtf_qcombobox_currentIndex
     public :: qtf_qcombobox_setCurrentIndex, qtf_qcombobox_currentText, qtf_qcombobox_setCurrentText
     public :: qtf_qcombobox_itemText, qtf_qcombobox_findText, qtf_qcombobox_setEditable
-    public :: qtf_qcombobox_setCompleter, qtf_qlayout_setContentsMargins, qtf_qlayout_setSpacing
-    public :: qtf_qlayout_spacing, qtf_qlayout_count, qtf_qboxlayout_addWidget, qtf_qboxlayout_addLayout
-    public :: qtf_qboxlayout_addStretch, qtf_qboxlayout_addSpacing, qtf_qboxlayout_setStretchFactor
-    public :: qtf_qboxlayout_setStretch, qtf_qvboxlayout_new, qtf_qhboxlayout_new, qtf_qgridlayout_new
-    public :: qtf_qgridlayout_addWidget, qtf_qgridlayout_addLayout, qtf_qgridlayout_setRowStretch
-    public :: qtf_qgridlayout_setColumnStretch, qtf_qgridlayout_rowCount, qtf_qgridlayout_columnCount
-    public :: qtf_qstatusbar_showMessage, qtf_qstatusbar_clearMessage, qtf_qstatusbar_currentMessage
-    public :: qtf_qmainwindow_new, qtf_qmainwindow_setCentralWidget, qtf_qmainwindow_centralWidget
-    public :: qtf_qmainwindow_statusBar, qtf_qmainwindow_menuBar, qtf_qmainwindow_addToolBar
-    public :: qtf_qmainwindow_addDockWidget, qtf_qmainwindow_removeDockWidget
-    public :: qtf_qmainwindow_tabifyDockWidget, qtf_qmainwindow_saveState, qtf_qmainwindow_restoreState
-    public :: qtf_qmenu_new, qtf_qmenu_addMenu, qtf_qmenu_addSeparator, qtf_qmenu_title, qtf_qmenu_menuAction
-    public :: qtf_qmenu_popup, qtf_qmenu_exec, qtf_qmenu_clear, qtf_qmenu_isEmpty, qtf_qmenubar_addMenu
+    public :: qtf_qcombobox_setCompleter, qtf_qlayout_setContentsMargins, qtf_qlayout_setContentsMarginsM
+    public :: qtf_qlayout_contentsMargins, qtf_qlayout_setSpacing, qtf_qlayout_spacing, qtf_qlayout_count
+    public :: qtf_qboxlayout_addWidget, qtf_qboxlayout_addLayout, qtf_qboxlayout_addStretch
+    public :: qtf_qboxlayout_addSpacing, qtf_qboxlayout_setStretchFactor, qtf_qboxlayout_setStretch
+    public :: qtf_qvboxlayout_new, qtf_qhboxlayout_new, qtf_qgridlayout_new, qtf_qgridlayout_addWidget
+    public :: qtf_qgridlayout_addLayout, qtf_qgridlayout_setRowStretch, qtf_qgridlayout_setColumnStretch
+    public :: qtf_qgridlayout_rowCount, qtf_qgridlayout_columnCount, qtf_qstatusbar_showMessage
+    public :: qtf_qstatusbar_clearMessage, qtf_qstatusbar_currentMessage, qtf_qmainwindow_new
+    public :: qtf_qmainwindow_setCentralWidget, qtf_qmainwindow_centralWidget, qtf_qmainwindow_statusBar
+    public :: qtf_qmainwindow_menuBar, qtf_qmainwindow_addToolBar, qtf_qmainwindow_addDockWidget
+    public :: qtf_qmainwindow_removeDockWidget, qtf_qmainwindow_tabifyDockWidget, qtf_qmainwindow_saveState
+    public :: qtf_qmainwindow_restoreState, qtf_qmenu_new, qtf_qmenu_addMenu, qtf_qmenu_addSeparator
+    public :: qtf_qmenu_title, qtf_qmenu_menuAction, qtf_qmenu_popup, qtf_qmenu_exec, qtf_qmenu_popupAt
+    public :: qtf_qmenu_execAt, qtf_qmenu_clear, qtf_qmenu_isEmpty, qtf_qmenubar_addMenu
     public :: qtf_qmenubar_insertMenu, qtf_qtoolbar_addSeparator, qtf_qtoolbar_addWidget
     public :: qtf_qtoolbar_setIconSize, qtf_qtoolbar_setToolButtonStyle, qtf_qdialog_new, qtf_qdialog_exec
     public :: qtf_qdialog_open, qtf_qdialog_accept, qtf_qdialog_reject, qtf_qdialog_done, qtf_qdialog_result
@@ -9327,19 +9701,20 @@ module qt_c_widgets
     public :: qtf_qtfitemdelegate_setSizeHint, qtf_qtfitemdelegate_setChoices, qtf_qtfitemdelegate_setRange
     public :: qtf_qtfitemdelegate_clear, qtf_qtfpaintcell_painter, qtf_qtfpaintcell_row
     public :: qtf_qtfpaintcell_column, qtf_qtfpaintcell_node, qtf_qtfpaintcell_viewRow, qtf_qtfpaintcell_x
-    public :: qtf_qtfpaintcell_y, qtf_qtfpaintcell_width, qtf_qtfpaintcell_height, qtf_qtfpaintcell_text
-    public :: qtf_qtfpaintcell_textColor, qtf_qtfpaintcell_isSelected, qtf_qtfpaintcell_hasFocus
-    public :: qtf_qtfpaintcell_isHovered, qtf_qtfpaintcell_isEnabled, qtf_qtfpaintcell_drawBackground
-    public :: qtf_qtfpaintcell_drawDefault, qtf_qtablewidgetitem_new, qtf_qtablewidgetitem_setText
-    public :: qtf_qtablewidgetitem_text, qtf_qtablewidgetitem_setTextAlignment, qtf_qtablewidgetitem_setFlags
-    public :: qtf_qtablewidgetitem_flags, qtf_qtablewidgetitem_setToolTip, qtf_qtablewidgetitem_setIcon
-    public :: qtf_qtablewidgetitem_setBackground, qtf_qtablewidgetitem_setForeground
-    public :: qtf_qtablewidgetitem_row, qtf_qtablewidgetitem_column, qtf_qtablewidget_new
-    public :: qtf_qtablewidget_setRowCount, qtf_qtablewidget_rowCount, qtf_qtablewidget_setColumnCount
-    public :: qtf_qtablewidget_columnCount, qtf_qtablewidget_setItem, qtf_qtablewidget_item
-    public :: qtf_qtablewidget_setHorizontalHeaderLabels, qtf_qtablewidget_setVerticalHeaderLabels
-    public :: qtf_qtablewidget_clearContents, qtf_qtablewidget_clear, qtf_qtablewidget_insertRow
-    public :: qtf_qtablewidget_removeRow, qtf_qtablewidget_insertColumn, qtf_qtablewidget_removeColumn
+    public :: qtf_qtfpaintcell_y, qtf_qtfpaintcell_width, qtf_qtfpaintcell_height, qtf_qtfpaintcell_rect
+    public :: qtf_qtfpaintcell_text, qtf_qtfpaintcell_textColor, qtf_qtfpaintcell_isSelected
+    public :: qtf_qtfpaintcell_hasFocus, qtf_qtfpaintcell_isHovered, qtf_qtfpaintcell_isEnabled
+    public :: qtf_qtfpaintcell_drawBackground, qtf_qtfpaintcell_drawDefault, qtf_qtablewidgetitem_new
+    public :: qtf_qtablewidgetitem_setText, qtf_qtablewidgetitem_text, qtf_qtablewidgetitem_setTextAlignment
+    public :: qtf_qtablewidgetitem_setFlags, qtf_qtablewidgetitem_flags, qtf_qtablewidgetitem_setToolTip
+    public :: qtf_qtablewidgetitem_setIcon, qtf_qtablewidgetitem_setBackground
+    public :: qtf_qtablewidgetitem_setForeground, qtf_qtablewidgetitem_row, qtf_qtablewidgetitem_column
+    public :: qtf_qtablewidget_new, qtf_qtablewidget_setRowCount, qtf_qtablewidget_rowCount
+    public :: qtf_qtablewidget_setColumnCount, qtf_qtablewidget_columnCount, qtf_qtablewidget_setItem
+    public :: qtf_qtablewidget_item, qtf_qtablewidget_setHorizontalHeaderLabels
+    public :: qtf_qtablewidget_setVerticalHeaderLabels, qtf_qtablewidget_clearContents
+    public :: qtf_qtablewidget_clear, qtf_qtablewidget_insertRow, qtf_qtablewidget_removeRow
+    public :: qtf_qtablewidget_insertColumn, qtf_qtablewidget_removeColumn
     public :: qtf_qtablewidget_setSortingEnabled, qtf_qtablewidget_sortItems, qtf_qlistwidget_new
     public :: qtf_qlistwidget_addItem, qtf_qlistwidget_addItems, qtf_qlistwidget_insertItem
     public :: qtf_qlistwidget_takeItem, qtf_qlistwidget_count, qtf_qlistwidget_currentRow

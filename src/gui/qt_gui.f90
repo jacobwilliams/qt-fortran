@@ -12,6 +12,7 @@ module qt_gui
     use qt_c_gui
     use qt_core
     use qt_gui_types
+    use qt_geometry
     implicit none
     private
 
@@ -225,6 +226,7 @@ module qt_gui
     contains
         procedure :: width => qimage_width
         procedure :: height => qimage_height
+        procedure :: size => qimage_size
         procedure :: fill => qimage_fill
         procedure :: setPixelColor => qimage_setPixelColor
         procedure :: save => qimage_save
@@ -243,6 +245,7 @@ module qt_gui
     contains
         procedure :: width => qpixmap_width
         procedure :: height => qpixmap_height
+        procedure :: size => qpixmap_size
         procedure :: toImage => qpixmap_toImage
         procedure :: save => qpixmap_save
         procedure :: delete => qpixmap_delete
@@ -283,24 +286,24 @@ module qt_gui
         procedure :: scale => qpainter_scale
         procedure :: rotate => qpainter_rotate
         procedure :: resetTransform => qpainter_resetTransform
-        procedure, private :: qpainter_drawPoint_d, qpainter_drawPoint_i
-        generic :: drawPoint => qpainter_drawPoint_d, qpainter_drawPoint_i
-        procedure, private :: qpainter_drawLine_d, qpainter_drawLine_i
-        generic :: drawLine => qpainter_drawLine_d, qpainter_drawLine_i
-        procedure, private :: qpainter_drawRect_d, qpainter_drawRect_i
-        generic :: drawRect => qpainter_drawRect_d, qpainter_drawRect_i
+        procedure, private :: qpainter_drawPoint_d, qpainter_drawPoint_i, qpainter_drawPointF
+        generic :: drawPoint => qpainter_drawPoint_d, qpainter_drawPoint_i, qpainter_drawPointF
+        procedure, private :: qpainter_drawLine_d, qpainter_drawLine_i, qpainter_drawLinePoints, qpainter_drawLineF
+        generic :: drawLine => qpainter_drawLine_d, qpainter_drawLine_i, qpainter_drawLinePoints, qpainter_drawLineF
+        procedure, private :: qpainter_drawRect_d, qpainter_drawRect_i, qpainter_drawRectF
+        generic :: drawRect => qpainter_drawRect_d, qpainter_drawRect_i, qpainter_drawRectF
         procedure, private :: qpainter_drawRoundedRect_d, qpainter_drawRoundedRect_i
         generic :: drawRoundedRect => qpainter_drawRoundedRect_d, qpainter_drawRoundedRect_i
-        procedure, private :: qpainter_drawEllipse_d, qpainter_drawEllipse_i
-        generic :: drawEllipse => qpainter_drawEllipse_d, qpainter_drawEllipse_i
-        procedure, private :: qpainter_fillRect_d, qpainter_fillRect_i, qpainter_fillRectGradient_d, qpainter_fillRectGradient_i
-        generic :: fillRect => qpainter_fillRect_d, qpainter_fillRect_i, qpainter_fillRectGradient_d, qpainter_fillRectGradient_i
+        procedure, private :: qpainter_drawEllipse_d, qpainter_drawEllipse_i, qpainter_drawEllipseF, qpainter_drawEllipseCenter
+        generic :: drawEllipse => qpainter_drawEllipse_d, qpainter_drawEllipse_i, qpainter_drawEllipseF, qpainter_drawEllipseCenter
+        procedure, private :: qpainter_fillRect_d, qpainter_fillRect_i, qpainter_fillRectGradient_d, qpainter_fillRectGradient_i, qpainter_fillRectF
+        generic :: fillRect => qpainter_fillRect_d, qpainter_fillRect_i, qpainter_fillRectGradient_d, qpainter_fillRectGradient_i, qpainter_fillRectF
         procedure, private :: qpainter_drawPolyline_d, qpainter_drawPolyline_i
         generic :: drawPolyline => qpainter_drawPolyline_d, qpainter_drawPolyline_i
         procedure, private :: qpainter_drawPolygon_d, qpainter_drawPolygon_i
         generic :: drawPolygon => qpainter_drawPolygon_d, qpainter_drawPolygon_i
-        procedure, private :: qpainter_drawText_d, qpainter_drawText_i, qpainter_drawTextRect_d, qpainter_drawTextRect_i
-        generic :: drawText => qpainter_drawText_d, qpainter_drawText_i, qpainter_drawTextRect_d, qpainter_drawTextRect_i
+        procedure, private :: qpainter_drawText_d, qpainter_drawText_i, qpainter_drawTextRect_d, qpainter_drawTextRect_i, qpainter_drawTextAt, qpainter_drawTextInRect
+        generic :: drawText => qpainter_drawText_d, qpainter_drawText_i, qpainter_drawTextRect_d, qpainter_drawTextRect_i, qpainter_drawTextAt, qpainter_drawTextInRect
         procedure, private :: qpainter_drawImage, qpainter_drawImageRect_d, qpainter_drawImageRect_i
         generic :: drawImage => qpainter_drawImage, qpainter_drawImageRect_d, qpainter_drawImageRect_i
         procedure :: drawPixmap => qpainter_drawPixmap
@@ -314,8 +317,8 @@ module qt_gui
         procedure, private :: qpainter_fillPath, qpainter_fillPathGradient
         generic :: fillPath => qpainter_fillPath, qpainter_fillPathGradient
         procedure :: strokePath => qpainter_strokePath
-        procedure, private :: qpainter_setClipRect_d, qpainter_setClipRect_i
-        generic :: setClipRect => qpainter_setClipRect_d, qpainter_setClipRect_i
+        procedure, private :: qpainter_setClipRect_d, qpainter_setClipRect_i, qpainter_setClipRectF
+        generic :: setClipRect => qpainter_setClipRect_d, qpainter_setClipRect_i, qpainter_setClipRectF
         procedure :: setClipPath => qpainter_setClipPath
         procedure :: setClipping => qpainter_setClipping
         procedure :: hasClipping => qpainter_hasClipping
@@ -339,6 +342,8 @@ module qt_gui
     contains
         procedure :: x => qmouseevent_x
         procedure :: y => qmouseevent_y
+        procedure :: position => qmouseevent_position
+        procedure :: globalPosition => qmouseevent_globalPosition
         procedure :: button => qmouseevent_button
         procedure :: buttons => qmouseevent_buttons
         procedure :: modifiers => qmouseevent_modifiers
@@ -368,6 +373,9 @@ module qt_gui
         procedure :: y => qwheelevent_y
         procedure :: angleDeltaX => qwheelevent_angleDeltaX
         procedure :: angleDeltaY => qwheelevent_angleDeltaY
+        procedure :: position => qwheelevent_position
+        procedure :: angleDelta => qwheelevent_angleDelta
+        procedure :: pixelDelta => qwheelevent_pixelDelta
         procedure :: buttons => qwheelevent_buttons
         procedure :: modifiers => qwheelevent_modifiers
     end type QWheelEvent
@@ -383,6 +391,8 @@ module qt_gui
         procedure :: height => qresizeevent_height
         procedure :: oldWidth => qresizeevent_oldWidth
         procedure :: oldHeight => qresizeevent_oldHeight
+        procedure :: size => qresizeevent_size
+        procedure :: oldSize => qresizeevent_oldSize
     end type QResizeEvent
     !> Constructor: `QResizeEvent(width, height, oldWidth, oldHeight)`.
     interface QResizeEvent
@@ -406,6 +416,8 @@ module qt_gui
         procedure :: y => qcontextmenuevent_y
         procedure :: globalX => qcontextmenuevent_globalX
         procedure :: globalY => qcontextmenuevent_globalY
+        procedure :: pos => qcontextmenuevent_pos
+        procedure :: globalPos => qcontextmenuevent_globalPos
         procedure :: reason => qcontextmenuevent_reason
         procedure :: modifiers => qcontextmenuevent_modifiers
     end type QContextMenuEvent
@@ -420,10 +432,10 @@ module qt_gui
     type, public :: QPainterPath
         type(c_ptr) :: ptr = c_null_ptr
     contains
-        procedure, private :: qpainterpath_moveTo_d, qpainterpath_moveTo_i
-        generic :: moveTo => qpainterpath_moveTo_d, qpainterpath_moveTo_i
-        procedure, private :: qpainterpath_lineTo_d, qpainterpath_lineTo_i
-        generic :: lineTo => qpainterpath_lineTo_d, qpainterpath_lineTo_i
+        procedure, private :: qpainterpath_moveTo_d, qpainterpath_moveTo_i, qpainterpath_moveToPoint
+        generic :: moveTo => qpainterpath_moveTo_d, qpainterpath_moveTo_i, qpainterpath_moveToPoint
+        procedure, private :: qpainterpath_lineTo_d, qpainterpath_lineTo_i, qpainterpath_lineToPoint
+        generic :: lineTo => qpainterpath_lineTo_d, qpainterpath_lineTo_i, qpainterpath_lineToPoint
         procedure, private :: qpainterpath_quadTo_d, qpainterpath_quadTo_i
         generic :: quadTo => qpainterpath_quadTo_d, qpainterpath_quadTo_i
         procedure, private :: qpainterpath_cubicTo_d, qpainterpath_cubicTo_i
@@ -431,12 +443,12 @@ module qt_gui
         procedure, private :: qpainterpath_arcTo_d, qpainterpath_arcTo_i
         generic :: arcTo => qpainterpath_arcTo_d, qpainterpath_arcTo_i
         procedure :: closeSubpath => qpainterpath_closeSubpath
-        procedure, private :: qpainterpath_addRect_d, qpainterpath_addRect_i
-        generic :: addRect => qpainterpath_addRect_d, qpainterpath_addRect_i
+        procedure, private :: qpainterpath_addRect_d, qpainterpath_addRect_i, qpainterpath_addRectF
+        generic :: addRect => qpainterpath_addRect_d, qpainterpath_addRect_i, qpainterpath_addRectF
         procedure, private :: qpainterpath_addRoundedRect_d, qpainterpath_addRoundedRect_i
         generic :: addRoundedRect => qpainterpath_addRoundedRect_d, qpainterpath_addRoundedRect_i
-        procedure, private :: qpainterpath_addEllipse_d, qpainterpath_addEllipse_i
-        generic :: addEllipse => qpainterpath_addEllipse_d, qpainterpath_addEllipse_i
+        procedure, private :: qpainterpath_addEllipse_d, qpainterpath_addEllipse_i, qpainterpath_addEllipseF
+        generic :: addEllipse => qpainterpath_addEllipse_d, qpainterpath_addEllipse_i, qpainterpath_addEllipseF
         procedure, private :: qpainterpath_addPolygon_d, qpainterpath_addPolygon_i
         generic :: addPolygon => qpainterpath_addPolygon_d, qpainterpath_addPolygon_i
         procedure, private :: qpainterpath_addText_d, qpainterpath_addText_i
@@ -445,7 +457,11 @@ module qt_gui
         procedure, private :: qpainterpath_translate_d, qpainterpath_translate_i
         generic :: translate => qpainterpath_translate_d, qpainterpath_translate_i
         procedure :: setFillRule => qpainterpath_setFillRule
-        procedure :: containsPoint => qpainterpath_containsPoint
+        procedure, private :: qpainterpath_containsPoint, qpainterpath_containsPointF
+        generic :: containsPoint => qpainterpath_containsPoint, qpainterpath_containsPointF
+        procedure :: currentPosition => qpainterpath_currentPosition
+        procedure :: pointAtPercent => qpainterpath_pointAtPercent
+        procedure :: boundingRect => qpainterpath_boundingRect
         procedure :: isEmpty => qpainterpath_isEmpty
         procedure :: length => qpainterpath_length
         procedure :: elementCount => qpainterpath_elementCount
@@ -534,6 +550,8 @@ module qt_gui
         procedure :: dy => qtransform_dy
         procedure :: mapX => qtransform_mapX
         procedure :: mapY => qtransform_mapY
+        procedure :: map => qtransform_map
+        procedure :: mapRect => qtransform_mapRect
         procedure :: inverted => qtransform_inverted
         procedure :: multiplied => qtransform_multiplied
         procedure :: copy => qtransform_copy
@@ -552,6 +570,8 @@ module qt_gui
     contains
         procedure :: horizontalAdvance => qfontmetrics_horizontalAdvance
         procedure :: boundingWidth => qfontmetrics_boundingWidth
+        procedure :: boundingRect => qfontmetrics_boundingRect
+        procedure :: size => qfontmetrics_size
         procedure :: height => qfontmetrics_height
         procedure :: ascent => qfontmetrics_ascent
         procedure :: descent => qfontmetrics_descent
@@ -608,6 +628,7 @@ module qt_gui
     contains
         procedure :: x => qdropevent_x
         procedure :: y => qdropevent_y
+        procedure :: position => qdropevent_position
         procedure :: proposedAction => qdropevent_proposedAction
         procedure :: possibleActions => qdropevent_possibleActions
         procedure :: dropAction => qdropevent_dropAction
@@ -640,7 +661,8 @@ module qt_gui
     contains
         procedure :: setMimeData => qdrag_setMimeData
         procedure :: setPixmap => qdrag_setPixmap
-        procedure :: setHotSpot => qdrag_setHotSpot
+        procedure, private :: qdrag_setHotSpot, qdrag_setHotSpotPoint
+        generic :: setHotSpot => qdrag_setHotSpot, qdrag_setHotSpotPoint
         procedure :: exec => qdrag_exec
     end type QDrag
     !> Constructor: `QDrag(source)`.
@@ -686,6 +708,10 @@ module qt_gui
         procedure :: availableY => qscreen_availableY
         procedure :: availableWidth => qscreen_availableWidth
         procedure :: availableHeight => qscreen_availableHeight
+        procedure :: geometry => qscreen_geometry
+        procedure :: availableGeometry => qscreen_availableGeometry
+        procedure :: size => qscreen_size
+        procedure :: physicalSize => qscreen_physicalSize
         procedure :: devicePixelRatio => qscreen_devicePixelRatio
         procedure :: logicalDotsPerInch => qscreen_logicalDotsPerInch
         procedure :: physicalDotsPerInch => qscreen_physicalDotsPerInch
@@ -791,9 +817,17 @@ module qt_gui
         procedure :: hide => qwindow_hide
         procedure :: isVisible => qwindow_isVisible
         procedure :: isExposed => qwindow_isExposed
-        procedure :: resize => qwindow_resize
+        procedure, private :: qwindow_resize, qwindow_resizeSize
+        generic :: resize => qwindow_resize, qwindow_resizeSize
         procedure :: width => qwindow_width
         procedure :: height => qwindow_height
+        procedure :: size => qwindow_size
+        procedure :: position => qwindow_position
+        procedure :: setPosition => qwindow_setPosition
+        procedure :: geometry => qwindow_geometry
+        procedure :: setGeometry => qwindow_setGeometry
+        procedure :: mapToGlobal => qwindow_mapToGlobal
+        procedure :: mapFromGlobal => qwindow_mapFromGlobal
         procedure :: devicePixelRatio => qwindow_devicePixelRatio
         procedure :: winId => qwindow_winId
         procedure :: setTitle => qwindow_setTitle
@@ -990,6 +1024,7 @@ module qt_gui
     public :: QCursor_x
     public :: QCursor_y
     public :: QCursor_setPos
+    public :: QCursor_pos
 
 contains
 
@@ -1021,6 +1056,17 @@ contains
         integer :: res
         res = qtf_qimage_height(self%ptr)
     end function qimage_height
+
+    !> The size in pixels.
+    function qimage_size(self) result(res)
+        class(QImage), intent(in) :: self
+        type(QSize) :: res
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qimage_size(self%ptr, r_width, r_height)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qimage_size
 
     !> Fill the whole image with `color`.
     subroutine qimage_fill(self, color)
@@ -1131,6 +1177,17 @@ contains
         integer :: res
         res = qtf_qpixmap_height(self%ptr)
     end function qpixmap_height
+
+    !> The size in pixels.
+    function qpixmap_size(self) result(res)
+        class(QPixmap), intent(in) :: self
+        type(QSize) :: res
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qpixmap_size(self%ptr, r_width, r_height)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qpixmap_size
 
     !> A new image with the pixmap's contents (delete it when done).
     function qpixmap_toImage(self) result(res)
@@ -1720,6 +1777,85 @@ contains
                 c_double))
     end subroutine qpainter_setClipRect_i
 
+    !> Draw only inside `rect` (in the current coordinates).
+    subroutine qpainter_setClipRectF(self, rect)
+        class(QPainter), intent(in) :: self
+        type(QRectF), intent(in) :: rect
+        call qtf_qpainter_setClipRectF(self%ptr, rect%x, rect%y, rect%width, rect%height)
+    end subroutine qpainter_setClipRectF
+
+    !> Draw a point at `p` with the pen.
+    subroutine qpainter_drawPointF(self, p)
+        class(QPainter), intent(in) :: self
+        type(QPointF), intent(in) :: p
+        call qtf_qpainter_drawPointF(self%ptr, p%x, p%y)
+    end subroutine qpainter_drawPointF
+
+    !> Draw a line from `p1` to `p2`.
+    subroutine qpainter_drawLinePoints(self, p1, p2)
+        class(QPainter), intent(in) :: self
+        type(QPointF), intent(in) :: p1
+        type(QPointF), intent(in) :: p2
+        call qtf_qpainter_drawLinePoints(self%ptr, p1%x, p1%y, p2%x, p2%y)
+    end subroutine qpainter_drawLinePoints
+
+    !> Draw `line`.
+    subroutine qpainter_drawLineF(self, line)
+        class(QPainter), intent(in) :: self
+        type(QLineF), intent(in) :: line
+        call qtf_qpainter_drawLineF(self%ptr, line%x1, line%y1, line%x2, line%y2)
+    end subroutine qpainter_drawLineF
+
+    !> Draw `rect`: outlined with the pen, filled with the brush.
+    subroutine qpainter_drawRectF(self, rect)
+        class(QPainter), intent(in) :: self
+        type(QRectF), intent(in) :: rect
+        call qtf_qpainter_drawRectF(self%ptr, rect%x, rect%y, rect%width, rect%height)
+    end subroutine qpainter_drawRectF
+
+    !> Draw the ellipse inscribed in `rect`.
+    subroutine qpainter_drawEllipseF(self, rect)
+        class(QPainter), intent(in) :: self
+        type(QRectF), intent(in) :: rect
+        call qtf_qpainter_drawEllipseF(self%ptr, rect%x, rect%y, rect%width, rect%height)
+    end subroutine qpainter_drawEllipseF
+
+    !> Draw the ellipse at `center` with radii `rx` and `ry`.
+    subroutine qpainter_drawEllipseCenter(self, center, rx, ry)
+        class(QPainter), intent(in) :: self
+        type(QPointF), intent(in) :: center
+        real(c_double), intent(in) :: rx
+        real(c_double), intent(in) :: ry
+        call qtf_qpainter_drawEllipseCenter(self%ptr, center%x, center%y, rx, ry)
+    end subroutine qpainter_drawEllipseCenter
+
+    !> Draw text with its baseline starting at `p`.
+    subroutine qpainter_drawTextAt(self, p, text)
+        class(QPainter), intent(in) :: self
+        type(QPointF), intent(in) :: p
+        character(len=*), intent(in) :: text
+        call qtf_qpainter_drawTextAt(self%ptr, p%x, p%y, text, len(text, c_int))
+    end subroutine qpainter_drawTextAt
+
+    !> Draw text inside `rect`, aligned by `flags` (e.g. Qt_AlignCenter).
+    subroutine qpainter_drawTextInRect(self, rect, flags, text)
+        class(QPainter), intent(in) :: self
+        type(QRectF), intent(in) :: rect
+        integer, intent(in) :: flags
+        character(len=*), intent(in) :: text
+        call qtf_qpainter_drawTextInRect(self%ptr, rect%x, rect%y, rect%width, rect%height, int(flags, c_int), text, &
+                len(text, c_int))
+    end subroutine qpainter_drawTextInRect
+
+    !> Fill `rect` with `color` (ignores pen and brush).
+    subroutine qpainter_fillRectF(self, rect, color)
+        class(QPainter), intent(in) :: self
+        type(QRectF), intent(in) :: rect
+        type(QColor), intent(in) :: color
+        call qtf_qpainter_fillRectF(self%ptr, rect%x, rect%y, rect%width, rect%height, int(color%r, c_int), &
+                int(color%g, c_int), int(color%b, c_int), int(color%a, c_int))
+    end subroutine qpainter_fillRectF
+
     !> Draw only inside the path.
     subroutine qpainter_setClipPath(self, path)
         class(QPainter), intent(in) :: self
@@ -1850,6 +1986,28 @@ contains
         res = qtf_qmouseevent_y(self%ptr)
     end function qmouseevent_y
 
+    !> The position in widget coordinates.
+    function qmouseevent_position(self) result(res)
+        class(QMouseEvent), intent(in) :: self
+        type(QPointF) :: res
+        real(c_double) :: r_x
+        real(c_double) :: r_y
+        call qtf_qmouseevent_position(self%ptr, r_x, r_y)
+        res%x = r_x
+        res%y = r_y
+    end function qmouseevent_position
+
+    !> The position on the screen (virtual desktop).
+    function qmouseevent_globalPosition(self) result(res)
+        class(QMouseEvent), intent(in) :: self
+        type(QPointF) :: res
+        real(c_double) :: r_x
+        real(c_double) :: r_y
+        call qtf_qmouseevent_globalPosition(self%ptr, r_x, r_y)
+        res%x = r_x
+        res%y = r_y
+    end function qmouseevent_globalPosition
+
     !> The button that caused the event (Qt_NoButton for moves).
     function qmouseevent_button(self) result(res)
         class(QMouseEvent), intent(in) :: self
@@ -1964,6 +2122,39 @@ contains
         res = qtf_qwheelevent_angleDeltaY(self%ptr)
     end function qwheelevent_angleDeltaY
 
+    !> The cursor position in widget coordinates.
+    function qwheelevent_position(self) result(res)
+        class(QWheelEvent), intent(in) :: self
+        type(QPointF) :: res
+        real(c_double) :: r_x
+        real(c_double) :: r_y
+        call qtf_qwheelevent_position(self%ptr, r_x, r_y)
+        res%x = r_x
+        res%y = r_y
+    end function qwheelevent_position
+
+    !> The wheel rotation in eighths of a degree (y: +120 per notch away from the user).
+    function qwheelevent_angleDelta(self) result(res)
+        class(QWheelEvent), intent(in) :: self
+        type(QPoint) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        call qtf_qwheelevent_angleDelta(self%ptr, r_x, r_y)
+        res%x = int(r_x)
+        res%y = int(r_y)
+    end function qwheelevent_angleDelta
+
+    !> The scrolling distance in pixels on devices that report it (e.g. trackpads; otherwise (0, 0)).
+    function qwheelevent_pixelDelta(self) result(res)
+        class(QWheelEvent), intent(in) :: self
+        type(QPoint) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        call qtf_qwheelevent_pixelDelta(self%ptr, r_x, r_y)
+        res%x = int(r_x)
+        res%y = int(r_y)
+    end function qwheelevent_pixelDelta
+
     !> Mouse buttons held during the event.
     function qwheelevent_buttons(self) result(res)
         class(QWheelEvent), intent(in) :: self
@@ -2017,6 +2208,28 @@ contains
         res = qtf_qresizeevent_oldHeight(self%ptr)
     end function qresizeevent_oldHeight
 
+    !> The new size.
+    function qresizeevent_size(self) result(res)
+        class(QResizeEvent), intent(in) :: self
+        type(QSize) :: res
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qresizeevent_size(self%ptr, r_width, r_height)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qresizeevent_size
+
+    !> The previous size (-1 x -1 before the first resize).
+    function qresizeevent_oldSize(self) result(res)
+        class(QResizeEvent), intent(in) :: self
+        type(QSize) :: res
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qresizeevent_oldSize(self%ptr, r_width, r_height)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qresizeevent_oldSize
+
     !> A synthetic close event (e.g. for QCoreApplication_sendEvent); delete it after use.
     function qcloseevent_new() result(res)
         type(QCloseEvent) :: res
@@ -2062,6 +2275,28 @@ contains
         integer :: res
         res = qtf_qcontextmenuevent_globalY(self%ptr)
     end function qcontextmenuevent_globalY
+
+    !> The position in widget coordinates.
+    function qcontextmenuevent_pos(self) result(res)
+        class(QContextMenuEvent), intent(in) :: self
+        type(QPoint) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        call qtf_qcontextmenuevent_pos(self%ptr, r_x, r_y)
+        res%x = int(r_x)
+        res%y = int(r_y)
+    end function qcontextmenuevent_pos
+
+    !> The position in screen coordinates (e.g. for `menu%popup(event%globalPos())`).
+    function qcontextmenuevent_globalPos(self) result(res)
+        class(QContextMenuEvent), intent(in) :: self
+        type(QPoint) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        call qtf_qcontextmenuevent_globalPos(self%ptr, r_x, r_y)
+        res%x = int(r_x)
+        res%y = int(r_y)
+    end function qcontextmenuevent_globalPos
 
     !> What caused the request (QContextMenuEvent_Mouse, _Keyboard or _Other).
     function qcontextmenuevent_reason(self) result(res)
@@ -2358,6 +2593,80 @@ contains
         logical :: res
         res = qtf_logical(qtf_qpainterpath_containsPoint(self%ptr, x, y))
     end function qpainterpath_containsPoint
+
+    !> True if `p` is inside the path.
+    function qpainterpath_containsPointF(self, p) result(res)
+        class(QPainterPath), intent(in) :: self
+        type(QPointF), intent(in) :: p
+        logical :: res
+        res = qtf_logical(qtf_qpainterpath_containsPointF(self%ptr, p%x, p%y))
+    end function qpainterpath_containsPointF
+
+    !> Start a new subpath at `p`.
+    subroutine qpainterpath_moveToPoint(self, p)
+        class(QPainterPath), intent(in) :: self
+        type(QPointF), intent(in) :: p
+        call qtf_qpainterpath_moveToPoint(self%ptr, p%x, p%y)
+    end subroutine qpainterpath_moveToPoint
+
+    !> A straight line to `p`.
+    subroutine qpainterpath_lineToPoint(self, p)
+        class(QPainterPath), intent(in) :: self
+        type(QPointF), intent(in) :: p
+        call qtf_qpainterpath_lineToPoint(self%ptr, p%x, p%y)
+    end subroutine qpainterpath_lineToPoint
+
+    !> Add `rect` (a closed subpath).
+    subroutine qpainterpath_addRectF(self, rect)
+        class(QPainterPath), intent(in) :: self
+        type(QRectF), intent(in) :: rect
+        call qtf_qpainterpath_addRectF(self%ptr, rect%x, rect%y, rect%width, rect%height)
+    end subroutine qpainterpath_addRectF
+
+    !> Add the ellipse inscribed in `rect`.
+    subroutine qpainterpath_addEllipseF(self, rect)
+        class(QPainterPath), intent(in) :: self
+        type(QRectF), intent(in) :: rect
+        call qtf_qpainterpath_addEllipseF(self%ptr, rect%x, rect%y, rect%width, rect%height)
+    end subroutine qpainterpath_addEllipseF
+
+    !> The end point of the last subpath (where the next lineTo starts).
+    function qpainterpath_currentPosition(self) result(res)
+        class(QPainterPath), intent(in) :: self
+        type(QPointF) :: res
+        real(c_double) :: r_x
+        real(c_double) :: r_y
+        call qtf_qpainterpath_currentPosition(self%ptr, r_x, r_y)
+        res%x = r_x
+        res%y = r_y
+    end function qpainterpath_currentPosition
+
+    !> The point at fraction `t` (0..1) of the path's length.
+    function qpainterpath_pointAtPercent(self, t) result(res)
+        class(QPainterPath), intent(in) :: self
+        real(c_double), intent(in) :: t
+        type(QPointF) :: res
+        real(c_double) :: r_x
+        real(c_double) :: r_y
+        call qtf_qpainterpath_pointAtPercent(self%ptr, t, r_x, r_y)
+        res%x = r_x
+        res%y = r_y
+    end function qpainterpath_pointAtPercent
+
+    !> The bounding rectangle (including control points).
+    function qpainterpath_boundingRect(self) result(res)
+        class(QPainterPath), intent(in) :: self
+        type(QRectF) :: res
+        real(c_double) :: r_x
+        real(c_double) :: r_y
+        real(c_double) :: r_width
+        real(c_double) :: r_height
+        call qtf_qpainterpath_boundingRect(self%ptr, r_x, r_y, r_width, r_height)
+        res%x = r_x
+        res%y = r_y
+        res%width = r_width
+        res%height = r_height
+    end function qpainterpath_boundingRect
 
     !> True if the path has no elements.
     function qpainterpath_isEmpty(self) result(res)
@@ -2710,6 +3019,34 @@ contains
         res = qtf_qtransform_mapY(self%ptr, x, y)
     end function qtransform_mapY
 
+    !> The transformed point.
+    function qtransform_map(self, p) result(res)
+        class(QTransform), intent(in) :: self
+        type(QPointF), intent(in) :: p
+        type(QPointF) :: res
+        real(c_double) :: r_x
+        real(c_double) :: r_y
+        call qtf_qtransform_map(self%ptr, p%x, p%y, r_x, r_y)
+        res%x = r_x
+        res%y = r_y
+    end function qtransform_map
+
+    !> The bounding rectangle of the transformed rectangle.
+    function qtransform_mapRect(self, rect) result(res)
+        class(QTransform), intent(in) :: self
+        type(QRectF), intent(in) :: rect
+        type(QRectF) :: res
+        real(c_double) :: r_x
+        real(c_double) :: r_y
+        real(c_double) :: r_width
+        real(c_double) :: r_height
+        call qtf_qtransform_mapRect(self%ptr, rect%x, rect%y, rect%width, rect%height, r_x, r_y, r_width, r_height)
+        res%x = r_x
+        res%y = r_y
+        res%width = r_width
+        res%height = r_height
+    end function qtransform_mapRect
+
     !> A new transform: the inverse (the identity if not invertible; then `ok` is false).
     function qtransform_inverted(self, ok) result(res)
         class(QTransform), intent(in) :: self
@@ -2763,6 +3100,35 @@ contains
         integer :: res
         res = qtf_qfontmetrics_boundingWidth(self%ptr, text, len(text, c_int))
     end function qfontmetrics_boundingWidth
+
+    !> The rectangle covered by the ink of `text`, relative to its baseline origin (so `y` is negative).
+    function qfontmetrics_boundingRect(self, text) result(res)
+        class(QFontMetrics), intent(in) :: self
+        character(len=*), intent(in) :: text
+        type(QRect) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qfontmetrics_boundingRect(self%ptr, text, len(text, c_int), r_x, r_y, r_width, r_height)
+        res%x = int(r_x)
+        res%y = int(r_y)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qfontmetrics_boundingRect
+
+    !> The size of `text` laid out with `flags` (e.g. 0, or Qt_TextSingleLine).
+    function qfontmetrics_size(self, flags, text) result(res)
+        class(QFontMetrics), intent(in) :: self
+        integer, intent(in) :: flags
+        character(len=*), intent(in) :: text
+        type(QSize) :: res
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qfontmetrics_size(self%ptr, int(flags, c_int), text, len(text, c_int), r_width, r_height)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qfontmetrics_size
 
     !> Line height (ascent + descent).
     function qfontmetrics_height(self) result(res)
@@ -3057,6 +3423,17 @@ contains
         res = qtf_qdropevent_y(self%ptr)
     end function qdropevent_y
 
+    !> The position in widget coordinates.
+    function qdropevent_position(self) result(res)
+        class(QDropEvent), intent(in) :: self
+        type(QPointF) :: res
+        real(c_double) :: r_x
+        real(c_double) :: r_y
+        call qtf_qdropevent_position(self%ptr, r_x, r_y)
+        res%x = r_x
+        res%y = r_y
+    end function qdropevent_position
+
     !> The action the user asks for (Qt_CopyAction, _MoveAction, _LinkAction).
     function qdropevent_proposedAction(self) result(res)
         class(QDropEvent), intent(in) :: self
@@ -3217,6 +3594,14 @@ contains
         integer, intent(in) :: y
         call qtf_qdrag_setHotSpot(qtf_live(self, 'QDrag%setHotSpot'), int(x, c_int), int(y, c_int))
     end subroutine qdrag_setHotSpot
+
+    !> Where the cursor is on the pixmap.
+    subroutine qdrag_setHotSpotPoint(self, hotSpot)
+        class(QDrag), intent(in) :: self
+        type(QPoint), intent(in) :: hotSpot
+        call qtf_qdrag_setHotSpotPoint(qtf_live(self, 'QDrag%setHotSpotPoint'), int(hotSpot%x, c_int), int(hotSpot%y, &
+                c_int))
+    end subroutine qdrag_setHotSpotPoint
 
     !> Run the drag (blocks until it ends); returns the action taken, Qt_IgnoreAction if cancelled.
     function qdrag_exec(self, supportedActions, defaultAction) result(res)
@@ -3437,6 +3822,58 @@ contains
         integer :: res
         res = qtf_qscreen_availableHeight(qtf_live(self, 'QScreen%availableHeight'))
     end function qscreen_availableHeight
+
+    !> The screen's position and size in the virtual desktop (logical pixels).
+    function qscreen_geometry(self) result(res)
+        class(QScreen), intent(in) :: self
+        type(QRect) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qscreen_geometry(qtf_live(self, 'QScreen%geometry'), r_x, r_y, r_width, r_height)
+        res%x = int(r_x)
+        res%y = int(r_y)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qscreen_geometry
+
+    !> The area available to windows (without docks and task bars).
+    function qscreen_availableGeometry(self) result(res)
+        class(QScreen), intent(in) :: self
+        type(QRect) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qscreen_availableGeometry(qtf_live(self, 'QScreen%availableGeometry'), r_x, r_y, r_width, r_height)
+        res%x = int(r_x)
+        res%y = int(r_y)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qscreen_availableGeometry
+
+    !> The size in logical pixels.
+    function qscreen_size(self) result(res)
+        class(QScreen), intent(in) :: self
+        type(QSize) :: res
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qscreen_size(qtf_live(self, 'QScreen%size'), r_width, r_height)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qscreen_size
+
+    !> The physical size in millimeters (0 x 0 if unknown).
+    function qscreen_physicalSize(self) result(res)
+        class(QScreen), intent(in) :: self
+        type(QSizeF) :: res
+        real(c_double) :: r_width
+        real(c_double) :: r_height
+        call qtf_qscreen_physicalSize(qtf_live(self, 'QScreen%physicalSize'), r_width, r_height)
+        res%width = r_width
+        res%height = r_height
+    end function qscreen_physicalSize
 
     !> Physical pixels per logical pixel (2 on a typical HiDPI display).
     function qscreen_devicePixelRatio(self) result(res)
@@ -3840,6 +4277,92 @@ contains
         res = qtf_qwindow_height(qtf_live(self, 'QWindow%height'))
     end function qwindow_height
 
+    !> Resize, in logical pixels.
+    subroutine qwindow_resizeSize(self, size)
+        class(QWindow), intent(in) :: self
+        type(QSize), intent(in) :: size
+        call qtf_qwindow_resizeSize(qtf_live(self, 'QWindow%resizeSize'), int(size%width, c_int), int(size%height, &
+                c_int))
+    end subroutine qwindow_resizeSize
+
+    !> The size in logical pixels.
+    function qwindow_size(self) result(res)
+        class(QWindow), intent(in) :: self
+        type(QSize) :: res
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qwindow_size(qtf_live(self, 'QWindow%size'), r_width, r_height)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qwindow_size
+
+    !> The position of the window (on the screen for a top-level window).
+    function qwindow_position(self) result(res)
+        class(QWindow), intent(in) :: self
+        type(QPoint) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        call qtf_qwindow_position(qtf_live(self, 'QWindow%position'), r_x, r_y)
+        res%x = int(r_x)
+        res%y = int(r_y)
+    end function qwindow_position
+
+    !> Move the window.
+    subroutine qwindow_setPosition(self, position)
+        class(QWindow), intent(in) :: self
+        type(QPoint), intent(in) :: position
+        call qtf_qwindow_setPosition(qtf_live(self, 'QWindow%setPosition'), int(position%x, c_int), int(position%y, &
+                c_int))
+    end subroutine qwindow_setPosition
+
+    !> The window's position and size (without the frame).
+    function qwindow_geometry(self) result(res)
+        class(QWindow), intent(in) :: self
+        type(QRect) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qwindow_geometry(qtf_live(self, 'QWindow%geometry'), r_x, r_y, r_width, r_height)
+        res%x = int(r_x)
+        res%y = int(r_y)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qwindow_geometry
+
+    !> Set the window's position and size (without the frame).
+    subroutine qwindow_setGeometry(self, rect)
+        class(QWindow), intent(in) :: self
+        type(QRect), intent(in) :: rect
+        call qtf_qwindow_setGeometry(qtf_live(self, 'QWindow%setGeometry'), int(rect%x, c_int), int(rect%y, c_int), &
+                int(rect%width, c_int), int(rect%height, c_int))
+    end subroutine qwindow_setGeometry
+
+    !> A point in window coordinates as screen coordinates.
+    function qwindow_mapToGlobal(self, p) result(res)
+        class(QWindow), intent(in) :: self
+        type(QPoint), intent(in) :: p
+        type(QPoint) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        call qtf_qwindow_mapToGlobal(qtf_live(self, 'QWindow%mapToGlobal'), int(p%x, c_int), int(p%y, c_int), r_x, r_y)
+        res%x = int(r_x)
+        res%y = int(r_y)
+    end function qwindow_mapToGlobal
+
+    !> A point in screen coordinates as window coordinates.
+    function qwindow_mapFromGlobal(self, p) result(res)
+        class(QWindow), intent(in) :: self
+        type(QPoint), intent(in) :: p
+        type(QPoint) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        call qtf_qwindow_mapFromGlobal(qtf_live(self, 'QWindow%mapFromGlobal'), int(p%x, c_int), int(p%y, c_int), &
+                r_x, r_y)
+        res%x = int(r_x)
+        res%y = int(r_y)
+    end function qwindow_mapFromGlobal
+
     !> Physical pixels per logical pixel (2 on a typical HiDPI display).
     function qwindow_devicePixelRatio(self) result(res)
         class(QWindow), intent(in) :: self
@@ -3958,6 +4481,16 @@ contains
         integer, intent(in) :: y
         call qtf_QCursor_setPos(int(x, c_int), int(y, c_int))
     end subroutine QCursor_setPos
+
+    !> The mouse cursor's position on the screen (virtual desktop).
+    function QCursor_pos() result(res)
+        type(QPoint) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        call qtf_QCursor_pos(r_x, r_y)
+        res%x = int(r_x)
+        res%y = int(r_y)
+    end function QCursor_pos
 
     !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalpainter_connect(self, slot, data, connection)

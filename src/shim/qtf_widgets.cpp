@@ -1616,6 +1616,168 @@ QTF_API int qtf_qwidget_y(void *self) { return as<QWidget>(self)->y(); }
 // Move the widget (a window: on the screen).
 QTF_API void qtf_qwidget_move(void *self, int x, int y) { as<QWidget>(self)->move(x, y); }
 
+// The position (relative to the parent, or on the screen for a window).
+QTF_API void qtf_qwidget_pos(void *self, int *res_x, int *res_y) {
+    const auto v_ = as<QWidget>(self)->pos();
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// Move the widget to `p` (a window: on the screen).
+QTF_API void qtf_qwidget_movePoint(void *self, int p_x, int p_y) {
+    as<QWidget>(self)->move(QPoint(p_x, p_y));
+}
+
+// The size in pixels.
+QTF_API void qtf_qwidget_size(void *self, int *res_width, int *res_height) {
+    const auto v_ = as<QWidget>(self)->size();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// Resize to `size`.
+QTF_API void qtf_qwidget_resizeSize(void *self, int size_width, int size_height) {
+    as<QWidget>(self)->resize(QSize(size_width, size_height));
+}
+
+// The position and size (relative to the parent; for a window, without its frame).
+QTF_API void qtf_qwidget_geometry(void *self, int *res_x, int *res_y, int *res_width, int *res_height) {
+    const auto v_ = as<QWidget>(self)->geometry();
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// Set the position and size (relative to the parent; for a window, without its frame).
+QTF_API void qtf_qwidget_setGeometry(void *self, int rect_x, int rect_y, int rect_width, int rect_height) {
+    as<QWidget>(self)->setGeometry(QRect(rect_x, rect_y, rect_width, rect_height));
+}
+
+// The position and size including the window frame.
+QTF_API void qtf_qwidget_frameGeometry(void *self, int *res_x, int *res_y, int *res_width, int *res_height) {
+    const auto v_ = as<QWidget>(self)->frameGeometry();
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// The widget's own area: (0, 0, width, height).
+QTF_API void qtf_qwidget_rect(void *self, int *res_x, int *res_y, int *res_width, int *res_height) {
+    const auto v_ = as<QWidget>(self)->rect();
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// The area inside the contents margins.
+QTF_API void qtf_qwidget_contentsRect(void *self, int *res_x, int *res_y, int *res_width, int *res_height) {
+    const auto v_ = as<QWidget>(self)->contentsRect();
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// The recommended size (from the layout or the widget type).
+QTF_API void qtf_qwidget_sizeHint(void *self, int *res_width, int *res_height) {
+    const auto v_ = as<QWidget>(self)->sizeHint();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// The smallest allowed size.
+QTF_API void qtf_qwidget_minimumSize(void *self, int *res_width, int *res_height) {
+    const auto v_ = as<QWidget>(self)->minimumSize();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// The largest allowed size.
+QTF_API void qtf_qwidget_maximumSize(void *self, int *res_width, int *res_height) {
+    const auto v_ = as<QWidget>(self)->maximumSize();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// Set the smallest allowed size.
+QTF_API void qtf_qwidget_setMinimumSizeSize(void *self, int size_width, int size_height) {
+    as<QWidget>(self)->setMinimumSize(QSize(size_width, size_height));
+}
+
+// Set the largest allowed size.
+QTF_API void qtf_qwidget_setMaximumSizeSize(void *self, int size_width, int size_height) {
+    as<QWidget>(self)->setMaximumSize(QSize(size_width, size_height));
+}
+
+// Fix the size (the user cannot resize it).
+QTF_API void qtf_qwidget_setFixedSizeSize(void *self, int size_width, int size_height) {
+    as<QWidget>(self)->setFixedSize(QSize(size_width, size_height));
+}
+
+// The margins around the widget's contents.
+QTF_API void qtf_qwidget_contentsMargins(void *self, int *res_left, int *res_top, int *res_right, int *res_bottom) {
+    const auto v_ = as<QWidget>(self)->contentsMargins();
+    *res_left = v_.left();
+    *res_top = v_.top();
+    *res_right = v_.right();
+    *res_bottom = v_.bottom();
+}
+
+// Set the margins around the widget's contents.
+QTF_API void qtf_qwidget_setContentsMarginsM(void *self, int margins_left, int margins_top, int margins_right, int margins_bottom) {
+    as<QWidget>(self)->setContentsMargins(QMargins(margins_left, margins_top, margins_right, margins_bottom));
+}
+
+// A point in widget coordinates as screen coordinates.
+QTF_API void qtf_qwidget_mapToGlobal(void *self, int p_x, int p_y, int *res_x, int *res_y) {
+    const auto v_ = as<QWidget>(self)->mapToGlobal(QPoint(p_x, p_y));
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// A point in screen coordinates as widget coordinates.
+QTF_API void qtf_qwidget_mapFromGlobal(void *self, int p_x, int p_y, int *res_x, int *res_y) {
+    const auto v_ = as<QWidget>(self)->mapFromGlobal(QPoint(p_x, p_y));
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// A point in widget coordinates as the parent's coordinates.
+QTF_API void qtf_qwidget_mapToParent(void *self, int p_x, int p_y, int *res_x, int *res_y) {
+    const auto v_ = as<QWidget>(self)->mapToParent(QPoint(p_x, p_y));
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// A point in the parent's coordinates as widget coordinates.
+QTF_API void qtf_qwidget_mapFromParent(void *self, int p_x, int p_y, int *res_x, int *res_y) {
+    const auto v_ = as<QWidget>(self)->mapFromParent(QPoint(p_x, p_y));
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// A point in widget coordinates as coordinates of `parent` (an ancestor).
+QTF_API void qtf_qwidget_mapTo(void *self, void *parent, int p_x, int p_y, int *res_x, int *res_y) {
+    const auto v_ = as<QWidget>(self)->mapTo(as<QWidget>(parent), QPoint(p_x, p_y));
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// A point in the coordinates of `parent` (an ancestor) as widget coordinates.
+QTF_API void qtf_qwidget_mapFrom(void *self, void *parent, int p_x, int p_y, int *res_x, int *res_y) {
+    const auto v_ = as<QWidget>(self)->mapFrom(as<QWidget>(parent), QPoint(p_x, p_y));
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// The visible child widget at `p` (a null handle if none).
+QTF_API void *qtf_qwidget_childAt(void *self, int p_x, int p_y) {
+    return as<QWidget>(self)->childAt(QPoint(p_x, p_y));
+}
+
 // ---------------------------------------------------------------------------
 // QtfWidget
 
@@ -2040,6 +2202,20 @@ QTF_API void qtf_qlayout_setContentsMargins(void *self, int left, int top, int r
     as<QLayout>(self)->setContentsMargins(left, top, right, bottom);
 }
 
+// Set the margins around the layout.
+QTF_API void qtf_qlayout_setContentsMarginsM(void *self, int margins_left, int margins_top, int margins_right, int margins_bottom) {
+    as<QLayout>(self)->setContentsMargins(QMargins(margins_left, margins_top, margins_right, margins_bottom));
+}
+
+// The margins around the layout.
+QTF_API void qtf_qlayout_contentsMargins(void *self, int *res_left, int *res_top, int *res_right, int *res_bottom) {
+    const auto v_ = as<QLayout>(self)->contentsMargins();
+    *res_left = v_.left();
+    *res_top = v_.top();
+    *res_right = v_.right();
+    *res_bottom = v_.bottom();
+}
+
 // Set the space between items, in pixels.
 QTF_API void qtf_qlayout_setSpacing(void *self, int spacing) { as<QLayout>(self)->setSpacing(spacing); }
 
@@ -2218,6 +2394,16 @@ QTF_API void qtf_qmenu_popup(void *self, int globalX, int globalY) {
 // Show the menu at a screen position and wait; returns the chosen action (a null handle if none).
 QTF_API void *qtf_qmenu_exec(void *self, int globalX, int globalY) {
     return as<QMenu>(self)->exec(QPoint(globalX, globalY));
+}
+
+// Show the menu at a screen position (e.g. `event%globalPos()`) and return at once.
+QTF_API void qtf_qmenu_popupAt(void *self, int pos_x, int pos_y) {
+    as<QMenu>(self)->popup(QPoint(pos_x, pos_y));
+}
+
+// Show the menu at a screen position and wait; returns the chosen action (a null handle if none).
+QTF_API void *qtf_qmenu_execAt(void *self, int pos_x, int pos_y) {
+    return as<QMenu>(self)->exec(QPoint(pos_x, pos_y));
 }
 
 // Remove all actions (actions owned by the menu are deleted).
@@ -3284,6 +3470,15 @@ QTF_API int qtf_qtfpaintcell_width(void *self) { return as<QtfPaintCell>(self)->
 
 // Height of the cell.
 QTF_API int qtf_qtfpaintcell_height(void *self) { return as<QtfPaintCell>(self)->option.rect.height(); }
+
+// The cell's rectangle (in the view's coordinates).
+QTF_API void qtf_qtfpaintcell_rect(void *self, int *res_x, int *res_y, int *res_width, int *res_height) {
+    const auto v_ = as<QtfPaintCell>(self)->option.rect;
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
 
 // The cell's text (from the model).
 QTF_API char *qtf_qtfpaintcell_text(void *self, int *len) {

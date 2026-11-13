@@ -28,6 +28,7 @@ module qt_opengl
     use qt_gui
     use qt_widgets
     use qt_matrix
+    use qt_vectors
     implicit none
     private
 
@@ -161,8 +162,8 @@ module qt_opengl
         procedure :: enableAttributeArray => qopenglshaderprogram_enableAttributeArray
         procedure :: disableAttributeArray => qopenglshaderprogram_disableAttributeArray
         procedure :: setAttributeBuffer => qopenglshaderprogram_setAttributeBuffer
-        procedure, private :: qopenglshaderprogram_setUniformValueFloat, qopenglshaderprogram_setUniformValueInt, qopenglshaderprogram_setUniformValueVec3, qopenglshaderprogram_setUniformValueVec4, qopenglshaderprogram_setUniformValueColor, qopenglshaderprogram_setUniformValueMat4, qopenglshaderprogram_setUniformValueMat3
-        generic :: setUniformValue => qopenglshaderprogram_setUniformValueFloat, qopenglshaderprogram_setUniformValueInt, qopenglshaderprogram_setUniformValueVec3, qopenglshaderprogram_setUniformValueVec4, qopenglshaderprogram_setUniformValueColor, qopenglshaderprogram_setUniformValueMat4, qopenglshaderprogram_setUniformValueMat3
+        procedure, private :: qopenglshaderprogram_setUniformValueFloat, qopenglshaderprogram_setUniformValueInt, qopenglshaderprogram_setUniformValueVec3, qopenglshaderprogram_setUniformValueVec4, qopenglshaderprogram_setUniformValueVec2, qopenglshaderprogram_setUniformValueVector2D, qopenglshaderprogram_setUniformValueVector3D, qopenglshaderprogram_setUniformValueVector4D, qopenglshaderprogram_setUniformValueColor, qopenglshaderprogram_setUniformValueMat4, qopenglshaderprogram_setUniformValueMat3
+        generic :: setUniformValue => qopenglshaderprogram_setUniformValueFloat, qopenglshaderprogram_setUniformValueInt, qopenglshaderprogram_setUniformValueVec3, qopenglshaderprogram_setUniformValueVec4, qopenglshaderprogram_setUniformValueVec2, qopenglshaderprogram_setUniformValueVector2D, qopenglshaderprogram_setUniformValueVector3D, qopenglshaderprogram_setUniformValueVector4D, qopenglshaderprogram_setUniformValueColor, qopenglshaderprogram_setUniformValueMat4, qopenglshaderprogram_setUniformValueMat3
     end type QOpenGLShaderProgram
     !> Constructor: `QOpenGLShaderProgram([parent])`.
     interface QOpenGLShaderProgram
@@ -577,6 +578,44 @@ contains
         call qtf_qopenglshaderprogram_setUniformValueVec4(qtf_live(self, 'QOpenGLShaderProgram%setUniformValueVec4'), &
                 name, len(name, c_int), x, y, z, w)
     end subroutine qopenglshaderprogram_setUniformValueVec4
+
+    !> Set a vec2 uniform.
+    subroutine qopenglshaderprogram_setUniformValueVec2(self, name, x, y)
+        class(QOpenGLShaderProgram), intent(in) :: self
+        character(len=*), intent(in) :: name
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        call qtf_qopenglshaderprogram_setUniformValueVec2(qtf_live(self, 'QOpenGLShaderProgram%setUniformValueVec2'), &
+                name, len(name, c_int), x, y)
+    end subroutine qopenglshaderprogram_setUniformValueVec2
+
+    !> Set a vec2 uniform.
+    subroutine qopenglshaderprogram_setUniformValueVector2D(self, name, value)
+        class(QOpenGLShaderProgram), intent(in) :: self
+        character(len=*), intent(in) :: name
+        type(QVector2D), intent(in) :: value
+        call qtf_qopenglshaderprogram_setUniformValueVector2D(qtf_live(self, &
+                'QOpenGLShaderProgram%setUniformValueVector2D'), name, len(name, c_int), value%x, value%y)
+    end subroutine qopenglshaderprogram_setUniformValueVector2D
+
+    !> Set a vec3 uniform (e.g. a light direction).
+    subroutine qopenglshaderprogram_setUniformValueVector3D(self, name, value)
+        class(QOpenGLShaderProgram), intent(in) :: self
+        character(len=*), intent(in) :: name
+        type(QVector3D), intent(in) :: value
+        call qtf_qopenglshaderprogram_setUniformValueVector3D(qtf_live(self, &
+                'QOpenGLShaderProgram%setUniformValueVector3D'), name, len(name, c_int), value%x, value%y, value%z)
+    end subroutine qopenglshaderprogram_setUniformValueVector3D
+
+    !> Set a vec4 uniform.
+    subroutine qopenglshaderprogram_setUniformValueVector4D(self, name, value)
+        class(QOpenGLShaderProgram), intent(in) :: self
+        character(len=*), intent(in) :: name
+        type(QVector4D), intent(in) :: value
+        call qtf_qopenglshaderprogram_setUniformValueVector4D(qtf_live(self, &
+                'QOpenGLShaderProgram%setUniformValueVector4D'), name, len(name, c_int), value%x, value%y, value%z, &
+                        value%w)
+    end subroutine qopenglshaderprogram_setUniformValueVector4D
 
     !> Set a vec4 uniform from a color (components scaled to 0..1).
     subroutine qopenglshaderprogram_setUniformValueColor(self, name, color)

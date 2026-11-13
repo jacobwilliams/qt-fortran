@@ -11,6 +11,7 @@ module qt_widgets
     use qt_core
     use qt_gui_types
     use qt_gui
+    use qt_geometry
     implicit none
     private
 
@@ -367,11 +368,14 @@ module qt_widgets
         procedure :: isVisible => qwidget_isVisible
         procedure :: setEnabled => qwidget_setEnabled
         procedure :: isEnabled => qwidget_isEnabled
-        procedure :: resize => qwidget_resize
+        procedure, private :: qwidget_resize, qwidget_resizeSize
+        generic :: resize => qwidget_resize, qwidget_resizeSize
         procedure :: width => qwidget_width
         procedure :: height => qwidget_height
-        procedure :: setMinimumSize => qwidget_setMinimumSize
-        procedure :: setFixedSize => qwidget_setFixedSize
+        procedure, private :: qwidget_setMinimumSize, qwidget_setMinimumSizeSize
+        generic :: setMinimumSize => qwidget_setMinimumSize, qwidget_setMinimumSizeSize
+        procedure, private :: qwidget_setFixedSize, qwidget_setFixedSizeSize
+        generic :: setFixedSize => qwidget_setFixedSize, qwidget_setFixedSizeSize
         procedure :: setWindowTitle => qwidget_setWindowTitle
         procedure :: windowTitle => qwidget_windowTitle
         procedure :: setToolTip => qwidget_setToolTip
@@ -390,7 +394,8 @@ module qt_widgets
         procedure :: addAction => qwidget_addAction
         procedure :: insertAction => qwidget_insertAction
         procedure :: removeAction => qwidget_removeAction
-        procedure :: setMaximumSize => qwidget_setMaximumSize
+        procedure, private :: qwidget_setMaximumSize, qwidget_setMaximumSizeSize
+        generic :: setMaximumSize => qwidget_setMaximumSize, qwidget_setMaximumSizeSize
         procedure :: setMinimumWidth => qwidget_setMinimumWidth
         procedure :: setMinimumHeight => qwidget_setMinimumHeight
         procedure :: setMaximumWidth => qwidget_setMaximumWidth
@@ -398,7 +403,8 @@ module qt_widgets
         procedure :: setFixedWidth => qwidget_setFixedWidth
         procedure :: setFixedHeight => qwidget_setFixedHeight
         procedure :: setSizePolicy => qwidget_setSizePolicy
-        procedure :: setContentsMargins => qwidget_setContentsMargins
+        procedure, private :: qwidget_setContentsMargins, qwidget_setContentsMarginsM
+        generic :: setContentsMargins => qwidget_setContentsMargins, qwidget_setContentsMarginsM
         procedure :: setWindowIcon => qwidget_setWindowIcon
         procedure :: saveGeometry => qwidget_saveGeometry
         procedure :: restoreGeometry => qwidget_restoreGeometry
@@ -422,7 +428,26 @@ module qt_widgets
         procedure :: repolish => qwidget_repolish
         procedure :: x => qwidget_x
         procedure :: y => qwidget_y
-        procedure :: move => qwidget_move
+        procedure, private :: qwidget_move, qwidget_movePoint
+        generic :: move => qwidget_move, qwidget_movePoint
+        procedure :: pos => qwidget_pos
+        procedure :: size => qwidget_size
+        procedure :: geometry => qwidget_geometry
+        procedure :: setGeometry => qwidget_setGeometry
+        procedure :: frameGeometry => qwidget_frameGeometry
+        procedure :: rect => qwidget_rect
+        procedure :: contentsRect => qwidget_contentsRect
+        procedure :: sizeHint => qwidget_sizeHint
+        procedure :: minimumSize => qwidget_minimumSize
+        procedure :: maximumSize => qwidget_maximumSize
+        procedure :: contentsMargins => qwidget_contentsMargins
+        procedure :: mapToGlobal => qwidget_mapToGlobal
+        procedure :: mapFromGlobal => qwidget_mapFromGlobal
+        procedure :: mapToParent => qwidget_mapToParent
+        procedure :: mapFromParent => qwidget_mapFromParent
+        procedure :: mapTo => qwidget_mapTo
+        procedure :: mapFrom => qwidget_mapFrom
+        procedure :: childAt => qwidget_childAt
     end type QWidget
     !> Constructor: `QWidget([parent])`.
     interface QWidget
@@ -660,7 +685,9 @@ module qt_widgets
     !> and grid layouts take different arguments.
     type, extends(QObject), public :: QLayout
     contains
-        procedure :: setContentsMargins => qlayout_setContentsMargins
+        procedure, private :: qlayout_setContentsMargins, qlayout_setContentsMarginsM
+        generic :: setContentsMargins => qlayout_setContentsMargins, qlayout_setContentsMarginsM
+        procedure :: contentsMargins => qlayout_contentsMargins
         procedure :: setSpacing => qlayout_setSpacing
         procedure :: spacing => qlayout_spacing
         procedure :: count => qlayout_count
@@ -742,8 +769,10 @@ module qt_widgets
         procedure :: addSeparator => qmenu_addSeparator
         procedure :: title => qmenu_title
         procedure :: menuAction => qmenu_menuAction
-        procedure :: popup => qmenu_popup
-        procedure :: exec => qmenu_exec
+        procedure, private :: qmenu_popup, qmenu_popupAt
+        generic :: popup => qmenu_popup, qmenu_popupAt
+        procedure, private :: qmenu_exec, qmenu_execAt
+        generic :: exec => qmenu_exec, qmenu_execAt
         procedure :: clear => qmenu_clear
         procedure :: isEmpty => qmenu_isEmpty
     end type QMenu
@@ -1205,6 +1234,7 @@ module qt_widgets
         procedure :: y => qtfpaintcell_y
         procedure :: width => qtfpaintcell_width
         procedure :: height => qtfpaintcell_height
+        procedure :: rect => qtfpaintcell_rect
         procedure :: text => qtfpaintcell_text
         procedure :: textColor => qtfpaintcell_textColor
         procedure :: isSelected => qtfpaintcell_isSelected
@@ -2774,6 +2804,277 @@ contains
         call qtf_qwidget_move(qtf_live(self, 'QWidget%move'), int(x, c_int), int(y, c_int))
     end subroutine qwidget_move
 
+    !> The position (relative to the parent, or on the screen for a window).
+    function qwidget_pos(self) result(res)
+        class(QWidget), intent(in) :: self
+        type(QPoint) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        call qtf_qwidget_pos(qtf_live(self, 'QWidget%pos'), r_x, r_y)
+        res%x = int(r_x)
+        res%y = int(r_y)
+    end function qwidget_pos
+
+    !> Move the widget to `p` (a window: on the screen).
+    subroutine qwidget_movePoint(self, p)
+        class(QWidget), intent(in) :: self
+        type(QPoint), intent(in) :: p
+        call qtf_qwidget_movePoint(qtf_live(self, 'QWidget%movePoint'), int(p%x, c_int), int(p%y, c_int))
+    end subroutine qwidget_movePoint
+
+    !> The size in pixels.
+    function qwidget_size(self) result(res)
+        class(QWidget), intent(in) :: self
+        type(QSize) :: res
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qwidget_size(qtf_live(self, 'QWidget%size'), r_width, r_height)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qwidget_size
+
+    !> Resize to `size`.
+    subroutine qwidget_resizeSize(self, size)
+        class(QWidget), intent(in) :: self
+        type(QSize), intent(in) :: size
+        call qtf_qwidget_resizeSize(qtf_live(self, 'QWidget%resizeSize'), int(size%width, c_int), int(size%height, &
+                c_int))
+    end subroutine qwidget_resizeSize
+
+    !> The position and size (relative to the parent; for a window, without its frame).
+    function qwidget_geometry(self) result(res)
+        class(QWidget), intent(in) :: self
+        type(QRect) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qwidget_geometry(qtf_live(self, 'QWidget%geometry'), r_x, r_y, r_width, r_height)
+        res%x = int(r_x)
+        res%y = int(r_y)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qwidget_geometry
+
+    !> Set the position and size (relative to the parent; for a window, without its frame).
+    subroutine qwidget_setGeometry(self, rect)
+        class(QWidget), intent(in) :: self
+        type(QRect), intent(in) :: rect
+        call qtf_qwidget_setGeometry(qtf_live(self, 'QWidget%setGeometry'), int(rect%x, c_int), int(rect%y, c_int), &
+                int(rect%width, c_int), int(rect%height, c_int))
+    end subroutine qwidget_setGeometry
+
+    !> The position and size including the window frame.
+    function qwidget_frameGeometry(self) result(res)
+        class(QWidget), intent(in) :: self
+        type(QRect) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qwidget_frameGeometry(qtf_live(self, 'QWidget%frameGeometry'), r_x, r_y, r_width, r_height)
+        res%x = int(r_x)
+        res%y = int(r_y)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qwidget_frameGeometry
+
+    !> The widget's own area: (0, 0, width, height).
+    function qwidget_rect(self) result(res)
+        class(QWidget), intent(in) :: self
+        type(QRect) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qwidget_rect(qtf_live(self, 'QWidget%rect'), r_x, r_y, r_width, r_height)
+        res%x = int(r_x)
+        res%y = int(r_y)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qwidget_rect
+
+    !> The area inside the contents margins.
+    function qwidget_contentsRect(self) result(res)
+        class(QWidget), intent(in) :: self
+        type(QRect) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qwidget_contentsRect(qtf_live(self, 'QWidget%contentsRect'), r_x, r_y, r_width, r_height)
+        res%x = int(r_x)
+        res%y = int(r_y)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qwidget_contentsRect
+
+    !> The recommended size (from the layout or the widget type).
+    function qwidget_sizeHint(self) result(res)
+        class(QWidget), intent(in) :: self
+        type(QSize) :: res
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qwidget_sizeHint(qtf_live(self, 'QWidget%sizeHint'), r_width, r_height)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qwidget_sizeHint
+
+    !> The smallest allowed size.
+    function qwidget_minimumSize(self) result(res)
+        class(QWidget), intent(in) :: self
+        type(QSize) :: res
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qwidget_minimumSize(qtf_live(self, 'QWidget%minimumSize'), r_width, r_height)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qwidget_minimumSize
+
+    !> The largest allowed size.
+    function qwidget_maximumSize(self) result(res)
+        class(QWidget), intent(in) :: self
+        type(QSize) :: res
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qwidget_maximumSize(qtf_live(self, 'QWidget%maximumSize'), r_width, r_height)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qwidget_maximumSize
+
+    !> Set the smallest allowed size.
+    subroutine qwidget_setMinimumSizeSize(self, size)
+        class(QWidget), intent(in) :: self
+        type(QSize), intent(in) :: size
+        call qtf_qwidget_setMinimumSizeSize(qtf_live(self, 'QWidget%setMinimumSizeSize'), int(size%width, c_int), &
+                int(size%height, c_int))
+    end subroutine qwidget_setMinimumSizeSize
+
+    !> Set the largest allowed size.
+    subroutine qwidget_setMaximumSizeSize(self, size)
+        class(QWidget), intent(in) :: self
+        type(QSize), intent(in) :: size
+        call qtf_qwidget_setMaximumSizeSize(qtf_live(self, 'QWidget%setMaximumSizeSize'), int(size%width, c_int), &
+                int(size%height, c_int))
+    end subroutine qwidget_setMaximumSizeSize
+
+    !> Fix the size (the user cannot resize it).
+    subroutine qwidget_setFixedSizeSize(self, size)
+        class(QWidget), intent(in) :: self
+        type(QSize), intent(in) :: size
+        call qtf_qwidget_setFixedSizeSize(qtf_live(self, 'QWidget%setFixedSizeSize'), int(size%width, c_int), &
+                int(size%height, c_int))
+    end subroutine qwidget_setFixedSizeSize
+
+    !> The margins around the widget's contents.
+    function qwidget_contentsMargins(self) result(res)
+        class(QWidget), intent(in) :: self
+        type(QMargins) :: res
+        integer(c_int) :: r_left
+        integer(c_int) :: r_top
+        integer(c_int) :: r_right
+        integer(c_int) :: r_bottom
+        call qtf_qwidget_contentsMargins(qtf_live(self, 'QWidget%contentsMargins'), r_left, r_top, r_right, r_bottom)
+        res%left = int(r_left)
+        res%top = int(r_top)
+        res%right = int(r_right)
+        res%bottom = int(r_bottom)
+    end function qwidget_contentsMargins
+
+    !> Set the margins around the widget's contents.
+    subroutine qwidget_setContentsMarginsM(self, margins)
+        class(QWidget), intent(in) :: self
+        type(QMargins), intent(in) :: margins
+        call qtf_qwidget_setContentsMarginsM(qtf_live(self, 'QWidget%setContentsMarginsM'), int(margins%left, c_int), &
+                int(margins%top, c_int), int(margins%right, c_int), int(margins%bottom, c_int))
+    end subroutine qwidget_setContentsMarginsM
+
+    !> A point in widget coordinates as screen coordinates.
+    function qwidget_mapToGlobal(self, p) result(res)
+        class(QWidget), intent(in) :: self
+        type(QPoint), intent(in) :: p
+        type(QPoint) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        call qtf_qwidget_mapToGlobal(qtf_live(self, 'QWidget%mapToGlobal'), int(p%x, c_int), int(p%y, c_int), r_x, r_y)
+        res%x = int(r_x)
+        res%y = int(r_y)
+    end function qwidget_mapToGlobal
+
+    !> A point in screen coordinates as widget coordinates.
+    function qwidget_mapFromGlobal(self, p) result(res)
+        class(QWidget), intent(in) :: self
+        type(QPoint), intent(in) :: p
+        type(QPoint) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        call qtf_qwidget_mapFromGlobal(qtf_live(self, 'QWidget%mapFromGlobal'), int(p%x, c_int), int(p%y, c_int), &
+                r_x, r_y)
+        res%x = int(r_x)
+        res%y = int(r_y)
+    end function qwidget_mapFromGlobal
+
+    !> A point in widget coordinates as the parent's coordinates.
+    function qwidget_mapToParent(self, p) result(res)
+        class(QWidget), intent(in) :: self
+        type(QPoint), intent(in) :: p
+        type(QPoint) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        call qtf_qwidget_mapToParent(qtf_live(self, 'QWidget%mapToParent'), int(p%x, c_int), int(p%y, c_int), r_x, r_y)
+        res%x = int(r_x)
+        res%y = int(r_y)
+    end function qwidget_mapToParent
+
+    !> A point in the parent's coordinates as widget coordinates.
+    function qwidget_mapFromParent(self, p) result(res)
+        class(QWidget), intent(in) :: self
+        type(QPoint), intent(in) :: p
+        type(QPoint) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        call qtf_qwidget_mapFromParent(qtf_live(self, 'QWidget%mapFromParent'), int(p%x, c_int), int(p%y, c_int), &
+                r_x, r_y)
+        res%x = int(r_x)
+        res%y = int(r_y)
+    end function qwidget_mapFromParent
+
+    !> A point in widget coordinates as coordinates of `parent` (an ancestor).
+    function qwidget_mapTo(self, parent, p) result(res)
+        class(QWidget), intent(in) :: self
+        class(QWidget), intent(in) :: parent
+        type(QPoint), intent(in) :: p
+        type(QPoint) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        call qtf_qwidget_mapTo(qtf_live(self, 'QWidget%mapTo'), qtf_live(parent, 'QWidget%mapTo'), int(p%x, c_int), &
+                int(p%y, c_int), r_x, r_y)
+        res%x = int(r_x)
+        res%y = int(r_y)
+    end function qwidget_mapTo
+
+    !> A point in the coordinates of `parent` (an ancestor) as widget coordinates.
+    function qwidget_mapFrom(self, parent, p) result(res)
+        class(QWidget), intent(in) :: self
+        class(QWidget), intent(in) :: parent
+        type(QPoint), intent(in) :: p
+        type(QPoint) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        call qtf_qwidget_mapFrom(qtf_live(self, 'QWidget%mapFrom'), qtf_live(parent, 'QWidget%mapFrom'), int(p%x, &
+                c_int), int(p%y, c_int), r_x, r_y)
+        res%x = int(r_x)
+        res%y = int(r_y)
+    end function qwidget_mapFrom
+
+    !> The visible child widget at `p` (a null handle if none).
+    function qwidget_childAt(self, p) result(res)
+        class(QWidget), intent(in) :: self
+        type(QPoint), intent(in) :: p
+        type(QWidget) :: res
+        call res%attach(qtf_qwidget_childAt(qtf_live(self, 'QWidget%childAt'), int(p%x, c_int), int(p%y, c_int)))
+    end function qwidget_childAt
+
     !> Bind to a C++ QtfWidget and its signals.
     subroutine qtfwidget_attach(self, ptr)
         class(QtfWidget), intent(inout) :: self
@@ -3542,6 +3843,29 @@ contains
                 c_int), int(right, c_int), int(bottom, c_int))
     end subroutine qlayout_setContentsMargins
 
+    !> Set the margins around the layout.
+    subroutine qlayout_setContentsMarginsM(self, margins)
+        class(QLayout), intent(in) :: self
+        type(QMargins), intent(in) :: margins
+        call qtf_qlayout_setContentsMarginsM(qtf_live(self, 'QLayout%setContentsMarginsM'), int(margins%left, c_int), &
+                int(margins%top, c_int), int(margins%right, c_int), int(margins%bottom, c_int))
+    end subroutine qlayout_setContentsMarginsM
+
+    !> The margins around the layout.
+    function qlayout_contentsMargins(self) result(res)
+        class(QLayout), intent(in) :: self
+        type(QMargins) :: res
+        integer(c_int) :: r_left
+        integer(c_int) :: r_top
+        integer(c_int) :: r_right
+        integer(c_int) :: r_bottom
+        call qtf_qlayout_contentsMargins(qtf_live(self, 'QLayout%contentsMargins'), r_left, r_top, r_right, r_bottom)
+        res%left = int(r_left)
+        res%top = int(r_top)
+        res%right = int(r_right)
+        res%bottom = int(r_bottom)
+    end function qlayout_contentsMargins
+
     !> Set the space between items, in pixels.
     subroutine qlayout_setSpacing(self, spacing)
         class(QLayout), intent(in) :: self
@@ -3894,6 +4218,21 @@ contains
         type(QAction) :: res
         call res%attach(qtf_qmenu_exec(qtf_live(self, 'QMenu%exec'), int(globalX, c_int), int(globalY, c_int)))
     end function qmenu_exec
+
+    !> Show the menu at a screen position (e.g. `event%globalPos()`) and return at once.
+    subroutine qmenu_popupAt(self, pos)
+        class(QMenu), intent(in) :: self
+        type(QPoint), intent(in) :: pos
+        call qtf_qmenu_popupAt(qtf_live(self, 'QMenu%popupAt'), int(pos%x, c_int), int(pos%y, c_int))
+    end subroutine qmenu_popupAt
+
+    !> Show the menu at a screen position and wait; returns the chosen action (a null handle if none).
+    function qmenu_execAt(self, pos) result(res)
+        class(QMenu), intent(in) :: self
+        type(QPoint), intent(in) :: pos
+        type(QAction) :: res
+        call res%attach(qtf_qmenu_execAt(qtf_live(self, 'QMenu%execAt'), int(pos%x, c_int), int(pos%y, c_int)))
+    end function qmenu_execAt
 
     !> Remove all actions (actions owned by the menu are deleted).
     subroutine qmenu_clear(self)
@@ -5857,6 +6196,21 @@ contains
         integer :: res
         res = qtf_qtfpaintcell_height(self%ptr)
     end function qtfpaintcell_height
+
+    !> The cell's rectangle (in the view's coordinates).
+    function qtfpaintcell_rect(self) result(res)
+        class(QtfPaintCell), intent(in) :: self
+        type(QRect) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qtfpaintcell_rect(self%ptr, r_x, r_y, r_width, r_height)
+        res%x = int(r_x)
+        res%y = int(r_y)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qtfpaintcell_rect
 
     !> The cell's text (from the model).
     function qtfpaintcell_text(self) result(res)

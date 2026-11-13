@@ -28,12 +28,14 @@ module test_opengl_scene
         '#version 330 core' // nl // &
         'layout(location = 0) in vec2 position;' // nl // &
         'uniform mat4 transform;' // nl // &
-        'void main() { gl_Position = transform * vec4(position, 0.0, 1.0); }' // nl
+        'uniform vec2 offset;' // nl // &
+        'void main() { gl_Position = transform * vec4(position + offset, 0.0, 1.0); }' // nl
     character(len=*), parameter :: fragment_shader = &
         '#version 330 core' // nl // &
         'uniform vec4 color;' // nl // &
+        'uniform vec3 tint;' // nl // &
         'out vec4 fragColor;' // nl // &
-        'void main() { fragColor = color; }' // nl
+        'void main() { fragColor = color * vec4(tint, 1.0); }' // nl
 
 contains
 
@@ -92,6 +94,10 @@ contains
             ok = s%program%bind()
             call s%program%setUniformValue('transform', transform)
             call s%program%setUniformValue('color', Qt_red)
+            ! the vector overloads (the image stays the same if they arrive intact)
+            call s%program%setUniformValue('color', QVector4D(1, 0, 0, 1))
+            call s%program%setUniformValue('tint', QVector3D(1, 1, 1))
+            call s%program%setUniformValue('offset', QVector2D(0, 0))
             call s%vao%bind()
             call glDrawArrays(GL_TRIANGLES, 0, 3)
             call s%vao%release()

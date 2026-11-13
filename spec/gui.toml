@@ -16,6 +16,7 @@ uses = [
     "use qt_c_gui",
     "use qt_core",
     "use qt_gui_types",
+    "use qt_geometry",
 ]
 cpp_includes = [
     "QAction", "QFontMetrics", "QImage", "QKeyEvent", "QKeySequence", "QMouseEvent", "QPainter",
@@ -204,6 +205,7 @@ functions = [
     { sig = "QCursor_x() -> int", cpp = "QCursor::pos().x()", doc = "The mouse cursor's x position on the screen (virtual desktop)." },
     { sig = "QCursor_y() -> int", cpp = "QCursor::pos().y()", doc = "The mouse cursor's y position on the screen." },
     { sig = "QCursor_setPos(x: int, y: int)", cpp = "QCursor::setPos({x}, {y})", doc = "Move the mouse cursor to (x, y) on the screen (where the system allows it)." },
+    { sig = "QCursor_pos() -> QPoint", cpp = "QCursor::pos()", doc = "The mouse cursor's position on the screen (virtual desktop)." },
 ]
 
 # ---------------------------------------------------------------------------
@@ -597,6 +599,40 @@ cpp = "qtf_pen({color}, {width}, {style})"
 fields = ["color: QColor", "style: int"]
 cpp = "QBrush({color}, Qt::BrushStyle({style}))"
 
+[value_types.QPoint]
+fields = ["x: int", "y: int"]
+cpp = "QPoint({x}, {y})"
+out = { x = "{v}.x()", y = "{v}.y()" }
+
+[value_types.QPointF]
+fields = ["x: double", "y: double"]
+cpp = "QPointF({x}, {y})"
+out = { x = "{v}.x()", y = "{v}.y()" }
+
+[value_types.QSize]
+fields = ["width: int", "height: int"]
+cpp = "QSize({width}, {height})"
+out = { width = "{v}.width()", height = "{v}.height()" }
+
+[value_types.QSizeF]
+fields = ["width: double", "height: double"]
+cpp = "QSizeF({width}, {height})"
+out = { width = "{v}.width()", height = "{v}.height()" }
+
+[value_types.QRect]
+fields = ["x: int", "y: int", "width: int", "height: int"]
+cpp = "QRect({x}, {y}, {width}, {height})"
+out = { x = "{v}.x()", y = "{v}.y()", width = "{v}.width()", height = "{v}.height()" }
+
+[value_types.QRectF]
+fields = ["x: double", "y: double", "width: double", "height: double"]
+cpp = "QRectF({x}, {y}, {width}, {height})"
+out = { x = "{v}.x()", y = "{v}.y()", width = "{v}.width()", height = "{v}.height()" }
+
+[value_types.QLineF]
+fields = ["x1: double", "y1: double", "x2: double", "y2: double"]
+cpp = "QLineF({x1}, {y1}, {x2}, {y2})"
+
 # ---------------------------------------------------------------------------
 # enums
 
@@ -802,6 +838,7 @@ ctors = [
 methods = [
     "width() -> int -- Width in pixels.",
     "height() -> int -- Height in pixels.",
+    "size() -> QSize -- The size in pixels.",
     "fill(color: QColor) -- Fill the whole image with `color`.",
     "setPixelColor(x: int, y: int, color: QColor) -- Set pixel (x, y), 0-based, to `color`.",
     "save(fileName: string) -> bool -- Save to a file; the format follows the extension (.png, .jpg, ...).",
@@ -902,6 +939,7 @@ doc = "An image for on-screen display (e.g. from `QWidget%grab`); release it wit
 methods = [
     "width() -> int -- Width in pixels.",
     "height() -> int -- Height in pixels.",
+    "size() -> QSize -- The size in pixels.",
     { sig = "toImage() -> QImage", cpp = "new QImage({self}->toImage())", doc = "A new image with the pixmap's contents (delete it when done)." },
     { sig = "static fromImage(image: QImage) -> QPixmap", cpp = "new QPixmap(QPixmap::fromImage(*{image}))", doc = "A new pixmap with an image's contents, e.g. for QLabel%setPixmap (delete it when done)." },
     "save(fileName: string) -> bool -- Save to a file; the format follows the extension (.png, .jpg, ...).",
@@ -1020,6 +1058,16 @@ methods = [
     { sig = "setBrushGradient(gradient: QGradient)", fortran_name = "setBrush", cpp = "{self}->setBrush(QBrush(*{gradient}))", doc = "Fill shapes with a gradient (copied)." },
     { sig = "fillRectGradient(x: num, y: num, w: num, h: num, gradient: QGradient)", fortran_name = "fillRect", cpp = "{self}->fillRect(QRectF({x}, {y}, {w}, {h}), QBrush(*{gradient}))", doc = "Fill a rectangle with a gradient." },
     { sig = "setClipRect(x: num, y: num, w: num, h: num)", cpp = "{self}->setClipRect(QRectF({x}, {y}, {w}, {h}))", doc = "Draw only inside the rectangle (in the current coordinates)." },
+    { sig = "setClipRectF(rect: QRectF)", fortran_name = "setClipRect", cpp = "{self}->setClipRect({rect})", doc = "Draw only inside `rect` (in the current coordinates)." },
+    { sig = "drawPointF(p: QPointF)", fortran_name = "drawPoint", cpp = "{self}->drawPoint({p})", doc = "Draw a point at `p` with the pen." },
+    { sig = "drawLinePoints(p1: QPointF, p2: QPointF)", fortran_name = "drawLine", cpp = "{self}->drawLine({p1}, {p2})", doc = "Draw a line from `p1` to `p2`." },
+    { sig = "drawLineF(line: QLineF)", fortran_name = "drawLine", cpp = "{self}->drawLine({line})", doc = "Draw `line`." },
+    { sig = "drawRectF(rect: QRectF)", fortran_name = "drawRect", cpp = "{self}->drawRect({rect})", doc = "Draw `rect`: outlined with the pen, filled with the brush." },
+    { sig = "drawEllipseF(rect: QRectF)", fortran_name = "drawEllipse", cpp = "{self}->drawEllipse({rect})", doc = "Draw the ellipse inscribed in `rect`." },
+    { sig = "drawEllipseCenter(center: QPointF, rx: double, ry: double)", fortran_name = "drawEllipse", cpp = "{self}->drawEllipse({center}, {rx}, {ry})", doc = "Draw the ellipse at `center` with radii `rx` and `ry`." },
+    { sig = "drawTextAt(p: QPointF, text: string)", fortran_name = "drawText", cpp = "{self}->drawText({p}, {text})", doc = "Draw text with its baseline starting at `p`." },
+    { sig = "drawTextInRect(rect: QRectF, flags: int, text: string)", fortran_name = "drawText", cpp = "{self}->drawText({rect}, {flags}, {text})", doc = "Draw text inside `rect`, aligned by `flags` (e.g. Qt_AlignCenter)." },
+    { sig = "fillRectF(rect: QRectF, color: QColor)", fortran_name = "fillRect", cpp = "{self}->fillRect({rect}, {color})", doc = "Fill `rect` with `color` (ignores pen and brush)." },
     { sig = "setClipPath(path: QPainterPath)", cpp = "{self}->setClipPath(*{path})", doc = "Draw only inside the path." },
     "setClipping(enable: bool) -- Turn clipping on or off (off: draw everywhere).",
     "hasClipping() -> bool -- True if clipping is on.",
@@ -1099,6 +1147,8 @@ cpp_ctor = "new QMouseEvent({type}, QPointF({x}, {y}), QPointF({x}, {y}), {butto
 methods = [
     { sig = "x() -> double", cpp = "{self}->position().x()", doc = "Horizontal position in widget coordinates." },
     { sig = "y() -> double", cpp = "{self}->position().y()", doc = "Vertical position in widget coordinates." },
+    "position() -> QPointF -- The position in widget coordinates.",
+    "globalPosition() -> QPointF -- The position on the screen (virtual desktop).",
     "button() -> Qt::MouseButton -- The button that caused the event (Qt_NoButton for moves).",
     "buttons() -> Qt::MouseButtons -- All buttons held during the event (a combination of Qt_*Button).",
     "modifiers() -> Qt::KeyboardModifiers -- Keyboard modifiers held (a combination of Qt_*Modifier).",
@@ -1129,6 +1179,9 @@ methods = [
     { sig = "y() -> double", cpp = "{self}->position().y()", doc = "Vertical cursor position in widget coordinates." },
     { sig = "angleDeltaX() -> int", cpp = "{self}->angleDelta().x()", doc = "Horizontal wheel rotation in eighths of a degree." },
     { sig = "angleDeltaY() -> int", cpp = "{self}->angleDelta().y()", doc = "Vertical wheel rotation in eighths of a degree (+120 per notch away from the user)." },
+    "position() -> QPointF -- The cursor position in widget coordinates.",
+    "angleDelta() -> QPoint -- The wheel rotation in eighths of a degree (y: +120 per notch away from the user).",
+    "pixelDelta() -> QPoint -- The scrolling distance in pixels on devices that report it (e.g. trackpads; otherwise (0, 0)).",
     "buttons() -> Qt::MouseButtons -- Mouse buttons held during the event.",
     "modifiers() -> Qt::KeyboardModifiers -- Keyboard modifiers held (a combination of Qt_*Modifier).",
 ]
@@ -1145,6 +1198,8 @@ methods = [
     { sig = "height() -> int", cpp = "{self}->size().height()", doc = "The new height." },
     { sig = "oldWidth() -> int", cpp = "{self}->oldSize().width()", doc = "The previous width." },
     { sig = "oldHeight() -> int", cpp = "{self}->oldSize().height()", doc = "The previous height." },
+    "size() -> QSize -- The new size.",
+    "oldSize() -> QSize -- The previous size (-1 x -1 before the first resize).",
 ]
 
 [[class]]
@@ -1170,6 +1225,8 @@ methods = [
     "y() -> int -- Vertical position in widget coordinates.",
     "globalX() -> int -- Horizontal position in screen coordinates.",
     "globalY() -> int -- Vertical position in screen coordinates.",
+    "pos() -> QPoint -- The position in widget coordinates.",
+    "globalPos() -> QPoint -- The position in screen coordinates (e.g. for `menu%popup(event%globalPos())`).",
     "reason() -> QContextMenuEvent::Reason -- What caused the request (QContextMenuEvent_Mouse, _Keyboard or _Other).",
     "modifiers() -> Qt::KeyboardModifiers -- Keyboard modifiers held (a combination of Qt_*Modifier).",
 ]
@@ -1202,6 +1259,14 @@ methods = [
     "translate(dx: num, dy: num) -- Move the whole path by (dx, dy).",
     "setFillRule(rule: Qt::FillRule) -- How overlapping subpaths fill: Qt_OddEvenFill (default) or Qt_WindingFill.",
     { sig = "containsPoint(x: double, y: double) -> bool", cpp = "{self}->contains(QPointF({x}, {y}))", doc = "True if (x, y) is inside the path." },
+    { sig = "containsPointF(p: QPointF) -> bool", fortran_name = "containsPoint", cpp = "{self}->contains({p})", doc = "True if `p` is inside the path." },
+    { sig = "moveToPoint(p: QPointF)", fortran_name = "moveTo", cpp = "{self}->moveTo({p})", doc = "Start a new subpath at `p`." },
+    { sig = "lineToPoint(p: QPointF)", fortran_name = "lineTo", cpp = "{self}->lineTo({p})", doc = "A straight line to `p`." },
+    { sig = "addRectF(rect: QRectF)", fortran_name = "addRect", cpp = "{self}->addRect({rect})", doc = "Add `rect` (a closed subpath)." },
+    { sig = "addEllipseF(rect: QRectF)", fortran_name = "addEllipse", cpp = "{self}->addEllipse({rect})", doc = "Add the ellipse inscribed in `rect`." },
+    "currentPosition() -> QPointF -- The end point of the last subpath (where the next lineTo starts).",
+    "pointAtPercent(t: double) -> QPointF -- The point at fraction `t` (0..1) of the path's length.",
+    "boundingRect() -> QRectF -- The bounding rectangle (including control points).",
     "isEmpty() -> bool -- True if the path has no elements.",
     "length() -> double -- The length of the path.",
     "elementCount() -> int -- The number of path elements (move-to, line-to and curve points).",
@@ -1318,6 +1383,8 @@ methods = [
     "dy() -> double -- The y translation.",
     { sig = "mapX(x: double, y: double) -> double", cpp = "{self}->map(QPointF({x}, {y})).x()", doc = "x of the transformed point (x, y)." },
     { sig = "mapY(x: double, y: double) -> double", cpp = "{self}->map(QPointF({x}, {y})).y()", doc = "y of the transformed point (x, y)." },
+    "map(p: QPointF) -> QPointF -- The transformed point.",
+    "mapRect(rect: QRectF) -> QRectF -- The bounding rectangle of the transformed rectangle.",
     { sig = "inverted(ok: bool&) -> QTransform", cpp = "new QTransform({self}->inverted({ok}))", doc = "A new transform: the inverse (the identity if not invertible; then `ok` is false)." },
     { sig = "multiplied(other: QTransform) -> QTransform", cpp = "new QTransform(*{self} * *{other})", doc = "A new transform: this one, then `other`." },
     { sig = "copy() -> QTransform", cpp = "new QTransform(*{self})", doc = "A copy (delete it when done)." },
@@ -1348,6 +1415,8 @@ cpp_ctor = "new QFontMetrics(QGuiApplication::font())"
 methods = [
     "horizontalAdvance(text: string) -> int -- Width of `text` (the advance to where the next text would start).",
     { sig = "boundingWidth(text: string) -> int", cpp = "{self}->boundingRect({text}).width()", doc = "Width of the ink of `text` (its bounding rectangle)." },
+    "boundingRect(text: string) -> QRect -- The rectangle covered by the ink of `text`, relative to its baseline origin (so `y` is negative).",
+    { sig = "size(flags: int, text: string) -> QSize", doc = "The size of `text` laid out with `flags` (e.g. 0, or Qt_TextSingleLine)." },
     "height() -> int -- Line height (ascent + descent).",
     "ascent() -> int -- Distance from the baseline to the top of the tallest glyphs.",
     "descent() -> int -- Distance from the baseline to the bottom of the lowest glyphs.",
@@ -1438,6 +1507,7 @@ cpp_ctor = "qtf_drop_event({type}, {x}, {y}, {mimeData}, {actions}, {buttons}, {
 methods = [
     { sig = "x() -> double", cpp = "{self}->position().x()", doc = "Horizontal position in widget coordinates." },
     { sig = "y() -> double", cpp = "{self}->position().y()", doc = "Vertical position in widget coordinates." },
+    "position() -> QPointF -- The position in widget coordinates.",
     "proposedAction() -> Qt::DropAction -- The action the user asks for (Qt_CopyAction, _MoveAction, _LinkAction).",
     "possibleActions() -> Qt::DropActions -- The actions the source allows (a combination of Qt_*Action).",
     "dropAction() -> Qt::DropAction -- The action that will be taken.",
@@ -1470,6 +1540,7 @@ methods = [
     "setMimeData(data: QMimeData) -- The data to drag (the drag takes ownership).",
     { sig = "setPixmap(pixmap: QPixmap)", cpp = "{self}->setPixmap(*{pixmap})", doc = "The image shown under the cursor (copied)." },
     { sig = "setHotSpot(x: int, y: int)", cpp = "{self}->setHotSpot(QPoint({x}, {y}))", doc = "Where the cursor is on the pixmap." },
+    { sig = "setHotSpotPoint(hotSpot: QPoint)", fortran_name = "setHotSpot", cpp = "{self}->setHotSpot({hotSpot})", doc = "Where the cursor is on the pixmap." },
     { sig = "exec(supportedActions: Qt::DropActions = Qt_CopyAction, defaultAction: Qt::DropAction = Qt_IgnoreAction) -> Qt::DropAction", doc = "Run the drag (blocks until it ends); returns the action taken, Qt_IgnoreAction if cancelled." },
 ]
 
@@ -1517,6 +1588,10 @@ methods = [
     { sig = "availableY() -> int", cpp = "{self}->availableGeometry().y()", doc = "Top of the available area." },
     { sig = "availableWidth() -> int", cpp = "{self}->availableGeometry().width()", doc = "Width of the available area." },
     { sig = "availableHeight() -> int", cpp = "{self}->availableGeometry().height()", doc = "Height of the available area." },
+    "geometry() -> QRect -- The screen's position and size in the virtual desktop (logical pixels).",
+    "availableGeometry() -> QRect -- The area available to windows (without docks and task bars).",
+    "size() -> QSize -- The size in logical pixels.",
+    "physicalSize() -> QSizeF -- The physical size in millimeters (0 x 0 if unknown).",
     "devicePixelRatio() -> double -- Physical pixels per logical pixel (2 on a typical HiDPI display).",
     "logicalDotsPerInch() -> double -- Logical resolution (what font sizes in points are based on).",
     "physicalDotsPerInch() -> double -- Physical resolution of the display.",
@@ -1640,6 +1715,14 @@ methods = [
     "resize(width: int, height: int) -- Resize, in logical pixels.",
     "width() -> int -- Width in logical pixels.",
     "height() -> int -- Height in logical pixels.",
+    { sig = "resizeSize(size: QSize)", fortran_name = "resize", cpp = "{self}->resize({size})", doc = "Resize, in logical pixels." },
+    "size() -> QSize -- The size in logical pixels.",
+    "position() -> QPoint -- The position of the window (on the screen for a top-level window).",
+    "setPosition(position: QPoint) -- Move the window.",
+    "geometry() -> QRect -- The window's position and size (without the frame).",
+    "setGeometry(rect: QRect) -- Set the window's position and size (without the frame).",
+    "mapToGlobal(p: QPoint) -> QPoint -- A point in window coordinates as screen coordinates.",
+    "mapFromGlobal(p: QPoint) -> QPoint -- A point in screen coordinates as window coordinates.",
     "devicePixelRatio() -> double -- Physical pixels per logical pixel (2 on a typical HiDPI display).",
     "winId() -> int64 -- The native window handle (an NSView* on macOS, an HWND on Windows, an X11/xcb window id on Linux), for rendering engines that draw into the window themselves (e.g. Vulkan). Creates the native window if needed.",
     "setTitle(title: string) -- The window title (for a top-level window).",

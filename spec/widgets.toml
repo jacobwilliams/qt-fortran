@@ -14,6 +14,7 @@ uses = [
     "use qt_core",
     "use qt_gui_types",
     "use qt_gui",
+    "use qt_geometry",
 ]
 handle_types = ["QPixmap", "QImage", "QIcon", "QPainter"]
 cpp_includes = [
@@ -1463,6 +1464,26 @@ fields = ["r: int", "g: int", "b: int", "a: int", "valid: bool"]
 cpp = "QColor({r}, {g}, {b}, {a})"
 out = { r = "{v}.red()", g = "{v}.green()", b = "{v}.blue()", a = "{v}.alpha()", valid = "{v}.isValid()" }
 
+[value_types.QPoint]
+fields = ["x: int", "y: int"]
+cpp = "QPoint({x}, {y})"
+out = { x = "{v}.x()", y = "{v}.y()" }
+
+[value_types.QSize]
+fields = ["width: int", "height: int"]
+cpp = "QSize({width}, {height})"
+out = { width = "{v}.width()", height = "{v}.height()" }
+
+[value_types.QRect]
+fields = ["x: int", "y: int", "width: int", "height: int"]
+cpp = "QRect({x}, {y}, {width}, {height})"
+out = { x = "{v}.x()", y = "{v}.y()", width = "{v}.width()", height = "{v}.height()" }
+
+[value_types.QMargins]
+fields = ["left: int", "top: int", "right: int", "bottom: int"]
+cpp = "QMargins({left}, {top}, {right}, {bottom})"
+out = { left = "{v}.left()", top = "{v}.top()", right = "{v}.right()", bottom = "{v}.bottom()" }
+
 [value_types.QDate]
 fields = ["year: int", "month: int", "day: int"]
 cpp = "QDate({year}, {month}, {day})"
@@ -1825,6 +1846,30 @@ methods = [
     "x() -> int -- Horizontal position (relative to the parent, or on the screen for a window).",
     "y() -> int -- Vertical position (relative to the parent, or on the screen for a window).",
     "move(x: int, y: int) -- Move the widget (a window: on the screen).",
+    "pos() -> QPoint -- The position (relative to the parent, or on the screen for a window).",
+    { sig = "movePoint(p: QPoint)", fortran_name = "move", cpp = "{self}->move({p})", doc = "Move the widget to `p` (a window: on the screen)." },
+    "size() -> QSize -- The size in pixels.",
+    { sig = "resizeSize(size: QSize)", fortran_name = "resize", cpp = "{self}->resize({size})", doc = "Resize to `size`." },
+    "geometry() -> QRect -- The position and size (relative to the parent; for a window, without its frame).",
+    "setGeometry(rect: QRect) -- Set the position and size (relative to the parent; for a window, without its frame).",
+    "frameGeometry() -> QRect -- The position and size including the window frame.",
+    "rect() -> QRect -- The widget's own area: (0, 0, width, height).",
+    "contentsRect() -> QRect -- The area inside the contents margins.",
+    "sizeHint() -> QSize -- The recommended size (from the layout or the widget type).",
+    "minimumSize() -> QSize -- The smallest allowed size.",
+    "maximumSize() -> QSize -- The largest allowed size.",
+    { sig = "setMinimumSizeSize(size: QSize)", fortran_name = "setMinimumSize", cpp = "{self}->setMinimumSize({size})", doc = "Set the smallest allowed size." },
+    { sig = "setMaximumSizeSize(size: QSize)", fortran_name = "setMaximumSize", cpp = "{self}->setMaximumSize({size})", doc = "Set the largest allowed size." },
+    { sig = "setFixedSizeSize(size: QSize)", fortran_name = "setFixedSize", cpp = "{self}->setFixedSize({size})", doc = "Fix the size (the user cannot resize it)." },
+    "contentsMargins() -> QMargins -- The margins around the widget's contents.",
+    { sig = "setContentsMarginsM(margins: QMargins)", fortran_name = "setContentsMargins", cpp = "{self}->setContentsMargins({margins})", doc = "Set the margins around the widget's contents." },
+    "mapToGlobal(p: QPoint) -> QPoint -- A point in widget coordinates as screen coordinates.",
+    "mapFromGlobal(p: QPoint) -> QPoint -- A point in screen coordinates as widget coordinates.",
+    "mapToParent(p: QPoint) -> QPoint -- A point in widget coordinates as the parent's coordinates.",
+    "mapFromParent(p: QPoint) -> QPoint -- A point in the parent's coordinates as widget coordinates.",
+    "mapTo(parent: QWidget, p: QPoint) -> QPoint -- A point in widget coordinates as coordinates of `parent` (an ancestor).",
+    "mapFrom(parent: QWidget, p: QPoint) -> QPoint -- A point in the coordinates of `parent` (an ancestor) as widget coordinates.",
+    "childAt(p: QPoint) -> QWidget -- The visible child widget at `p` (a null handle if none).",
 ]
 
 [[class]]
@@ -2074,6 +2119,8 @@ Base of all layouts. `addWidget` is defined per layout type, since box
 and grid layouts take different arguments."""
 methods = [
     "setContentsMargins(left: int, top: int, right: int, bottom: int) -- Set the margins around the layout, in pixels.",
+    { sig = "setContentsMarginsM(margins: QMargins)", fortran_name = "setContentsMargins", cpp = "{self}->setContentsMargins({margins})", doc = "Set the margins around the layout." },
+    "contentsMargins() -> QMargins -- The margins around the layout.",
     "setSpacing(spacing: int) -- Set the space between items, in pixels.",
     "spacing() -> int -- The space between items, in pixels.",
     "count() -> int -- Number of items (widgets, layouts, stretches) in the layout.",
@@ -2161,6 +2208,8 @@ methods = [
     "menuAction() -> QAction -- The action that represents this menu in its parent menu or menu bar.",
     { sig = "popup(globalX: int, globalY: int)", cpp = "{self}->popup(QPoint({globalX}, {globalY}))", doc = "Show the menu at a screen position and return at once (the chosen action triggers)." },
     { sig = "exec(globalX: int, globalY: int) -> QAction", cpp = "{self}->exec(QPoint({globalX}, {globalY}))", doc = "Show the menu at a screen position and wait; returns the chosen action (a null handle if none)." },
+    { sig = "popupAt(pos: QPoint)", fortran_name = "popup", cpp = "{self}->popup({pos})", doc = "Show the menu at a screen position (e.g. `event%globalPos()`) and return at once." },
+    { sig = "execAt(pos: QPoint) -> QAction", fortran_name = "exec", cpp = "{self}->exec({pos})", doc = "Show the menu at a screen position and wait; returns the chosen action (a null handle if none)." },
     "clear() -- Remove all actions (actions owned by the menu are deleted).",
     "isEmpty() -> bool -- True if the menu has no actions.",
 ]
@@ -2652,6 +2701,7 @@ methods = [
     { sig = "y() -> int", cpp = "{self}->option.rect.y()", doc = "Top of the cell." },
     { sig = "width() -> int", cpp = "{self}->option.rect.width()", doc = "Width of the cell." },
     { sig = "height() -> int", cpp = "{self}->option.rect.height()", doc = "Height of the cell." },
+    { sig = "rect() -> QRect", cpp = "{self}->option.rect", doc = "The cell's rectangle (in the view's coordinates)." },
     { sig = "text() -> string", cpp = "{self}->option.text", doc = "The cell's text (from the model)." },
     { sig = "textColor() -> QColor", cpp = "{self}->textColor()", doc = "The color for text in this cell's state (the highlight text color when selected)." },
     { sig = "isSelected() -> bool", cpp = "bool({self}->option.state & QStyle::State_Selected)", doc = "True if the cell is selected." },

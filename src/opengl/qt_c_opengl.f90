@@ -436,6 +436,65 @@ module qt_c_opengl
             real(c_double), value :: w
         end subroutine qtf_qopenglshaderprogram_setUniformValueVec4
 
+        !> Set a vec2 uniform.
+        !>
+        !> C: `void qtf_qopenglshaderprogram_setUniformValueVec2(void *self, const char *name, int name_len, double x, double y)`
+        subroutine qtf_qopenglshaderprogram_setUniformValueVec2(self, name, name_len, x, y) &
+                bind(C, name='qtf_qopenglshaderprogram_setUniformValueVec2')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+            real(c_double), value :: x
+            real(c_double), value :: y
+        end subroutine qtf_qopenglshaderprogram_setUniformValueVec2
+
+        !> Set a vec2 uniform.
+        !>
+        !> C: `void qtf_qopenglshaderprogram_setUniformValueVector2D(void *self, const char *name, int name_len, double value_x, double value_y)`
+        subroutine qtf_qopenglshaderprogram_setUniformValueVector2D(self, name, name_len, value_x, value_y) &
+                bind(C, name='qtf_qopenglshaderprogram_setUniformValueVector2D')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+            real(c_double), value :: value_x
+            real(c_double), value :: value_y
+        end subroutine qtf_qopenglshaderprogram_setUniformValueVector2D
+
+        !> Set a vec3 uniform (e.g. a light direction).
+        !>
+        !> C: `void qtf_qopenglshaderprogram_setUniformValueVector3D(void *self, const char *name, int name_len, double value_x, double value_y, double value_z)`
+        subroutine qtf_qopenglshaderprogram_setUniformValueVector3D(self, name, name_len, value_x, value_y, value_z) &
+                bind(C, name='qtf_qopenglshaderprogram_setUniformValueVector3D')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+            real(c_double), value :: value_x
+            real(c_double), value :: value_y
+            real(c_double), value :: value_z
+        end subroutine qtf_qopenglshaderprogram_setUniformValueVector3D
+
+        !> Set a vec4 uniform.
+        !>
+        !> C: `void qtf_qopenglshaderprogram_setUniformValueVector4D(void *self, const char *name, int name_len, double value_x, double value_y, double value_z, double value_w)`
+        subroutine qtf_qopenglshaderprogram_setUniformValueVector4D(self, name, name_len, value_x, value_y, value_z, value_w) &
+                bind(C, name='qtf_qopenglshaderprogram_setUniformValueVector4D')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+            real(c_double), value :: value_x
+            real(c_double), value :: value_y
+            real(c_double), value :: value_z
+            real(c_double), value :: value_w
+        end subroutine qtf_qopenglshaderprogram_setUniformValueVector4D
+
         !> Set a vec4 uniform from a color (components scaled to 0..1).
         !>
         !> C: `void qtf_qopenglshaderprogram_setUniformValueColor(void *self, const char *name, int name_len, int color_r, int color_g, int color_b, int color_a)`
@@ -962,7 +1021,10 @@ module qt_c_opengl
     public :: qtf_qopenglshaderprogram_enableAttributeArray, qtf_qopenglshaderprogram_disableAttributeArray
     public :: qtf_qopenglshaderprogram_setAttributeBuffer, qtf_qopenglshaderprogram_setUniformValueFloat
     public :: qtf_qopenglshaderprogram_setUniformValueInt, qtf_qopenglshaderprogram_setUniformValueVec3
-    public :: qtf_qopenglshaderprogram_setUniformValueVec4, qtf_qopenglshaderprogram_setUniformValueColor
+    public :: qtf_qopenglshaderprogram_setUniformValueVec4, qtf_qopenglshaderprogram_setUniformValueVec2
+    public :: qtf_qopenglshaderprogram_setUniformValueVector2D
+    public :: qtf_qopenglshaderprogram_setUniformValueVector3D
+    public :: qtf_qopenglshaderprogram_setUniformValueVector4D, qtf_qopenglshaderprogram_setUniformValueColor
     public :: qtf_qopenglshaderprogram_setUniformValueMat4, qtf_qopenglshaderprogram_setUniformValueMat3
     public :: qtf_qopenglbuffer_delete, qtf_qopenglbuffer_new, qtf_qopenglbuffer_create
     public :: qtf_qopenglbuffer_isCreated, qtf_qopenglbuffer_bind, qtf_qopenglbuffer_release

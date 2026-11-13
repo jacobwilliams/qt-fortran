@@ -24,7 +24,10 @@
 #include <QPointer>
 #include <QSurfaceFormat>
 #include <QThread>
+#include <QVector2D>
 #include <QVector3D>
+#include <QVector3D>
+#include <QVector4D>
 #include <QVector4D>
 #include <QWheelEvent>
 #include <QWindow>
@@ -387,6 +390,26 @@ QTF_API void qtf_qopenglshaderprogram_setUniformValueVec3(void *self, const char
 // Set a vec4 uniform.
 QTF_API void qtf_qopenglshaderprogram_setUniformValueVec4(void *self, const char *name, int name_len, double x, double y, double z, double w) {
     as<QOpenGLShaderProgram>(self)->setUniformValue(as<QOpenGLShaderProgram>(self)->uniformLocation(qtf_qstring(name, name_len)), QVector4D(x, y, z, w));
+}
+
+// Set a vec2 uniform.
+QTF_API void qtf_qopenglshaderprogram_setUniformValueVec2(void *self, const char *name, int name_len, double x, double y) {
+    as<QOpenGLShaderProgram>(self)->setUniformValue(as<QOpenGLShaderProgram>(self)->uniformLocation(qtf_qstring(name, name_len)), QVector2D(x, y));
+}
+
+// Set a vec2 uniform.
+QTF_API void qtf_qopenglshaderprogram_setUniformValueVector2D(void *self, const char *name, int name_len, double value_x, double value_y) {
+    as<QOpenGLShaderProgram>(self)->setUniformValue(as<QOpenGLShaderProgram>(self)->uniformLocation(qtf_qstring(name, name_len)), QVector2D(float(value_x), float(value_y)));
+}
+
+// Set a vec3 uniform (e.g. a light direction).
+QTF_API void qtf_qopenglshaderprogram_setUniformValueVector3D(void *self, const char *name, int name_len, double value_x, double value_y, double value_z) {
+    as<QOpenGLShaderProgram>(self)->setUniformValue(as<QOpenGLShaderProgram>(self)->uniformLocation(qtf_qstring(name, name_len)), QVector3D(float(value_x), float(value_y), float(value_z)));
+}
+
+// Set a vec4 uniform.
+QTF_API void qtf_qopenglshaderprogram_setUniformValueVector4D(void *self, const char *name, int name_len, double value_x, double value_y, double value_z, double value_w) {
+    as<QOpenGLShaderProgram>(self)->setUniformValue(as<QOpenGLShaderProgram>(self)->uniformLocation(qtf_qstring(name, name_len)), QVector4D(float(value_x), float(value_y), float(value_z), float(value_w)));
 }
 
 // Set a vec4 uniform from a color (components scaled to 0..1).
