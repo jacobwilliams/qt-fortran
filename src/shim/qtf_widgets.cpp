@@ -42,6 +42,7 @@
 #include <QDropEvent>
 #include <QExposeEvent>
 #include <QFileDialog>
+#include <QFileIconProvider>
 #include <QFileInfo>
 #include <QFileSystemModel>
 #include <QFocusEvent>
@@ -112,6 +113,7 @@
 #include <QToolTip>
 #include <QTreeView>
 #include <QTreeWidget>
+#include <QTreeWidgetItemIterator>
 #include <QUndoStack>
 #include <QUndoView>
 #include <QUrl>
@@ -202,104 +204,107 @@ enum : int {
     QTF_SIG_QTFTREEMODEL_CHECKCHANGED = 1068,
     QTF_SIG_QTFTREEMODEL_DRAGSTARTED = 1069,
     QTF_SIG_QTFTREEMODEL_DROPPED = 1070,
-    QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED = 1071,
-    QTF_SIG_QFILESYSTEMMODEL_ROOTPATHCHANGED = 1072,
-    QTF_SIG_QTFITEMDELEGATE_PAINTCELL = 1073,
-    QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1074,
-    QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1075,
-    QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1076,
-    QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1077,
-    QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1078,
-    QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1079,
-    QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1080,
-    QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1081,
-    QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1082,
-    QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1083,
-    QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1084,
-    QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1085,
-    QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1086,
-    QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1087,
-    QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1088,
-    QTF_SIG_QPLAINTEXTEDIT_CURSORPOSITIONCHANGED = 1089,
-    QTF_SIG_QPLAINTEXTEDIT_SELECTIONCHANGED = 1090,
-    QTF_SIG_QPLAINTEXTEDIT_BLOCKCOUNTCHANGED = 1091,
-    QTF_SIG_QPLAINTEXTEDIT_MODIFICATIONCHANGED = 1092,
-    QTF_SIG_QPLAINTEXTEDIT_UNDOAVAILABLE = 1093,
-    QTF_SIG_QPLAINTEXTEDIT_REDOAVAILABLE = 1094,
-    QTF_SIG_QPLAINTEXTEDIT_COPYAVAILABLE = 1095,
-    QTF_SIG_QTFPLAINTEXTEDIT_VIEWPORTPAINTEVENT = 1096,
-    QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1097,
-    QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1098,
-    QTF_SIG_QTABWIDGET_TABBARCLICKED = 1099,
-    QTF_SIG_QTABBAR_CURRENTCHANGED = 1100,
-    QTF_SIG_QTABBAR_TABCLOSEREQUESTED = 1101,
-    QTF_SIG_QTABBAR_TABMOVED = 1102,
-    QTF_SIG_QTABBAR_TABBARCLICKED = 1103,
-    QTF_SIG_QTABBAR_TABBARDOUBLECLICKED = 1104,
-    QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1105,
-    QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1106,
-    QTF_SIG_QSPLITTER_SPLITTERMOVED = 1107,
-    QTF_SIG_QGROUPBOX_TOGGLED = 1108,
-    QTF_SIG_QGROUPBOX_CLICKED = 1109,
-    QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1110,
-    QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1111,
-    QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1112,
-    QTF_SIG_QBUTTONGROUP_IDCLICKED = 1113,
-    QTF_SIG_QDATEEDIT_DATECHANGED = 1114,
-    QTF_SIG_QTIMEEDIT_TIMECHANGED = 1115,
-    QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1116,
-    QTF_SIG_QCALENDARWIDGET_CLICKED = 1117,
-    QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1118,
-    QTF_SIG_QPROGRESSDIALOG_CANCELED = 1119,
-    QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED = 1120,
-    QTF_SIG_QDIALOGBUTTONBOX_REJECTED = 1121,
-    QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED = 1122,
-    QTF_SIG_QDIALOGBUTTONBOX_CLICKED = 1123,
-    QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE = 1124,
-    QTF_SIG_QCOMPLETER_ACTIVATED = 1125,
-    QTF_SIG_QCOMPLETER_HIGHLIGHTED = 1126,
-    QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED = 1127,
-    QTF_SIG_QTEXTBROWSER_ANCHORCLICKED = 1128,
-    QTF_SIG_QTEXTBROWSER_SOURCECHANGED = 1129,
-    QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE = 1130,
-    QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE = 1131,
-    QTF_SIG_QTOOLBOX_CURRENTCHANGED = 1132,
-    QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED = 1133,
-    QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE = 1134,
-    QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED = 1135,
-    QTF_SIG_QWIZARDPAGE_COMPLETECHANGED = 1136,
-    QTF_SIG_QWIZARD_CURRENTIDCHANGED = 1137,
-    QTF_SIG_QWIZARD_HELPREQUESTED = 1138,
-    QTF_SIG_QUNDOSTACK_REDOREQUESTED = 1139,
-    QTF_SIG_QUNDOSTACK_UNDOREQUESTED = 1140,
-    QTF_SIG_QUNDOSTACK_CANUNDOCHANGED = 1141,
-    QTF_SIG_QUNDOSTACK_CANREDOCHANGED = 1142,
-    QTF_SIG_QUNDOSTACK_INDEXCHANGED = 1143,
-    QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1144,
-    QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1145,
-    QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1146,
-    QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT = 1147,
-    QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT = 1148,
-    QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT = 1149,
-    QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT = 1150,
-    QTF_SIG_QTFEVENTFILTER_WHEELEVENT = 1151,
-    QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT = 1152,
-    QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT = 1153,
-    QTF_SIG_QTFEVENTFILTER_DRAGENTEREVENT = 1154,
-    QTF_SIG_QTFEVENTFILTER_DRAGMOVEEVENT = 1155,
-    QTF_SIG_QTFEVENTFILTER_DRAGLEAVEEVENT = 1156,
-    QTF_SIG_QTFEVENTFILTER_DROPEVENT = 1157,
-    QTF_SIG_QTFEVENTFILTER_RESIZEEVENT = 1158,
-    QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT = 1159,
-    QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST = 1160,
-    QTF_SIG_QTFEVENTFILTER_ENTEREVENT = 1161,
-    QTF_SIG_QTFEVENTFILTER_LEAVEEVENT = 1162,
-    QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT = 1163,
-    QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1164,
-    QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1165,
-    QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1166,
-    QTF_SIG_QTFEVENTFILTER_SURFACECREATED = 1167,
-    QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED = 1168,
+    QTF_SIG_QTFSORTFILTERPROXYMODEL_FILTERACCEPTSROW = 1071,
+    QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED = 1072,
+    QTF_SIG_QFILESYSTEMMODEL_ROOTPATHCHANGED = 1073,
+    QTF_SIG_QTFITEMDELEGATE_PAINTCELL = 1074,
+    QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1075,
+    QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1076,
+    QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1077,
+    QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1078,
+    QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1079,
+    QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1080,
+    QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1081,
+    QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1082,
+    QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1083,
+    QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1084,
+    QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1085,
+    QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1086,
+    QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1087,
+    QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1088,
+    QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1089,
+    QTF_SIG_QPLAINTEXTEDIT_CURSORPOSITIONCHANGED = 1090,
+    QTF_SIG_QPLAINTEXTEDIT_SELECTIONCHANGED = 1091,
+    QTF_SIG_QPLAINTEXTEDIT_BLOCKCOUNTCHANGED = 1092,
+    QTF_SIG_QPLAINTEXTEDIT_MODIFICATIONCHANGED = 1093,
+    QTF_SIG_QPLAINTEXTEDIT_UNDOAVAILABLE = 1094,
+    QTF_SIG_QPLAINTEXTEDIT_REDOAVAILABLE = 1095,
+    QTF_SIG_QPLAINTEXTEDIT_COPYAVAILABLE = 1096,
+    QTF_SIG_QTFPLAINTEXTEDIT_VIEWPORTPAINTEVENT = 1097,
+    QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1098,
+    QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1099,
+    QTF_SIG_QTABWIDGET_TABBARCLICKED = 1100,
+    QTF_SIG_QTABBAR_CURRENTCHANGED = 1101,
+    QTF_SIG_QTABBAR_TABCLOSEREQUESTED = 1102,
+    QTF_SIG_QTABBAR_TABMOVED = 1103,
+    QTF_SIG_QTABBAR_TABBARCLICKED = 1104,
+    QTF_SIG_QTABBAR_TABBARDOUBLECLICKED = 1105,
+    QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1106,
+    QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1107,
+    QTF_SIG_QSPLITTER_SPLITTERMOVED = 1108,
+    QTF_SIG_QGROUPBOX_TOGGLED = 1109,
+    QTF_SIG_QGROUPBOX_CLICKED = 1110,
+    QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1111,
+    QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1112,
+    QTF_SIG_QDOCKWIDGET_DOCKLOCATIONCHANGED = 1113,
+    QTF_SIG_QDOCKWIDGET_FEATURESCHANGED = 1114,
+    QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1115,
+    QTF_SIG_QBUTTONGROUP_IDCLICKED = 1116,
+    QTF_SIG_QDATEEDIT_DATECHANGED = 1117,
+    QTF_SIG_QTIMEEDIT_TIMECHANGED = 1118,
+    QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1119,
+    QTF_SIG_QCALENDARWIDGET_CLICKED = 1120,
+    QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1121,
+    QTF_SIG_QPROGRESSDIALOG_CANCELED = 1122,
+    QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED = 1123,
+    QTF_SIG_QDIALOGBUTTONBOX_REJECTED = 1124,
+    QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED = 1125,
+    QTF_SIG_QDIALOGBUTTONBOX_CLICKED = 1126,
+    QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE = 1127,
+    QTF_SIG_QCOMPLETER_ACTIVATED = 1128,
+    QTF_SIG_QCOMPLETER_HIGHLIGHTED = 1129,
+    QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED = 1130,
+    QTF_SIG_QTEXTBROWSER_ANCHORCLICKED = 1131,
+    QTF_SIG_QTEXTBROWSER_SOURCECHANGED = 1132,
+    QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE = 1133,
+    QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE = 1134,
+    QTF_SIG_QTOOLBOX_CURRENTCHANGED = 1135,
+    QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED = 1136,
+    QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE = 1137,
+    QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED = 1138,
+    QTF_SIG_QWIZARDPAGE_COMPLETECHANGED = 1139,
+    QTF_SIG_QWIZARD_CURRENTIDCHANGED = 1140,
+    QTF_SIG_QWIZARD_HELPREQUESTED = 1141,
+    QTF_SIG_QUNDOSTACK_REDOREQUESTED = 1142,
+    QTF_SIG_QUNDOSTACK_UNDOREQUESTED = 1143,
+    QTF_SIG_QUNDOSTACK_CANUNDOCHANGED = 1144,
+    QTF_SIG_QUNDOSTACK_CANREDOCHANGED = 1145,
+    QTF_SIG_QUNDOSTACK_INDEXCHANGED = 1146,
+    QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1147,
+    QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1148,
+    QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1149,
+    QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT = 1150,
+    QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT = 1151,
+    QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT = 1152,
+    QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT = 1153,
+    QTF_SIG_QTFEVENTFILTER_WHEELEVENT = 1154,
+    QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT = 1155,
+    QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT = 1156,
+    QTF_SIG_QTFEVENTFILTER_DRAGENTEREVENT = 1157,
+    QTF_SIG_QTFEVENTFILTER_DRAGMOVEEVENT = 1158,
+    QTF_SIG_QTFEVENTFILTER_DRAGLEAVEEVENT = 1159,
+    QTF_SIG_QTFEVENTFILTER_DROPEVENT = 1160,
+    QTF_SIG_QTFEVENTFILTER_RESIZEEVENT = 1161,
+    QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT = 1162,
+    QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST = 1163,
+    QTF_SIG_QTFEVENTFILTER_ENTEREVENT = 1164,
+    QTF_SIG_QTFEVENTFILTER_LEAVEEVENT = 1165,
+    QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT = 1166,
+    QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1167,
+    QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1168,
+    QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1169,
+    QTF_SIG_QTFEVENTFILTER_SURFACECREATED = 1170,
+    QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED = 1171,
 };
 
 // Use the style called `name` (QStyleFactory::keys); false if there is none.
@@ -626,6 +631,18 @@ class QtfWidget : public QWidget {
     // (not named `slots`: that is a Qt macro)
     std::array<std::vector<qtf_slot>, QTF_EV_COUNT> handlers;
 
+    // Size hints set from Fortran (-1: QWidget's own for that dimension).
+    QSize hint{-1, -1}, min_hint{-1, -1};
+
+    void setHints(QSize h, QSize m) {
+        hint = h;
+        min_hint = m;
+        updateGeometry();   // tell the layout
+    }
+
+    QSize sizeHint() const override { return merged(hint, QWidget::sizeHint()); }
+    QSize minimumSizeHint() const override { return merged(min_hint, QWidget::minimumSizeHint()); }
+
   protected:
     // True if a (live) slot handled the event.
     bool forward(qtf_widget_event ev, void *p) {
@@ -663,6 +680,11 @@ class QtfWidget : public QWidget {
     void resizeEvent(QResizeEvent *e) override {
         QWidget::resizeEvent(e);
         forward(QTF_EV_RESIZE, e);
+    }
+
+  private:
+    static QSize merged(QSize set, QSize def) {
+        return QSize(set.width() >= 0 ? set.width() : def.width(), set.height() >= 0 ? set.height() : def.height());
     }
 };
 
@@ -1340,6 +1362,99 @@ static bool connect_delegate_paint(void *s, const qtf_slot &ref) {
     return true;
 }
 
+// A source row being filtered by a QtfSortFilterProxyModel's filterAcceptsRow
+// slots (QtfFilterRow).
+struct QtfFilterRow {
+    const QAbstractItemModel *model;   // the source model
+    int row;
+    QModelIndex parent;
+    bool accepted;
+
+    // The QtfTreeModel node of the row (-1 for other models).
+    int node() const { return qtf_node(model->index(row, 0, parent)); }
+
+    // Its parent node (0 for a top-level node; -1 if not a QtfTreeModel).
+    int parentNode() const {
+        if (!dynamic_cast<const QtfTreeModel *>(model)) return -1;
+        return parent.isValid() ? int(parent.internalId()) : 0;
+    }
+
+    QString text(int column) const { return model->index(row, column, parent).data(Qt::DisplayRole).toString(); }
+};
+
+// QtfSortFilterProxyModel: a QSortFilterProxyModel whose rows are accepted or
+// rejected by Fortran filterAcceptsRow slots (after the standard filter).
+class QtfSortFilterProxyModel : public QSortFilterProxyModel {
+  public:
+    using QSortFilterProxyModel::QSortFilterProxyModel;
+    std::vector<qtf_slot> filter_handlers;
+
+    // Filter again (e.g. after the Fortran filter's settings changed).
+    void refilter() {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
+        beginFilterChange();
+        endFilterChange(QSortFilterProxyModel::Direction::Rows);
+#else
+        invalidateFilter();
+#endif
+    }
+
+  protected:
+    bool filterAcceptsRow(int row, const QModelIndex &parent) const override {
+        const bool standard = QSortFilterProxyModel::filterAcceptsRow(row, parent);
+        if (filter_handlers.empty() || !sourceModel()) return standard;
+        QtfFilterRow r{sourceModel(), row, parent, standard};
+        qtf_args a{};
+        a.p = &r;
+        if (qtf_emit_all(filter_handlers, a) == 0) return standard;   // all slots disconnected
+        return r.accepted;
+    }
+};
+
+// Attach a slot to a QtfSortFilterProxyModel's filterAcceptsRow.
+static bool connect_proxy_filter(void *s, const qtf_slot &ref) {
+    auto *m = dynamic_cast<QtfSortFilterProxyModel *>(static_cast<QObject *>(s));
+    if (!m) return false;
+    m->filter_handlers.push_back(ref);
+    m->refilter();
+    return true;
+}
+
+// Item data: the integer stored with an item (-1 if none).
+static int qtf_item_int(const QVariant &v) {
+    bool ok = false;
+    const int i = v.toInt(&ok);
+    return ok ? i : -1;
+}
+
+// The first item of a tree whose integer data in `column` is `value` (null if none).
+static QTreeWidgetItem *qtf_find_tree_data(QTreeWidget *t, int value, int column) {
+    for (QTreeWidgetItemIterator it(t); *it; ++it)
+        if ((*it)->data(column, Qt::UserRole) == QVariant(value)) return *it;
+    return nullptr;
+}
+
+// The first row of a list whose item has integer data `value` (-1 if none).
+static int qtf_find_list_data(QListWidget *l, int value) {
+    for (int r = 0; r < l->count(); ++r)
+        if (l->item(r)->data(Qt::UserRole) == QVariant(value)) return r;
+    return -1;
+}
+
+// The first item of a table with integer data `value` (null if none).
+static QTableWidgetItem *qtf_find_table_data(QTableWidget *t, int value) {
+    for (int r = 0; r < t->rowCount(); ++r)
+        for (int c = 0; c < t->columnCount(); ++c)
+            if (auto *it = t->item(r, c); it && it->data(Qt::UserRole) == QVariant(value)) return it;
+    return nullptr;
+}
+
+// The icon of a file or directory (null for a path that does not exist).
+static QIcon *qtf_file_icon(QFileIconProvider *p, const QString &path) {
+    const QFileInfo fi(path);
+    return fi.exists() ? new QIcon(p->icon(fi)) : new QIcon();
+}
+
 // Attach a slot to one of the QtfWidget's event handlers. The slots are owned
 // by the widget, so they are released when it is destroyed.
 template <qtf_widget_event EV> static bool connect_event(void *s, const qtf_slot &ref) {
@@ -1738,6 +1853,19 @@ QTF_API void qtf_qwidget_setSizePolicy(void *self, int horizontal, int vertical)
     as<QWidget>(self)->setSizePolicy(QSizePolicy::Policy(horizontal), QSizePolicy::Policy(vertical));
 }
 
+// The smallest size layouts give the widget (unless a minimum size is set).
+QTF_API void qtf_qwidget_minimumSizeHint(void *self, int *res_width, int *res_height) {
+    const auto v_ = as<QWidget>(self)->minimumSizeHint();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// Tell the layout that the size hints changed.
+QTF_API void qtf_qwidget_updateGeometry(void *self) { as<QWidget>(self)->updateGeometry(); }
+
+// Resize the widget to fit its contents (its size hint).
+QTF_API void qtf_qwidget_adjustSize(void *self) { as<QWidget>(self)->adjustSize(); }
+
 // Set the margins around the widget's contents, in pixels.
 QTF_API void qtf_qwidget_setContentsMargins(void *self, int left, int top, int right, int bottom) {
     as<QWidget>(self)->setContentsMargins(left, top, right, bottom);
@@ -2010,6 +2138,16 @@ QTF_API void qtf_qwidget_setAutoFillBackground(void *self, int enabled) {
 
 // Create a QtfWidget; without a parent it is a top-level window.
 QTF_API void *qtf_qtfwidget_new(void *parent) { return new QtfWidget(as<QWidget>(parent)); }
+
+// The size layouts prefer for the widget (sizeHint; -1: QWidget's own for that dimension, from its layout if it has one). Call it again when the contents change size.
+QTF_API void qtf_qtfwidget_setSizeHint(void *self, int width, int height) {
+    as<QtfWidget>(self)->setHints(QSize(width, height), as<QtfWidget>(self)->min_hint);
+}
+
+// The smallest size layouts give the widget (minimumSizeHint; -1: QWidget's own).
+QTF_API void qtf_qtfwidget_setMinimumSizeHint(void *self, int width, int height) {
+    as<QtfWidget>(self)->setHints(as<QtfWidget>(self)->hint, QSize(width, height));
+}
 
 // ---------------------------------------------------------------------------
 // QFrame
@@ -2675,6 +2813,69 @@ QTF_API void qtf_qmainwindow_removeDockWidget(void *self, void *dock) {
 // Stack `second` on `first` as tabs.
 QTF_API void qtf_qmainwindow_tabifyDockWidget(void *self, void *first, void *second) {
     as<QMainWindow>(self)->tabifyDockWidget(as<QDockWidget>(first), as<QDockWidget>(second));
+}
+
+// The docks stacked as tabs with `dock` (not including it).
+QTF_API void **qtf_qmainwindow_tabifiedDockWidgets(void *self, void *dock, int *len) {
+    return qtf_objects_to_c(as<QMainWindow>(self)->tabifiedDockWidgets(as<QDockWidget>(dock)), len);
+}
+
+// Put `second` beside `first` (Qt_Horizontal) or below it (Qt_Vertical), sharing its space.
+QTF_API void qtf_qmainwindow_splitDockWidget(void *self, void *first, void *second, int orientation) {
+    as<QMainWindow>(self)->splitDockWidget(as<QDockWidget>(first), as<QDockWidget>(second), Qt::Orientation(orientation));
+}
+
+// Resize docks to `sizes` (pixels): widths with Qt_Horizontal, heights with Qt_Vertical. Docks in the same area share its space in proportion.
+QTF_API void qtf_qmainwindow_resizeDocks(void *self, void **docks, const int *sizes, int orientation, int n) {
+    as<QMainWindow>(self)->resizeDocks(qtf_objects<QDockWidget>(docks, n), qtf_intlist(sizes, n), Qt::Orientation(orientation));
+}
+
+// The area `dock` is in (Qt_NoDockWidgetArea if floating or not in this window).
+QTF_API int qtf_qmainwindow_dockWidgetArea(void *self, void *dock) {
+    return int(as<QMainWindow>(self)->dockWidgetArea(as<QDockWidget>(dock)));
+}
+
+// Which dock area owns a corner, e.g. (Qt_BottomLeftCorner, Qt_LeftDockWidgetArea): the left docks run the full height.
+QTF_API void qtf_qmainwindow_setCorner(void *self, int corner, int area) {
+    as<QMainWindow>(self)->setCorner(Qt::Corner(corner), Qt::DockWidgetArea(area));
+}
+
+// The dock area owning a corner.
+QTF_API int qtf_qmainwindow_corner(void *self, int corner) {
+    return int(as<QMainWindow>(self)->corner(Qt::Corner(corner)));
+}
+
+// Where the tabs of tabified docks are in these areas (QTabWidget_North, ...; the default is South).
+QTF_API void qtf_qmainwindow_setTabPosition(void *self, int areas, int position) {
+    as<QMainWindow>(self)->setTabPosition(Qt::DockWidgetAreas(areas), QTabWidget::TabPosition(position));
+}
+
+// Where the tabs of tabified docks are in `area`.
+QTF_API int qtf_qmainwindow_tabPosition(void *self, int area) {
+    return int(as<QMainWindow>(self)->tabPosition(Qt::DockWidgetArea(area)));
+}
+
+// QTabWidget_Rounded (default) or QTabWidget_Triangular tabs for tabified docks.
+QTF_API void qtf_qmainwindow_setTabShape(void *self, int shape) {
+    as<QMainWindow>(self)->setTabShape(QTabWidget::TabShape(shape));
+}
+
+// How docks behave (QMainWindow_AnimatedDocks, AllowNestedDocks, AllowTabbedDocks, ForceTabbedDocks, VerticalTabs, GroupedDragging); the default is AnimatedDocks + AllowTabbedDocks.
+QTF_API void qtf_qmainwindow_setDockOptions(void *self, int options) {
+    as<QMainWindow>(self)->setDockOptions(QMainWindow::DockOptions(options));
+}
+
+// The dock options.
+QTF_API int qtf_qmainwindow_dockOptions(void *self) { return int(as<QMainWindow>(self)->dockOptions()); }
+
+// Allow splitting a dock area into rows and columns (QMainWindow_AllowNestedDocks).
+QTF_API void qtf_qmainwindow_setDockNestingEnabled(void *self, int enabled) {
+    as<QMainWindow>(self)->setDockNestingEnabled((enabled != 0));
+}
+
+// True if dock areas can be split.
+QTF_API int qtf_qmainwindow_isDockNestingEnabled(void *self) {
+    return qtf_bool(as<QMainWindow>(self)->isDockNestingEnabled());
 }
 
 // The layout of tool bars and dock widgets as text (base64), e.g. to store with QSettings. Give each tool bar and dock widget a unique objectName first.
@@ -3891,6 +4092,73 @@ QTF_API int qtf_qsortfilterproxymodel_mapFromSourceRow(void *self, int row, int 
 }
 
 // ---------------------------------------------------------------------------
+// QtfSortFilterProxyModel
+
+// A proxy model filtered by Fortran slots (set its source model).
+QTF_API void *qtf_qtfsortfilterproxymodel_new(void *parent) {
+    return new QtfSortFilterProxyModel(as<QObject>(parent));
+}
+
+// Filter all rows again (call it when the Fortran filter changes).
+QTF_API void qtf_qtfsortfilterproxymodel_invalidateFilter(void *self) {
+    as<QtfSortFilterProxyModel>(self)->refilter();
+}
+
+// ---------------------------------------------------------------------------
+// QtfFilterRow
+
+// The row in the source model (for a tree: under its parent).
+QTF_API int qtf_qtffilterrow_row(void *self) { return as<QtfFilterRow>(self)->row; }
+
+// The row's node, for a QtfTreeModel (-1 otherwise).
+QTF_API int qtf_qtffilterrow_node(void *self) { return as<QtfFilterRow>(self)->node(); }
+
+// The node of the row's parent, for a QtfTreeModel (0 for a top-level node; -1 for other models).
+QTF_API int qtf_qtffilterrow_parentNode(void *self) { return as<QtfFilterRow>(self)->parentNode(); }
+
+// The displayed text of a cell of the row.
+QTF_API char *qtf_qtffilterrow_text(void *self, int column, int *len) {
+    return qtf_to_c(as<QtfFilterRow>(self)->text(column), len);
+}
+
+// True if the row is shown so far (it passed the standard filter, and no slot rejected it).
+QTF_API int qtf_qtffilterrow_isAccepted(void *self) { return qtf_bool(as<QtfFilterRow>(self)->accepted); }
+
+// Show (.true.) or hide (.false.) the row.
+QTF_API void qtf_qtffilterrow_setAccepted(void *self, int accept) {
+    as<QtfFilterRow>(self)->accepted = (accept != 0);
+}
+
+// ---------------------------------------------------------------------------
+// QFileIconProvider
+
+// Delete an icon provider.
+QTF_API void qtf_qfileiconprovider_delete(void *self) { delete as<QFileIconProvider>(self); }
+
+// An icon provider.
+QTF_API void *qtf_qfileiconprovider_new(void) { return new QFileIconProvider(); }
+
+// The icon for an existing file or directory (by its type; null if it does not exist).
+QTF_API void *qtf_qfileiconprovider_icon(void *self, const char *path, int path_len) {
+    return qtf_file_icon(as<QFileIconProvider>(self), qtf_qstring(path, path_len));
+}
+
+// A generic icon: QFileIconProvider_Folder, QFileIconProvider_File, QFileIconProvider_Drive, ...
+QTF_API void *qtf_qfileiconprovider_iconForType(void *self, int which) {
+    return new QIcon(as<QFileIconProvider>(self)->icon(QFileIconProvider::IconType(QFileIconProvider::IconType(which))));
+}
+
+// A description of the file's type, e.g. 'Folder' or 'txt File'.
+QTF_API char *qtf_qfileiconprovider_typeName(void *self, const char *path, int path_len, int *len) {
+    return qtf_to_c(as<QFileIconProvider>(self)->type(QFileInfo(qtf_qstring(path, path_len))), len);
+}
+
+// QFileIconProvider_DontUseCustomDirectoryIcons: the same icon for every directory (faster).
+QTF_API void qtf_qfileiconprovider_setOptions(void *self, int options) {
+    as<QFileIconProvider>(self)->setOptions(QFileIconProvider::Options(QFileIconProvider::Options(options)));
+}
+
+// ---------------------------------------------------------------------------
 // QFileSystemModel
 
 // A file system model (call setRootPath).
@@ -4089,6 +4357,26 @@ QTF_API int qtf_qtablewidgetitem_row(void *self) { return as<QTableWidgetItem>(s
 // Column of the item in its table (-1 if none).
 QTF_API int qtf_qtablewidgetitem_column(void *self) { return as<QTableWidgetItem>(self)->column(); }
 
+// Store an integer with the item, e.g. an index into your own arrays (it moves with the item when the table is sorted).
+QTF_API void qtf_qtablewidgetitem_setData(void *self, int value) {
+    as<QTableWidgetItem>(self)->setData(Qt::UserRole, value);
+}
+
+// Store a string with the item (read it with `stringData`).
+QTF_API void qtf_qtablewidgetitem_setStringData(void *self, const char *value, int value_len) {
+    as<QTableWidgetItem>(self)->setData(Qt::UserRole, qtf_qstring(value, value_len));
+}
+
+// The integer stored with `setData` (-1 if none).
+QTF_API int qtf_qtablewidgetitem_data(void *self) {
+    return qtf_item_int(as<QTableWidgetItem>(self)->data(Qt::UserRole));
+}
+
+// The string stored with `setData` ('' if none).
+QTF_API char *qtf_qtablewidgetitem_stringData(void *self, int *len) {
+    return qtf_to_c(as<QTableWidgetItem>(self)->data(Qt::UserRole).toString(), len);
+}
+
 // ---------------------------------------------------------------------------
 // QTableWidget
 
@@ -4163,6 +4451,11 @@ QTF_API void qtf_qtablewidget_sortItems(void *self, int column, int order) {
     as<QTableWidget>(self)->sortItems(column, Qt::SortOrder(order));
 }
 
+// The first item (by row, then column) whose integer data (`item%setData`) is `value` (null if none).
+QTF_API void *qtf_qtablewidget_findData(void *self, int value) {
+    return qtf_find_table_data(as<QTableWidget>(self), value);
+}
+
 // ---------------------------------------------------------------------------
 // QListWidget
 
@@ -4217,6 +4510,31 @@ QTF_API void qtf_qlistwidget_setSortingEnabled(void *self, int enable) {
 // Sort the items.
 QTF_API void qtf_qlistwidget_sortItems(void *self, int order) {
     as<QListWidget>(self)->sortItems(Qt::SortOrder(order));
+}
+
+// Store an integer with the item at `row`, e.g. an index into your own arrays (it moves with the item when the list is sorted).
+QTF_API void qtf_qlistwidget_setItemData(void *self, int row, int value) {
+    if (auto *it = as<QListWidget>(self)->item(row)) it->setData(Qt::UserRole, value);
+}
+
+// Store a string with the item at `row` (read it with `itemStringData`).
+QTF_API void qtf_qlistwidget_setItemStringData(void *self, int row, const char *value, int value_len) {
+    if (auto *it = as<QListWidget>(self)->item(row)) it->setData(Qt::UserRole, qtf_qstring(value, value_len));
+}
+
+// The integer stored with the item at `row` (-1 if none).
+QTF_API int qtf_qlistwidget_itemData(void *self, int row) {
+    return as<QListWidget>(self)->item(row) ? qtf_item_int(as<QListWidget>(self)->item(row)->data(Qt::UserRole)) : -1;
+}
+
+// The string stored with the item at `row` ('' if none).
+QTF_API char *qtf_qlistwidget_itemStringData(void *self, int row, int *len) {
+    return qtf_to_c(as<QListWidget>(self)->item(row) ? as<QListWidget>(self)->item(row)->data(Qt::UserRole).toString() : QString(), len);
+}
+
+// The first row whose integer data is `value` (-1 if none).
+QTF_API int qtf_qlistwidget_findData(void *self, int value) {
+    return qtf_find_list_data(as<QListWidget>(self), value);
 }
 
 // ---------------------------------------------------------------------------
@@ -4291,6 +4609,56 @@ QTF_API void qtf_qtreewidgetitem_setFlags(void *self, int flags) {
     as<QTreeWidgetItem>(self)->setFlags(Qt::ItemFlags(flags));
 }
 
+// Store an integer with a column of the item, e.g. an index into your own arrays (column 0 for the whole item).
+QTF_API void qtf_qtreewidgetitem_setData(void *self, int column, int value) {
+    as<QTreeWidgetItem>(self)->setData(column, Qt::UserRole, value);
+}
+
+// Store a string with a column of the item (read it with `stringData`).
+QTF_API void qtf_qtreewidgetitem_setStringData(void *self, int column, const char *value, int value_len) {
+    as<QTreeWidgetItem>(self)->setData(column, Qt::UserRole, qtf_qstring(value, value_len));
+}
+
+// The integer stored with a column (-1 if none).
+QTF_API int qtf_qtreewidgetitem_data(void *self, int column) {
+    return qtf_item_int(as<QTreeWidgetItem>(self)->data(column, Qt::UserRole));
+}
+
+// The string stored with a column ('' if none).
+QTF_API char *qtf_qtreewidgetitem_stringData(void *self, int column, int *len) {
+    return qtf_to_c(as<QTreeWidgetItem>(self)->data(column, Qt::UserRole).toString(), len);
+}
+
+// The index of a child item (-1 if it is not one).
+QTF_API int qtf_qtreewidgetitem_indexOfChild(void *self, void *child) {
+    return as<QTreeWidgetItem>(self)->indexOfChild(as<QTreeWidgetItem>(child));
+}
+
+// Remove (and delete) a child item and its children.
+QTF_API void qtf_qtreewidgetitem_takeChild(void *self, int index) {
+    delete as<QTreeWidgetItem>(self)->takeChild(index);
+}
+
+// Hide or show the item.
+QTF_API void qtf_qtreewidgetitem_setHidden(void *self, int hide) {
+    as<QTreeWidgetItem>(self)->setHidden((hide != 0));
+}
+
+// True if hidden.
+QTF_API int qtf_qtreewidgetitem_isHidden(void *self) {
+    return qtf_bool(as<QTreeWidgetItem>(self)->isHidden());
+}
+
+// Select or deselect the item.
+QTF_API void qtf_qtreewidgetitem_setSelected(void *self, int select) {
+    as<QTreeWidgetItem>(self)->setSelected((select != 0));
+}
+
+// True if selected.
+QTF_API int qtf_qtreewidgetitem_isSelected(void *self) {
+    return qtf_bool(as<QTreeWidgetItem>(self)->isSelected());
+}
+
 // ---------------------------------------------------------------------------
 // QTreeWidget
 
@@ -4363,6 +4731,26 @@ QTF_API void qtf_qtreewidget_setSortingEnabled(void *self, int enable) {
 // Sort by a column.
 QTF_API void qtf_qtreewidget_sortItems(void *self, int column, int order) {
     as<QTreeWidget>(self)->sortItems(column, Qt::SortOrder(order));
+}
+
+// The first item (in tree order, expanded or not) whose integer data in `column` is `value` (null if none).
+QTF_API void *qtf_qtreewidget_findData(void *self, int value, int column) {
+    return qtf_find_tree_data(as<QTreeWidget>(self), value, column);
+}
+
+// Scroll so that `item` is visible (expanding its parents).
+QTF_API void qtf_qtreewidget_scrollToItem(void *self, void *item) {
+    as<QTreeWidget>(self)->scrollToItem(as<QTreeWidgetItem>(item));
+}
+
+// Remove (and delete) a top-level item and its children.
+QTF_API void qtf_qtreewidget_takeTopLevelItem(void *self, int index) {
+    delete as<QTreeWidget>(self)->takeTopLevelItem(index);
+}
+
+// The index of a top-level item (-1 if it is not one).
+QTF_API int qtf_qtreewidget_indexOfTopLevelItem(void *self, void *item) {
+    return as<QTreeWidget>(self)->indexOfTopLevelItem(as<QTreeWidgetItem>(item));
 }
 
 // ---------------------------------------------------------------------------
@@ -5162,10 +5550,29 @@ QTF_API void qtf_qdockwidget_setFeatures(void *self, int features) {
     as<QDockWidget>(self)->setFeatures(QDockWidget::DockWidgetFeatures(features));
 }
 
+// The QDockWidget_* flags.
+QTF_API int qtf_qdockwidget_features(void *self) { return int(as<QDockWidget>(self)->features()); }
+
 // Where the dock may be placed (Qt_*DockWidgetArea flags).
 QTF_API void qtf_qdockwidget_setAllowedAreas(void *self, int areas) {
     as<QDockWidget>(self)->setAllowedAreas(Qt::DockWidgetAreas(areas));
 }
+
+// Where the dock may be placed.
+QTF_API int qtf_qdockwidget_allowedAreas(void *self) { return int(as<QDockWidget>(self)->allowedAreas()); }
+
+// True if the dock may be placed in `area`.
+QTF_API int qtf_qdockwidget_isAreaAllowed(void *self, int area) {
+    return qtf_bool(as<QDockWidget>(self)->isAreaAllowed(Qt::DockWidgetArea(area)));
+}
+
+// Replace the title bar with `widget` (the dock takes ownership), e.g. a compact header with buttons; no widget restores the standard title bar. An empty QWidget hides the title bar.
+QTF_API void qtf_qdockwidget_setTitleBarWidget(void *self, void *widget) {
+    as<QDockWidget>(self)->setTitleBarWidget(as<QWidget>(widget));
+}
+
+// The custom title bar (null if the standard one is used).
+QTF_API void *qtf_qdockwidget_titleBarWidget(void *self) { return as<QDockWidget>(self)->titleBarWidget(); }
 
 // A checkable action that shows/hides the dock (for a View menu).
 QTF_API void *qtf_qdockwidget_toggleViewAction(void *self) {
@@ -6423,6 +6830,7 @@ static const bool qtf_widgets_registered = [] {
     qtf_register_connector(QTF_SIG_QTFTREEMODEL_CHECKCHANGED, connect_model<3>);
     qtf_register_connector(QTF_SIG_QTFTREEMODEL_DRAGSTARTED, connect_model<4>);
     qtf_register_connector(QTF_SIG_QTFTREEMODEL_DROPPED, connect_model<5>);
+    qtf_register_connector(QTF_SIG_QTFSORTFILTERPROXYMODEL_FILTERACCEPTSROW, connect_proxy_filter);
     qtf_register_connector(QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QFileSystemModel>(s), &QFileSystemModel::directoryLoaded, as<QFileSystemModel>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
     });
@@ -6541,6 +6949,12 @@ static const bool qtf_widgets_registered = [] {
     });
     qtf_register_connector(QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QDockWidget>(s), &QDockWidget::topLevelChanged, as<QDockWidget>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QDOCKWIDGET_DOCKLOCATIONCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QDockWidget>(s), &QDockWidget::dockLocationChanged, as<QDockWidget>(s), [ref](Qt::DockWidgetArea area) { qtf_emit_int(ref, int(area)); }));
+    });
+    qtf_register_connector(QTF_SIG_QDOCKWIDGET_FEATURESCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QDockWidget>(s), &QDockWidget::featuresChanged, as<QDockWidget>(s), [ref](QDockWidget::DockWidgetFeatures f) { qtf_emit_int(ref, int(f)); }));
     });
     qtf_register_connector(QTF_SIG_QPROGRESSBAR_VALUECHANGED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QProgressBar>(s), &QProgressBar::valueChanged, as<QProgressBar>(s), [ref](int v) { qtf_emit_int(ref, v); }));

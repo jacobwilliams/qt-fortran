@@ -190,6 +190,34 @@ module qt_widgets
     integer(c_int), parameter, public :: QTabWidget_West = 2
     integer(c_int), parameter, public :: QTabWidget_East = 3
 
+    ! QTabWidget::TabShape
+    integer(c_int), parameter, public :: QTabWidget_Rounded = 0
+    integer(c_int), parameter, public :: QTabWidget_Triangular = 1
+
+    ! Qt::Corner
+    integer(c_int), parameter, public :: Qt_TopLeftCorner = 0
+    integer(c_int), parameter, public :: Qt_TopRightCorner = 1
+    integer(c_int), parameter, public :: Qt_BottomLeftCorner = 2
+    integer(c_int), parameter, public :: Qt_BottomRightCorner = 3
+
+    ! QMainWindow::DockOption (flags)
+    integer(c_int), parameter, public :: QMainWindow_AnimatedDocks = 1
+    integer(c_int), parameter, public :: QMainWindow_AllowNestedDocks = 2
+    integer(c_int), parameter, public :: QMainWindow_AllowTabbedDocks = 4
+    integer(c_int), parameter, public :: QMainWindow_ForceTabbedDocks = 8
+    integer(c_int), parameter, public :: QMainWindow_VerticalTabs = 16
+    integer(c_int), parameter, public :: QMainWindow_GroupedDragging = 32
+
+    ! QFileIconProvider::IconType and Option
+    integer(c_int), parameter, public :: QFileIconProvider_Computer = 0
+    integer(c_int), parameter, public :: QFileIconProvider_Desktop = 1
+    integer(c_int), parameter, public :: QFileIconProvider_Trashcan = 2
+    integer(c_int), parameter, public :: QFileIconProvider_Network = 3
+    integer(c_int), parameter, public :: QFileIconProvider_Drive = 4
+    integer(c_int), parameter, public :: QFileIconProvider_Folder = 5
+    integer(c_int), parameter, public :: QFileIconProvider_File = 6
+    integer(c_int), parameter, public :: QFileIconProvider_DontUseCustomDirectoryIcons = 1
+
     ! Qt::ApplicationAttribute (subset)
     integer(c_int), parameter, public :: Qt_AA_DontShowIconsInMenus = 2
     integer(c_int), parameter, public :: Qt_AA_NativeWindows = 3
@@ -353,6 +381,12 @@ module qt_widgets
         procedure :: connect => qsignalpaintcell_connect
     end type QSignalPaintCell
 
+    !> A row to filter: slots get (row) and may reject it (`row%setAccepted(.false.)`).
+    type, extends(QtfSignal), public :: QSignalFilterRow
+    contains
+        procedure :: connect => qsignalfilterrow_connect
+    end type QSignalFilterRow
+
     public :: QFontDialog_getFont
 
     !> The application object. Create exactly one, before any widget, with
@@ -423,6 +457,9 @@ module qt_widgets
         procedure :: setFixedWidth => qwidget_setFixedWidth
         procedure :: setFixedHeight => qwidget_setFixedHeight
         procedure :: setSizePolicy => qwidget_setSizePolicy
+        procedure :: minimumSizeHint => qwidget_minimumSizeHint
+        procedure :: updateGeometry => qwidget_updateGeometry
+        procedure :: adjustSize => qwidget_adjustSize
         procedure, private :: qwidget_setContentsMargins, qwidget_setContentsMarginsM
         generic :: setContentsMargins => qwidget_setContentsMargins, qwidget_setContentsMarginsM
         procedure :: setWindowIcon => qwidget_setWindowIcon
@@ -501,6 +538,8 @@ module qt_widgets
         type(QSignalResizeEvent) :: resizeEvent   !! Widget resized.
     contains
         procedure :: attach => qtfwidget_attach
+        procedure :: setSizeHint => qtfwidget_setSizeHint
+        procedure :: setMinimumSizeHint => qtfwidget_setMinimumSizeHint
     end type QtfWidget
     !> Constructor: `QtfWidget([parent])`.
     interface QtfWidget
@@ -833,6 +872,19 @@ module qt_widgets
         procedure :: addDockWidget => qmainwindow_addDockWidget
         procedure :: removeDockWidget => qmainwindow_removeDockWidget
         procedure :: tabifyDockWidget => qmainwindow_tabifyDockWidget
+        procedure :: tabifiedDockWidgets => qmainwindow_tabifiedDockWidgets
+        procedure :: splitDockWidget => qmainwindow_splitDockWidget
+        procedure :: resizeDocks => qmainwindow_resizeDocks
+        procedure :: dockWidgetArea => qmainwindow_dockWidgetArea
+        procedure :: setCorner => qmainwindow_setCorner
+        procedure :: corner => qmainwindow_corner
+        procedure :: setTabPosition => qmainwindow_setTabPosition
+        procedure :: tabPosition => qmainwindow_tabPosition
+        procedure :: setTabShape => qmainwindow_setTabShape
+        procedure :: setDockOptions => qmainwindow_setDockOptions
+        procedure :: dockOptions => qmainwindow_dockOptions
+        procedure :: setDockNestingEnabled => qmainwindow_setDockNestingEnabled
+        procedure :: isDockNestingEnabled => qmainwindow_isDockNestingEnabled
         procedure :: saveState => qmainwindow_saveState
         procedure :: restoreState => qmainwindow_restoreState
     end type QMainWindow
@@ -1310,6 +1362,53 @@ module qt_widgets
         module procedure :: qsortfilterproxymodel_new
     end interface QSortFilterProxyModel
 
+    !> A QSortFilterProxyModel whose rows are filtered by Fortran (`Qtf` marks a
+    !> qt-fortran class): connect `filterAcceptsRow`, and the slot gets each source
+    !> row (`row%row()`, `row%node()` for a QtfTreeModel, `row%text(column)`) and
+    !> rejects it with `row%setAccepted(.false.)`. Rows arrive already filtered by
+    !> the standard filter (`setFilterFixedString`, ...): `row%isAccepted()` says
+    !> whether it passed. Call `invalidateFilter` when your filter's settings change.
+    type, extends(QSortFilterProxyModel), public :: QtfSortFilterProxyModel
+        type(QSignalFilterRow) :: filterAcceptsRow   !! Decide whether a source row is shown: slots get (row) and may `row%setAccepted(.false.)`. For trees, rows are asked for level by level (parents before their children).
+    contains
+        procedure :: attach => qtfsortfilterproxymodel_attach
+        procedure :: invalidateFilter => qtfsortfilterproxymodel_invalidateFilter
+    end type QtfSortFilterProxyModel
+    !> Constructor: `QtfSortFilterProxyModel([parent])`.
+    interface QtfSortFilterProxyModel
+        module procedure :: qtfsortfilterproxymodel_new
+    end interface QtfSortFilterProxyModel
+
+    !> A source row being filtered by a QtfSortFilterProxyModel's `filterAcceptsRow`
+    !> slot (valid only during the slot).
+    type, public :: QtfFilterRow
+        type(c_ptr) :: ptr = c_null_ptr
+    contains
+        procedure :: row => qtffilterrow_row
+        procedure :: node => qtffilterrow_node
+        procedure :: parentNode => qtffilterrow_parentNode
+        procedure :: text => qtffilterrow_text
+        procedure :: isAccepted => qtffilterrow_isAccepted
+        procedure :: setAccepted => qtffilterrow_setAccepted
+    end type QtfFilterRow
+
+    !> The icons the platform shows for files, directories and drives, e.g. for a
+    !> QTreeWidget of project files. Icons returned are new handles: delete them
+    !> when done (setIcon copies them).
+    type, public :: QFileIconProvider
+        type(c_ptr) :: ptr = c_null_ptr
+    contains
+        procedure :: icon => qfileiconprovider_icon
+        procedure :: iconForType => qfileiconprovider_iconForType
+        procedure :: typeName => qfileiconprovider_typeName
+        procedure :: setOptions => qfileiconprovider_setOptions
+        procedure :: delete => qfileiconprovider_delete
+    end type QFileIconProvider
+    !> Constructor: `QFileIconProvider()`.
+    interface QFileIconProvider
+        module procedure :: qfileiconprovider_new
+    end interface QFileIconProvider
+
     !> The local file system as a model, for a QTreeView (or QTableView). Columns:
     !> name, size, type, date modified. Directories are read in the background:
     !> `directoryLoaded` reports when a directory's contents are available.
@@ -1396,6 +1495,10 @@ module qt_widgets
         procedure :: setForeground => qtablewidgetitem_setForeground
         procedure :: row => qtablewidgetitem_row
         procedure :: column => qtablewidgetitem_column
+        procedure, private :: qtablewidgetitem_setData, qtablewidgetitem_setStringData
+        generic :: setData => qtablewidgetitem_setData, qtablewidgetitem_setStringData
+        procedure :: data => qtablewidgetitem_data
+        procedure :: stringData => qtablewidgetitem_stringData
         procedure :: isNull => qtablewidgetitem_isNull
     end type QTableWidgetItem
     !> Constructor: `QTableWidgetItem([text])`.
@@ -1427,6 +1530,7 @@ module qt_widgets
         procedure :: removeColumn => qtablewidget_removeColumn
         procedure :: setSortingEnabled => qtablewidget_setSortingEnabled
         procedure :: sortItems => qtablewidget_sortItems
+        procedure :: findData => qtablewidget_findData
     end type QTableWidget
     !> Constructor: `QTableWidget([rows, columns, parent])`.
     interface QTableWidget
@@ -1452,6 +1556,11 @@ module qt_widgets
         procedure :: clear => qlistwidget_clear
         procedure :: setSortingEnabled => qlistwidget_setSortingEnabled
         procedure :: sortItems => qlistwidget_sortItems
+        procedure, private :: qlistwidget_setItemData, qlistwidget_setItemStringData
+        generic :: setItemData => qlistwidget_setItemData, qlistwidget_setItemStringData
+        procedure :: itemData => qlistwidget_itemData
+        procedure :: itemStringData => qlistwidget_itemStringData
+        procedure :: findData => qlistwidget_findData
     end type QListWidget
     !> Constructor: `QListWidget([parent])`.
     interface QListWidget
@@ -1475,6 +1584,16 @@ module qt_widgets
         procedure :: setToolTip => qtreewidgetitem_setToolTip
         procedure :: setIcon => qtreewidgetitem_setIcon
         procedure :: setFlags => qtreewidgetitem_setFlags
+        procedure, private :: qtreewidgetitem_setData, qtreewidgetitem_setStringData
+        generic :: setData => qtreewidgetitem_setData, qtreewidgetitem_setStringData
+        procedure :: data => qtreewidgetitem_data
+        procedure :: stringData => qtreewidgetitem_stringData
+        procedure :: indexOfChild => qtreewidgetitem_indexOfChild
+        procedure :: takeChild => qtreewidgetitem_takeChild
+        procedure :: setHidden => qtreewidgetitem_setHidden
+        procedure :: isHidden => qtreewidgetitem_isHidden
+        procedure :: setSelected => qtreewidgetitem_setSelected
+        procedure :: isSelected => qtreewidgetitem_isSelected
         procedure :: isNull => qtreewidgetitem_isNull
     end type QTreeWidgetItem
     !> Constructor: `QTreeWidgetItem(texts)` or `QTreeWidgetItem(parent, texts)` or `QTreeWidgetItem(parent, texts)`.
@@ -1508,6 +1627,10 @@ module qt_widgets
         procedure :: resizeColumnToContents => qtreewidget_resizeColumnToContents
         procedure :: setSortingEnabled => qtreewidget_setSortingEnabled
         procedure :: sortItems => qtreewidget_sortItems
+        procedure :: findData => qtreewidget_findData
+        procedure :: scrollToItem => qtreewidget_scrollToItem
+        procedure :: takeTopLevelItem => qtreewidget_takeTopLevelItem
+        procedure :: indexOfTopLevelItem => qtreewidget_indexOfTopLevelItem
     end type QTreeWidget
     !> Constructor: `QTreeWidget([parent])`.
     interface QTreeWidget
@@ -1811,6 +1934,8 @@ module qt_widgets
     type, extends(QWidget), public :: QDockWidget
         type(QSignalBool) :: visibilityChanged   !! The dock was shown or hidden.
         type(QSignalBool) :: topLevelChanged   !! The dock started (.true.) or stopped floating.
+        type(QSignalInt) :: dockLocationChanged   !! The dock moved to another area: the new area (Qt_LeftDockWidgetArea, ...).
+        type(QSignalInt) :: featuresChanged   !! The features changed: the new QDockWidget_* flags.
     contains
         procedure :: attach => qdockwidget_attach
         procedure :: setWidget => qdockwidget_setWidget
@@ -1818,7 +1943,12 @@ module qt_widgets
         procedure :: setFloating => qdockwidget_setFloating
         procedure :: isFloating => qdockwidget_isFloating
         procedure :: setFeatures => qdockwidget_setFeatures
+        procedure :: features => qdockwidget_features
         procedure :: setAllowedAreas => qdockwidget_setAllowedAreas
+        procedure :: allowedAreas => qdockwidget_allowedAreas
+        procedure :: isAreaAllowed => qdockwidget_isAreaAllowed
+        procedure :: setTitleBarWidget => qdockwidget_setTitleBarWidget
+        procedure :: titleBarWidget => qdockwidget_titleBarWidget
         procedure :: toggleViewAction => qdockwidget_toggleViewAction
     end type QDockWidget
     !> Constructor: `QDockWidget([title, parent])`.
@@ -2392,6 +2522,13 @@ module qt_widgets
             type(QtfPaintCell), intent(in) :: cell
             class(*), intent(inout), optional :: data
         end subroutine qt_slot_paint_cell
+        !> Slot filtering one source row (QtfSortFilterProxyModel%filterAcceptsRow).
+        subroutine qt_slot_filter_row(row, data)
+            import :: QtfFilterRow
+            implicit none
+            type(QtfFilterRow), intent(in) :: row
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_filter_row
         !> Slot receiving a tree item.
         subroutine qt_slot_tree_item(item, data)
             import :: QTreeWidgetItem
@@ -2409,7 +2546,14 @@ module qt_widgets
         end subroutine qt_slot_tree_item_int
     end interface
     public :: qt_slot_model_data, qt_slot_model_edit, qt_slot_tree_item, qt_slot_tree_item_int
-    public :: qt_slot_paint_cell, qt_slot_mime_data, qt_slot_model_drop
+    public :: qt_slot_paint_cell, qt_slot_mime_data, qt_slot_model_drop, qt_slot_filter_row
+
+    !> Slot handler for QSignalFilterRow.
+    type, extends(qt_slot_handler) :: filter_row_handler
+        procedure(qt_slot_filter_row), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => filter_row_handler_invoke
+    end type filter_row_handler
 
     !> Slot handler for QSignalMimeData.
     type, extends(qt_slot_handler) :: mime_data_handler
@@ -2911,6 +3055,29 @@ contains
         call qtf_qwidget_setSizePolicy(qtf_live(self, 'QWidget%setSizePolicy'), int(horizontal, c_int), int(vertical, &
                 c_int))
     end subroutine qwidget_setSizePolicy
+
+    !> The smallest size layouts give the widget (unless a minimum size is set).
+    function qwidget_minimumSizeHint(self) result(res)
+        class(QWidget), intent(in) :: self
+        type(QSize) :: res
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qwidget_minimumSizeHint(qtf_live(self, 'QWidget%minimumSizeHint'), r_width, r_height)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qwidget_minimumSizeHint
+
+    !> Tell the layout that the size hints changed.
+    subroutine qwidget_updateGeometry(self)
+        class(QWidget), intent(in) :: self
+        call qtf_qwidget_updateGeometry(qtf_live(self, 'QWidget%updateGeometry'))
+    end subroutine qwidget_updateGeometry
+
+    !> Resize the widget to fit its contents (its size hint).
+    subroutine qwidget_adjustSize(self)
+        class(QWidget), intent(in) :: self
+        call qtf_qwidget_adjustSize(qtf_live(self, 'QWidget%adjustSize'))
+    end subroutine qwidget_adjustSize
 
     !> Set the margins around the widget's contents, in pixels.
     subroutine qwidget_setContentsMargins(self, left, top, right, bottom)
@@ -3461,6 +3628,34 @@ contains
         type(QtfWidget) :: res
         call res%attach(qtf_qtfwidget_new(qtf_ptr(parent)))
     end function qtfwidget_new
+
+    !> The size layouts prefer for the widget (sizeHint; -1: QWidget's own for that dimension, from its layout if it has one). Call it again when the contents change size.
+    subroutine qtfwidget_setSizeHint(self, width, height)
+        class(QtfWidget), intent(in) :: self
+        integer, intent(in), optional :: width
+        integer, intent(in), optional :: height
+        integer(c_int) :: width_
+        integer(c_int) :: height_
+        width_ = -1
+        if (present(width)) width_ = int(width, c_int)
+        height_ = -1
+        if (present(height)) height_ = int(height, c_int)
+        call qtf_qtfwidget_setSizeHint(qtf_live(self, 'QtfWidget%setSizeHint'), width_, height_)
+    end subroutine qtfwidget_setSizeHint
+
+    !> The smallest size layouts give the widget (minimumSizeHint; -1: QWidget's own).
+    subroutine qtfwidget_setMinimumSizeHint(self, width, height)
+        class(QtfWidget), intent(in) :: self
+        integer, intent(in), optional :: width
+        integer, intent(in), optional :: height
+        integer(c_int) :: width_
+        integer(c_int) :: height_
+        width_ = -1
+        if (present(width)) width_ = int(width, c_int)
+        height_ = -1
+        if (present(height)) height_ = int(height, c_int)
+        call qtf_qtfwidget_setMinimumSizeHint(qtf_live(self, 'QtfWidget%setMinimumSizeHint'), width_, height_)
+    end subroutine qtfwidget_setMinimumSizeHint
 
     !> Create a frame.
     function qframe_new(parent) result(res)
@@ -4671,6 +4866,128 @@ contains
         call qtf_qmainwindow_tabifyDockWidget(qtf_live(self, 'QMainWindow%tabifyDockWidget'), qtf_live(first, &
                 'QMainWindow%tabifyDockWidget'), qtf_live(second, 'QMainWindow%tabifyDockWidget'))
     end subroutine qmainwindow_tabifyDockWidget
+
+    !> The docks stacked as tabs with `dock` (not including it).
+    function qmainwindow_tabifiedDockWidgets(self, dock) result(res)
+        class(QMainWindow), intent(in) :: self
+        class(QDockWidget), intent(in) :: dock
+        type(QDockWidget), allocatable :: res(:)
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        type(c_ptr), allocatable :: ptrs_(:)
+        integer :: i_
+        p_ = qtf_qmainwindow_tabifiedDockWidgets(qtf_live(self, 'QMainWindow%tabifiedDockWidgets'), qtf_live(dock, &
+                'QMainWindow%tabifiedDockWidgets'), n_)
+        ptrs_ = qtf_take_ptrs(p_, n_)
+        allocate(res(n_))
+        do i_ = 1, n_
+            call res(i_)%attach(ptrs_(i_))
+        end do
+    end function qmainwindow_tabifiedDockWidgets
+
+    !> Put `second` beside `first` (Qt_Horizontal) or below it (Qt_Vertical), sharing its space.
+    subroutine qmainwindow_splitDockWidget(self, first, second, orientation)
+        class(QMainWindow), intent(in) :: self
+        class(QDockWidget), intent(in) :: first
+        class(QDockWidget), intent(in) :: second
+        integer, intent(in) :: orientation
+        call qtf_qmainwindow_splitDockWidget(qtf_live(self, 'QMainWindow%splitDockWidget'), qtf_live(first, &
+                'QMainWindow%splitDockWidget'), qtf_live(second, 'QMainWindow%splitDockWidget'), int(orientation, &
+                        c_int))
+    end subroutine qmainwindow_splitDockWidget
+
+    !> Resize docks to `sizes` (pixels): widths with Qt_Horizontal, heights with Qt_Vertical. Docks in the same area share its space in proportion.
+    subroutine qmainwindow_resizeDocks(self, docks, sizes, orientation)
+        class(QMainWindow), intent(in) :: self
+        class(QDockWidget), intent(in) :: docks(:)
+        integer, intent(in) :: sizes(:)
+        integer, intent(in) :: orientation
+        type(c_ptr) :: docks_p(size(docks))
+        integer :: docks_i
+        do docks_i = 1, size(docks)
+            docks_p(docks_i) = qtf_live(docks(docks_i), 'QMainWindow%resizeDocks')
+        end do
+        call qtf_qmainwindow_resizeDocks(qtf_live(self, 'QMainWindow%resizeDocks'), docks_p, int(sizes, c_int), &
+                int(orientation, c_int), int(min(size(docks), size(sizes)), c_int))
+    end subroutine qmainwindow_resizeDocks
+
+    !> The area `dock` is in (Qt_NoDockWidgetArea if floating or not in this window).
+    function qmainwindow_dockWidgetArea(self, dock) result(res)
+        class(QMainWindow), intent(in) :: self
+        class(QDockWidget), intent(in) :: dock
+        integer :: res
+        res = qtf_qmainwindow_dockWidgetArea(qtf_live(self, 'QMainWindow%dockWidgetArea'), qtf_live(dock, &
+                'QMainWindow%dockWidgetArea'))
+    end function qmainwindow_dockWidgetArea
+
+    !> Which dock area owns a corner, e.g. (Qt_BottomLeftCorner, Qt_LeftDockWidgetArea): the left docks run the full height.
+    subroutine qmainwindow_setCorner(self, corner, area)
+        class(QMainWindow), intent(in) :: self
+        integer, intent(in) :: corner
+        integer, intent(in) :: area
+        call qtf_qmainwindow_setCorner(qtf_live(self, 'QMainWindow%setCorner'), int(corner, c_int), int(area, c_int))
+    end subroutine qmainwindow_setCorner
+
+    !> The dock area owning a corner.
+    function qmainwindow_corner(self, corner) result(res)
+        class(QMainWindow), intent(in) :: self
+        integer, intent(in) :: corner
+        integer :: res
+        res = qtf_qmainwindow_corner(qtf_live(self, 'QMainWindow%corner'), int(corner, c_int))
+    end function qmainwindow_corner
+
+    !> Where the tabs of tabified docks are in these areas (QTabWidget_North, ...; the default is South).
+    subroutine qmainwindow_setTabPosition(self, areas, position)
+        class(QMainWindow), intent(in) :: self
+        integer, intent(in) :: areas
+        integer, intent(in) :: position
+        call qtf_qmainwindow_setTabPosition(qtf_live(self, 'QMainWindow%setTabPosition'), int(areas, c_int), &
+                int(position, c_int))
+    end subroutine qmainwindow_setTabPosition
+
+    !> Where the tabs of tabified docks are in `area`.
+    function qmainwindow_tabPosition(self, area) result(res)
+        class(QMainWindow), intent(in) :: self
+        integer, intent(in) :: area
+        integer :: res
+        res = qtf_qmainwindow_tabPosition(qtf_live(self, 'QMainWindow%tabPosition'), int(area, c_int))
+    end function qmainwindow_tabPosition
+
+    !> QTabWidget_Rounded (default) or QTabWidget_Triangular tabs for tabified docks.
+    subroutine qmainwindow_setTabShape(self, shape)
+        class(QMainWindow), intent(in) :: self
+        integer, intent(in) :: shape
+        call qtf_qmainwindow_setTabShape(qtf_live(self, 'QMainWindow%setTabShape'), int(shape, c_int))
+    end subroutine qmainwindow_setTabShape
+
+    !> How docks behave (QMainWindow_AnimatedDocks, AllowNestedDocks, AllowTabbedDocks, ForceTabbedDocks, VerticalTabs, GroupedDragging); the default is AnimatedDocks + AllowTabbedDocks.
+    subroutine qmainwindow_setDockOptions(self, options)
+        class(QMainWindow), intent(in) :: self
+        integer, intent(in) :: options
+        call qtf_qmainwindow_setDockOptions(qtf_live(self, 'QMainWindow%setDockOptions'), int(options, c_int))
+    end subroutine qmainwindow_setDockOptions
+
+    !> The dock options.
+    function qmainwindow_dockOptions(self) result(res)
+        class(QMainWindow), intent(in) :: self
+        integer :: res
+        res = qtf_qmainwindow_dockOptions(qtf_live(self, 'QMainWindow%dockOptions'))
+    end function qmainwindow_dockOptions
+
+    !> Allow splitting a dock area into rows and columns (QMainWindow_AllowNestedDocks).
+    subroutine qmainwindow_setDockNestingEnabled(self, enabled)
+        class(QMainWindow), intent(in) :: self
+        logical, intent(in) :: enabled
+        call qtf_qmainwindow_setDockNestingEnabled(qtf_live(self, 'QMainWindow%setDockNestingEnabled'), &
+                qtf_int(enabled))
+    end subroutine qmainwindow_setDockNestingEnabled
+
+    !> True if dock areas can be split.
+    function qmainwindow_isDockNestingEnabled(self) result(res)
+        class(QMainWindow), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qmainwindow_isDockNestingEnabled(qtf_live(self, 'QMainWindow%isDockNestingEnabled')))
+    end function qmainwindow_isDockNestingEnabled
 
     !> The layout of tool bars and dock widgets as text (base64), e.g. to store with QSettings. Give each tool bar and dock widget a unique objectName first.
     function qmainwindow_saveState(self) result(res)
@@ -6855,6 +7172,123 @@ contains
                 int(row, c_int), column_)
     end function qsortfilterproxymodel_mapFromSourceRow
 
+    !> Bind to a C++ QtfSortFilterProxyModel and its signals.
+    subroutine qtfsortfilterproxymodel_attach(self, ptr)
+        class(QtfSortFilterProxyModel), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QSortFilterProxyModel%attach(ptr)
+        self%filterAcceptsRow = QSignalFilterRow(ptr, QTF_SIG_QTFSORTFILTERPROXYMODEL_FILTERACCEPTSROW, self%serial)
+    end subroutine qtfsortfilterproxymodel_attach
+
+    !> A proxy model filtered by Fortran slots (set its source model).
+    function qtfsortfilterproxymodel_new(parent) result(res)
+        class(QObject), intent(in), optional :: parent
+        type(QtfSortFilterProxyModel) :: res
+        call res%attach(qtf_qtfsortfilterproxymodel_new(qtf_ptr(parent)))
+    end function qtfsortfilterproxymodel_new
+
+    !> Filter all rows again (call it when the Fortran filter changes).
+    subroutine qtfsortfilterproxymodel_invalidateFilter(self)
+        class(QtfSortFilterProxyModel), intent(in) :: self
+        call qtf_qtfsortfilterproxymodel_invalidateFilter(qtf_live(self, 'QtfSortFilterProxyModel%invalidateFilter'))
+    end subroutine qtfsortfilterproxymodel_invalidateFilter
+
+    !> The row in the source model (for a tree: under its parent).
+    function qtffilterrow_row(self) result(res)
+        class(QtfFilterRow), intent(in) :: self
+        integer :: res
+        res = qtf_qtffilterrow_row(self%ptr)
+    end function qtffilterrow_row
+
+    !> The row's node, for a QtfTreeModel (-1 otherwise).
+    function qtffilterrow_node(self) result(res)
+        class(QtfFilterRow), intent(in) :: self
+        integer :: res
+        res = qtf_qtffilterrow_node(self%ptr)
+    end function qtffilterrow_node
+
+    !> The node of the row's parent, for a QtfTreeModel (0 for a top-level node; -1 for other models).
+    function qtffilterrow_parentNode(self) result(res)
+        class(QtfFilterRow), intent(in) :: self
+        integer :: res
+        res = qtf_qtffilterrow_parentNode(self%ptr)
+    end function qtffilterrow_parentNode
+
+    !> The displayed text of a cell of the row.
+    function qtffilterrow_text(self, column) result(res)
+        class(QtfFilterRow), intent(in) :: self
+        integer, intent(in), optional :: column
+        character(len=:), allocatable :: res
+        integer(c_int) :: column_
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        column_ = 0
+        if (present(column)) column_ = int(column, c_int)
+        p_ = qtf_qtffilterrow_text(self%ptr, column_, n_)
+        res = qtf_take_string(p_, n_)
+    end function qtffilterrow_text
+
+    !> True if the row is shown so far (it passed the standard filter, and no slot rejected it).
+    function qtffilterrow_isAccepted(self) result(res)
+        class(QtfFilterRow), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtffilterrow_isAccepted(self%ptr))
+    end function qtffilterrow_isAccepted
+
+    !> Show (.true.) or hide (.false.) the row.
+    subroutine qtffilterrow_setAccepted(self, accept)
+        class(QtfFilterRow), intent(in) :: self
+        logical, intent(in) :: accept
+        call qtf_qtffilterrow_setAccepted(self%ptr, qtf_int(accept))
+    end subroutine qtffilterrow_setAccepted
+
+    !> An icon provider.
+    function qfileiconprovider_new() result(res)
+        type(QFileIconProvider) :: res
+        res%ptr = qtf_qfileiconprovider_new()
+    end function qfileiconprovider_new
+
+    !> The icon for an existing file or directory (by its type; null if it does not exist).
+    function qfileiconprovider_icon(self, path) result(res)
+        class(QFileIconProvider), intent(in) :: self
+        character(len=*), intent(in) :: path
+        type(QIcon) :: res
+        res%ptr = qtf_qfileiconprovider_icon(self%ptr, path, len(path, c_int))
+    end function qfileiconprovider_icon
+
+    !> A generic icon: QFileIconProvider_Folder, QFileIconProvider_File, QFileIconProvider_Drive, ...
+    function qfileiconprovider_iconForType(self, which) result(res)
+        class(QFileIconProvider), intent(in) :: self
+        integer, intent(in) :: which
+        type(QIcon) :: res
+        res%ptr = qtf_qfileiconprovider_iconForType(self%ptr, int(which, c_int))
+    end function qfileiconprovider_iconForType
+
+    !> A description of the file's type, e.g. 'Folder' or 'txt File'.
+    function qfileiconprovider_typeName(self, path) result(res)
+        class(QFileIconProvider), intent(in) :: self
+        character(len=*), intent(in) :: path
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qfileiconprovider_typeName(self%ptr, path, len(path, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function qfileiconprovider_typeName
+
+    !> QFileIconProvider_DontUseCustomDirectoryIcons: the same icon for every directory (faster).
+    subroutine qfileiconprovider_setOptions(self, options)
+        class(QFileIconProvider), intent(in) :: self
+        integer, intent(in) :: options
+        call qtf_qfileiconprovider_setOptions(self%ptr, int(options, c_int))
+    end subroutine qfileiconprovider_setOptions
+
+    !> Delete the icon provider (icons it returned stay valid).
+    subroutine qfileiconprovider_delete(self)
+        class(QFileIconProvider), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qfileiconprovider_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qfileiconprovider_delete
+
     !> Bind to a C++ QFileSystemModel and its signals.
     subroutine qfilesystemmodel_attach(self, ptr)
         class(QFileSystemModel), intent(inout) :: self
@@ -7211,6 +7645,37 @@ contains
         res = qtf_qtablewidgetitem_column(self%ptr)
     end function qtablewidgetitem_column
 
+    !> Store an integer with the item, e.g. an index into your own arrays (it moves with the item when the table is sorted).
+    subroutine qtablewidgetitem_setData(self, value)
+        class(QTableWidgetItem), intent(in) :: self
+        integer, intent(in) :: value
+        call qtf_qtablewidgetitem_setData(self%ptr, int(value, c_int))
+    end subroutine qtablewidgetitem_setData
+
+    !> Store a string with the item (read it with `stringData`).
+    subroutine qtablewidgetitem_setStringData(self, value)
+        class(QTableWidgetItem), intent(in) :: self
+        character(len=*), intent(in) :: value
+        call qtf_qtablewidgetitem_setStringData(self%ptr, value, len(value, c_int))
+    end subroutine qtablewidgetitem_setStringData
+
+    !> The integer stored with `setData` (-1 if none).
+    function qtablewidgetitem_data(self) result(res)
+        class(QTableWidgetItem), intent(in) :: self
+        integer :: res
+        res = qtf_qtablewidgetitem_data(self%ptr)
+    end function qtablewidgetitem_data
+
+    !> The string stored with `setData` ('' if none).
+    function qtablewidgetitem_stringData(self) result(res)
+        class(QTableWidgetItem), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qtablewidgetitem_stringData(self%ptr, n_)
+        res = qtf_take_string(p_, n_)
+    end function qtablewidgetitem_stringData
+
     !> True if this handle does not refer to an item (e.g. an empty cell).
     logical function qtablewidgetitem_isNull(self)
         class(QTableWidgetItem), intent(in) :: self
@@ -7364,6 +7829,14 @@ contains
         call qtf_qtablewidget_sortItems(qtf_live(self, 'QTableWidget%sortItems'), int(column, c_int), order_)
     end subroutine qtablewidget_sortItems
 
+    !> The first item (by row, then column) whose integer data (`item%setData`) is `value` (null if none).
+    function qtablewidget_findData(self, value) result(res)
+        class(QTableWidget), intent(in) :: self
+        integer, intent(in) :: value
+        type(QTableWidgetItem) :: res
+        res%ptr = qtf_qtablewidget_findData(qtf_live(self, 'QTableWidget%findData'), int(value, c_int))
+    end function qtablewidget_findData
+
     !> Bind to a C++ QListWidget and its signals.
     subroutine qlistwidget_attach(self, ptr)
         class(QListWidget), intent(inout) :: self
@@ -7475,6 +7948,50 @@ contains
         if (present(order)) order_ = int(order, c_int)
         call qtf_qlistwidget_sortItems(qtf_live(self, 'QListWidget%sortItems'), order_)
     end subroutine qlistwidget_sortItems
+
+    !> Store an integer with the item at `row`, e.g. an index into your own arrays (it moves with the item when the list is sorted).
+    subroutine qlistwidget_setItemData(self, row, value)
+        class(QListWidget), intent(in) :: self
+        integer, intent(in) :: row
+        integer, intent(in) :: value
+        call qtf_qlistwidget_setItemData(qtf_live(self, 'QListWidget%setItemData'), int(row, c_int), int(value, c_int))
+    end subroutine qlistwidget_setItemData
+
+    !> Store a string with the item at `row` (read it with `itemStringData`).
+    subroutine qlistwidget_setItemStringData(self, row, value)
+        class(QListWidget), intent(in) :: self
+        integer, intent(in) :: row
+        character(len=*), intent(in) :: value
+        call qtf_qlistwidget_setItemStringData(qtf_live(self, 'QListWidget%setItemStringData'), int(row, c_int), &
+                value, len(value, c_int))
+    end subroutine qlistwidget_setItemStringData
+
+    !> The integer stored with the item at `row` (-1 if none).
+    function qlistwidget_itemData(self, row) result(res)
+        class(QListWidget), intent(in) :: self
+        integer, intent(in) :: row
+        integer :: res
+        res = qtf_qlistwidget_itemData(qtf_live(self, 'QListWidget%itemData'), int(row, c_int))
+    end function qlistwidget_itemData
+
+    !> The string stored with the item at `row` ('' if none).
+    function qlistwidget_itemStringData(self, row) result(res)
+        class(QListWidget), intent(in) :: self
+        integer, intent(in) :: row
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qlistwidget_itemStringData(qtf_live(self, 'QListWidget%itemStringData'), int(row, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function qlistwidget_itemStringData
+
+    !> The first row whose integer data is `value` (-1 if none).
+    function qlistwidget_findData(self, value) result(res)
+        class(QListWidget), intent(in) :: self
+        integer, intent(in) :: value
+        integer :: res
+        res = qtf_qlistwidget_findData(qtf_live(self, 'QListWidget%findData'), int(value, c_int))
+    end function qlistwidget_findData
 
     !> An item with the given column texts, not yet in a tree (add it with addTopLevelItem or addChild).
     function qtreewidgetitem_new(texts) result(res)
@@ -7591,6 +8108,90 @@ contains
         integer, intent(in) :: flags
         call qtf_qtreewidgetitem_setFlags(self%ptr, int(flags, c_int))
     end subroutine qtreewidgetitem_setFlags
+
+    !> Store an integer with a column of the item, e.g. an index into your own arrays (column 0 for the whole item).
+    subroutine qtreewidgetitem_setData(self, column, value)
+        class(QTreeWidgetItem), intent(in) :: self
+        integer, intent(in) :: column
+        integer, intent(in) :: value
+        call qtf_qtreewidgetitem_setData(self%ptr, int(column, c_int), int(value, c_int))
+    end subroutine qtreewidgetitem_setData
+
+    !> Store a string with a column of the item (read it with `stringData`).
+    subroutine qtreewidgetitem_setStringData(self, column, value)
+        class(QTreeWidgetItem), intent(in) :: self
+        integer, intent(in) :: column
+        character(len=*), intent(in) :: value
+        call qtf_qtreewidgetitem_setStringData(self%ptr, int(column, c_int), value, len(value, c_int))
+    end subroutine qtreewidgetitem_setStringData
+
+    !> The integer stored with a column (-1 if none).
+    function qtreewidgetitem_data(self, column) result(res)
+        class(QTreeWidgetItem), intent(in) :: self
+        integer, intent(in), optional :: column
+        integer :: res
+        integer(c_int) :: column_
+        column_ = 0
+        if (present(column)) column_ = int(column, c_int)
+        res = qtf_qtreewidgetitem_data(self%ptr, column_)
+    end function qtreewidgetitem_data
+
+    !> The string stored with a column ('' if none).
+    function qtreewidgetitem_stringData(self, column) result(res)
+        class(QTreeWidgetItem), intent(in) :: self
+        integer, intent(in), optional :: column
+        character(len=:), allocatable :: res
+        integer(c_int) :: column_
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        column_ = 0
+        if (present(column)) column_ = int(column, c_int)
+        p_ = qtf_qtreewidgetitem_stringData(self%ptr, column_, n_)
+        res = qtf_take_string(p_, n_)
+    end function qtreewidgetitem_stringData
+
+    !> The index of a child item (-1 if it is not one).
+    function qtreewidgetitem_indexOfChild(self, child) result(res)
+        class(QTreeWidgetItem), intent(in) :: self
+        class(QTreeWidgetItem), intent(in) :: child
+        integer :: res
+        res = qtf_qtreewidgetitem_indexOfChild(self%ptr, child%ptr)
+    end function qtreewidgetitem_indexOfChild
+
+    !> Remove (and delete) a child item and its children.
+    subroutine qtreewidgetitem_takeChild(self, index)
+        class(QTreeWidgetItem), intent(in) :: self
+        integer, intent(in) :: index
+        call qtf_qtreewidgetitem_takeChild(self%ptr, int(index, c_int))
+    end subroutine qtreewidgetitem_takeChild
+
+    !> Hide or show the item.
+    subroutine qtreewidgetitem_setHidden(self, hide)
+        class(QTreeWidgetItem), intent(in) :: self
+        logical, intent(in) :: hide
+        call qtf_qtreewidgetitem_setHidden(self%ptr, qtf_int(hide))
+    end subroutine qtreewidgetitem_setHidden
+
+    !> True if hidden.
+    function qtreewidgetitem_isHidden(self) result(res)
+        class(QTreeWidgetItem), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtreewidgetitem_isHidden(self%ptr))
+    end function qtreewidgetitem_isHidden
+
+    !> Select or deselect the item.
+    subroutine qtreewidgetitem_setSelected(self, select)
+        class(QTreeWidgetItem), intent(in) :: self
+        logical, intent(in) :: select
+        call qtf_qtreewidgetitem_setSelected(self%ptr, qtf_int(select))
+    end subroutine qtreewidgetitem_setSelected
+
+    !> True if selected.
+    function qtreewidgetitem_isSelected(self) result(res)
+        class(QTreeWidgetItem), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtreewidgetitem_isSelected(self%ptr))
+    end function qtreewidgetitem_isSelected
 
     !> True if this handle does not refer to an item.
     logical function qtreewidgetitem_isNull(self)
@@ -7733,6 +8334,40 @@ contains
         if (present(order)) order_ = int(order, c_int)
         call qtf_qtreewidget_sortItems(qtf_live(self, 'QTreeWidget%sortItems'), int(column, c_int), order_)
     end subroutine qtreewidget_sortItems
+
+    !> The first item (in tree order, expanded or not) whose integer data in `column` is `value` (null if none).
+    function qtreewidget_findData(self, value, column) result(res)
+        class(QTreeWidget), intent(in) :: self
+        integer, intent(in) :: value
+        integer, intent(in), optional :: column
+        type(QTreeWidgetItem) :: res
+        integer(c_int) :: column_
+        column_ = 0
+        if (present(column)) column_ = int(column, c_int)
+        res%ptr = qtf_qtreewidget_findData(qtf_live(self, 'QTreeWidget%findData'), int(value, c_int), column_)
+    end function qtreewidget_findData
+
+    !> Scroll so that `item` is visible (expanding its parents).
+    subroutine qtreewidget_scrollToItem(self, item)
+        class(QTreeWidget), intent(in) :: self
+        class(QTreeWidgetItem), intent(in) :: item
+        call qtf_qtreewidget_scrollToItem(qtf_live(self, 'QTreeWidget%scrollToItem'), item%ptr)
+    end subroutine qtreewidget_scrollToItem
+
+    !> Remove (and delete) a top-level item and its children.
+    subroutine qtreewidget_takeTopLevelItem(self, index)
+        class(QTreeWidget), intent(in) :: self
+        integer, intent(in) :: index
+        call qtf_qtreewidget_takeTopLevelItem(qtf_live(self, 'QTreeWidget%takeTopLevelItem'), int(index, c_int))
+    end subroutine qtreewidget_takeTopLevelItem
+
+    !> The index of a top-level item (-1 if it is not one).
+    function qtreewidget_indexOfTopLevelItem(self, item) result(res)
+        class(QTreeWidget), intent(in) :: self
+        class(QTreeWidgetItem), intent(in) :: item
+        integer :: res
+        res = qtf_qtreewidget_indexOfTopLevelItem(qtf_live(self, 'QTreeWidget%indexOfTopLevelItem'), item%ptr)
+    end function qtreewidget_indexOfTopLevelItem
 
     !> Bind to a C++ QTextEdit and its signals.
     subroutine qtextedit_attach(self, ptr)
@@ -9162,6 +9797,8 @@ contains
         call self%QWidget%attach(ptr)
         self%visibilityChanged = QSignalBool(ptr, QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED, self%serial)
         self%topLevelChanged = QSignalBool(ptr, QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED, self%serial)
+        self%dockLocationChanged = QSignalInt(ptr, QTF_SIG_QDOCKWIDGET_DOCKLOCATIONCHANGED, self%serial)
+        self%featuresChanged = QSignalInt(ptr, QTF_SIG_QDOCKWIDGET_FEATURESCHANGED, self%serial)
     end subroutine qdockwidget_attach
 
     !> A dock widget with `title`.
@@ -9211,12 +9848,48 @@ contains
         call qtf_qdockwidget_setFeatures(qtf_live(self, 'QDockWidget%setFeatures'), int(features, c_int))
     end subroutine qdockwidget_setFeatures
 
+    !> The QDockWidget_* flags.
+    function qdockwidget_features(self) result(res)
+        class(QDockWidget), intent(in) :: self
+        integer :: res
+        res = qtf_qdockwidget_features(qtf_live(self, 'QDockWidget%features'))
+    end function qdockwidget_features
+
     !> Where the dock may be placed (Qt_*DockWidgetArea flags).
     subroutine qdockwidget_setAllowedAreas(self, areas)
         class(QDockWidget), intent(in) :: self
         integer, intent(in) :: areas
         call qtf_qdockwidget_setAllowedAreas(qtf_live(self, 'QDockWidget%setAllowedAreas'), int(areas, c_int))
     end subroutine qdockwidget_setAllowedAreas
+
+    !> Where the dock may be placed.
+    function qdockwidget_allowedAreas(self) result(res)
+        class(QDockWidget), intent(in) :: self
+        integer :: res
+        res = qtf_qdockwidget_allowedAreas(qtf_live(self, 'QDockWidget%allowedAreas'))
+    end function qdockwidget_allowedAreas
+
+    !> True if the dock may be placed in `area`.
+    function qdockwidget_isAreaAllowed(self, area) result(res)
+        class(QDockWidget), intent(in) :: self
+        integer, intent(in) :: area
+        logical :: res
+        res = qtf_logical(qtf_qdockwidget_isAreaAllowed(qtf_live(self, 'QDockWidget%isAreaAllowed'), int(area, c_int)))
+    end function qdockwidget_isAreaAllowed
+
+    !> Replace the title bar with `widget` (the dock takes ownership), e.g. a compact header with buttons; no widget restores the standard title bar. An empty QWidget hides the title bar.
+    subroutine qdockwidget_setTitleBarWidget(self, widget)
+        class(QDockWidget), intent(in) :: self
+        class(QWidget), intent(in), optional :: widget
+        call qtf_qdockwidget_setTitleBarWidget(qtf_live(self, 'QDockWidget%setTitleBarWidget'), qtf_ptr(widget))
+    end subroutine qdockwidget_setTitleBarWidget
+
+    !> The custom title bar (null if the standard one is used).
+    function qdockwidget_titleBarWidget(self) result(res)
+        class(QDockWidget), intent(in) :: self
+        type(QWidget) :: res
+        call res%attach(qtf_qdockwidget_titleBarWidget(qtf_live(self, 'QDockWidget%titleBarWidget')))
+    end function qdockwidget_titleBarWidget
 
     !> A checkable action that shows/hides the dock (for a View menu).
     function qdockwidget_toggleViewAction(self) result(res)
@@ -11413,6 +12086,31 @@ contains
             call self%f(cell)
         end if
     end subroutine paint_cell_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalfilterrow_connect(self, slot, data, connection)
+        class(QSignalFilterRow), intent(in) :: self
+        procedure(qt_slot_filter_row) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
+        type(filter_row_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self, h, data, connection)
+    end subroutine qsignalfilterrow_connect
+
+    !> Call the slot with the row (borrowed: valid during the call).
+    subroutine filter_row_handler_invoke(self, args, data)
+        class(filter_row_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QtfFilterRow) :: row
+        row%ptr = args%p
+        if (associated(data)) then
+            call self%f(row, data)
+        else
+            call self%f(row)
+        end if
+    end subroutine filter_row_handler_invoke
 
     !> Connect a slot (with optional user data) to this signal.
     subroutine qsignalmodeledit_connect(self, slot, data, connection)

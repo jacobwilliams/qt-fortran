@@ -429,8 +429,8 @@ module qt_gui
         module procedure :: qicon_new, qicon_fromPixmap
     end interface QIcon
 
-    !> Draws on an image, or on a QtfWidget inside its paintEvent slot.
-    !> Coordinates may be integers or `real(c_double)`.
+    !> Draws on an image, an SVG file (QSvgGenerator), or on a QtfWidget inside its
+    !> paintEvent slot. Coordinates may be integers or `real(c_double)`.
     type, public :: QPainter
         type(c_ptr) :: ptr = c_null_ptr
         logical :: owned = .false.   !! created from Fortran: `end` deletes it
@@ -496,9 +496,9 @@ module qt_gui
         procedure :: isActive => qpainter_isActive
         procedure :: setFont => qpainter_setFont
     end type QPainter
-    !> Constructor: `QPainter(image)`.
+    !> Constructor: `QPainter(image)` or `QPainter(generator)`.
     interface QPainter
-        module procedure :: qpainter_new
+        module procedure :: qpainter_new, qpainter_newSvg
     end interface QPainter
 
     !> A mouse press, release, move or double-click event.
@@ -1217,6 +1217,53 @@ module qt_gui
         module procedure :: qshortcut_new, qshortcut_fromStandardKey
     end interface QShortcut
 
+    !> Draws an SVG image (QtSvg: SVG Tiny 1.2, the common subset of SVG): load a
+    !> file or SVG text, then `render` it with a painter (scaled to a rectangle),
+    !> or make an image or an icon of any size from it.
+    type, extends(QObject), public :: QSvgRenderer
+        type(QSignal) :: repaintNeeded   !! An animated SVG changed: repaint it.
+    contains
+        procedure :: attach => qsvgrenderer_attach
+        procedure :: load => qsvgrenderer_load
+        procedure :: isValid => qsvgrenderer_isValid
+        procedure :: defaultSize => qsvgrenderer_defaultSize
+        procedure :: viewBoxF => qsvgrenderer_viewBoxF
+        procedure :: setViewBox => qsvgrenderer_setViewBox
+        procedure :: setAspectRatioMode => qsvgrenderer_setAspectRatioMode
+        procedure :: isAnimated => qsvgrenderer_isAnimated
+        procedure, private :: qsvgrenderer_render, qsvgrenderer_renderRect
+        generic :: render => qsvgrenderer_render, qsvgrenderer_renderRect
+        procedure :: renderElement => qsvgrenderer_renderElement
+        procedure :: elementExists => qsvgrenderer_elementExists
+        procedure :: boundsOnElement => qsvgrenderer_boundsOnElement
+        procedure :: toImage => qsvgrenderer_toImage
+        procedure :: toIcon => qsvgrenderer_toIcon
+    end type QSvgRenderer
+    !> Constructor: `QSvgRenderer([source, parent])`.
+    interface QSvgRenderer
+        module procedure :: qsvgrenderer_new
+    end interface QSvgRenderer
+
+    !> Writes what a painter draws as SVG (QtSvg), e.g. to export a plot or a
+    !> graph: create it, set the title, paint with `QPainter(generator)` (the same
+    !> drawing calls as on a widget), and `end` the painter, which writes the file.
+    !> With no file name the SVG is kept in memory (`contents`). The size is
+    !> written in millimetres at 96 dpi, as browsers show pixels.
+    type, public :: QSvgGenerator
+        type(c_ptr) :: ptr = c_null_ptr
+    contains
+        procedure :: setTitle => qsvggenerator_setTitle
+        procedure :: setDescription => qsvggenerator_setDescription
+        procedure :: setViewBox => qsvggenerator_setViewBox
+        procedure :: fileName => qsvggenerator_fileName
+        procedure :: contents => qsvggenerator_contents
+        procedure :: delete => qsvggenerator_delete
+    end type QSvgGenerator
+    !> Constructor: `QSvgGenerator(fileName, width, height)`.
+    interface QSvgGenerator
+        module procedure :: qsvggenerator_new
+    end interface QSvgGenerator
+
     abstract interface
         !> Slot for paint requests: draw with `painter` (do not end it).
         subroutine qt_slot_painter(painter, data)
@@ -1689,6 +1736,14 @@ contains
         res%ptr = qtf_qpainter_new(image%ptr)
         res%owned = .true.
     end function qpainter_new
+
+    !> Begin painting into an SVG file; `end` writes it.
+    function qpainter_newSvg(generator) result(res)
+        class(QSvgGenerator), intent(in) :: generator
+        type(QPainter) :: res
+        res%ptr = qtf_qpainter_newSvg(generator%ptr)
+        res%owned = .true.
+    end function qpainter_newSvg
 
     !> Width of the device being painted (widget or image).
     function qpainter_deviceWidth(self) result(res)
@@ -5736,6 +5791,226 @@ contains
         logical, intent(in) :: on
         call qtf_qshortcut_setAutoRepeat(qtf_live(self, 'QShortcut%setAutoRepeat'), qtf_int(on))
     end subroutine qshortcut_setAutoRepeat
+
+    !> Bind to a C++ QSvgRenderer and its signals.
+    subroutine qsvgrenderer_attach(self, ptr)
+        class(QSvgRenderer), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QObject%attach(ptr)
+        self%repaintNeeded = QSignal(ptr, QTF_SIG_QSVGRENDERER_REPAINTNEEDED, self%serial)
+    end subroutine qsvgrenderer_attach
+
+    !> A renderer for `source`: an SVG file, or SVG text (starting with '<'); check `isValid()`.
+    function qsvgrenderer_new(source, parent) result(res)
+        character(len=*), intent(in), optional :: source
+        class(QObject), intent(in), optional :: parent
+        type(QSvgRenderer) :: res
+        character(len=:), allocatable :: source_
+        source_ = ''
+        if (present(source)) source_ = source
+        call res%attach(qtf_qsvgrenderer_new(source_, len(source_, c_int), qtf_ptr(parent)))
+    end function qsvgrenderer_new
+
+    !> Load another SVG (a file, or SVG text starting with '<'); true if it is valid.
+    function qsvgrenderer_load(self, source) result(res)
+        class(QSvgRenderer), intent(in) :: self
+        character(len=*), intent(in) :: source
+        logical :: res
+        res = qtf_logical(qtf_qsvgrenderer_load(qtf_live(self, 'QSvgRenderer%load'), source, len(source, c_int)))
+    end function qsvgrenderer_load
+
+    !> True if an SVG is loaded.
+    function qsvgrenderer_isValid(self) result(res)
+        class(QSvgRenderer), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qsvgrenderer_isValid(qtf_live(self, 'QSvgRenderer%isValid')))
+    end function qsvgrenderer_isValid
+
+    !> The SVG's own size (from its width and height, or view box).
+    function qsvgrenderer_defaultSize(self) result(res)
+        class(QSvgRenderer), intent(in) :: self
+        type(QSize) :: res
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qsvgrenderer_defaultSize(qtf_live(self, 'QSvgRenderer%defaultSize'), r_width, r_height)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qsvgrenderer_defaultSize
+
+    !> The part of the SVG's coordinates that is drawn.
+    function qsvgrenderer_viewBoxF(self) result(res)
+        class(QSvgRenderer), intent(in) :: self
+        type(QRectF) :: res
+        real(c_double) :: r_x
+        real(c_double) :: r_y
+        real(c_double) :: r_width
+        real(c_double) :: r_height
+        call qtf_qsvgrenderer_viewBoxF(qtf_live(self, 'QSvgRenderer%viewBoxF'), r_x, r_y, r_width, r_height)
+        res%x = r_x
+        res%y = r_y
+        res%width = r_width
+        res%height = r_height
+    end function qsvgrenderer_viewBoxF
+
+    !> Draw only this part of the SVG's coordinates (zoom and pan).
+    subroutine qsvgrenderer_setViewBox(self, x, y, width, height)
+        class(QSvgRenderer), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        real(c_double), intent(in) :: width
+        real(c_double), intent(in) :: height
+        call qtf_qsvgrenderer_setViewBox(qtf_live(self, 'QSvgRenderer%setViewBox'), x, y, width, height)
+    end subroutine qsvgrenderer_setViewBox
+
+    !> Qt_IgnoreAspectRatio (stretch to the rectangle, default) or Qt_KeepAspectRatio (fit inside it, centered).
+    subroutine qsvgrenderer_setAspectRatioMode(self, mode)
+        class(QSvgRenderer), intent(in) :: self
+        integer, intent(in) :: mode
+        call qtf_qsvgrenderer_setAspectRatioMode(qtf_live(self, 'QSvgRenderer%setAspectRatioMode'), int(mode, c_int))
+    end subroutine qsvgrenderer_setAspectRatioMode
+
+    !> True if the SVG has animations.
+    function qsvgrenderer_isAnimated(self) result(res)
+        class(QSvgRenderer), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qsvgrenderer_isAnimated(qtf_live(self, 'QSvgRenderer%isAnimated')))
+    end function qsvgrenderer_isAnimated
+
+    !> Draw the SVG at its default size at (0, 0) of the painter's coordinates.
+    subroutine qsvgrenderer_render(self, painter)
+        class(QSvgRenderer), intent(in) :: self
+        class(QPainter), intent(in) :: painter
+        call qtf_qsvgrenderer_render(qtf_live(self, 'QSvgRenderer%render'), painter%ptr)
+    end subroutine qsvgrenderer_render
+
+    !> Draw the SVG scaled into a rectangle.
+    subroutine qsvgrenderer_renderRect(self, painter, x, y, width, height)
+        class(QSvgRenderer), intent(in) :: self
+        class(QPainter), intent(in) :: painter
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        real(c_double), intent(in) :: width
+        real(c_double), intent(in) :: height
+        call qtf_qsvgrenderer_renderRect(qtf_live(self, 'QSvgRenderer%renderRect'), painter%ptr, x, y, width, height)
+    end subroutine qsvgrenderer_renderRect
+
+    !> Draw one element (by its `id` attribute) scaled into a rectangle, e.g. one icon of a sheet.
+    subroutine qsvgrenderer_renderElement(self, painter, id, x, y, width, height)
+        class(QSvgRenderer), intent(in) :: self
+        class(QPainter), intent(in) :: painter
+        character(len=*), intent(in) :: id
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        real(c_double), intent(in) :: width
+        real(c_double), intent(in) :: height
+        call qtf_qsvgrenderer_renderElement(qtf_live(self, 'QSvgRenderer%renderElement'), painter%ptr, id, len(id, &
+                c_int), x, y, width, height)
+    end subroutine qsvgrenderer_renderElement
+
+    !> True if the SVG has an element with this `id`.
+    function qsvgrenderer_elementExists(self, id) result(res)
+        class(QSvgRenderer), intent(in) :: self
+        character(len=*), intent(in) :: id
+        logical :: res
+        res = qtf_logical(qtf_qsvgrenderer_elementExists(qtf_live(self, 'QSvgRenderer%elementExists'), id, len(id, &
+                c_int)))
+    end function qsvgrenderer_elementExists
+
+    !> Where an element is, in the SVG's coordinates.
+    function qsvgrenderer_boundsOnElement(self, id) result(res)
+        class(QSvgRenderer), intent(in) :: self
+        character(len=*), intent(in) :: id
+        type(QRectF) :: res
+        real(c_double) :: r_x
+        real(c_double) :: r_y
+        real(c_double) :: r_width
+        real(c_double) :: r_height
+        call qtf_qsvgrenderer_boundsOnElement(qtf_live(self, 'QSvgRenderer%boundsOnElement'), id, len(id, c_int), &
+                r_x, r_y, r_width, r_height)
+        res%x = r_x
+        res%y = r_y
+        res%width = r_width
+        res%height = r_height
+    end function qsvgrenderer_boundsOnElement
+
+    !> The SVG drawn into a new transparent image (as `setAspectRatioMode` says); delete it when done.
+    function qsvgrenderer_toImage(self, width, height) result(res)
+        class(QSvgRenderer), intent(in) :: self
+        integer, intent(in) :: width
+        integer, intent(in) :: height
+        type(QImage) :: res
+        res%ptr = qtf_qsvgrenderer_toImage(qtf_live(self, 'QSvgRenderer%toImage'), int(width, c_int), int(height, &
+                c_int))
+    end function qsvgrenderer_toImage
+
+    !> An icon of the SVG drawn at this size (icons scale it as needed); delete it when done.
+    function qsvgrenderer_toIcon(self, width, height) result(res)
+        class(QSvgRenderer), intent(in) :: self
+        integer, intent(in) :: width
+        integer, intent(in) :: height
+        type(QIcon) :: res
+        res%ptr = qtf_qsvgrenderer_toIcon(qtf_live(self, 'QSvgRenderer%toIcon'), int(width, c_int), int(height, c_int))
+    end function qsvgrenderer_toIcon
+
+    !> An SVG of `width` x `height` (the view box) written to `fileName` ('': kept in memory).
+    function qsvggenerator_new(fileName, width, height) result(res)
+        character(len=*), intent(in) :: fileName
+        integer, intent(in) :: width
+        integer, intent(in) :: height
+        type(QSvgGenerator) :: res
+        res%ptr = qtf_qsvggenerator_new(fileName, len(fileName, c_int), int(width, c_int), int(height, c_int))
+    end function qsvggenerator_new
+
+    !> The SVG's title (set before painting).
+    subroutine qsvggenerator_setTitle(self, title)
+        class(QSvgGenerator), intent(in) :: self
+        character(len=*), intent(in) :: title
+        call qtf_qsvggenerator_setTitle(self%ptr, title, len(title, c_int))
+    end subroutine qsvggenerator_setTitle
+
+    !> The SVG's description (set before painting).
+    subroutine qsvggenerator_setDescription(self, text)
+        class(QSvgGenerator), intent(in) :: self
+        character(len=*), intent(in) :: text
+        call qtf_qsvggenerator_setDescription(self%ptr, text, len(text, c_int))
+    end subroutine qsvggenerator_setDescription
+
+    !> The SVG coordinates the drawing uses (default: 0, 0, width, height; set before painting).
+    subroutine qsvggenerator_setViewBox(self, x, y, width, height)
+        class(QSvgGenerator), intent(in) :: self
+        real(c_double), intent(in) :: x
+        real(c_double), intent(in) :: y
+        real(c_double), intent(in) :: width
+        real(c_double), intent(in) :: height
+        call qtf_qsvggenerator_setViewBox(self%ptr, x, y, width, height)
+    end subroutine qsvggenerator_setViewBox
+
+    !> The output file ('' if kept in memory).
+    function qsvggenerator_fileName(self) result(res)
+        class(QSvgGenerator), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qsvggenerator_fileName(self%ptr, n_)
+        res = qtf_take_string(p_, n_)
+    end function qsvggenerator_fileName
+
+    !> The SVG text, when there is no file name (after the painter has ended).
+    function qsvggenerator_contents(self) result(res)
+        class(QSvgGenerator), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qsvggenerator_contents(self%ptr, n_)
+        res = qtf_take_string(p_, n_)
+    end function qsvggenerator_contents
+
+    !> Delete the generator (end its painter first).
+    subroutine qsvggenerator_delete(self)
+        class(QSvgGenerator), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qsvggenerator_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qsvggenerator_delete
 
     !> The system clipboard (needs the application object).
     function QGuiApplication_clipboard() result(res)

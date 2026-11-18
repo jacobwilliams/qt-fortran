@@ -10,7 +10,7 @@ environment.
 | Topic | Decision |
 |-------|----------|
 | API naming | Qt style: `QPushButton`, `btn%setText(...)`, `clicked`. The Qt/PySide docs carry over directly. |
-| Qt modules | QtCore, QtGui, QtWidgets, plus QtOpenGL / QtOpenGLWidgets for 3D. |
+| Qt modules | QtCore, QtGui, QtWidgets, QtSvg, plus QtOpenGL / QtOpenGLWidgets for 3D. |
 | Platforms | Cross-platform: Linux, macOS, Windows. |
 | Build | fpm builds everything, including the C++ shim in `src/shim` (Linux, macOS, MinGW). `tools/fpm_qt.py` supplies the C++ compiler and Qt flags. Only Windows with conda's MSVC Qt uses a separate shim DLL. |
 | Toolchain | gfortran on all OSes. See the table below. |
@@ -537,6 +537,29 @@ spec-only work now; items marked *(design)* need new machinery.
     `verticalScrollValue`/`setVerticalScrollValue` were dropped for
     `verticalScrollBar()`. The gui QColor value type gained `out`, so gui
     methods can return colors. Example: themes; test: test_theming.
+  - **Done (application panels):** docks (`splitDockWidget`, `resizeDocks`,
+    `tabifiedDockWidgets`, `dockWidgetArea`, `setCorner`, `setTabPosition`,
+    `setTabShape`, `setDockOptions`; `QDockWidget%setTitleBarWidget`,
+    `features`, `isAreaAllowed`, signals `dockLocationChanged` and
+    `featuresChanged`). Item data: an integer or string in `Qt::UserRole` on
+    QTreeWidgetItem (per column), QTableWidgetItem and QListWidget rows
+    (`setData` generic over int/string, `data` returns -1 when unset), plus
+    `findData` on the three widgets. `QFileSystemWatcher` (core_classes),
+    `QDir_entryList`/`isDir`, `QFileIconProvider` (a handle; icons are new
+    QIcon handles). QtSvg (now linked: Qt6Svg in fpm.toml and fpm_qt.py):
+    `QSvgRenderer` (a file or SVG text, starting with '<'), `QSvgGenerator`
+    (a `QtfSvgGenerator` that writes to a file or a QBuffer, at 96 dpi so
+    browsers show the requested pixel size; `QPainter(generator)`).
+    `QtfWidget%setSizeHint`/`setMinimumSizeHint` (overrides on the existing
+    QtfWidget class; -1 keeps QWidget's own), `QWidget%minimumSizeHint`,
+    `updateGeometry`, `adjustSize`. `QtfSortFilterProxyModel`: its
+    `filterAcceptsRow` slots get a `QtfFilterRow` (source row, node, parent
+    node, cell text, the standard filter's verdict) after the standard
+    filter; `invalidateFilter` uses begin/endFilterChange on Qt >= 6.10. The
+    generator gained object arrays (`QClass[]`): arguments are passed as
+    `void **` (built from checked handles), results come back as a malloc'd
+    pointer array (`qtf_objects_to_c` / `qtf_take_ptrs`). Example: ide; test:
+    test_panels.
   - **Done:** `QProcess` and `QProcessEnvironment` (spec/core_classes.toml):
     start (generic: set program/arguments, a program, or a program and
     arguments; `startCommand` for a command line), waits, write /

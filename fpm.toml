@@ -14,7 +14,7 @@ module-naming = false
 # The C++ shim in src/shim is compiled by fpm (C++ compiler and Qt include
 # flags come from FPM_CXX / FPM_CXXFLAGS; see tools/fpm_qt.py and the README).
 # These Qt libraries are linked into every program that uses qt-fortran.
-link = ["Qt6OpenGLWidgets", "Qt6OpenGL", "Qt6Widgets", "Qt6Gui", "Qt6Core"]
+link = ["Qt6OpenGLWidgets", "Qt6OpenGL", "Qt6Svg", "Qt6Widgets", "Qt6Gui", "Qt6Core"]
 
 [fortran]
 implicit-typing = false

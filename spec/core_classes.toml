@@ -7,15 +7,16 @@ src_dir = "core"
 signal_base = 4000
 doc = """
 QtCore classes: persistent application settings (QSettings), worker
-threads (QThread), external programs (QProcess, QProcessEnvironment), and
-portable directory functions (QDir_*), which standard Fortran lacks.
+threads (QThread), external programs (QProcess, QProcessEnvironment),
+watching files for changes (QFileSystemWatcher), and portable directory
+functions (QDir_*), which standard Fortran lacks.
 """
 uses = [
     "use qt_c_util",
     "use qt_c_core_classes",
     "use qt_core",
 ]
-cpp_includes = ["QDir", "QSettings", "QStringList", "QThread", "QVariant", "QProcess", "QProcessEnvironment", "cstdlib", "cstring"]
+cpp_includes = ["QDir", "QSettings", "QStringList", "QThread", "QVariant", "QProcess", "QProcessEnvironment", "QFileSystemWatcher", "QFileInfo", "cstdlib", "cstring"]
 
 cpp_prelude = """
 // Runs (op 0) or frees (op 1) the Fortran task of a thread.
@@ -84,6 +85,16 @@ functions = [
     { sig = "QDir_currentPath() -> string", cpp = "QDir::currentPath()", doc = "The current working directory (with `/` separators)." },
     { sig = "QDir_homePath() -> string", cpp = "QDir::homePath()", doc = "The user's home directory." },
     { sig = "QDir_tempPath() -> string", cpp = "QDir::tempPath()", doc = "The system's directory for temporary files." },
+    { sig = "QDir_entryList(path: string, filters: QDir::Filters = ior(QDir_AllEntries, QDir_NoDotAndDotDot)) -> strings", cpp = "QDir({path}).entryList(QDir::Filters({filters}), QDir::Name | QDir::DirsFirst | QDir::IgnoreCase)", doc = "The names in a directory, directories first, then by name (ignoring case); none if it does not exist. `filters`: QDir_Dirs, QDir_Files, QDir_Hidden, QDir_NoDotAndDotDot (default: all entries but . and .., not hidden ones)." },
+    { sig = "QDir_isDir(path: string) -> bool", cpp = "QFileInfo({path}).isDir()", doc = "True if `path` is a directory." },
+]
+
+[[enum]]
+doc = "QDir::Filter (flags)"
+values = [
+    "QDir_Dirs = 1", "QDir_Files = 2", "QDir_Drives = 4", "QDir_AllEntries = 7", "QDir_NoSymLinks = 8",
+    "QDir_Readable = 16", "QDir_Writable = 32", "QDir_Hidden = 256", "QDir_System = 512",
+    "QDir_NoDotAndDotDot = 12288",
 ]
 
 [[enum]]
@@ -417,3 +428,26 @@ fortran_procedures = """
         res = qtf_take_string(p, n)
     end function qprocess_readLine
 """
+
+[[class]]
+name = "QFileSystemWatcher"
+doc = """
+Watches files and directories for changes made by any program, e.g. to
+reload an open file or refresh a project tree. `fileChanged` reports a
+modified, renamed or deleted file; `directoryChanged` a directory whose
+entries changed (a file added, removed or renamed in it). Many editors save
+by replacing the file, which removes it from the watch list: add it again in
+the slot if it still exists. Signals arrive through the event loop."""
+ctor = "(parent: QObject?) -- A watcher with nothing to watch yet."
+signals = [
+    { sig = "fileChanged: string", doc = "A watched file was modified, renamed or deleted: its path." },
+    { sig = "directoryChanged: string", doc = "The entries of a watched directory changed: its path." },
+]
+methods = [
+    "addPath(path: string) -> bool -- Watch a file or directory; false if it does not exist or is already watched.",
+    "addPaths(paths: strings) -> strings -- Watch several; returns the paths that could not be added.",
+    "removePath(path: string) -> bool -- Stop watching a path; false if it was not watched.",
+    "removePaths(paths: strings) -> strings -- Stop watching several; returns the paths that were not watched.",
+    "files() -> strings -- The watched files.",
+    "directories() -> strings -- The watched directories.",
+]

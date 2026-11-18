@@ -9,6 +9,8 @@
 #include "qtf_common.h"
 
 #include <QDir>
+#include <QFileInfo>
+#include <QFileSystemWatcher>
 #include <QProcess>
 #include <QProcessEnvironment>
 #include <QSettings>
@@ -31,6 +33,8 @@ enum : int {
     QTF_SIG_QPROCESS_READYREADSTANDARDOUTPUT = 4006,
     QTF_SIG_QPROCESS_READYREADSTANDARDERROR = 4007,
     QTF_SIG_QPROCESS_READYREAD = 4008,
+    QTF_SIG_QFILESYSTEMWATCHER_FILECHANGED = 4009,
+    QTF_SIG_QFILESYSTEMWATCHER_DIRECTORYCHANGED = 4010,
 };
 
 // Runs (op 0) or frees (op 1) the Fortran task of a thread.
@@ -476,6 +480,42 @@ QTF_API char *qtf_qprocess_splitCommand(const char *command, int command_len, in
 QTF_API char *qtf_qprocess_nullDevice(int *len) { return qtf_to_c(QProcess::nullDevice(), len); }
 
 // ---------------------------------------------------------------------------
+// QFileSystemWatcher
+
+// A watcher with nothing to watch yet.
+QTF_API void *qtf_qfilesystemwatcher_new(void *parent) { return new QFileSystemWatcher(as<QObject>(parent)); }
+
+// Watch a file or directory; false if it does not exist or is already watched.
+QTF_API int qtf_qfilesystemwatcher_addPath(void *self, const char *path, int path_len) {
+    return qtf_bool(as<QFileSystemWatcher>(self)->addPath(qtf_qstring(path, path_len)));
+}
+
+// Watch several; returns the paths that could not be added.
+QTF_API char *qtf_qfilesystemwatcher_addPaths(void *self, const char *paths, int paths_len, int n, int *len) {
+    return qtf_list_to_c(as<QFileSystemWatcher>(self)->addPaths(qtf_qstringlist(paths, paths_len, n)), len);
+}
+
+// Stop watching a path; false if it was not watched.
+QTF_API int qtf_qfilesystemwatcher_removePath(void *self, const char *path, int path_len) {
+    return qtf_bool(as<QFileSystemWatcher>(self)->removePath(qtf_qstring(path, path_len)));
+}
+
+// Stop watching several; returns the paths that were not watched.
+QTF_API char *qtf_qfilesystemwatcher_removePaths(void *self, const char *paths, int paths_len, int n, int *len) {
+    return qtf_list_to_c(as<QFileSystemWatcher>(self)->removePaths(qtf_qstringlist(paths, paths_len, n)), len);
+}
+
+// The watched files.
+QTF_API char *qtf_qfilesystemwatcher_files(void *self, int *len) {
+    return qtf_list_to_c(as<QFileSystemWatcher>(self)->files(), len);
+}
+
+// The watched directories.
+QTF_API char *qtf_qfilesystemwatcher_directories(void *self, int *len) {
+    return qtf_list_to_c(as<QFileSystemWatcher>(self)->directories(), len);
+}
+
+// ---------------------------------------------------------------------------
 // functions
 
 // Create a directory and any missing parents (like `mkdir -p`); true if it exists afterwards. `/` works as the separator on every platform.
@@ -501,6 +541,16 @@ QTF_API char *qtf_QDir_homePath(int *len) { return qtf_to_c(QDir::homePath(), le
 
 // The system's directory for temporary files.
 QTF_API char *qtf_QDir_tempPath(int *len) { return qtf_to_c(QDir::tempPath(), len); }
+
+// The names in a directory, directories first, then by name (ignoring case); none if it does not exist. `filters`: QDir_Dirs, QDir_Files, QDir_Hidden, QDir_NoDotAndDotDot (default: all entries but . and .., not hidden ones).
+QTF_API char *qtf_QDir_entryList(const char *path, int path_len, int filters, int *len) {
+    return qtf_list_to_c(QDir(qtf_qstring(path, path_len)).entryList(QDir::Filters(QDir::Filters(filters)), QDir::Name | QDir::DirsFirst | QDir::IgnoreCase), len);
+}
+
+// True if `path` is a directory.
+QTF_API int qtf_QDir_isDir(const char *path, int path_len) {
+    return qtf_bool(QFileInfo(qtf_qstring(path, path_len)).isDir());
+}
 
 // ---------------------------------------------------------------------------
 // signal connectors
@@ -532,6 +582,12 @@ static const bool qtf_core_classes_registered = [] {
     });
     qtf_register_connector(QTF_SIG_QPROCESS_READYREAD, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QProcess>(s), &QProcess::readyRead, as<QProcess>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QFILESYSTEMWATCHER_FILECHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QFileSystemWatcher>(s), &QFileSystemWatcher::fileChanged, as<QFileSystemWatcher>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QFILESYSTEMWATCHER_DIRECTORYCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QFileSystemWatcher>(s), &QFileSystemWatcher::directoryChanged, as<QFileSystemWatcher>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
     });
     return true;
 }();

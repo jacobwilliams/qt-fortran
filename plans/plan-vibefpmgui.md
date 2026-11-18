@@ -83,18 +83,22 @@ card, progress line, git stats, animated logo, blame column and terminal view.
   - `QHeaderView` options (resize modes, section sizes);
   - `QScrollBar` access (value, range, signals).
   *Done; the scroll bars come from a new `QAbstractScrollArea` base.*
-- [ ] Docks:
-  - [ ] `resizeDocks`, `splitDockWidget`, `setCorner`, `setTitleBarWidget`;
-  - [ ] `tabifiedDockWidgets`, `setTabPosition`, `setDockOptions`
-        (done: `setFloating`/`isFloating`, `setAllowedAreas`, `tabifyDockWidget`);
-  - [ ] signal `dockLocationChanged` (done: `topLevelChanged`, `visibilityChanged`).
-- [ ] Files: `QFileSystemWatcher`, `QFileIconProvider`.
-- [ ] QtSvg: `QSvgRenderer` (SVG icons) and `QSvgGenerator` (graph export).
-      Add `Qt6Svg` to the link list (it is already in the pixi env).
-- [ ] Item data: an integer (and string) value per item on `QTreeWidgetItem`,
+- [x] Docks:
+  - [x] `resizeDocks`, `splitDockWidget`, `setCorner`, `setTitleBarWidget`;
+  - [x] `tabifiedDockWidgets`, `setTabPosition`, `setDockOptions`
+        (also `setFloating`/`isFloating`, `setAllowedAreas`, `tabifyDockWidget`);
+  - [x] signal `dockLocationChanged` (also `topLevelChanged`, `visibilityChanged`).
+  *Done (example/ide.f90, test/test_panels.f90).*
+- [x] Files: `QFileSystemWatcher`, `QFileIconProvider`. *Done, plus
+      `QDir_entryList`/`QDir_isDir`.*
+- [x] QtSvg: `QSvgRenderer` (SVG icons) and `QSvgGenerator` (graph export).
+      `Qt6Svg` is now linked. *Done (`toIcon`/`toImage`; generators write
+      to a file or memory).*
+- [x] Item data: an integer (and string) value per item on `QTreeWidgetItem`,
       `QTableWidgetItem` and `QListWidgetItem`. The app attaches objects to
       items 46 times (`Qt.UserRole`); in Fortran, store an index into your own
-      arrays.
+      arrays. *Done: `setData`/`data`/`stringData`, and `findData` on the
+      widgets (QListWidget items are addressed by row).*
 - [x] More cell roles for `QtfTableModel`/`QtfTreeModel`: tooltip,
       foreground and background color, font, icon
       (`request%setToolTip(...)`, ...). *Done (also check boxes, status
@@ -146,8 +150,10 @@ card, progress line, git stats, animated logo, blame column and terminal view.
          any object, with a "consume" result, and allow installing it on
          objects other than the widget itself (including the application).
          *Done: `QtfEventFilter(target)` on any QObject.*
-   - [ ] `QtfWidget%setSizeHint` / `setMinimumSizeHint`; a few `Qtf`
+   - [x] `QtfWidget%setSizeHint` / `setMinimumSizeHint`; a few `Qtf`
          subclasses where a widget's size hint must come from Fortran.
+         *Done on QtfWidget (wrap other widgets in one, with a layout, when
+         their hint must come from Fortran).*
 3. **Custom-painted item delegates.** There are 10 `QStyledItemDelegate`
    subclasses with `paint` (most with `sizeHint`): build rows, test results,
    the git log graph, completion kinds, search results.
@@ -155,8 +161,8 @@ card, progress line, git stats, animated logo, blame column and terminal view.
          rectangle, its state (selected, hover, focus) and the cell (row and
          column, or node); plus a size request. *Done: `paintCell` with a
          `QtfPaintCell`, and `setSizeHint`.*
-   - [ ] A `QSortFilterProxyModel` filter callback into Fortran
-         (`filterAcceptsRow`).
+   - [x] A `QSortFilterProxyModel` filter callback into Fortran
+         (`filterAcceptsRow`). *Done: `QtfSortFilterProxyModel`.*
 
 ### C. Outside Qt (needed by the app, not the GUI)
 

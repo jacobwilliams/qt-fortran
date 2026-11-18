@@ -12,6 +12,7 @@ Supported C types (anything else is an error, so new types are added here):
 
     parameters                  Fortran dummy
     void *x                     type(c_ptr), value
+    void **x                    type(c_ptr), dimension(*), intent(in)
     const char *x               character(kind=c_char), dimension(*), intent(in)
     const double *x             real(c_double), dimension(*), intent(in)
     const int *x                integer(c_int), dimension(*), intent(in)
@@ -21,7 +22,7 @@ Supported C types (anything else is an error, so new types are added here):
     double x                    real(c_double), value
     qtf_*_fn x                  type(c_funptr), value
 
-    return: void, void *, char *, int *, int, double
+    return: void, void *, void **, char *, int *, int, double
 """
 
 import os
@@ -42,6 +43,7 @@ MODULES = [
 ]
 
 PARAMS = [
+    (r"void \* \*", "type(c_ptr), dimension(*), intent(in)", "c_ptr"),
     (r"void \*", "type(c_ptr), value", "c_ptr"),
     (r"const char \*", "character(kind=c_char), dimension(*), intent(in)", "c_char"),
     (r"const double \*", "real(c_double), dimension(*), intent(in)", "c_double"),
@@ -58,6 +60,7 @@ PARAMS = [
 RETURNS = {
     "void": None,
     "void *": ("type(c_ptr)", "c_ptr"),
+    "void * *": ("type(c_ptr)", "c_ptr"),
     "char *": ("type(c_ptr)", "c_ptr"),
     "int *": ("type(c_ptr)", "c_ptr"),
     "int": ("integer(c_int)", "c_int"),

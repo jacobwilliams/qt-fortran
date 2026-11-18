@@ -10,6 +10,7 @@
 
 #include <QAction>
 #include <QActionGroup>
+#include <QBuffer>
 #include <QClipboard>
 #include <QCloseEvent>
 #include <QConicalGradient>
@@ -47,6 +48,8 @@
 #include <QScreen>
 #include <QShortcut>
 #include <QStyleHints>
+#include <QSvgGenerator>
+#include <QSvgRenderer>
 #include <QSyntaxHighlighter>
 #include <QTextBlock>
 #include <QTextCharFormat>
@@ -86,7 +89,39 @@ enum : int {
     QTF_SIG_QACTIONGROUP_HOVERED = 2017,
     QTF_SIG_QSHORTCUT_ACTIVATED = 2018,
     QTF_SIG_QSHORTCUT_ACTIVATEDAMBIGUOUSLY = 2019,
+    QTF_SIG_QSVGRENDERER_REPAINTNEEDED = 2020,
 };
+
+// Load an SVG file, or SVG text (starting with '<'), into a renderer.
+static QSvgRenderer *qtf_svg_load(QSvgRenderer *r, const QString &source) {
+    if (source.trimmed().startsWith(u'<')) r->load(source.toUtf8());
+    else if (!source.isEmpty()) r->load(source);
+    return r;
+}
+
+// An SVG drawn into a transparent image.
+static QImage qtf_svg_image(QSvgRenderer *r, int width, int height) {
+    QImage img(std::max(width, 1), std::max(height, 1), QImage::Format_ARGB32_Premultiplied);
+    img.fill(Qt::transparent);
+    QPainter p(&img);
+    r->render(&p, QRectF(0, 0, width, height));
+    return img;
+}
+
+// QtfSvgGenerator: an SVG generator writing to a file, or to memory.
+class QtfSvgGenerator : public QSvgGenerator {
+  public:
+    QtfSvgGenerator(const QString &fileName, int width, int height) {
+        if (fileName.isEmpty()) setOutputDevice(&buffer);
+        else setFileName(fileName);
+        setResolution(96);   // the file's size (in mm) shows as width x height pixels in browsers
+        setSize(QSize(width, height));
+        setViewBox(QRect(0, 0, width, height));
+    }
+    QBuffer buffer;
+};
+
+static QtfSvgGenerator *qtf_svg_gen(QSvgGenerator *g) { return static_cast<QtfSvgGenerator *>(g); }
 
 // Validate `text` with a validator: QValidator_Invalid, _Intermediate or _Acceptable.
 static int qtf_validate(const QValidator *v, QString text) {
@@ -512,6 +547,9 @@ QTF_API void qtf_qpainter_setFont(void *self, const char *family, int len, doubl
 
 // Begin painting on `image`; call `end` when done.
 QTF_API void *qtf_qpainter_new(void *image) { return new QPainter(as<QImage>(image)); }
+
+// Begin painting into an SVG file; `end` writes it.
+QTF_API void *qtf_qpainter_newSvg(void *generator) { return new QPainter(as<QSvgGenerator>(generator)); }
 
 // Width of the device being painted (widget or image).
 QTF_API int qtf_qpainter_deviceWidth(void *self) { return as<QPainter>(self)->device()->width(); }
@@ -2457,6 +2495,126 @@ QTF_API void qtf_qshortcut_setAutoRepeat(void *self, int on) {
 }
 
 // ---------------------------------------------------------------------------
+// QSvgRenderer
+
+// A renderer for `source`: an SVG file, or SVG text (starting with '<'); check `isValid()`.
+QTF_API void *qtf_qsvgrenderer_new(const char *source, int source_len, void *parent) {
+    return qtf_svg_load(new QSvgRenderer(as<QObject>(parent)), qtf_qstring(source, source_len));
+}
+
+// Load another SVG (a file, or SVG text starting with '<'); true if it is valid.
+QTF_API int qtf_qsvgrenderer_load(void *self, const char *source, int source_len) {
+    return qtf_bool(qtf_svg_load(as<QSvgRenderer>(self), qtf_qstring(source, source_len))->isValid());
+}
+
+// True if an SVG is loaded.
+QTF_API int qtf_qsvgrenderer_isValid(void *self) { return qtf_bool(as<QSvgRenderer>(self)->isValid()); }
+
+// The SVG's own size (from its width and height, or view box).
+QTF_API void qtf_qsvgrenderer_defaultSize(void *self, int *res_width, int *res_height) {
+    const auto v_ = as<QSvgRenderer>(self)->defaultSize();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// The part of the SVG's coordinates that is drawn.
+QTF_API void qtf_qsvgrenderer_viewBoxF(void *self, double *res_x, double *res_y, double *res_width, double *res_height) {
+    const auto v_ = as<QSvgRenderer>(self)->viewBoxF();
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// Draw only this part of the SVG's coordinates (zoom and pan).
+QTF_API void qtf_qsvgrenderer_setViewBox(void *self, double x, double y, double width, double height) {
+    as<QSvgRenderer>(self)->setViewBox(QRectF(x, y, width, height));
+}
+
+// Qt_IgnoreAspectRatio (stretch to the rectangle, default) or Qt_KeepAspectRatio (fit inside it, centered).
+QTF_API void qtf_qsvgrenderer_setAspectRatioMode(void *self, int mode) {
+    as<QSvgRenderer>(self)->setAspectRatioMode(Qt::AspectRatioMode(Qt::AspectRatioMode(mode)));
+}
+
+// True if the SVG has animations.
+QTF_API int qtf_qsvgrenderer_isAnimated(void *self) { return qtf_bool(as<QSvgRenderer>(self)->animated()); }
+
+// Draw the SVG at its default size at (0, 0) of the painter's coordinates.
+QTF_API void qtf_qsvgrenderer_render(void *self, void *painter) {
+    as<QSvgRenderer>(self)->render(as<QPainter>(painter));
+}
+
+// Draw the SVG scaled into a rectangle.
+QTF_API void qtf_qsvgrenderer_renderRect(void *self, void *painter, double x, double y, double width, double height) {
+    as<QSvgRenderer>(self)->render(as<QPainter>(painter), QRectF(x, y, width, height));
+}
+
+// Draw one element (by its `id` attribute) scaled into a rectangle, e.g. one icon of a sheet.
+QTF_API void qtf_qsvgrenderer_renderElement(void *self, void *painter, const char *id, int id_len, double x, double y, double width, double height) {
+    as<QSvgRenderer>(self)->render(as<QPainter>(painter), qtf_qstring(id, id_len), QRectF(x, y, width, height));
+}
+
+// True if the SVG has an element with this `id`.
+QTF_API int qtf_qsvgrenderer_elementExists(void *self, const char *id, int id_len) {
+    return qtf_bool(as<QSvgRenderer>(self)->elementExists(qtf_qstring(id, id_len)));
+}
+
+// Where an element is, in the SVG's coordinates.
+QTF_API void qtf_qsvgrenderer_boundsOnElement(void *self, const char *id, int id_len, double *res_x, double *res_y, double *res_width, double *res_height) {
+    const auto v_ = as<QSvgRenderer>(self)->transformForElement(qtf_qstring(id, id_len)).mapRect(as<QSvgRenderer>(self)->boundsOnElement(qtf_qstring(id, id_len)));
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// The SVG drawn into a new transparent image (as `setAspectRatioMode` says); delete it when done.
+QTF_API void *qtf_qsvgrenderer_toImage(void *self, int width, int height) {
+    return new QImage(qtf_svg_image(as<QSvgRenderer>(self), width, height));
+}
+
+// An icon of the SVG drawn at this size (icons scale it as needed); delete it when done.
+QTF_API void *qtf_qsvgrenderer_toIcon(void *self, int width, int height) {
+    return new QIcon(QPixmap::fromImage(qtf_svg_image(as<QSvgRenderer>(self), width, height)));
+}
+
+// ---------------------------------------------------------------------------
+// QSvgGenerator
+
+// Delete the generator (end its painter first).
+QTF_API void qtf_qsvggenerator_delete(void *self) { delete qtf_svg_gen(as<QSvgGenerator>(self)); }
+
+// An SVG of `width` x `height` (the view box) written to `fileName` ('': kept in memory).
+QTF_API void *qtf_qsvggenerator_new(const char *fileName, int fileName_len, int width, int height) {
+    return static_cast<QSvgGenerator *>(new QtfSvgGenerator(qtf_qstring(fileName, fileName_len), width, height));
+}
+
+// The SVG's title (set before painting).
+QTF_API void qtf_qsvggenerator_setTitle(void *self, const char *title, int title_len) {
+    as<QSvgGenerator>(self)->setTitle(qtf_qstring(title, title_len));
+}
+
+// The SVG's description (set before painting).
+QTF_API void qtf_qsvggenerator_setDescription(void *self, const char *text, int text_len) {
+    as<QSvgGenerator>(self)->setDescription(qtf_qstring(text, text_len));
+}
+
+// The SVG coordinates the drawing uses (default: 0, 0, width, height; set before painting).
+QTF_API void qtf_qsvggenerator_setViewBox(void *self, double x, double y, double width, double height) {
+    as<QSvgGenerator>(self)->setViewBox(QRectF(x, y, width, height));
+}
+
+// The output file ('' if kept in memory).
+QTF_API char *qtf_qsvggenerator_fileName(void *self, int *len) {
+    return qtf_to_c(as<QSvgGenerator>(self)->fileName(), len);
+}
+
+// The SVG text, when there is no file name (after the painter has ended).
+QTF_API char *qtf_qsvggenerator_contents(void *self, int *len) {
+    return qtf_to_c(QString::fromUtf8(qtf_svg_gen(as<QSvgGenerator>(self))->buffer.data()), len);
+}
+
+// ---------------------------------------------------------------------------
 // functions
 
 // The system clipboard (needs the application object).
@@ -2609,6 +2767,9 @@ static const bool qtf_gui_registered = [] {
     });
     qtf_register_connector(QTF_SIG_QSHORTCUT_ACTIVATEDAMBIGUOUSLY, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QShortcut>(s), &QShortcut::activatedAmbiguously, as<QShortcut>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QSVGRENDERER_REPAINTNEEDED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QSvgRenderer>(s), &QSvgRenderer::repaintNeeded, as<QSvgRenderer>(s), [ref]() { qtf_emit(ref); }));
     });
     return true;
 }();

@@ -17,6 +17,8 @@ module qt_c_core_classes
     integer(c_int), parameter, public :: QTF_SIG_QPROCESS_READYREADSTANDARDOUTPUT = 4006
     integer(c_int), parameter, public :: QTF_SIG_QPROCESS_READYREADSTANDARDERROR = 4007
     integer(c_int), parameter, public :: QTF_SIG_QPROCESS_READYREAD = 4008
+    integer(c_int), parameter, public :: QTF_SIG_QFILESYSTEMWATCHER_FILECHANGED = 4009
+    integer(c_int), parameter, public :: QTF_SIG_QFILESYSTEMWATCHER_DIRECTORYCHANGED = 4010
 
     interface
 
@@ -1018,6 +1020,95 @@ module qt_c_core_classes
             type(c_ptr) :: res
         end function qtf_qprocess_nullDevice
 
+        !> A watcher with nothing to watch yet.
+        !>
+        !> C: `void *qtf_qfilesystemwatcher_new(void *parent)`
+        function qtf_qfilesystemwatcher_new(parent) result(res) bind(C, name='qtf_qfilesystemwatcher_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qfilesystemwatcher_new
+
+        !> Watch a file or directory; false if it does not exist or is already watched.
+        !>
+        !> C: `int qtf_qfilesystemwatcher_addPath(void *self, const char *path, int path_len)`
+        function qtf_qfilesystemwatcher_addPath(self, path, path_len) &
+                result(res) bind(C, name='qtf_qfilesystemwatcher_addPath')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: path
+            integer(c_int), value :: path_len
+            integer(c_int) :: res
+        end function qtf_qfilesystemwatcher_addPath
+
+        !> Watch several; returns the paths that could not be added.
+        !>
+        !> C: `char *qtf_qfilesystemwatcher_addPaths(void *self, const char *paths, int paths_len, int n, int *len)`
+        function qtf_qfilesystemwatcher_addPaths(self, paths, paths_len, n, len) &
+                result(res) bind(C, name='qtf_qfilesystemwatcher_addPaths')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: paths
+            integer(c_int), value :: paths_len
+            integer(c_int), value :: n
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qfilesystemwatcher_addPaths
+
+        !> Stop watching a path; false if it was not watched.
+        !>
+        !> C: `int qtf_qfilesystemwatcher_removePath(void *self, const char *path, int path_len)`
+        function qtf_qfilesystemwatcher_removePath(self, path, path_len) &
+                result(res) bind(C, name='qtf_qfilesystemwatcher_removePath')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: path
+            integer(c_int), value :: path_len
+            integer(c_int) :: res
+        end function qtf_qfilesystemwatcher_removePath
+
+        !> Stop watching several; returns the paths that were not watched.
+        !>
+        !> C: `char *qtf_qfilesystemwatcher_removePaths(void *self, const char *paths, int paths_len, int n, int *len)`
+        function qtf_qfilesystemwatcher_removePaths(self, paths, paths_len, n, len) &
+                result(res) bind(C, name='qtf_qfilesystemwatcher_removePaths')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: paths
+            integer(c_int), value :: paths_len
+            integer(c_int), value :: n
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qfilesystemwatcher_removePaths
+
+        !> The watched files.
+        !>
+        !> C: `char *qtf_qfilesystemwatcher_files(void *self, int *len)`
+        function qtf_qfilesystemwatcher_files(self, len) result(res) bind(C, name='qtf_qfilesystemwatcher_files')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qfilesystemwatcher_files
+
+        !> The watched directories.
+        !>
+        !> C: `char *qtf_qfilesystemwatcher_directories(void *self, int *len)`
+        function qtf_qfilesystemwatcher_directories(self, len) &
+                result(res) bind(C, name='qtf_qfilesystemwatcher_directories')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qfilesystemwatcher_directories
+
         !> Create a directory and any missing parents (like `mkdir -p`); true if it exists afterwards. `/` works as the separator on every platform.
         !>
         !> C: `int qtf_QDir_mkpath(const char *path, int path_len)`
@@ -1081,6 +1172,30 @@ module qt_c_core_classes
             type(c_ptr) :: res
         end function qtf_QDir_tempPath
 
+        !> The names in a directory, directories first, then by name (ignoring case); none if it does not exist. `filters`: QDir_Dirs, QDir_Files, QDir_Hidden, QDir_NoDotAndDotDot (default: all entries but . and .., not hidden ones).
+        !>
+        !> C: `char *qtf_QDir_entryList(const char *path, int path_len, int filters, int *len)`
+        function qtf_QDir_entryList(path, path_len, filters, len) result(res) bind(C, name='qtf_QDir_entryList')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: path
+            integer(c_int), value :: path_len
+            integer(c_int), value :: filters
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_QDir_entryList
+
+        !> True if `path` is a directory.
+        !>
+        !> C: `int qtf_QDir_isDir(const char *path, int path_len)`
+        function qtf_QDir_isDir(path, path_len) result(res) bind(C, name='qtf_QDir_isDir')
+            import :: c_char, c_int
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: path
+            integer(c_int), value :: path_len
+            integer(c_int) :: res
+        end function qtf_QDir_isDir
+
     end interface
 
     public :: qtf_set_task_runner, qtf_qthread_create, qtf_qsettings_new, qtf_qsettings_fromFile
@@ -1112,8 +1227,11 @@ module qt_c_core_classes
     public :: qtf_qprocess_workingDirectory, qtf_qprocess_setProcessEnvironment
     public :: qtf_qprocess_processEnvironment, qtf_qprocess_state, qtf_qprocess_exitCode
     public :: qtf_qprocess_exitStatus, qtf_qprocess_error, qtf_qprocess_errorString, qtf_qprocess_processId
-    public :: qtf_qprocess_execute, qtf_qprocess_splitCommand, qtf_qprocess_nullDevice, qtf_QDir_mkpath
+    public :: qtf_qprocess_execute, qtf_qprocess_splitCommand, qtf_qprocess_nullDevice
+    public :: qtf_qfilesystemwatcher_new, qtf_qfilesystemwatcher_addPath, qtf_qfilesystemwatcher_addPaths
+    public :: qtf_qfilesystemwatcher_removePath, qtf_qfilesystemwatcher_removePaths
+    public :: qtf_qfilesystemwatcher_files, qtf_qfilesystemwatcher_directories, qtf_QDir_mkpath
     public :: qtf_QDir_exists, qtf_QDir_removeRecursively, qtf_QDir_currentPath, qtf_QDir_homePath
-    public :: qtf_QDir_tempPath
+    public :: qtf_QDir_tempPath, qtf_QDir_entryList, qtf_QDir_isDir
 
 end module qt_c_core_classes

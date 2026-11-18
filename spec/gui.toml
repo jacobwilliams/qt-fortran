@@ -28,10 +28,42 @@ cpp_includes = [
     "QValidator", "QIntValidator", "QDoubleValidator", "QRegularExpressionValidator", "QRegularExpression", "QLocale",
     "QTextCursor", "QTextDocument", "QTextBlock", "QTextCharFormat", "QTextLayout", "QSyntaxHighlighter",
     "QFontDatabase", "QFontInfo", "QPalette", "QActionGroup", "QShortcut", "QDesktopServices", "QStyleHints",
+    "QSvgRenderer", "QSvgGenerator", "QBuffer",
     "cmath", "vector", "algorithm",
 ]
 
 cpp_prelude = """
+// Load an SVG file, or SVG text (starting with '<'), into a renderer.
+static QSvgRenderer *qtf_svg_load(QSvgRenderer *r, const QString &source) {
+    if (source.trimmed().startsWith(u'<')) r->load(source.toUtf8());
+    else if (!source.isEmpty()) r->load(source);
+    return r;
+}
+
+// An SVG drawn into a transparent image.
+static QImage qtf_svg_image(QSvgRenderer *r, int width, int height) {
+    QImage img(std::max(width, 1), std::max(height, 1), QImage::Format_ARGB32_Premultiplied);
+    img.fill(Qt::transparent);
+    QPainter p(&img);
+    r->render(&p, QRectF(0, 0, width, height));
+    return img;
+}
+
+// QtfSvgGenerator: an SVG generator writing to a file, or to memory.
+class QtfSvgGenerator : public QSvgGenerator {
+  public:
+    QtfSvgGenerator(const QString &fileName, int width, int height) {
+        if (fileName.isEmpty()) setOutputDevice(&buffer);
+        else setFileName(fileName);
+        setResolution(96);   // the file's size (in mm) shows as width x height pixels in browsers
+        setSize(QSize(width, height));
+        setViewBox(QRect(0, 0, width, height));
+    }
+    QBuffer buffer;
+};
+
+static QtfSvgGenerator *qtf_svg_gen(QSvgGenerator *g) { return static_cast<QtfSvgGenerator *>(g); }
+
 // Validate `text` with a validator: QValidator_Invalid, _Intermediate or _Acceptable.
 static int qtf_validate(const QValidator *v, QString text) {
     int pos = 0;
@@ -1404,10 +1436,13 @@ fortran_procedures = '''
 name = "QPainter"
 handle = true
 doc = """
-Draws on an image, or on a QtfWidget inside its paintEvent slot.
-Coordinates may be integers or `real(c_double)`."""
+Draws on an image, an SVG file (QSvgGenerator), or on a QtfWidget inside its
+paintEvent slot. Coordinates may be integers or `real(c_double)`."""
 fortran_components = "logical :: owned = .false.   !! created from Fortran: `end` deletes it"
-ctor = "(image: QImage) -- Begin painting on `image`; call `end` when done."
+ctors = [
+    { sig = "(image: QImage)", name = "new", doc = "Begin painting on `image`; call `end` when done." },
+    { sig = "(generator: QSvgGenerator)", name = "newSvg", doc = "Begin painting into an SVG file; `end` writes it." },
+]
 ctor_post = "res%owned = .true."
 methods = [
     { sig = "deviceWidth() -> int", cpp = "{self}->device()->width()", doc = "Width of the device being painted (widget or image)." },
@@ -2417,3 +2452,64 @@ methods = [
     "setContext(context: Qt::ShortcutContext) -- Where it works: Qt_WindowShortcut (default), Qt_WidgetShortcut (only when the parent has focus), Qt_WidgetWithChildrenShortcut, Qt_ApplicationShortcut.",
     "setAutoRepeat(on: bool) -- Emit `activated` repeatedly while the keys are held (default: on).",
 ]
+
+# ---------------------------------------------------------------------------
+# QtSvg
+
+[[class]]
+name = "QSvgRenderer"
+doc = """
+Draws an SVG image (QtSvg: SVG Tiny 1.2, the common subset of SVG): load a
+file or SVG text, then `render` it with a painter (scaled to a rectangle),
+or make an image or an icon of any size from it."""
+ctor = "(source: string = '', parent: QObject?) -- A renderer for `source`: an SVG file, or SVG text (starting with '<'); check `isValid()`."
+cpp_ctor = "qtf_svg_load(new QSvgRenderer({parent}), {source})"
+signals = ["repaintNeeded: void -- An animated SVG changed: repaint it."]
+methods = [
+    { sig = "load(source: string) -> bool", cpp = "qtf_svg_load({self}, {source})->isValid()", doc = "Load another SVG (a file, or SVG text starting with '<'); true if it is valid." },
+    "isValid() -> bool -- True if an SVG is loaded.",
+    "defaultSize() -> QSize -- The SVG's own size (from its width and height, or view box).",
+    "viewBoxF() -> QRectF -- The part of the SVG's coordinates that is drawn.",
+    { sig = "setViewBox(x: double, y: double, width: double, height: double)", cpp = "{self}->setViewBox(QRectF({x}, {y}, {width}, {height}))", doc = "Draw only this part of the SVG's coordinates (zoom and pan)." },
+    { sig = "setAspectRatioMode(mode: Qt::AspectRatioMode)", cpp = "{self}->setAspectRatioMode(Qt::AspectRatioMode({mode}))", doc = "Qt_IgnoreAspectRatio (stretch to the rectangle, default) or Qt_KeepAspectRatio (fit inside it, centered)." },
+    { sig = "isAnimated() -> bool", cpp = "{self}->animated()", doc = "True if the SVG has animations." },
+    { sig = "render(painter: QPainter)", cpp = "{self}->render({painter})", fortran_name = "render", doc = "Draw the SVG at its default size at (0, 0) of the painter's coordinates." },
+    { sig = "renderRect(painter: QPainter, x: double, y: double, width: double, height: double)", cpp = "{self}->render({painter}, QRectF({x}, {y}, {width}, {height}))", fortran_name = "render", doc = "Draw the SVG scaled into a rectangle." },
+    { sig = "renderElement(painter: QPainter, id: string, x: double, y: double, width: double, height: double)", cpp = "{self}->render({painter}, {id}, QRectF({x}, {y}, {width}, {height}))", doc = "Draw one element (by its `id` attribute) scaled into a rectangle, e.g. one icon of a sheet." },
+    "elementExists(id: string) -> bool -- True if the SVG has an element with this `id`.",
+    { sig = "boundsOnElement(id: string) -> QRectF", cpp = "{self}->transformForElement({id}).mapRect({self}->boundsOnElement({id}))", doc = "Where an element is, in the SVG's coordinates." },
+    { sig = "toImage(width: int, height: int) -> QImage", cpp = "new QImage(qtf_svg_image({self}, {width}, {height}))", doc = "The SVG drawn into a new transparent image (as `setAspectRatioMode` says); delete it when done." },
+    { sig = "toIcon(width: int, height: int) -> QIcon", cpp = "new QIcon(QPixmap::fromImage(qtf_svg_image({self}, {width}, {height})))", doc = "An icon of the SVG drawn at this size (icons scale it as needed); delete it when done." },
+]
+
+[[class]]
+name = "QSvgGenerator"
+handle = true
+doc = """
+Writes what a painter draws as SVG (QtSvg), e.g. to export a plot or a
+graph: create it, set the title, paint with `QPainter(generator)` (the same
+drawing calls as on a widget), and `end` the painter, which writes the file.
+With no file name the SVG is kept in memory (`contents`). The size is
+written in millimetres at 96 dpi, as browsers show pixels."""
+ctor = "(fileName: string, width: int, height: int) -- An SVG of `width` x `height` (the view box) written to `fileName` ('': kept in memory)."
+cpp_ctor = "static_cast<QSvgGenerator *>(new QtfSvgGenerator({fileName}, {width}, {height}))"
+methods = [
+    "setTitle(title: string) -- The SVG's title (set before painting).",
+    "setDescription(text: string) -- The SVG's description (set before painting).",
+    { sig = "setViewBox(x: double, y: double, width: double, height: double)", cpp = "{self}->setViewBox(QRectF({x}, {y}, {width}, {height}))", doc = "The SVG coordinates the drawing uses (default: 0, 0, width, height; set before painting)." },
+    "fileName() -> string -- The output file ('' if kept in memory).",
+    { sig = "contents() -> string", cpp = "QString::fromUtf8(qtf_svg_gen({self})->buffer.data())", doc = "The SVG text, when there is no file name (after the painter has ended)." },
+]
+cpp = """
+// Delete the generator (end its painter first).
+QTF_API void qtf_qsvggenerator_delete(void *self) { delete qtf_svg_gen(as<QSvgGenerator>(self)); }
+"""
+fortran_bindings = "procedure :: delete => qsvggenerator_delete"
+fortran_procedures = """
+    !> Delete the generator (end its painter first).
+    subroutine qsvggenerator_delete(self)
+        class(QSvgGenerator), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qsvggenerator_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qsvggenerator_delete
+"""

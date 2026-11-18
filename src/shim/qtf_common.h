@@ -6,6 +6,7 @@
 #include <QStringList>
 
 #include <cstdint>
+#include <cstdlib>
 #include <initializer_list>
 #include <memory>
 #include <vector>
@@ -93,6 +94,21 @@ char *qtf_list_to_c(const QStringList &list, int *len);
 
 // Integer lists are returned as a malloc'd array of `len` ints, released by qtf_free.
 int *qtf_ints_to_c(const QList<int> &list, int *len);
+
+// Object arrays: a Fortran array of handles as a list, and a list returned as
+// a malloc'd array of `len` pointers (released by qtf_free).
+template <typename T> QList<T *> qtf_objects(void **p, int n) {
+    QList<T *> list;
+    for (int i = 0; i < n; ++i) list << static_cast<T *>(p[i]);
+    return list;
+}
+
+template <typename T> void **qtf_objects_to_c(const QList<T *> &list, int *len) {
+    *len = static_cast<int>(list.size());
+    void **p = static_cast<void **>(std::malloc(sizeof(void *) * (list.size() + 1)));
+    for (qsizetype i = 0; i < list.size(); ++i) p[i] = list[i];
+    return p;
+}
 
 // A Fortran character array (n items of `itemlen` bytes, blank padded) as a
 // string list, with trailing blanks removed from each item.

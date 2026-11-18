@@ -66,6 +66,9 @@ Argument and result types:
                            the element count is passed as `{n}`
     Scope::Enum            an enum/flags value (integer in Fortran)
     QClass / QClass?       an object handle (`?`: optional, null when absent)
+    QClass[]               an array of object handles: an argument (`void **` in C++,
+                           converted with `qtf_objects<QClass>(p, n)`; count passed as
+                           `{n}`) or a result (C++ returns `qtf_objects_to_c(list, len)`)
     a value type           see `value_types`
 An argument may have a default (`name: int = 0`), which makes it optional; the
 default is a Fortran expression.
@@ -160,6 +163,8 @@ def kind(typ, where=""):
         return "intarray"
     if typ in VALUE_TYPES:
         return "value"
+    if re.fullmatch(r"Q\w+\[\]", typ):
+        return "objarray"
     if "::" in typ:
         return "enum"
     if re.fullmatch(r"Q\w+", typ):
@@ -271,7 +276,7 @@ def value_f_args(vt, expr):
     return out
 
 
-ARRAY_KINDS = ("numarray", "doublearray", "intarray", "strings")
+ARRAY_KINDS = ("numarray", "doublearray", "intarray", "strings", "objarray")
 
 
 def has_arrays(sig):
@@ -294,6 +299,8 @@ def cpp_params(sig, has_self):
             params.append(f"const double *{n}")
         elif k == "intarray":
             params.append(f"const int *{n}")
+        elif k == "objarray":
+            params.append(f"void **{n}")
         elif k == "strings":
             params += [f"const char *{n}", f"int {n}_len"]
         elif k == "outbool":
@@ -305,7 +312,7 @@ def cpp_params(sig, has_self):
     if has_arrays(sig):
         params.append("int n")
     rk = kind(sig.ret) if sig.ret else None
-    if rk in ("string", "strings", "intarray"):
+    if rk in ("string", "strings", "intarray", "objarray"):
         params.append("int *len")
     elif rk == "value":
         params += [f"{'double' if t == 'double' else 'int'} *res_{f}" for f, t in VALUE_TYPES[sig.ret]["fields"]]
@@ -321,6 +328,7 @@ def cpp_value(a):
         "object": f"as<{a.type}>({n})",
         "value": value_cpp(a.type, n) if k == "value" else None,
         "strings": f"qtf_qstringlist({n}, {n}_len, n)",
+        "objarray": f"qtf_objects<{a.type[:-2]}>({n}, n)",
         "outbool": f"&{n}_b",
     }.get(k, n)
 
@@ -350,12 +358,15 @@ def cpp_function(cls, sig, template, ctor=False):
     ret = "void *" if ctor else {
         None: "void ", "int": "int ", "int64": "long long ", "bool": "int ", "double": "double ", "enum": "int ",
         "string": "char *", "strings": "char *", "object": "void *", "intarray": "int *", "value": "void ",
+        "objarray": "void **",
     }[kind(sig.ret) if sig.ret else None]
     rk = kind(sig.ret) if sig.ret else None
     if rk == "value":
         ret = "void "
     elif rk == "intarray":
         ret = "int *"
+    elif rk == "objarray":
+        ret = "void **"
     outs = [cname(a.name) for a in sig.args if kind(a.type) == "outbool"]
     pre = [f"bool {o}_b = false;" for o in outs]
     post = [f"if ({o}) *{o} = {o}_b ? 1 : 0;" for o in outs]
@@ -368,6 +379,7 @@ def cpp_function(cls, sig, template, ctor=False):
             "string": f"qtf_to_c({expr}, len)",
             "strings": f"qtf_list_to_c({expr}, len)",
             "intarray": f"qtf_ints_to_c({expr}, len)",
+            "objarray": f"qtf_objects_to_c({expr}, len)",
         }.get(rk, expr)
 
     if ctor:
@@ -432,7 +444,9 @@ def f_dummy(a, handle_types, variant=None):
     elif k == "value":
         decl = f"type({a.type})"
     elif k == "object":
-        decl = f"class({a.type})"   # handle types too: accepts subtypes (QLinearGradient as a QGradient)
+        decl = f"class({a.type})"
+    elif k == "objarray":
+        decl = f"class({a.type[:-2]})"   # handle types too: accepts subtypes (QLinearGradient as a QGradient)
     return f"{decl}, intent(in){opt} :: {a.name}{dims}"
 
 
@@ -456,6 +470,13 @@ def f_locals_and_args(sig, handle_types, variant=None, post=None, where="qt"):
             continue
         if k == "strings":
             args += [n, f"len({n}, c_int)"]
+            continue
+        if k == "objarray":
+            elem = a.type[:-2]
+            decls += [f"type(c_ptr) :: {n}_p(size({n}))", f"integer :: {n}_i"]
+            item = f"{n}({n}_i)%ptr" if elem in handle_types else f"qtf_live({n}({n}_i), '{where}')"
+            setup += [f"do {n}_i = 1, size({n})", f"    {n}_p({n}_i) = {item}", "end do"]
+            args.append(f"{n}_p")
             continue
         if k == "outbool":
             decls.append(f"integer(c_int) :: {n}_")
@@ -583,6 +604,15 @@ def f_procedure(cls, sig, handle_types, ctor=False, suffix="", variant=None, han
             locals_ += ["integer(c_int) :: n_", "type(c_ptr) :: p_"]
             args.append("n_")
             body += [f"p_ = {raw}({', '.join(args)})", "res = qtf_take_ints(p_, n_)"]
+        elif rk == "objarray":
+            elem = sig.ret[:-2]
+            decls.append(f"type({elem}), allocatable :: res(:)")
+            locals_ += ["integer(c_int) :: n_", "type(c_ptr) :: p_", "type(c_ptr), allocatable :: ptrs_(:)",
+                        "integer :: i_"]
+            args.append("n_")
+            item = "res(i_)%ptr = ptrs_(i_)" if elem in handle_types else "call res(i_)%attach(ptrs_(i_))"
+            body += [f"p_ = {raw}({', '.join(args)})", "ptrs_ = qtf_take_ptrs(p_, n_)", "allocate(res(n_))",
+                     "do i_ = 1, n_", f"    {item}", "end do"]
         elif rk == "value":
             decls.append(f"type({sig.ret}) :: res")
             fields = VALUE_TYPES[sig.ret]["fields"]

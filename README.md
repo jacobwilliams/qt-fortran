@@ -13,7 +13,7 @@ compiler extensions, and you never write C++.
 
 *The [Function Explorer](example/explorer.f90) example, written in about 1350 lines of Fortran.*
 
-> **Status: early development.** The API covers QtCore, QtGui, QtWidgets
+> **Status: early development.** The API covers QtCore, QtGui, QtWidgets, QtSvg
 > and modern OpenGL essentials and is tested on Linux, macOS and Windows, but it may still change.
 
 ## A taste
@@ -93,23 +93,24 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 
 | Area | Classes |
 |------|---------|
-| Core | `QObject` (with dynamic properties and `findChild`), `QTimer`, `QEvent`, `QDateTime`, `QSettings` (persistent preferences, window geometry and layout), `QThread` (run Fortran work in a worker thread), `QProcess` and `QProcessEnvironment` (run external programs: arguments, environment, working directory, standard input/output/error, exit codes, signals), `QDir_mkpath`/`exists`/`removeRecursively` and standard paths (portable directory handling, which standard Fortran lacks) |
+| Core | `QObject` (with dynamic properties and `findChild`), `QTimer`, `QEvent`, `QDateTime`, `QSettings` (persistent preferences, window geometry and layout), `QThread` (run Fortran work in a worker thread), `QProcess` and `QProcessEnvironment` (run external programs: arguments, environment, working directory, standard input/output/error, exit codes, signals), `QFileSystemWatcher` (files and folders changed by other programs), `QDir_mkpath`/`exists`/`removeRecursively`/`entryList`/`isDir` and standard paths (portable directory handling, which standard Fortran lacks) |
 | Application | `QApplication` (command-line arguments, organization/application names) |
-| Widgets | `QWidget`, `QFrame`, `QLabel`, `QPushButton`, `QToolButton`, `QCheckBox`, `QRadioButton`, `QButtonGroup`, `QLineEdit`, `QSpinBox`, `QDoubleSpinBox`, `QSlider`, `QDial`, `QComboBox`, `QProgressBar`, `QLCDNumber`, `QDateEdit`, `QTimeEdit`, `QCalendarWidget`, `QtfWidget` (custom painting/events) |
+| Widgets | `QWidget`, `QFrame`, `QLabel`, `QPushButton`, `QToolButton`, `QCheckBox`, `QRadioButton`, `QButtonGroup`, `QLineEdit`, `QSpinBox`, `QDoubleSpinBox`, `QSlider`, `QDial`, `QComboBox`, `QProgressBar`, `QLCDNumber`, `QDateEdit`, `QTimeEdit`, `QCalendarWidget`, `QtfWidget` (custom painting/events, size hints from Fortran) |
 | Input helpers | `QDateTimeEdit`, validators (`QIntValidator`, `QDoubleValidator`, `QRegularExpressionValidator`), `QCompleter` |
 | Text | `QTextEdit`, `QPlainTextEdit`, `QTextBrowser` (help pages with links) |
 | Code editors | `QtfPlainTextEdit` (a gutter for line numbers and markers, painting over the text, the visible lines and their geometry), `QTextDocument`, `QTextBlock`, `QTextCursor` (editing, selections, undo steps), `QtfSyntaxHighlighter` (highlighting done by Fortran, with state across lines), `QTextCharFormat`, extra selections |
-| Item views | `QTableWidget`, `QListWidget`, `QTreeWidget`; `QHeaderView` (resize modes, section sizes, sort indicator, movable sections); `QTableView` with `QtfTableModel`, `QListView` with `QtfListModel` and `QTreeView` with `QtfTreeModel` (cells come from Fortran on demand, so large arrays aren't copied; with icons, check boxes, tool tips, colors, alignment and bold/italic); `QSortFilterProxyModel`, `QFileSystemModel`, `QtfItemDelegate` (combo / spin-box cell editors, custom-painted cells) |
+| Item views | `QTableWidget`, `QListWidget`, `QTreeWidget` (an integer or string stored with each item, `findData`); `QHeaderView` (resize modes, section sizes, sort indicator, movable sections); `QTableView` with `QtfTableModel`, `QListView` with `QtfListModel` and `QTreeView` with `QtfTreeModel` (cells come from Fortran on demand, so large arrays aren't copied; with icons, check boxes, tool tips, colors, alignment and bold/italic); `QSortFilterProxyModel`, `QtfSortFilterProxyModel` (rows filtered by Fortran), `QFileSystemModel`, `QFileIconProvider`, `QtfItemDelegate` (combo / spin-box cell editors, custom-painted cells) |
 | Containers | `QTabWidget`, `QTabBar` (standalone, with an integer per tab), `QStackedWidget`, `QStackedLayout`, `QSplitter`, `QScrollArea`, `QGroupBox`, `QDockWidget`, `QToolBox`, `QMdiArea` |
 | Undo | `QUndoStack` (commands are Fortran slots), `QUndoView` |
 | Layouts | `QVBoxLayout`, `QHBoxLayout`, `QGridLayout`, `QFormLayout`, `QStackedLayout`, size policies |
 | Theming | `QPalette` (color roles and groups; application and widget palettes), styles (`QApplication_setStyle('Fusion')`, `QStyleFactory_keys`), light/dark color scheme |
 | Scrolling | `QAbstractScrollArea` (the base of views and editors): `verticalScrollBar()`/`horizontalScrollBar()` as `QScrollBar`s, scroll-bar policies, `viewport()` |
-| Main window | `QMainWindow`, `QMenuBar`, `QMenu`, `QToolBar`, `QStatusBar`, `QAction`, `QActionGroup` (one checked at a time), `QShortcut`, standard shortcuts (`QKeySequence_*`, native text), docks |
+| Main window | `QMainWindow`, `QMenuBar`, `QMenu`, `QToolBar`, `QStatusBar`, `QAction`, `QActionGroup` (one checked at a time), `QShortcut`, standard shortcuts (`QKeySequence_*`, native text), docks (split, tabify, resize, corners, tab position, custom title bars) |
 | Dialogs | `QDialog`, `QDialogButtonBox`, `QMessageBox`, `QFileDialog`, `QInputDialog`, `QColorDialog`, `QFontDialog`, `QProgressDialog`, `QWizard`, `QSplashScreen` |
 | Painting | `QPainter` (shapes, text, images, arcs and pies, clipping, transforms), `QPainterPath` (curves, boolean operations), `QLinearGradient`, `QRadialGradient`, `QConicalGradient`, `QTransform`, `QFontMetrics`, `QImage`, `QPixmap`, `QColor`, `QPen`, `QBrush`, `QFont` |
+| SVG | `QSvgRenderer` (draw SVG files or text, scaled, one element, as images and icons), `QSvgGenerator` (paint into an SVG file, e.g. to export a plot) |
 | Arrays as images | `QImage_fromArray` (a 2D Fortran array through a colormap: viridis, magma, inferno, plasma, coolwarm, gray; NaN transparent), `QImage_colorbar` |
-| Icons | `QIcon` (files or generated images), `QStyle_standardIcon`, icons on actions, buttons, tabs, items and windows |
+| Icons | `QIcon` (files, generated images or SVG), `QStyle_standardIcon`, file-type icons (`QFileIconProvider`), icons on actions, buttons, tabs, items and windows |
 | Events | `QMouseEvent`, `QKeyEvent`, `QWheelEvent`, `QResizeEvent`; on any widget: `QCloseEvent` (veto closing), `QContextMenuEvent`, enter/leave, focus in/out, show/hide, drag and drop; on any object (e.g. a `QWindow`): `QtfEventFilter` (input and drag-and-drop events can be consumed) |
 | Desktop | `QClipboard` (text, images, any data), `QToolTip_showText`, `QDesktopServices_openUrl` (web pages, mail, files in their default application), drag and drop (`QMimeData`, `QDropEvent`, `QDrag`; files from the desktop arrive as paths; rows and nodes dragged out of, reordered in and dropped on item views with Fortran models), cursors (per widget, override cursor), `QScreen` (size, available area, DPI, pixel ratio) |
 | Geometry and math | `QPoint`, `QPointF`, `QSize`, `QSizeF`, `QRect`, `QRectF`, `QLineF`, `QMargins`, `QVector2D`, `QVector3D`, `QVector4D`, `QQuaternion` (Euler angles, slerp, look-at rotations): plain Fortran types with Qt's methods and operators, taken and returned by widget geometry (`pos`, `size`, `geometry`, `mapToGlobal`, ...), painting, paths, transforms, events, screens, shader uniforms and `QMatrix4x4` (`rotate(quaternion)`, `matrix * vector`, `QVector3D_project`/`unproject`) |
@@ -170,6 +171,7 @@ Examples:
 | [geometry](example/geometry.f90) | the geometry and 3D math value types: drag the handles of `QLineF` segments and `QRectF` rectangles to see intersections, angles and unions; a cube painted with `QPainter` that slerps between `QQuaternion` orientations, rotates by dragging, is projected with `QMatrix4x4` and `QVector3D_project`, and picks the vertex under the mouse with `QVector3D_unproject` |
 | [editor](example/editor.f90) | a Fortran code editor: syntax highlighting (strings continued across lines), a gutter with line numbers and clickable bookmarks, the current line and every occurrence of the word under the cursor highlighted, a column-80 ruler with a wavy underline past it, auto-indent, Alt+click for several cursors that type together, a find bar |
 | [themes](example/themes.f90) | an application that restyles itself: light, dark, Solarized and high-contrast palettes plus an accent color, chosen from a menu action group or cycled with a shortcut; every style; pages switched by a tab bar over a stacked layout: controls (enabled and disabled), the palette's color roles, and the platform's standard shortcuts in portable and native text; on-demand tool tips; opening a web page |
+| [ide](example/ide.f90) | an IDE-like window: a project tree (file icons, an index stored with each item), a file viewer that reloads when the file changes on disk, quick open with a fuzzy filter written in Fortran, an SVG logo in a dock with a custom title bar; two dock layouts (split, tabbed, resized), tabs on top, export of the dock layout as SVG |
 | [surface3d](example/surface3d.f90) | an interactive 3D surface plot with modern OpenGL: GLSL shaders, an indexed mesh with lighting, orbit/zoom with the mouse, auto-rotation, PNG export |
 | [datasets](example/datasets.f90) | a data catalog: datasets in a table with check boxes, color swatches and painted bar cells, a color grid (QListView), a chart of QPainterPath curves with gradient fills; drop files or text to add datasets, drag the chart out as an image, copy and paste through the clipboard |
 | [orbit3d](example/orbit3d.f90) | a spacecraft orbit viewer: Kepler propagation, orbital elements and presets in a side panel, a rotating lit planet, time warp, live readouts, OpenGL 3D view |
@@ -204,6 +206,8 @@ pixi run example surface3d -- --screenshot surface.png
 ![Code editor example](media/editor.png)
 
 ![Themes example](media/themes.png)
+
+![IDE example](media/ide.png)
 
 ![3D surface example](media/surface3d.png)
 
@@ -242,7 +246,7 @@ Instead of exporting the variables, you can let the script run fpm with them
 variables yourself, e.g. on Linux:
 
 ```sh
-QT="Qt6Core Qt6Gui Qt6Widgets Qt6OpenGL Qt6OpenGLWidgets"
+QT="Qt6Core Qt6Gui Qt6Widgets Qt6OpenGL Qt6OpenGLWidgets Qt6Svg"
 export FPM_CXX=g++
 export FPM_CXXFLAGS="-std=c++17 -fPIC $(pkg-config --cflags $QT)"
 export FPM_LDFLAGS="$(pkg-config --libs-only-L $QT) -Wl,-rpath,$(pkg-config --variable=libdir Qt6Core)"
@@ -256,8 +260,8 @@ minimal project; CI builds and runs it on all three platforms.
 - **pixi/conda-forge (recommended):** add `qt6-main`, `gfortran`, `fpm`,
   `cxx-compiler` and `pkg-config` to your environment (see this repository's
   [pixi.toml](pixi.toml)).
-- **Linux distribution packages** (Qt 6 development files and pkg-config) should
-  also work.
+- **Linux distribution packages** (Qt 6 development files, including Qt SVG,
+  e.g. `qt6-base-dev` and `qt6-svg-dev`, and pkg-config) should also work.
 - **Not yet supported:**
   - Homebrew's Qt on macOS, which ships only as frameworks.
   - MSYS2's MinGW Qt on Windows. It is supported by design but untested.
@@ -545,6 +549,40 @@ A few conventions to know (the full list is in [plans/plan.md](plans/plan.md)):
   the output. Output comes as raw bytes. `write` and `closeWriteChannel`
   feed standard input, and `setProcessEnvironment` sets the environment
   (start from `QProcessEnvironment_systemEnvironment()`).
+- **Docks**: add dock widgets to a `QMainWindow`, then arrange them:
+  `splitDockWidget(a, b, Qt_Vertical)` puts `b` below `a`,
+  `tabifyDockWidget(a, b)` stacks them as tabs, and
+  `resizeDocks([a, b], [300, 200], Qt_Horizontal)` sets their sizes.
+  `setCorner` says which area owns each corner, `setTabPosition` where
+  tabs go. Give each dock and tool bar an `objectName` and
+  `saveState`/`restoreState` keep the layout between runs.
+- **Item data**: store an index into your own arrays with each item
+  (`item%setData(0, k)` on a tree item, `item%setData(k)` on a table item,
+  `list%setItemData(row, k)`). It follows the item when the view sorts, and
+  `findData(k)` finds the item again.
+- **Fortran filters**: a `QtfSortFilterProxyModel` asks its
+  `filterAcceptsRow` slots about each source row (after the standard
+  filter), e.g. for fuzzy matching. Call `proxy%invalidateFilter()` when
+  the filter's settings change:
+
+  ```fortran
+  subroutine on_filter(row, data)
+      type(QtfFilterRow), intent(in) :: row
+      class(*), intent(inout), optional :: data
+      select type (s => data)
+      type is (app_state)
+          if (s%values(row%row() + 1) < s%threshold) call row%setAccepted(.false.)
+      end select
+  end subroutine on_filter
+  ```
+- **SVG**: `QSvgRenderer(source)` takes a file or SVG text; draw it with
+  `r%render(painter, x, y, w, h)`, or make an icon with `r%toIcon(32, 32)`.
+  To export a drawing, paint on `QPainter(QSvgGenerator(file, w, h))` and
+  `end` the painter.
+- **Watching files**: `QFileSystemWatcher%addPath` for a file or folder;
+  `fileChanged` and `directoryChanged` arrive in the event loop. Editors
+  often save by replacing the file, which drops it from the watch list, so
+  add it again in the slot.
 - **Dates and times**: `QDateTime` is a value type with fields `year` …
   `msec`, in local time.
 
