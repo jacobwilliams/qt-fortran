@@ -9,14 +9,20 @@ pyqtgraph/numpy, ...) are out of scope.
 Survey of the repository as of 2026-10-25: 91 modules, about 52k lines of
 Python, using about 120 Qt classes from QtCore, QtGui, QtWidgets and QtSvg.
 
+> **Status (2026-11-17): the Qt bindings are done.** Every item of gaps A
+> and B below is checked off, with tests and examples (`editor`, `themes`,
+> `ide`). What remains is the non-Qt work of gap C and the port of the
+> application itself (see Milestones).
+
 ## Verdict
 
 The GUI can be built with qt-fortran.
 
-- **Already there:** about two thirds of the Qt it uses is bound already, or
-  only needs spec entries.
-- **New machinery:** three areas need new binding machinery: the code editor,
-  a general event-filter/override hook, and custom-painted item delegates.
+- **Already there:** about two thirds of the Qt it uses was bound already, or
+  only needed spec entries. *(All done.)*
+- **New machinery:** three areas needed new binding machinery: the code
+  editor, a general event-filter/override hook, and custom-painted item
+  delegates. *(All done.)*
 - **Outside Qt:** the terminal panel and the LSP/DAP clients need work that
   isn't Qt at all.
 - **The long pole:** porting the application logic (52k lines of Python,
@@ -183,25 +189,42 @@ card, progress line, git stats, animated logo, blame column and terminal view.
 
 ## Milestones
 
-1. **Skeleton app.** Gap A: `QProcess` first, then docks, services and
-   `QPalette`. Build the main window and docks, the *Build options* panel,
-   the project tree, fpm build/run/test with live output, the problems list,
-   and settings. This proves the app's architecture in Fortran early.
-2. **Editor.** Gap B1: text-document bindings, `QtfPlainTextEdit`,
-   `QtfSyntaxHighlighter`, the gutter. Fortran and TOML lexers. Most of the
-   binding design happens here.
-3. **Polished panels.** Gaps B2 and B3: the general event filter and painted
-   delegates, for the test monitor, git log graph, command palette, quick
-   open and completion popup.
+The bindings were milestones' prerequisites; they are all in place, so each
+milestone below is now port work.
+
+1. **Skeleton app.** The main window and docks, the *Build options* panel,
+   the project tree, fpm build/run/test with live output (`QProcess`), the
+   problems list, and settings. This proves the app's architecture in
+   Fortran early. The `ide` example already has the main-window, project-tree
+   and dock-layout pieces (file icons, item data, a file watcher, quick open
+   with a Fortran filter).
+2. **Editor.** Fortran and TOML lexers for `QtfSyntaxHighlighter`, on the
+   existing `QtfPlainTextEdit` (gutter, extra selections, viewport painting,
+   event filters). The `editor` example is the starting point.
+3. **Polished panels.** The test monitor, git log graph, command palette,
+   quick open and completion popup, with painted delegates
+   (`QtfItemDelegate%paintCell`), event filters and `QtfSortFilterProxyModel`.
 4. **Custom docking.** The `dock_snap.py` behavior (snapping, grips,
-   collapsing sides). It needs B2 and the dock APIs from A. Port it last.
+   collapsing sides), on the dock APIs and `QtfEventFilter`. Port it last.
 5. **Terminal, LSP and DAP.** The non-Qt work of gap C, alongside the other
-   milestones.
+   milestones. Start the terminal as a plain `QProcess` console.
+
+### Bindings that may still turn up
+
+Not checked against the app's source; add them when the port needs them:
+
+- `QSocketNotifier`, for a pseudo-terminal's file descriptor (gap C).
+- A `lessThan` sort callback on `QtfSortFilterProxyModel`, if sorting in
+  Fortran is needed beyond `QtfTableModel`'s `sortRequested`.
+- Anything else a ported module uses that isn't bound: most such additions
+  are spec entries.
 
 ## Effort
 
-- **Bindings:** gap A is mostly mechanical. B1 needs real design work; B2 and
-  B3 are moderate. In total, roughly 10-15 sessions like the recent
-  qt-fortran ones.
+- **Bindings:** done (gaps A and B, over the qt-fortran sessions up to
+  2026-11-17). Expect only small spec additions during the port.
+- **Gap C:** moderate. The lexers and the JSON/TOML handling are
+  straightforward with toml-f and json-fortran; the pseudo-terminal and a
+  VT100 emulator are the largest pieces.
 - **Application port:** 52k lines of Python, likely 1.5-2x as many lines of
   Fortran. This dominates the total.
