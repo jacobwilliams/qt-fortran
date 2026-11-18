@@ -101,26 +101,36 @@ card, progress line, git stats, animated logo, blame column and terminal view.
    11 virtuals and uses the text-document API heavily (`textCursor` x69,
    `document` x68, `blockNumber` x58, `setPosition` x53,
    `findBlockByNumber` x32). It needs:
-   - [ ] Bindings for `QTextCursor` (movePosition, setPosition, selection,
+   - [x] Bindings for `QTextCursor` (movePosition, setPosition, selection,
          insertText, edit blocks), `QTextDocument`/`QTextBlock` (find by
          number, block count, text, position, user state), and
          `QTextCharFormat` (color, background, underline style, bold).
-   - [ ] Extra selections (current line, matches, multi-cursor), as arrays
-         of (cursor range, format).
-   - [ ] `QtfPlainTextEdit`, which forwards key/mouse/wheel/focus/resize/
+         *Done: QTextBlock is a plain Fortran value (document + number);
+         QTextCharFormat a value type in qt_gui_types.*
+   - [x] Extra selections (current line, matches, multi-cursor), as arrays
+         of (cursor range, format). *Done: `addExtraSelection(s)`,
+         `clearExtraSelections` on QPlainTextEdit.*
+   - [x] `QtfPlainTextEdit`, which forwards key/mouse/wheel/focus/resize/
          context-menu events. Each event carries a "consume" flag, so Fortran
          can replace the default handling (completion, multi-cursor,
-         auto-indent).
-   - [ ] A viewport paint hook that runs after Qt draws the text (underlines,
-         markers).
-   - [ ] Access to protected methods: `firstVisibleBlock`,
+         auto-indent). *Done through `QtfEventFilter` on the editor (keys)
+         and on its `viewport()` (mouse), whose slots consume an event by
+         accepting it.*
+   - [x] A viewport paint hook that runs after Qt draws the text (underlines,
+         markers). *Done: `viewportPaintEvent`.*
+   - [x] Access to protected methods: `firstVisibleBlock`,
          `blockBoundingGeometry`, `contentOffset`, `setViewportMargins` (for
-         the line-number gutter).
-   - [ ] `QtfSyntaxHighlighter`: a Fortran `highlightBlock(text)` slot calls
+         the line-number gutter). *Done, plus `lastVisibleBlockNumber` and a
+         built-in gutter (`setGutterWidth`, `gutter()`: a QtfWidget kept in
+         place and scrolled with the text).*
+   - [x] `QtfSyntaxHighlighter`: a Fortran `highlightBlock(text)` slot calls
          `setFormat(start, length, format)` and gets/sets the block state.
          This is the same request pattern as the Fortran-backed models.
-   - [ ] `cursorForPosition`, `cursorRect`, `centerCursor`,
+         *Done; offsets are bytes of the slot's text, converted to Qt's
+         UTF-16 positions.*
+   - [x] `cursorForPosition`, `cursorRect`, `centerCursor`,
          `ensureCursorVisible`, `find`, tab stop distance, wrap modes.
+         *Done (example/editor.f90, test/test_code_editor.f90).*
 2. **General event filter / override hook.** The app uses `eventFilter` 14
    times, often on other objects (a viewport, the docks, the application).
    It also overrides `keyPressEvent` on `QLineEdit`, `QTreeWidget` and

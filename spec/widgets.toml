@@ -16,7 +16,7 @@ uses = [
     "use qt_gui",
     "use qt_geometry",
 ]
-handle_types = ["QPixmap", "QImage", "QIcon", "QPainter"]
+handle_types = ["QPixmap", "QImage", "QIcon", "QPainter", "QTextCursor"]
 cpp_includes = [
     "QAction", "QApplication", "QBoxLayout", "QCheckBox", "QComboBox", "QDialog", "QDoubleSpinBox",
     "QFileDialog", "QGridLayout", "QLabel", "QLineEdit", "QMainWindow", "QMenu", "QMenuBar",
@@ -35,6 +35,7 @@ cpp_includes = [
     "QBrush", "QColor", "QCursor", "QDragEnterEvent", "QDragLeaveEvent", "QDragMoveEvent", "QDropEvent", "QFont",
     "QListView", "QPainter", "QScreen", "QStyleOptionViewItem", "map",
     "QMimeData", "algorithm",
+    "QTextCursor", "QTextDocument", "QTextBlock", "QTextCharFormat", "QScrollBar",
 ]
 
 cpp_prelude = """
@@ -1076,6 +1077,140 @@ template <qtf_widget_event EV> static bool connect_event(void *s, const qtf_slot
     w->handlers[EV].push_back(ref);
     return true;
 }
+
+// ---------------------------------------------------------------------------
+// code editor
+
+// A character format from a Fortran QTextCharFormat (defined in the gui shim).
+QTextCharFormat qtf_char_format(const QColor &fg, const QColor &bg, bool bold, bool italic, int underline,
+                                const QColor &underlineColor);
+
+// An editor cursor at `position` (clamped to the document).
+static QTextCursor qtf_cursor_at(const QPlainTextEdit *e, int position) {
+    QTextCursor c(e->document());
+    c.setPosition(std::clamp(position, 0, std::max(e->document()->characterCount() - 1, 0)));
+    return c;
+}
+
+// Add extra selections from `start(i)` to `end(i)` with format `f` (`full`:
+// the whole width of the line, e.g. to highlight the current line).
+static void qtf_add_extra_selections(QPlainTextEdit *e, const int *starts, const int *ends, int n,
+                                     const QTextCharFormat &f, bool full) {
+    QList<QTextEdit::ExtraSelection> list = e->extraSelections();
+    const int last = std::max(e->document()->characterCount() - 1, 0);
+    for (int i = 0; i < n; ++i) {
+        QTextEdit::ExtraSelection sel;
+        sel.cursor = QTextCursor(e->document());
+        sel.cursor.setPosition(std::clamp(starts[i], 0, last));
+        sel.cursor.setPosition(std::clamp(ends[i], 0, last), QTextCursor::KeepAnchor);
+        sel.format = f;
+        if (full) sel.format.setProperty(QTextFormat::FullWidthSelection, true);
+        list << sel;
+    }
+    e->setExtraSelections(list);
+}
+
+static void qtf_set_cursor_position(QPlainTextEdit *e, int position) { e->setTextCursor(qtf_cursor_at(e, position)); }
+
+// QtfPlainTextEdit: a QPlainTextEdit for code editors. It makes the protected
+// layout API public (first visible block, block geometry, viewport margins),
+// forwards painting to Fortran slots after Qt has drawn the text, and keeps
+// an optional gutter (a QtfWidget left of the text, e.g. for line numbers)
+// placed and scrolled with the text.
+class QtfPlainTextEdit : public QPlainTextEdit {
+  public:
+    QtfPlainTextEdit(const QString &text, QWidget *parent) : QPlainTextEdit(text, parent) {
+        // the gutter follows the text: scrolled with it, repainted where the text is
+        connect(this, &QPlainTextEdit::updateRequest, this, [this](const QRect &r, int dy) {
+            if (!gutter_) return;
+            if (dy) gutter_->scroll(0, dy);
+            else gutter_->update(0, r.y(), gutter_->width(), r.height());
+        });
+    }
+
+    std::vector<qtf_slot> paint_handlers;
+
+    int firstVisibleBlockNumber() const { return firstVisibleBlock().blockNumber(); }
+
+    // The last block (partly) visible in the viewport.
+    int lastVisibleBlockNumber() const {
+        QTextBlock b = firstVisibleBlock();
+        const double bottom = viewport()->height();
+        int last = b.blockNumber();
+        for (; b.isValid(); b = b.next()) {
+            if (!b.isVisible()) continue;
+            if (blockBoundingGeometry(b).translated(contentOffset()).top() > bottom) break;
+            last = b.blockNumber();
+        }
+        return last;
+    }
+
+    // Block `n`'s rectangle in viewport coordinates (empty if there is no such block).
+    QRectF blockGeometry(int n) const {
+        const QTextBlock b = document()->findBlockByNumber(n);
+        return b.isValid() ? blockBoundingGeometry(b).translated(contentOffset()) : QRectF();
+    }
+
+    QPointF offset() const { return contentOffset(); }
+    void setMargins(int l, int t, int r, int b) { setViewportMargins(l, t, r, b); }
+    QMargins margins() const { return viewportMargins(); }
+
+    // The gutter, created on first use (hidden while its width is 0).
+    QtfWidget *gutter() {
+        if (!gutter_) {
+            gutter_ = new QtfWidget(this);
+            gutter_->setFocusPolicy(Qt::NoFocus);
+            gutter_->setVisible(gutter_width > 0);
+            placeGutter();
+        }
+        return gutter_;
+    }
+
+    void setGutterWidth(int w) {
+        gutter_width = std::max(w, 0);
+        const QMargins m = viewportMargins();
+        setViewportMargins(gutter_width, m.top(), m.right(), m.bottom());
+        gutter()->setVisible(gutter_width > 0);
+        placeGutter();
+        gutter_->update();
+    }
+
+    int gutterWidth() const { return gutter_width; }
+
+  protected:
+    void resizeEvent(QResizeEvent *e) override {
+        QPlainTextEdit::resizeEvent(e);
+        placeGutter();
+    }
+
+    void paintEvent(QPaintEvent *e) override {
+        QPlainTextEdit::paintEvent(e);
+        if (paint_handlers.empty()) return;
+        QPainter p(viewport());
+        qtf_args a{};
+        a.p = &p;
+        qtf_emit_all(paint_handlers, a);
+    }
+
+  private:
+    QtfWidget *gutter_ = nullptr;
+    int gutter_width = 0;
+
+    void placeGutter() {
+        if (!gutter_) return;
+        const QRect cr = contentsRect();
+        gutter_->setGeometry(QRect(cr.left(), cr.top(), gutter_width, cr.height()));
+    }
+};
+
+// Attach a slot to a QtfPlainTextEdit's viewportPaintEvent.
+static bool connect_viewport_paint(void *s, const qtf_slot &ref) {
+    auto *e = dynamic_cast<QtfPlainTextEdit *>(static_cast<QObject *>(s));
+    if (!e) return false;
+    e->paint_handlers.push_back(ref);
+    e->viewport()->update();
+    return true;
+}
 """
 
 fortran_decls = '''
@@ -1459,6 +1594,25 @@ fortran_procedures = '''
 '''
 
 # Value types passed to and returned from C++ field by field
+[value_types.QPointF]
+fields = ["x: double", "y: double"]
+cpp = "QPointF({x}, {y})"
+out = { x = "{v}.x()", y = "{v}.y()" }
+
+[value_types.QRectF]
+fields = ["x: double", "y: double", "width: double", "height: double"]
+cpp = "QRectF({x}, {y}, {width}, {height})"
+out = { x = "{v}.x()", y = "{v}.y()", width = "{v}.width()", height = "{v}.height()" }
+
+# a QColor that may be unset (invalid): a QTextCharFormat field
+[value_types.QColorOpt]
+fields = ["r: int", "g: int", "b: int", "a: int", "valid: bool"]
+cpp = "({valid} ? QColor({r}, {g}, {b}, {a}) : QColor())"
+
+[value_types.QTextCharFormat]
+fields = ["foreground: QColorOpt", "background: QColorOpt", "bold: bool", "italic: bool", "underlineStyle: int", "underlineColor: QColorOpt"]
+cpp = "qtf_char_format({foreground}, {background}, {bold}, {italic}, {underlineStyle}, {underlineColor})"
+
 [value_types.QColor]
 fields = ["r: int", "g: int", "b: int", "a: int", "valid: bool"]
 cpp = "QColor({r}, {g}, {b}, {a})"
@@ -1871,6 +2025,81 @@ methods = [
     "mapFrom(parent: QWidget, p: QPoint) -> QPoint -- A point in the coordinates of `parent` (an ancestor) as widget coordinates.",
     "childAt(p: QPoint) -> QWidget -- The visible child widget at `p` (a null handle if none).",
 ]
+cpp = """
+// Set a widget's font from the fields of a Fortran QFont (an empty family or
+// pointSize <= 0 keeps the widget's).
+QTF_API void qtf_qwidget_setFont(void *self, const char *family, int len, double pointSize, int bold, int italic) {
+    auto *w = as<QWidget>(self);
+    QFont f = w->font();
+    if (len > 0) f.setFamily(qtf_qstring(family, len));
+    if (pointSize > 0) f.setPointSizeF(pointSize);
+    f.setBold(bold != 0);
+    f.setItalic(italic != 0);
+    w->setFont(f);
+}
+
+// The family of a widget's font.
+QTF_API char *qtf_qwidget_fontFamily(void *self, int *len) { return qtf_to_c(as<QWidget>(self)->font().family(), len); }
+
+// The point size of a widget's font.
+QTF_API double qtf_qwidget_fontPointSize(void *self) { return as<QWidget>(self)->font().pointSizeF(); }
+
+// The width of `text` in a widget's font, in pixels.
+QTF_API int qtf_qwidget_textWidth(void *self, const char *text, int len) {
+    return as<QWidget>(self)->fontMetrics().horizontalAdvance(qtf_qstring(text, len));
+}
+
+// The line height (ascent + descent) of a widget's font, in pixels.
+QTF_API int qtf_qwidget_lineHeight(void *self) { return as<QWidget>(self)->fontMetrics().height(); }
+"""
+fortran_bindings = """
+procedure :: setFont => qwidget_setFont
+procedure :: font => qwidget_font
+procedure :: textWidth => qwidget_textWidth
+procedure :: lineHeight => qwidget_lineHeight
+"""
+fortran_procedures = """
+    !> Set the widget's font (and its children's); an empty family or a
+    !> pointSize <= 0 keeps the current one, e.g.
+    !> `call editor%setFont(QFont(QFontDatabase_fixedFamily(), 12d0))`.
+    subroutine qwidget_setFont(self, font)
+        class(QWidget), intent(in) :: self
+        type(QFont), intent(in) :: font
+        type(c_ptr) :: p
+        p = qtf_live(self, 'QWidget%setFont')
+        if (allocated(font%family)) then
+            call qtf_qwidget_setFont(p, font%family, len(font%family, c_int), font%pointSize, &
+                                     qtf_int(font%bold), qtf_int(font%italic))
+        else
+            call qtf_qwidget_setFont(p, '', 0_c_int, font%pointSize, qtf_int(font%bold), qtf_int(font%italic))
+        end if
+    end subroutine qwidget_setFont
+
+    !> The widget's font (family and point size; bold and italic are not read back).
+    function qwidget_font(self) result(font)
+        class(QWidget), intent(in) :: self
+        type(QFont) :: font
+        type(c_ptr) :: p, s
+        integer(c_int) :: n
+        p = qtf_live(self, 'QWidget%font')
+        s = qtf_qwidget_fontFamily(p, n)
+        font%family = qtf_take_string(s, n)
+        font%pointSize = qtf_qwidget_fontPointSize(p)
+    end function qwidget_font
+
+    !> The width of `text` in the widget's font, in pixels (e.g. of '9999' for a line-number gutter).
+    integer function qwidget_textWidth(self, text)
+        class(QWidget), intent(in) :: self
+        character(len=*), intent(in) :: text
+        qwidget_textWidth = qtf_qwidget_textWidth(qtf_live(self, 'QWidget%textWidth'), text, len(text, c_int))
+    end function qwidget_textWidth
+
+    !> The line height of the widget's font (ascent + descent), in pixels.
+    integer function qwidget_lineHeight(self)
+        class(QWidget), intent(in) :: self
+        qwidget_lineHeight = qtf_qwidget_lineHeight(qtf_live(self, 'QWidget%lineHeight'))
+    end function qwidget_lineHeight
+"""
 
 [[class]]
 name = "QtfWidget"
@@ -2895,9 +3124,27 @@ name = "QPlainTextEdit"
 base = "QFrame"
 doc = """
 A multi-line plain-text editor, efficient for large text and logs. For a log
-console: setReadOnly(.true.), setMaximumBlockCount(n), appendPlainText(line)."""
+console: setReadOnly(.true.), setMaximumBlockCount(n), appendPlainText(line).
+
+For a code editor, see QtfPlainTextEdit. The text is a QTextDocument
+(`document()`), edited through QTextCursor copies (`textCursor()`,
+`setTextCursor`). Extra selections color ranges of text without changing
+it (the current line, search matches, other cursors). Keys can be
+intercepted with a QtfEventFilter on the editor, mouse events with one on
+its `viewport()` (a slot that accepts the event replaces Qt's handling).
+Positions count Qt's characters (UTF-16 code units: bytes for ASCII text);
+pixel coordinates are the viewport's."""
 ctor = "(text: string = '', parent: QWidget?) -- An editor with initial `text`."
-signals = ["textChanged: void -- The text changed."]
+signals = [
+    "textChanged: void -- The text changed.",
+    "cursorPositionChanged: void -- The text cursor moved.",
+    "selectionChanged: void -- The selection changed.",
+    "blockCountChanged: int -- The number of blocks (lines) changed: the new count.",
+    "modificationChanged: bool -- The document's modified flag changed.",
+    "undoAvailable: bool -- Undo became possible (or impossible).",
+    "redoAvailable: bool -- Redo became possible (or impossible).",
+    "copyAvailable: bool -- Text was selected or deselected (so copy is possible or not).",
+]
 methods = [
     "setPlainText(text: string) -- Replace the contents.",
     "toPlainText() -> string -- The contents.",
@@ -2914,7 +3161,97 @@ methods = [
     "selectAll() -- Select all text.",
     "undo() -- Undo the last edit.",
     "redo() -- Redo the last undone edit.",
+    "cut() -- Cut the selection to the clipboard.",
+    "copy() -- Copy the selection to the clipboard.",
+    "paste() -- Paste the clipboard at the cursor.",
+    "document() -> QTextDocument -- The text document (owned by the editor).",
+    { sig = "textCursor() -> QTextCursor", cpp = "new QTextCursor({self}->textCursor())", doc = "A copy of the editor's cursor (delete it when done); to move the editor's cursor, pass it to `setTextCursor`." },
+    { sig = "setTextCursor(cursor: QTextCursor)", cpp = "{self}->setTextCursor(*{cursor})", doc = "Make the editor's cursor (and selection) a copy of `cursor`." },
+    { sig = "cursorPosition() -> int", cpp = "{self}->textCursor().position()", doc = "The position of the editor's cursor." },
+    { sig = "setCursorPosition(position: int)", cpp = "qtf_set_cursor_position({self}, {position})", doc = "Move the editor's cursor to `position` (dropping the selection)." },
+    { sig = "cursorForPosition(x: int, y: int) -> QTextCursor", cpp = "new QTextCursor({self}->cursorForPosition(QPoint({x}, {y})))", doc = "A new cursor at the text under viewport point (x, y) (delete it when done)." },
+    { sig = "positionAt(x: int, y: int) -> int", cpp = "{self}->cursorForPosition(QPoint({x}, {y})).position()", doc = "The document position of the text under viewport point (x, y)." },
+    { sig = "cursorRect() -> QRect", cpp = "{self}->cursorRect()", doc = "The rectangle of the editor's cursor, in viewport coordinates (e.g. to place a completion popup)." },
+    { sig = "cursorRectAt(position: int) -> QRect", cpp = "{self}->cursorRect(qtf_cursor_at({self}, {position}))", doc = "The rectangle a cursor at `position` would have, in viewport coordinates." },
+    "centerCursor() -- Scroll so that the cursor is vertically centered.",
+    "ensureCursorVisible() -- Scroll so that the cursor is visible.",
+    { sig = "find(text: string, flags: QTextDocument::FindFlags = 0) -> bool", cpp = "{self}->find({text}, {flags})", doc = "Select the next match of `text` after the cursor (QTextDocument_FindBackward: before it); false (and no change) if there is none." },
+    { sig = "findRegularExpression(pattern: string, flags: QTextDocument::FindFlags = 0) -> bool", cpp = "{self}->find(QRegularExpression({pattern}), {flags})", doc = "As `find`, for a regular expression." },
+    "setTabStopDistance(distance: double) -- The width of a tab, in pixels (e.g. 4 times a character width).",
+    "tabStopDistance() -> double -- The width of a tab, in pixels.",
+    "setOverwriteMode(overwrite: bool) -- Typing replaces the text after the cursor (insert key).",
+    "overwriteMode() -> bool -- True in overwrite mode.",
+    "setCursorWidth(width: int) -- The width of the text cursor, in pixels.",
+    "setCenterOnScroll(enabled: bool) -- Allow scrolling past the end, so the last line can be centered.",
+    { sig = "setUndoRedoEnabled(enable: bool)", doc = "Record edits for undo (the default) or not." },
+    { sig = "viewport() -> QWidget", doc = "The widget the text is drawn on, which gets the mouse events (e.g. for a QtfEventFilter)." },
+    { sig = "verticalScrollValue() -> int", cpp = "{self}->verticalScrollBar()->value()", doc = "The vertical scroll position (the first visible line, for plain text)." },
+    { sig = "setVerticalScrollValue(value: int)", cpp = "{self}->verticalScrollBar()->setValue({value})", doc = "Scroll vertically (to make line `value` the first visible one)." },
+    { sig = "addExtraSelection(start: int, end: int, format: QTextCharFormat, fullWidth: bool = .false.)", cpp = "qtf_add_extra_selections({self}, &{start}, &{end}, 1, {format}, {fullWidth})", doc = "Show text from position `start` to `end` with `format` (e.g. a background color), without changing the text. `fullWidth`: color the whole line (with start = end, e.g. the current line)." },
+    { sig = "addExtraSelections(starts: int[], ends: int[], format: QTextCharFormat, fullWidth: bool = .false.)", cpp = "qtf_add_extra_selections({self}, {starts}, {ends}, {n}, {format}, {fullWidth})", doc = "Add many extra selections with the same format (e.g. all search matches): from `starts(i)` to `ends(i)`." },
+    { sig = "clearExtraSelections()", cpp = "{self}->setExtraSelections(QList<QTextEdit::ExtraSelection>())", doc = "Remove all extra selections." },
+    { sig = "extraSelectionCount() -> int", cpp = "int({self}->extraSelections().size())", doc = "The number of extra selections." },
 ]
+fortran_bindings = "procedure :: textBlock => qplaintextedit_textBlock"
+fortran_procedures = """
+    !> The block (line) the editor's cursor is in.
+    function qplaintextedit_textBlock(self) result(block)
+        class(QPlainTextEdit), intent(in) :: self
+        type(QTextBlock) :: block
+        type(QTextCursor) :: c
+        c = self%textCursor()
+        block = c%block()
+        call c%delete()
+    end function qplaintextedit_textBlock
+"""
+
+[[class]]
+name = "QtfPlainTextEdit"
+base = "QPlainTextEdit"
+doc = """
+A QPlainTextEdit for code editors (`Qtf` marks a qt-fortran class). On top
+of QPlainTextEdit it offers what Qt keeps protected (the visible blocks,
+block geometry, viewport margins), painting over the text, and a gutter.
+
+- **Gutter** (e.g. line numbers, breakpoints): `setGutterWidth(w)` makes
+  room left of the text for `gutter()`, a QtfWidget kept in place and
+  scrolled with the text. Connect its `paintEvent` (and mouse events) and
+  draw each visible line at the height `blockBoundingGeometry(n)` gives:
+  the gutter and the viewport share their y coordinates.
+- **Painting over the text** (markers, rulers, extra cursors): slots of
+  `viewportPaintEvent` draw on the viewport after Qt has drawn the text.
+- **Keys and mouse**: as for QPlainTextEdit, a QtfEventFilter on the editor
+  (keys) or on `viewport()` (mouse) replaces Qt's handling of an event when a
+  slot accepts it (e.g. auto-indent on Return, Alt+click for a second cursor).
+
+Coordinates are the viewport's (and the gutter's: the same y)."""
+ctor = "(text: string = '', parent: QWidget?) -- A code editor with initial `text`."
+cpp_ctor = "new QtfPlainTextEdit({text}, {parent})"
+signals = [
+    { sig = "viewportPaintEvent: painter", connector = "connect_viewport_paint", doc = "The text was painted: slots draw over it with `painter` (on the viewport; do not end it)." },
+]
+methods = [
+    { sig = "firstVisibleBlockNumber() -> int", cpp = "{self}->firstVisibleBlockNumber()", doc = "The number of the first (partly) visible block (line)." },
+    { sig = "lastVisibleBlockNumber() -> int", cpp = "{self}->lastVisibleBlockNumber()", doc = "The number of the last (partly) visible block." },
+    { sig = "blockBoundingGeometry(number: int) -> QRectF", cpp = "{self}->blockGeometry({number})", doc = "The rectangle of block `number` in viewport coordinates (QPlainTextEdit::blockBoundingGeometry moved by the content offset); empty if there is no such block. Its `y` is where to draw the line's number in the gutter." },
+    { sig = "contentOffset() -> QPointF", cpp = "{self}->offset()", doc = "The content's origin in viewport coordinates (it moves as the text scrolls)." },
+    { sig = "setViewportMargins(left: int, top: int, right: int, bottom: int)", cpp = "{self}->setMargins({left}, {top}, {right}, {bottom})", doc = "Space around the viewport, e.g. for widgets placed beside the text (the left margin is the gutter's, see `setGutterWidth`)." },
+    { sig = "viewportMargins() -> QMargins", cpp = "{self}->margins()", doc = "The space around the viewport." },
+    { sig = "setGutterWidth(width: int)", cpp = "{self}->setGutterWidth({width})", doc = "Show the gutter `width` pixels wide left of the text (0: hide it)." },
+    { sig = "gutterWidth() -> int", cpp = "{self}->gutterWidth()", doc = "The gutter's width (0: hidden)." },
+    { sig = "gutter() -> QtfWidget", cpp = "{self}->gutter()", doc = "The gutter: a QtfWidget left of the text; connect its paintEvent (and mouse events) to draw line numbers, markers, ..." },
+]
+fortran_bindings = "procedure :: firstVisibleBlock => qtfplaintextedit_firstVisibleBlock"
+fortran_procedures = """
+    !> The first (partly) visible block (line).
+    function qtfplaintextedit_firstVisibleBlock(self) result(block)
+        class(QtfPlainTextEdit), intent(in) :: self
+        type(QTextBlock) :: block
+        type(QTextDocument) :: doc
+        doc = self%document()
+        block = doc%findBlockByNumber(self%firstVisibleBlockNumber())
+    end function qtfplaintextedit_firstVisibleBlock
+"""
 
 # ---------------------------------------------------------------------------
 # containers

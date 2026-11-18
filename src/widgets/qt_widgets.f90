@@ -448,6 +448,10 @@ module qt_widgets
         procedure :: mapTo => qwidget_mapTo
         procedure :: mapFrom => qwidget_mapFrom
         procedure :: childAt => qwidget_childAt
+        procedure :: setFont => qwidget_setFont
+        procedure :: font => qwidget_font
+        procedure :: textWidth => qwidget_textWidth
+        procedure :: lineHeight => qwidget_lineHeight
     end type QWidget
     !> Constructor: `QWidget([parent])`.
     interface QWidget
@@ -1407,8 +1411,24 @@ module qt_widgets
 
     !> A multi-line plain-text editor, efficient for large text and logs. For a log
     !> console: setReadOnly(.true.), setMaximumBlockCount(n), appendPlainText(line).
+    !>
+    !> For a code editor, see QtfPlainTextEdit. The text is a QTextDocument
+    !> (`document()`), edited through QTextCursor copies (`textCursor()`,
+    !> `setTextCursor`). Extra selections color ranges of text without changing
+    !> it (the current line, search matches, other cursors). Keys can be
+    !> intercepted with a QtfEventFilter on the editor, mouse events with one on
+    !> its `viewport()` (a slot that accepts the event replaces Qt's handling).
+    !> Positions count Qt's characters (UTF-16 code units: bytes for ASCII text);
+    !> pixel coordinates are the viewport's.
     type, extends(QFrame), public :: QPlainTextEdit
         type(QSignal) :: textChanged   !! The text changed.
+        type(QSignal) :: cursorPositionChanged   !! The text cursor moved.
+        type(QSignal) :: selectionChanged   !! The selection changed.
+        type(QSignalInt) :: blockCountChanged   !! The number of blocks (lines) changed: the new count.
+        type(QSignalBool) :: modificationChanged   !! The document's modified flag changed.
+        type(QSignalBool) :: undoAvailable   !! Undo became possible (or impossible).
+        type(QSignalBool) :: redoAvailable   !! Redo became possible (or impossible).
+        type(QSignalBool) :: copyAvailable   !! Text was selected or deselected (so copy is possible or not).
     contains
         procedure :: attach => qplaintextedit_attach
         procedure :: setPlainText => qplaintextedit_setPlainText
@@ -1426,11 +1446,78 @@ module qt_widgets
         procedure :: selectAll => qplaintextedit_selectAll
         procedure :: undo => qplaintextedit_undo
         procedure :: redo => qplaintextedit_redo
+        procedure :: cut => qplaintextedit_cut
+        procedure :: copy => qplaintextedit_copy
+        procedure :: paste => qplaintextedit_paste
+        procedure :: document => qplaintextedit_document
+        procedure :: textCursor => qplaintextedit_textCursor
+        procedure :: setTextCursor => qplaintextedit_setTextCursor
+        procedure :: cursorPosition => qplaintextedit_cursorPosition
+        procedure :: setCursorPosition => qplaintextedit_setCursorPosition
+        procedure :: cursorForPosition => qplaintextedit_cursorForPosition
+        procedure :: positionAt => qplaintextedit_positionAt
+        procedure :: cursorRect => qplaintextedit_cursorRect
+        procedure :: cursorRectAt => qplaintextedit_cursorRectAt
+        procedure :: centerCursor => qplaintextedit_centerCursor
+        procedure :: ensureCursorVisible => qplaintextedit_ensureCursorVisible
+        procedure :: find => qplaintextedit_find
+        procedure :: findRegularExpression => qplaintextedit_findRegularExpression
+        procedure :: setTabStopDistance => qplaintextedit_setTabStopDistance
+        procedure :: tabStopDistance => qplaintextedit_tabStopDistance
+        procedure :: setOverwriteMode => qplaintextedit_setOverwriteMode
+        procedure :: overwriteMode => qplaintextedit_overwriteMode
+        procedure :: setCursorWidth => qplaintextedit_setCursorWidth
+        procedure :: setCenterOnScroll => qplaintextedit_setCenterOnScroll
+        procedure :: setUndoRedoEnabled => qplaintextedit_setUndoRedoEnabled
+        procedure :: viewport => qplaintextedit_viewport
+        procedure :: verticalScrollValue => qplaintextedit_verticalScrollValue
+        procedure :: setVerticalScrollValue => qplaintextedit_setVerticalScrollValue
+        procedure :: addExtraSelection => qplaintextedit_addExtraSelection
+        procedure :: addExtraSelections => qplaintextedit_addExtraSelections
+        procedure :: clearExtraSelections => qplaintextedit_clearExtraSelections
+        procedure :: extraSelectionCount => qplaintextedit_extraSelectionCount
+        procedure :: textBlock => qplaintextedit_textBlock
     end type QPlainTextEdit
     !> Constructor: `QPlainTextEdit([text, parent])`.
     interface QPlainTextEdit
         module procedure :: qplaintextedit_new
     end interface QPlainTextEdit
+
+    !> A QPlainTextEdit for code editors (`Qtf` marks a qt-fortran class). On top
+    !> of QPlainTextEdit it offers what Qt keeps protected (the visible blocks,
+    !> block geometry, viewport margins), painting over the text, and a gutter.
+    !>
+    !> - **Gutter** (e.g. line numbers, breakpoints): `setGutterWidth(w)` makes
+    !>   room left of the text for `gutter()`, a QtfWidget kept in place and
+    !>   scrolled with the text. Connect its `paintEvent` (and mouse events) and
+    !>   draw each visible line at the height `blockBoundingGeometry(n)` gives:
+    !>   the gutter and the viewport share their y coordinates.
+    !> - **Painting over the text** (markers, rulers, extra cursors): slots of
+    !>   `viewportPaintEvent` draw on the viewport after Qt has drawn the text.
+    !> - **Keys and mouse**: as for QPlainTextEdit, a QtfEventFilter on the editor
+    !>   (keys) or on `viewport()` (mouse) replaces Qt's handling of an event when a
+    !>   slot accepts it (e.g. auto-indent on Return, Alt+click for a second cursor).
+    !>
+    !> Coordinates are the viewport's (and the gutter's: the same y).
+    type, extends(QPlainTextEdit), public :: QtfPlainTextEdit
+        type(QSignalPainter) :: viewportPaintEvent   !! The text was painted: slots draw over it with `painter` (on the viewport; do not end it).
+    contains
+        procedure :: attach => qtfplaintextedit_attach
+        procedure :: firstVisibleBlockNumber => qtfplaintextedit_firstVisibleBlockNumber
+        procedure :: lastVisibleBlockNumber => qtfplaintextedit_lastVisibleBlockNumber
+        procedure :: blockBoundingGeometry => qtfplaintextedit_blockBoundingGeometry
+        procedure :: contentOffset => qtfplaintextedit_contentOffset
+        procedure :: setViewportMargins => qtfplaintextedit_setViewportMargins
+        procedure :: viewportMargins => qtfplaintextedit_viewportMargins
+        procedure :: setGutterWidth => qtfplaintextedit_setGutterWidth
+        procedure :: gutterWidth => qtfplaintextedit_gutterWidth
+        procedure :: gutter => qtfplaintextedit_gutter
+        procedure :: firstVisibleBlock => qtfplaintextedit_firstVisibleBlock
+    end type QtfPlainTextEdit
+    !> Constructor: `QtfPlainTextEdit([text, parent])`.
+    interface QtfPlainTextEdit
+        module procedure :: qtfplaintextedit_new
+    end interface QtfPlainTextEdit
 
     !> Pages of widgets selected by tabs. Indices are 0-based.
     type, extends(QWidget), public :: QTabWidget
@@ -3074,6 +3161,47 @@ contains
         type(QWidget) :: res
         call res%attach(qtf_qwidget_childAt(qtf_live(self, 'QWidget%childAt'), int(p%x, c_int), int(p%y, c_int)))
     end function qwidget_childAt
+
+    !> Set the widget's font (and its children's); an empty family or a
+    !> pointSize <= 0 keeps the current one, e.g.
+    !> `call editor%setFont(QFont(QFontDatabase_fixedFamily(), 12d0))`.
+    subroutine qwidget_setFont(self, font)
+        class(QWidget), intent(in) :: self
+        type(QFont), intent(in) :: font
+        type(c_ptr) :: p
+        p = qtf_live(self, 'QWidget%setFont')
+        if (allocated(font%family)) then
+            call qtf_qwidget_setFont(p, font%family, len(font%family, c_int), font%pointSize, &
+                                     qtf_int(font%bold), qtf_int(font%italic))
+        else
+            call qtf_qwidget_setFont(p, '', 0_c_int, font%pointSize, qtf_int(font%bold), qtf_int(font%italic))
+        end if
+    end subroutine qwidget_setFont
+
+    !> The widget's font (family and point size; bold and italic are not read back).
+    function qwidget_font(self) result(font)
+        class(QWidget), intent(in) :: self
+        type(QFont) :: font
+        type(c_ptr) :: p, s
+        integer(c_int) :: n
+        p = qtf_live(self, 'QWidget%font')
+        s = qtf_qwidget_fontFamily(p, n)
+        font%family = qtf_take_string(s, n)
+        font%pointSize = qtf_qwidget_fontPointSize(p)
+    end function qwidget_font
+
+    !> The width of `text` in the widget's font, in pixels (e.g. of '9999' for a line-number gutter).
+    integer function qwidget_textWidth(self, text)
+        class(QWidget), intent(in) :: self
+        character(len=*), intent(in) :: text
+        qwidget_textWidth = qtf_qwidget_textWidth(qtf_live(self, 'QWidget%textWidth'), text, len(text, c_int))
+    end function qwidget_textWidth
+
+    !> The line height of the widget's font (ascent + descent), in pixels.
+    integer function qwidget_lineHeight(self)
+        class(QWidget), intent(in) :: self
+        qwidget_lineHeight = qtf_qwidget_lineHeight(qtf_live(self, 'QWidget%lineHeight'))
+    end function qwidget_lineHeight
 
     !> Bind to a C++ QtfWidget and its signals.
     subroutine qtfwidget_attach(self, ptr)
@@ -7029,6 +7157,13 @@ contains
         type(c_ptr), intent(in) :: ptr
         call self%QFrame%attach(ptr)
         self%textChanged = QSignal(ptr, QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED, self%serial)
+        self%cursorPositionChanged = QSignal(ptr, QTF_SIG_QPLAINTEXTEDIT_CURSORPOSITIONCHANGED, self%serial)
+        self%selectionChanged = QSignal(ptr, QTF_SIG_QPLAINTEXTEDIT_SELECTIONCHANGED, self%serial)
+        self%blockCountChanged = QSignalInt(ptr, QTF_SIG_QPLAINTEXTEDIT_BLOCKCOUNTCHANGED, self%serial)
+        self%modificationChanged = QSignalBool(ptr, QTF_SIG_QPLAINTEXTEDIT_MODIFICATIONCHANGED, self%serial)
+        self%undoAvailable = QSignalBool(ptr, QTF_SIG_QPLAINTEXTEDIT_UNDOAVAILABLE, self%serial)
+        self%redoAvailable = QSignalBool(ptr, QTF_SIG_QPLAINTEXTEDIT_REDOAVAILABLE, self%serial)
+        self%copyAvailable = QSignalBool(ptr, QTF_SIG_QPLAINTEXTEDIT_COPYAVAILABLE, self%serial)
     end subroutine qplaintextedit_attach
 
     !> An editor with initial `text`.
@@ -7149,6 +7284,411 @@ contains
         class(QPlainTextEdit), intent(in) :: self
         call qtf_qplaintextedit_redo(qtf_live(self, 'QPlainTextEdit%redo'))
     end subroutine qplaintextedit_redo
+
+    !> Cut the selection to the clipboard.
+    subroutine qplaintextedit_cut(self)
+        class(QPlainTextEdit), intent(in) :: self
+        call qtf_qplaintextedit_cut(qtf_live(self, 'QPlainTextEdit%cut'))
+    end subroutine qplaintextedit_cut
+
+    !> Copy the selection to the clipboard.
+    subroutine qplaintextedit_copy(self)
+        class(QPlainTextEdit), intent(in) :: self
+        call qtf_qplaintextedit_copy(qtf_live(self, 'QPlainTextEdit%copy'))
+    end subroutine qplaintextedit_copy
+
+    !> Paste the clipboard at the cursor.
+    subroutine qplaintextedit_paste(self)
+        class(QPlainTextEdit), intent(in) :: self
+        call qtf_qplaintextedit_paste(qtf_live(self, 'QPlainTextEdit%paste'))
+    end subroutine qplaintextedit_paste
+
+    !> The text document (owned by the editor).
+    function qplaintextedit_document(self) result(res)
+        class(QPlainTextEdit), intent(in) :: self
+        type(QTextDocument) :: res
+        call res%attach(qtf_qplaintextedit_document(qtf_live(self, 'QPlainTextEdit%document')))
+    end function qplaintextedit_document
+
+    !> A copy of the editor's cursor (delete it when done); to move the editor's cursor, pass it to `setTextCursor`.
+    function qplaintextedit_textCursor(self) result(res)
+        class(QPlainTextEdit), intent(in) :: self
+        type(QTextCursor) :: res
+        res%ptr = qtf_qplaintextedit_textCursor(qtf_live(self, 'QPlainTextEdit%textCursor'))
+    end function qplaintextedit_textCursor
+
+    !> Make the editor's cursor (and selection) a copy of `cursor`.
+    subroutine qplaintextedit_setTextCursor(self, cursor)
+        class(QPlainTextEdit), intent(in) :: self
+        class(QTextCursor), intent(in) :: cursor
+        call qtf_qplaintextedit_setTextCursor(qtf_live(self, 'QPlainTextEdit%setTextCursor'), cursor%ptr)
+    end subroutine qplaintextedit_setTextCursor
+
+    !> The position of the editor's cursor.
+    function qplaintextedit_cursorPosition(self) result(res)
+        class(QPlainTextEdit), intent(in) :: self
+        integer :: res
+        res = qtf_qplaintextedit_cursorPosition(qtf_live(self, 'QPlainTextEdit%cursorPosition'))
+    end function qplaintextedit_cursorPosition
+
+    !> Move the editor's cursor to `position` (dropping the selection).
+    subroutine qplaintextedit_setCursorPosition(self, position)
+        class(QPlainTextEdit), intent(in) :: self
+        integer, intent(in) :: position
+        call qtf_qplaintextedit_setCursorPosition(qtf_live(self, 'QPlainTextEdit%setCursorPosition'), int(position, &
+                c_int))
+    end subroutine qplaintextedit_setCursorPosition
+
+    !> A new cursor at the text under viewport point (x, y) (delete it when done).
+    function qplaintextedit_cursorForPosition(self, x, y) result(res)
+        class(QPlainTextEdit), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        type(QTextCursor) :: res
+        res%ptr = qtf_qplaintextedit_cursorForPosition(qtf_live(self, 'QPlainTextEdit%cursorForPosition'), int(x, &
+                c_int), int(y, c_int))
+    end function qplaintextedit_cursorForPosition
+
+    !> The document position of the text under viewport point (x, y).
+    function qplaintextedit_positionAt(self, x, y) result(res)
+        class(QPlainTextEdit), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        integer :: res
+        res = qtf_qplaintextedit_positionAt(qtf_live(self, 'QPlainTextEdit%positionAt'), int(x, c_int), int(y, c_int))
+    end function qplaintextedit_positionAt
+
+    !> The rectangle of the editor's cursor, in viewport coordinates (e.g. to place a completion popup).
+    function qplaintextedit_cursorRect(self) result(res)
+        class(QPlainTextEdit), intent(in) :: self
+        type(QRect) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qplaintextedit_cursorRect(qtf_live(self, 'QPlainTextEdit%cursorRect'), r_x, r_y, r_width, r_height)
+        res%x = int(r_x)
+        res%y = int(r_y)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qplaintextedit_cursorRect
+
+    !> The rectangle a cursor at `position` would have, in viewport coordinates.
+    function qplaintextedit_cursorRectAt(self, position) result(res)
+        class(QPlainTextEdit), intent(in) :: self
+        integer, intent(in) :: position
+        type(QRect) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qplaintextedit_cursorRectAt(qtf_live(self, 'QPlainTextEdit%cursorRectAt'), int(position, c_int), &
+                r_x, r_y, r_width, r_height)
+        res%x = int(r_x)
+        res%y = int(r_y)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qplaintextedit_cursorRectAt
+
+    !> Scroll so that the cursor is vertically centered.
+    subroutine qplaintextedit_centerCursor(self)
+        class(QPlainTextEdit), intent(in) :: self
+        call qtf_qplaintextedit_centerCursor(qtf_live(self, 'QPlainTextEdit%centerCursor'))
+    end subroutine qplaintextedit_centerCursor
+
+    !> Scroll so that the cursor is visible.
+    subroutine qplaintextedit_ensureCursorVisible(self)
+        class(QPlainTextEdit), intent(in) :: self
+        call qtf_qplaintextedit_ensureCursorVisible(qtf_live(self, 'QPlainTextEdit%ensureCursorVisible'))
+    end subroutine qplaintextedit_ensureCursorVisible
+
+    !> Select the next match of `text` after the cursor (QTextDocument_FindBackward: before it); false (and no change) if there is none.
+    function qplaintextedit_find(self, text, flags) result(res)
+        class(QPlainTextEdit), intent(in) :: self
+        character(len=*), intent(in) :: text
+        integer, intent(in), optional :: flags
+        logical :: res
+        integer(c_int) :: flags_
+        flags_ = 0
+        if (present(flags)) flags_ = int(flags, c_int)
+        res = qtf_logical(qtf_qplaintextedit_find(qtf_live(self, 'QPlainTextEdit%find'), text, len(text, c_int), &
+                flags_))
+    end function qplaintextedit_find
+
+    !> As `find`, for a regular expression.
+    function qplaintextedit_findRegularExpression(self, pattern, flags) result(res)
+        class(QPlainTextEdit), intent(in) :: self
+        character(len=*), intent(in) :: pattern
+        integer, intent(in), optional :: flags
+        logical :: res
+        integer(c_int) :: flags_
+        flags_ = 0
+        if (present(flags)) flags_ = int(flags, c_int)
+        res = qtf_logical(qtf_qplaintextedit_findRegularExpression(qtf_live(self, &
+                'QPlainTextEdit%findRegularExpression'), pattern, len(pattern, c_int), flags_))
+    end function qplaintextedit_findRegularExpression
+
+    !> The width of a tab, in pixels (e.g. 4 times a character width).
+    subroutine qplaintextedit_setTabStopDistance(self, distance)
+        class(QPlainTextEdit), intent(in) :: self
+        real(c_double), intent(in) :: distance
+        call qtf_qplaintextedit_setTabStopDistance(qtf_live(self, 'QPlainTextEdit%setTabStopDistance'), distance)
+    end subroutine qplaintextedit_setTabStopDistance
+
+    !> The width of a tab, in pixels.
+    function qplaintextedit_tabStopDistance(self) result(res)
+        class(QPlainTextEdit), intent(in) :: self
+        real(c_double) :: res
+        res = qtf_qplaintextedit_tabStopDistance(qtf_live(self, 'QPlainTextEdit%tabStopDistance'))
+    end function qplaintextedit_tabStopDistance
+
+    !> Typing replaces the text after the cursor (insert key).
+    subroutine qplaintextedit_setOverwriteMode(self, overwrite)
+        class(QPlainTextEdit), intent(in) :: self
+        logical, intent(in) :: overwrite
+        call qtf_qplaintextedit_setOverwriteMode(qtf_live(self, 'QPlainTextEdit%setOverwriteMode'), qtf_int(overwrite))
+    end subroutine qplaintextedit_setOverwriteMode
+
+    !> True in overwrite mode.
+    function qplaintextedit_overwriteMode(self) result(res)
+        class(QPlainTextEdit), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qplaintextedit_overwriteMode(qtf_live(self, 'QPlainTextEdit%overwriteMode')))
+    end function qplaintextedit_overwriteMode
+
+    !> The width of the text cursor, in pixels.
+    subroutine qplaintextedit_setCursorWidth(self, width)
+        class(QPlainTextEdit), intent(in) :: self
+        integer, intent(in) :: width
+        call qtf_qplaintextedit_setCursorWidth(qtf_live(self, 'QPlainTextEdit%setCursorWidth'), int(width, c_int))
+    end subroutine qplaintextedit_setCursorWidth
+
+    !> Allow scrolling past the end, so the last line can be centered.
+    subroutine qplaintextedit_setCenterOnScroll(self, enabled)
+        class(QPlainTextEdit), intent(in) :: self
+        logical, intent(in) :: enabled
+        call qtf_qplaintextedit_setCenterOnScroll(qtf_live(self, 'QPlainTextEdit%setCenterOnScroll'), qtf_int(enabled))
+    end subroutine qplaintextedit_setCenterOnScroll
+
+    !> Record edits for undo (the default) or not.
+    subroutine qplaintextedit_setUndoRedoEnabled(self, enable)
+        class(QPlainTextEdit), intent(in) :: self
+        logical, intent(in) :: enable
+        call qtf_qplaintextedit_setUndoRedoEnabled(qtf_live(self, 'QPlainTextEdit%setUndoRedoEnabled'), qtf_int(enable))
+    end subroutine qplaintextedit_setUndoRedoEnabled
+
+    !> The widget the text is drawn on, which gets the mouse events (e.g. for a QtfEventFilter).
+    function qplaintextedit_viewport(self) result(res)
+        class(QPlainTextEdit), intent(in) :: self
+        type(QWidget) :: res
+        call res%attach(qtf_qplaintextedit_viewport(qtf_live(self, 'QPlainTextEdit%viewport')))
+    end function qplaintextedit_viewport
+
+    !> The vertical scroll position (the first visible line, for plain text).
+    function qplaintextedit_verticalScrollValue(self) result(res)
+        class(QPlainTextEdit), intent(in) :: self
+        integer :: res
+        res = qtf_qplaintextedit_verticalScrollValue(qtf_live(self, 'QPlainTextEdit%verticalScrollValue'))
+    end function qplaintextedit_verticalScrollValue
+
+    !> Scroll vertically (to make line `value` the first visible one).
+    subroutine qplaintextedit_setVerticalScrollValue(self, value)
+        class(QPlainTextEdit), intent(in) :: self
+        integer, intent(in) :: value
+        call qtf_qplaintextedit_setVerticalScrollValue(qtf_live(self, 'QPlainTextEdit%setVerticalScrollValue'), &
+                int(value, c_int))
+    end subroutine qplaintextedit_setVerticalScrollValue
+
+    !> Show text from position `start` to `end` with `format` (e.g. a background color), without changing the text. `fullWidth`: color the whole line (with start = end, e.g. the current line).
+    subroutine qplaintextedit_addExtraSelection(self, start, end, format, fullWidth)
+        class(QPlainTextEdit), intent(in) :: self
+        integer, intent(in) :: start
+        integer, intent(in) :: end
+        type(QTextCharFormat), intent(in) :: format
+        logical, intent(in), optional :: fullWidth
+        logical :: fullWidth_
+        fullWidth_ = .false.
+        if (present(fullWidth)) fullWidth_ = fullWidth
+        call qtf_qplaintextedit_addExtraSelection(qtf_live(self, 'QPlainTextEdit%addExtraSelection'), int(start, &
+                c_int), int(end, c_int), int(format%foreground%r, c_int), int(format%foreground%g, c_int), &
+                        int(format%foreground%b, c_int), int(format%foreground%a, c_int), &
+                                qtf_int(format%foreground%valid), int(format%background%r, c_int), &
+                                        int(format%background%g, c_int), int(format%background%b, c_int), &
+                                                int(format%background%a, c_int), qtf_int(format%background%valid), &
+                                                        qtf_int(format%bold), qtf_int(format%italic), &
+                                                                int(format%underlineStyle, c_int), &
+                                                                        int(format%underlineColor%r, c_int), &
+                                                                                int(format%underlineColor%g, c_int), &
+                                                                                        int(format%underlineColor%b, &
+                                                                                                c_int), &
+                                                                                                        int(format%underlineColor%a, c_int), qtf_int(format%underlineColor%valid), qtf_int(fullWidth_))
+    end subroutine qplaintextedit_addExtraSelection
+
+    !> Add many extra selections with the same format (e.g. all search matches): from `starts(i)` to `ends(i)`.
+    subroutine qplaintextedit_addExtraSelections(self, starts, ends, format, fullWidth)
+        class(QPlainTextEdit), intent(in) :: self
+        integer, intent(in) :: starts(:)
+        integer, intent(in) :: ends(:)
+        type(QTextCharFormat), intent(in) :: format
+        logical, intent(in), optional :: fullWidth
+        logical :: fullWidth_
+        fullWidth_ = .false.
+        if (present(fullWidth)) fullWidth_ = fullWidth
+        call qtf_qplaintextedit_addExtraSelections(qtf_live(self, 'QPlainTextEdit%addExtraSelections'), int(starts, &
+                c_int), int(ends, c_int), int(format%foreground%r, c_int), int(format%foreground%g, c_int), &
+                        int(format%foreground%b, c_int), int(format%foreground%a, c_int), &
+                                qtf_int(format%foreground%valid), int(format%background%r, c_int), &
+                                        int(format%background%g, c_int), int(format%background%b, c_int), &
+                                                int(format%background%a, c_int), qtf_int(format%background%valid), &
+                                                        qtf_int(format%bold), qtf_int(format%italic), &
+                                                                int(format%underlineStyle, c_int), &
+                                                                        int(format%underlineColor%r, c_int), &
+                                                                                int(format%underlineColor%g, c_int), &
+                                                                                        int(format%underlineColor%b, &
+                                                                                                c_int), &
+                                                                                                        int(format%underlineColor%a, c_int), qtf_int(format%underlineColor%valid), qtf_int(fullWidth_), int(min(size(starts), size(ends)), c_int))
+    end subroutine qplaintextedit_addExtraSelections
+
+    !> Remove all extra selections.
+    subroutine qplaintextedit_clearExtraSelections(self)
+        class(QPlainTextEdit), intent(in) :: self
+        call qtf_qplaintextedit_clearExtraSelections(qtf_live(self, 'QPlainTextEdit%clearExtraSelections'))
+    end subroutine qplaintextedit_clearExtraSelections
+
+    !> The number of extra selections.
+    function qplaintextedit_extraSelectionCount(self) result(res)
+        class(QPlainTextEdit), intent(in) :: self
+        integer :: res
+        res = qtf_qplaintextedit_extraSelectionCount(qtf_live(self, 'QPlainTextEdit%extraSelectionCount'))
+    end function qplaintextedit_extraSelectionCount
+
+    !> The block (line) the editor's cursor is in.
+    function qplaintextedit_textBlock(self) result(block)
+        class(QPlainTextEdit), intent(in) :: self
+        type(QTextBlock) :: block
+        type(QTextCursor) :: c
+        c = self%textCursor()
+        block = c%block()
+        call c%delete()
+    end function qplaintextedit_textBlock
+
+    !> Bind to a C++ QtfPlainTextEdit and its signals.
+    subroutine qtfplaintextedit_attach(self, ptr)
+        class(QtfPlainTextEdit), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QPlainTextEdit%attach(ptr)
+        self%viewportPaintEvent = QSignalPainter(ptr, QTF_SIG_QTFPLAINTEXTEDIT_VIEWPORTPAINTEVENT, self%serial)
+    end subroutine qtfplaintextedit_attach
+
+    !> A code editor with initial `text`.
+    function qtfplaintextedit_new(text, parent) result(res)
+        character(len=*), intent(in), optional :: text
+        class(QWidget), intent(in), optional :: parent
+        type(QtfPlainTextEdit) :: res
+        character(len=:), allocatable :: text_
+        text_ = ''
+        if (present(text)) text_ = text
+        call res%attach(qtf_qtfplaintextedit_new(text_, len(text_, c_int), qtf_ptr(parent)))
+    end function qtfplaintextedit_new
+
+    !> The number of the first (partly) visible block (line).
+    function qtfplaintextedit_firstVisibleBlockNumber(self) result(res)
+        class(QtfPlainTextEdit), intent(in) :: self
+        integer :: res
+        res = qtf_qtfplaintextedit_firstVisibleBlockNumber(qtf_live(self, 'QtfPlainTextEdit%firstVisibleBlockNumber'))
+    end function qtfplaintextedit_firstVisibleBlockNumber
+
+    !> The number of the last (partly) visible block.
+    function qtfplaintextedit_lastVisibleBlockNumber(self) result(res)
+        class(QtfPlainTextEdit), intent(in) :: self
+        integer :: res
+        res = qtf_qtfplaintextedit_lastVisibleBlockNumber(qtf_live(self, 'QtfPlainTextEdit%lastVisibleBlockNumber'))
+    end function qtfplaintextedit_lastVisibleBlockNumber
+
+    !> The rectangle of block `number` in viewport coordinates (QPlainTextEdit::blockBoundingGeometry moved by the content offset); empty if there is no such block. Its `y` is where to draw the line's number in the gutter.
+    function qtfplaintextedit_blockBoundingGeometry(self, number) result(res)
+        class(QtfPlainTextEdit), intent(in) :: self
+        integer, intent(in) :: number
+        type(QRectF) :: res
+        real(c_double) :: r_x
+        real(c_double) :: r_y
+        real(c_double) :: r_width
+        real(c_double) :: r_height
+        call qtf_qtfplaintextedit_blockBoundingGeometry(qtf_live(self, 'QtfPlainTextEdit%blockBoundingGeometry'), &
+                int(number, c_int), r_x, r_y, r_width, r_height)
+        res%x = r_x
+        res%y = r_y
+        res%width = r_width
+        res%height = r_height
+    end function qtfplaintextedit_blockBoundingGeometry
+
+    !> The content's origin in viewport coordinates (it moves as the text scrolls).
+    function qtfplaintextedit_contentOffset(self) result(res)
+        class(QtfPlainTextEdit), intent(in) :: self
+        type(QPointF) :: res
+        real(c_double) :: r_x
+        real(c_double) :: r_y
+        call qtf_qtfplaintextedit_contentOffset(qtf_live(self, 'QtfPlainTextEdit%contentOffset'), r_x, r_y)
+        res%x = r_x
+        res%y = r_y
+    end function qtfplaintextedit_contentOffset
+
+    !> Space around the viewport, e.g. for widgets placed beside the text (the left margin is the gutter's, see `setGutterWidth`).
+    subroutine qtfplaintextedit_setViewportMargins(self, left, top, right, bottom)
+        class(QtfPlainTextEdit), intent(in) :: self
+        integer, intent(in) :: left
+        integer, intent(in) :: top
+        integer, intent(in) :: right
+        integer, intent(in) :: bottom
+        call qtf_qtfplaintextedit_setViewportMargins(qtf_live(self, 'QtfPlainTextEdit%setViewportMargins'), int(left, &
+                c_int), int(top, c_int), int(right, c_int), int(bottom, c_int))
+    end subroutine qtfplaintextedit_setViewportMargins
+
+    !> The space around the viewport.
+    function qtfplaintextedit_viewportMargins(self) result(res)
+        class(QtfPlainTextEdit), intent(in) :: self
+        type(QMargins) :: res
+        integer(c_int) :: r_left
+        integer(c_int) :: r_top
+        integer(c_int) :: r_right
+        integer(c_int) :: r_bottom
+        call qtf_qtfplaintextedit_viewportMargins(qtf_live(self, 'QtfPlainTextEdit%viewportMargins'), r_left, r_top, &
+                r_right, r_bottom)
+        res%left = int(r_left)
+        res%top = int(r_top)
+        res%right = int(r_right)
+        res%bottom = int(r_bottom)
+    end function qtfplaintextedit_viewportMargins
+
+    !> Show the gutter `width` pixels wide left of the text (0: hide it).
+    subroutine qtfplaintextedit_setGutterWidth(self, width)
+        class(QtfPlainTextEdit), intent(in) :: self
+        integer, intent(in) :: width
+        call qtf_qtfplaintextedit_setGutterWidth(qtf_live(self, 'QtfPlainTextEdit%setGutterWidth'), int(width, c_int))
+    end subroutine qtfplaintextedit_setGutterWidth
+
+    !> The gutter's width (0: hidden).
+    function qtfplaintextedit_gutterWidth(self) result(res)
+        class(QtfPlainTextEdit), intent(in) :: self
+        integer :: res
+        res = qtf_qtfplaintextedit_gutterWidth(qtf_live(self, 'QtfPlainTextEdit%gutterWidth'))
+    end function qtfplaintextedit_gutterWidth
+
+    !> The gutter: a QtfWidget left of the text; connect its paintEvent (and mouse events) to draw line numbers, markers, ...
+    function qtfplaintextedit_gutter(self) result(res)
+        class(QtfPlainTextEdit), intent(in) :: self
+        type(QtfWidget) :: res
+        call res%attach(qtf_qtfplaintextedit_gutter(qtf_live(self, 'QtfPlainTextEdit%gutter')))
+    end function qtfplaintextedit_gutter
+
+    !> The first (partly) visible block (line).
+    function qtfplaintextedit_firstVisibleBlock(self) result(block)
+        class(QtfPlainTextEdit), intent(in) :: self
+        type(QTextBlock) :: block
+        type(QTextDocument) :: doc
+        doc = self%document()
+        block = doc%findBlockByNumber(self%firstVisibleBlockNumber())
+    end function qtfplaintextedit_firstVisibleBlock
 
     !> Bind to a C++ QTabWidget and its signals.
     subroutine qtabwidget_attach(self, ptr)

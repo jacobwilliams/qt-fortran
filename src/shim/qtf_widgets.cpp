@@ -78,6 +78,7 @@
 #include <QRegularExpression>
 #include <QScreen>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <QSlider>
 #include <QSortFilterProxyModel>
 #include <QSpinBox>
@@ -92,7 +93,11 @@
 #include <QTabWidget>
 #include <QTableView>
 #include <QTableWidget>
+#include <QTextBlock>
 #include <QTextBrowser>
+#include <QTextCharFormat>
+#include <QTextCursor>
+#include <QTextDocument>
 #include <QTextEdit>
 #include <QTime>
 #include <QTimeEdit>
@@ -201,73 +206,81 @@ enum : int {
     QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1078,
     QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1079,
     QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1080,
-    QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1081,
-    QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1082,
-    QTF_SIG_QTABWIDGET_TABBARCLICKED = 1083,
-    QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1084,
-    QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1085,
-    QTF_SIG_QSPLITTER_SPLITTERMOVED = 1086,
-    QTF_SIG_QGROUPBOX_TOGGLED = 1087,
-    QTF_SIG_QGROUPBOX_CLICKED = 1088,
-    QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1089,
-    QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1090,
-    QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1091,
-    QTF_SIG_QBUTTONGROUP_IDCLICKED = 1092,
-    QTF_SIG_QDATEEDIT_DATECHANGED = 1093,
-    QTF_SIG_QTIMEEDIT_TIMECHANGED = 1094,
-    QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1095,
-    QTF_SIG_QCALENDARWIDGET_CLICKED = 1096,
-    QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1097,
-    QTF_SIG_QPROGRESSDIALOG_CANCELED = 1098,
-    QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED = 1099,
-    QTF_SIG_QDIALOGBUTTONBOX_REJECTED = 1100,
-    QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED = 1101,
-    QTF_SIG_QDIALOGBUTTONBOX_CLICKED = 1102,
-    QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE = 1103,
-    QTF_SIG_QCOMPLETER_ACTIVATED = 1104,
-    QTF_SIG_QCOMPLETER_HIGHLIGHTED = 1105,
-    QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED = 1106,
-    QTF_SIG_QTEXTBROWSER_ANCHORCLICKED = 1107,
-    QTF_SIG_QTEXTBROWSER_SOURCECHANGED = 1108,
-    QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE = 1109,
-    QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE = 1110,
-    QTF_SIG_QTOOLBOX_CURRENTCHANGED = 1111,
-    QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED = 1112,
-    QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE = 1113,
-    QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED = 1114,
-    QTF_SIG_QWIZARDPAGE_COMPLETECHANGED = 1115,
-    QTF_SIG_QWIZARD_CURRENTIDCHANGED = 1116,
-    QTF_SIG_QWIZARD_HELPREQUESTED = 1117,
-    QTF_SIG_QUNDOSTACK_REDOREQUESTED = 1118,
-    QTF_SIG_QUNDOSTACK_UNDOREQUESTED = 1119,
-    QTF_SIG_QUNDOSTACK_CANUNDOCHANGED = 1120,
-    QTF_SIG_QUNDOSTACK_CANREDOCHANGED = 1121,
-    QTF_SIG_QUNDOSTACK_INDEXCHANGED = 1122,
-    QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1123,
-    QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1124,
-    QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1125,
-    QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT = 1126,
-    QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT = 1127,
-    QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT = 1128,
-    QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT = 1129,
-    QTF_SIG_QTFEVENTFILTER_WHEELEVENT = 1130,
-    QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT = 1131,
-    QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT = 1132,
-    QTF_SIG_QTFEVENTFILTER_DRAGENTEREVENT = 1133,
-    QTF_SIG_QTFEVENTFILTER_DRAGMOVEEVENT = 1134,
-    QTF_SIG_QTFEVENTFILTER_DRAGLEAVEEVENT = 1135,
-    QTF_SIG_QTFEVENTFILTER_DROPEVENT = 1136,
-    QTF_SIG_QTFEVENTFILTER_RESIZEEVENT = 1137,
-    QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT = 1138,
-    QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST = 1139,
-    QTF_SIG_QTFEVENTFILTER_ENTEREVENT = 1140,
-    QTF_SIG_QTFEVENTFILTER_LEAVEEVENT = 1141,
-    QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT = 1142,
-    QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1143,
-    QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1144,
-    QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1145,
-    QTF_SIG_QTFEVENTFILTER_SURFACECREATED = 1146,
-    QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED = 1147,
+    QTF_SIG_QPLAINTEXTEDIT_CURSORPOSITIONCHANGED = 1081,
+    QTF_SIG_QPLAINTEXTEDIT_SELECTIONCHANGED = 1082,
+    QTF_SIG_QPLAINTEXTEDIT_BLOCKCOUNTCHANGED = 1083,
+    QTF_SIG_QPLAINTEXTEDIT_MODIFICATIONCHANGED = 1084,
+    QTF_SIG_QPLAINTEXTEDIT_UNDOAVAILABLE = 1085,
+    QTF_SIG_QPLAINTEXTEDIT_REDOAVAILABLE = 1086,
+    QTF_SIG_QPLAINTEXTEDIT_COPYAVAILABLE = 1087,
+    QTF_SIG_QTFPLAINTEXTEDIT_VIEWPORTPAINTEVENT = 1088,
+    QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1089,
+    QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1090,
+    QTF_SIG_QTABWIDGET_TABBARCLICKED = 1091,
+    QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1092,
+    QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1093,
+    QTF_SIG_QSPLITTER_SPLITTERMOVED = 1094,
+    QTF_SIG_QGROUPBOX_TOGGLED = 1095,
+    QTF_SIG_QGROUPBOX_CLICKED = 1096,
+    QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1097,
+    QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1098,
+    QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1099,
+    QTF_SIG_QBUTTONGROUP_IDCLICKED = 1100,
+    QTF_SIG_QDATEEDIT_DATECHANGED = 1101,
+    QTF_SIG_QTIMEEDIT_TIMECHANGED = 1102,
+    QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1103,
+    QTF_SIG_QCALENDARWIDGET_CLICKED = 1104,
+    QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1105,
+    QTF_SIG_QPROGRESSDIALOG_CANCELED = 1106,
+    QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED = 1107,
+    QTF_SIG_QDIALOGBUTTONBOX_REJECTED = 1108,
+    QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED = 1109,
+    QTF_SIG_QDIALOGBUTTONBOX_CLICKED = 1110,
+    QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE = 1111,
+    QTF_SIG_QCOMPLETER_ACTIVATED = 1112,
+    QTF_SIG_QCOMPLETER_HIGHLIGHTED = 1113,
+    QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED = 1114,
+    QTF_SIG_QTEXTBROWSER_ANCHORCLICKED = 1115,
+    QTF_SIG_QTEXTBROWSER_SOURCECHANGED = 1116,
+    QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE = 1117,
+    QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE = 1118,
+    QTF_SIG_QTOOLBOX_CURRENTCHANGED = 1119,
+    QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED = 1120,
+    QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE = 1121,
+    QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED = 1122,
+    QTF_SIG_QWIZARDPAGE_COMPLETECHANGED = 1123,
+    QTF_SIG_QWIZARD_CURRENTIDCHANGED = 1124,
+    QTF_SIG_QWIZARD_HELPREQUESTED = 1125,
+    QTF_SIG_QUNDOSTACK_REDOREQUESTED = 1126,
+    QTF_SIG_QUNDOSTACK_UNDOREQUESTED = 1127,
+    QTF_SIG_QUNDOSTACK_CANUNDOCHANGED = 1128,
+    QTF_SIG_QUNDOSTACK_CANREDOCHANGED = 1129,
+    QTF_SIG_QUNDOSTACK_INDEXCHANGED = 1130,
+    QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1131,
+    QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1132,
+    QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1133,
+    QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT = 1134,
+    QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT = 1135,
+    QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT = 1136,
+    QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT = 1137,
+    QTF_SIG_QTFEVENTFILTER_WHEELEVENT = 1138,
+    QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT = 1139,
+    QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT = 1140,
+    QTF_SIG_QTFEVENTFILTER_DRAGENTEREVENT = 1141,
+    QTF_SIG_QTFEVENTFILTER_DRAGMOVEEVENT = 1142,
+    QTF_SIG_QTFEVENTFILTER_DRAGLEAVEEVENT = 1143,
+    QTF_SIG_QTFEVENTFILTER_DROPEVENT = 1144,
+    QTF_SIG_QTFEVENTFILTER_RESIZEEVENT = 1145,
+    QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT = 1146,
+    QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST = 1147,
+    QTF_SIG_QTFEVENTFILTER_ENTEREVENT = 1148,
+    QTF_SIG_QTFEVENTFILTER_LEAVEEVENT = 1149,
+    QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT = 1150,
+    QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1151,
+    QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1152,
+    QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1153,
+    QTF_SIG_QTFEVENTFILTER_SURFACECREATED = 1154,
+    QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED = 1155,
 };
 
 // QApplication keeps references to argc/argv, so they must outlive it.
@@ -1310,6 +1323,140 @@ template <qtf_widget_event EV> static bool connect_event(void *s, const qtf_slot
 }
 
 // ---------------------------------------------------------------------------
+// code editor
+
+// A character format from a Fortran QTextCharFormat (defined in the gui shim).
+QTextCharFormat qtf_char_format(const QColor &fg, const QColor &bg, bool bold, bool italic, int underline,
+                                const QColor &underlineColor);
+
+// An editor cursor at `position` (clamped to the document).
+static QTextCursor qtf_cursor_at(const QPlainTextEdit *e, int position) {
+    QTextCursor c(e->document());
+    c.setPosition(std::clamp(position, 0, std::max(e->document()->characterCount() - 1, 0)));
+    return c;
+}
+
+// Add extra selections from `start(i)` to `end(i)` with format `f` (`full`:
+// the whole width of the line, e.g. to highlight the current line).
+static void qtf_add_extra_selections(QPlainTextEdit *e, const int *starts, const int *ends, int n,
+                                     const QTextCharFormat &f, bool full) {
+    QList<QTextEdit::ExtraSelection> list = e->extraSelections();
+    const int last = std::max(e->document()->characterCount() - 1, 0);
+    for (int i = 0; i < n; ++i) {
+        QTextEdit::ExtraSelection sel;
+        sel.cursor = QTextCursor(e->document());
+        sel.cursor.setPosition(std::clamp(starts[i], 0, last));
+        sel.cursor.setPosition(std::clamp(ends[i], 0, last), QTextCursor::KeepAnchor);
+        sel.format = f;
+        if (full) sel.format.setProperty(QTextFormat::FullWidthSelection, true);
+        list << sel;
+    }
+    e->setExtraSelections(list);
+}
+
+static void qtf_set_cursor_position(QPlainTextEdit *e, int position) { e->setTextCursor(qtf_cursor_at(e, position)); }
+
+// QtfPlainTextEdit: a QPlainTextEdit for code editors. It makes the protected
+// layout API public (first visible block, block geometry, viewport margins),
+// forwards painting to Fortran slots after Qt has drawn the text, and keeps
+// an optional gutter (a QtfWidget left of the text, e.g. for line numbers)
+// placed and scrolled with the text.
+class QtfPlainTextEdit : public QPlainTextEdit {
+  public:
+    QtfPlainTextEdit(const QString &text, QWidget *parent) : QPlainTextEdit(text, parent) {
+        // the gutter follows the text: scrolled with it, repainted where the text is
+        connect(this, &QPlainTextEdit::updateRequest, this, [this](const QRect &r, int dy) {
+            if (!gutter_) return;
+            if (dy) gutter_->scroll(0, dy);
+            else gutter_->update(0, r.y(), gutter_->width(), r.height());
+        });
+    }
+
+    std::vector<qtf_slot> paint_handlers;
+
+    int firstVisibleBlockNumber() const { return firstVisibleBlock().blockNumber(); }
+
+    // The last block (partly) visible in the viewport.
+    int lastVisibleBlockNumber() const {
+        QTextBlock b = firstVisibleBlock();
+        const double bottom = viewport()->height();
+        int last = b.blockNumber();
+        for (; b.isValid(); b = b.next()) {
+            if (!b.isVisible()) continue;
+            if (blockBoundingGeometry(b).translated(contentOffset()).top() > bottom) break;
+            last = b.blockNumber();
+        }
+        return last;
+    }
+
+    // Block `n`'s rectangle in viewport coordinates (empty if there is no such block).
+    QRectF blockGeometry(int n) const {
+        const QTextBlock b = document()->findBlockByNumber(n);
+        return b.isValid() ? blockBoundingGeometry(b).translated(contentOffset()) : QRectF();
+    }
+
+    QPointF offset() const { return contentOffset(); }
+    void setMargins(int l, int t, int r, int b) { setViewportMargins(l, t, r, b); }
+    QMargins margins() const { return viewportMargins(); }
+
+    // The gutter, created on first use (hidden while its width is 0).
+    QtfWidget *gutter() {
+        if (!gutter_) {
+            gutter_ = new QtfWidget(this);
+            gutter_->setFocusPolicy(Qt::NoFocus);
+            gutter_->setVisible(gutter_width > 0);
+            placeGutter();
+        }
+        return gutter_;
+    }
+
+    void setGutterWidth(int w) {
+        gutter_width = std::max(w, 0);
+        const QMargins m = viewportMargins();
+        setViewportMargins(gutter_width, m.top(), m.right(), m.bottom());
+        gutter()->setVisible(gutter_width > 0);
+        placeGutter();
+        gutter_->update();
+    }
+
+    int gutterWidth() const { return gutter_width; }
+
+  protected:
+    void resizeEvent(QResizeEvent *e) override {
+        QPlainTextEdit::resizeEvent(e);
+        placeGutter();
+    }
+
+    void paintEvent(QPaintEvent *e) override {
+        QPlainTextEdit::paintEvent(e);
+        if (paint_handlers.empty()) return;
+        QPainter p(viewport());
+        qtf_args a{};
+        a.p = &p;
+        qtf_emit_all(paint_handlers, a);
+    }
+
+  private:
+    QtfWidget *gutter_ = nullptr;
+    int gutter_width = 0;
+
+    void placeGutter() {
+        if (!gutter_) return;
+        const QRect cr = contentsRect();
+        gutter_->setGeometry(QRect(cr.left(), cr.top(), gutter_width, cr.height()));
+    }
+};
+
+// Attach a slot to a QtfPlainTextEdit's viewportPaintEvent.
+static bool connect_viewport_paint(void *s, const qtf_slot &ref) {
+    auto *e = dynamic_cast<QtfPlainTextEdit *>(static_cast<QObject *>(s));
+    if (!e) return false;
+    e->paint_handlers.push_back(ref);
+    e->viewport()->update();
+    return true;
+}
+
+// ---------------------------------------------------------------------------
 // QApplication
 
 // The command-line arguments left after Qt removed its own options (the first is the program); `args(i)%s` is the i-th.
@@ -1364,6 +1511,32 @@ QTF_API char *qtf_qapplication_applicationName(int *len) {
 
 // ---------------------------------------------------------------------------
 // QWidget
+
+// Set a widget's font from the fields of a Fortran QFont (an empty family or
+// pointSize <= 0 keeps the widget's).
+QTF_API void qtf_qwidget_setFont(void *self, const char *family, int len, double pointSize, int bold, int italic) {
+    auto *w = as<QWidget>(self);
+    QFont f = w->font();
+    if (len > 0) f.setFamily(qtf_qstring(family, len));
+    if (pointSize > 0) f.setPointSizeF(pointSize);
+    f.setBold(bold != 0);
+    f.setItalic(italic != 0);
+    w->setFont(f);
+}
+
+// The family of a widget's font.
+QTF_API char *qtf_qwidget_fontFamily(void *self, int *len) { return qtf_to_c(as<QWidget>(self)->font().family(), len); }
+
+// The point size of a widget's font.
+QTF_API double qtf_qwidget_fontPointSize(void *self) { return as<QWidget>(self)->font().pointSizeF(); }
+
+// The width of `text` in a widget's font, in pixels.
+QTF_API int qtf_qwidget_textWidth(void *self, const char *text, int len) {
+    return as<QWidget>(self)->fontMetrics().horizontalAdvance(qtf_qstring(text, len));
+}
+
+// The line height (ascent + descent) of a widget's font, in pixels.
+QTF_API int qtf_qwidget_lineHeight(void *self) { return as<QWidget>(self)->fontMetrics().height(); }
 
 // Create a widget; without a parent it is a top-level window.
 QTF_API void *qtf_qwidget_new(void *parent) { return new QWidget(as<QWidget>(parent)); }
@@ -4002,6 +4175,211 @@ QTF_API void qtf_qplaintextedit_undo(void *self) { as<QPlainTextEdit>(self)->und
 // Redo the last undone edit.
 QTF_API void qtf_qplaintextedit_redo(void *self) { as<QPlainTextEdit>(self)->redo(); }
 
+// Cut the selection to the clipboard.
+QTF_API void qtf_qplaintextedit_cut(void *self) { as<QPlainTextEdit>(self)->cut(); }
+
+// Copy the selection to the clipboard.
+QTF_API void qtf_qplaintextedit_copy(void *self) { as<QPlainTextEdit>(self)->copy(); }
+
+// Paste the clipboard at the cursor.
+QTF_API void qtf_qplaintextedit_paste(void *self) { as<QPlainTextEdit>(self)->paste(); }
+
+// The text document (owned by the editor).
+QTF_API void *qtf_qplaintextedit_document(void *self) { return as<QPlainTextEdit>(self)->document(); }
+
+// A copy of the editor's cursor (delete it when done); to move the editor's cursor, pass it to `setTextCursor`.
+QTF_API void *qtf_qplaintextedit_textCursor(void *self) {
+    return new QTextCursor(as<QPlainTextEdit>(self)->textCursor());
+}
+
+// Make the editor's cursor (and selection) a copy of `cursor`.
+QTF_API void qtf_qplaintextedit_setTextCursor(void *self, void *cursor) {
+    as<QPlainTextEdit>(self)->setTextCursor(*as<QTextCursor>(cursor));
+}
+
+// The position of the editor's cursor.
+QTF_API int qtf_qplaintextedit_cursorPosition(void *self) {
+    return as<QPlainTextEdit>(self)->textCursor().position();
+}
+
+// Move the editor's cursor to `position` (dropping the selection).
+QTF_API void qtf_qplaintextedit_setCursorPosition(void *self, int position) {
+    qtf_set_cursor_position(as<QPlainTextEdit>(self), position);
+}
+
+// A new cursor at the text under viewport point (x, y) (delete it when done).
+QTF_API void *qtf_qplaintextedit_cursorForPosition(void *self, int x, int y) {
+    return new QTextCursor(as<QPlainTextEdit>(self)->cursorForPosition(QPoint(x, y)));
+}
+
+// The document position of the text under viewport point (x, y).
+QTF_API int qtf_qplaintextedit_positionAt(void *self, int x, int y) {
+    return as<QPlainTextEdit>(self)->cursorForPosition(QPoint(x, y)).position();
+}
+
+// The rectangle of the editor's cursor, in viewport coordinates (e.g. to place a completion popup).
+QTF_API void qtf_qplaintextedit_cursorRect(void *self, int *res_x, int *res_y, int *res_width, int *res_height) {
+    const auto v_ = as<QPlainTextEdit>(self)->cursorRect();
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// The rectangle a cursor at `position` would have, in viewport coordinates.
+QTF_API void qtf_qplaintextedit_cursorRectAt(void *self, int position, int *res_x, int *res_y, int *res_width, int *res_height) {
+    const auto v_ = as<QPlainTextEdit>(self)->cursorRect(qtf_cursor_at(as<QPlainTextEdit>(self), position));
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// Scroll so that the cursor is vertically centered.
+QTF_API void qtf_qplaintextedit_centerCursor(void *self) { as<QPlainTextEdit>(self)->centerCursor(); }
+
+// Scroll so that the cursor is visible.
+QTF_API void qtf_qplaintextedit_ensureCursorVisible(void *self) {
+    as<QPlainTextEdit>(self)->ensureCursorVisible();
+}
+
+// Select the next match of `text` after the cursor (QTextDocument_FindBackward: before it); false (and no change) if there is none.
+QTF_API int qtf_qplaintextedit_find(void *self, const char *text, int text_len, int flags) {
+    return qtf_bool(as<QPlainTextEdit>(self)->find(qtf_qstring(text, text_len), QTextDocument::FindFlags(flags)));
+}
+
+// As `find`, for a regular expression.
+QTF_API int qtf_qplaintextedit_findRegularExpression(void *self, const char *pattern, int pattern_len, int flags) {
+    return qtf_bool(as<QPlainTextEdit>(self)->find(QRegularExpression(qtf_qstring(pattern, pattern_len)), QTextDocument::FindFlags(flags)));
+}
+
+// The width of a tab, in pixels (e.g. 4 times a character width).
+QTF_API void qtf_qplaintextedit_setTabStopDistance(void *self, double distance) {
+    as<QPlainTextEdit>(self)->setTabStopDistance(distance);
+}
+
+// The width of a tab, in pixels.
+QTF_API double qtf_qplaintextedit_tabStopDistance(void *self) {
+    return as<QPlainTextEdit>(self)->tabStopDistance();
+}
+
+// Typing replaces the text after the cursor (insert key).
+QTF_API void qtf_qplaintextedit_setOverwriteMode(void *self, int overwrite) {
+    as<QPlainTextEdit>(self)->setOverwriteMode((overwrite != 0));
+}
+
+// True in overwrite mode.
+QTF_API int qtf_qplaintextedit_overwriteMode(void *self) {
+    return qtf_bool(as<QPlainTextEdit>(self)->overwriteMode());
+}
+
+// The width of the text cursor, in pixels.
+QTF_API void qtf_qplaintextedit_setCursorWidth(void *self, int width) {
+    as<QPlainTextEdit>(self)->setCursorWidth(width);
+}
+
+// Allow scrolling past the end, so the last line can be centered.
+QTF_API void qtf_qplaintextedit_setCenterOnScroll(void *self, int enabled) {
+    as<QPlainTextEdit>(self)->setCenterOnScroll((enabled != 0));
+}
+
+// Record edits for undo (the default) or not.
+QTF_API void qtf_qplaintextedit_setUndoRedoEnabled(void *self, int enable) {
+    as<QPlainTextEdit>(self)->setUndoRedoEnabled((enable != 0));
+}
+
+// The widget the text is drawn on, which gets the mouse events (e.g. for a QtfEventFilter).
+QTF_API void *qtf_qplaintextedit_viewport(void *self) { return as<QPlainTextEdit>(self)->viewport(); }
+
+// The vertical scroll position (the first visible line, for plain text).
+QTF_API int qtf_qplaintextedit_verticalScrollValue(void *self) {
+    return as<QPlainTextEdit>(self)->verticalScrollBar()->value();
+}
+
+// Scroll vertically (to make line `value` the first visible one).
+QTF_API void qtf_qplaintextedit_setVerticalScrollValue(void *self, int value) {
+    as<QPlainTextEdit>(self)->verticalScrollBar()->setValue(value);
+}
+
+// Show text from position `start` to `end` with `format` (e.g. a background color), without changing the text. `fullWidth`: color the whole line (with start = end, e.g. the current line).
+QTF_API void qtf_qplaintextedit_addExtraSelection(void *self, int start, int end, int format_foreground_r, int format_foreground_g, int format_foreground_b, int format_foreground_a, int format_foreground_valid, int format_background_r, int format_background_g, int format_background_b, int format_background_a, int format_background_valid, int format_bold, int format_italic, int format_underlineStyle, int format_underlineColor_r, int format_underlineColor_g, int format_underlineColor_b, int format_underlineColor_a, int format_underlineColor_valid, int fullWidth) {
+    qtf_add_extra_selections(as<QPlainTextEdit>(self), &start, &end, 1, qtf_char_format(((format_foreground_valid != 0) ? QColor(format_foreground_r, format_foreground_g, format_foreground_b, format_foreground_a) : QColor()), ((format_background_valid != 0) ? QColor(format_background_r, format_background_g, format_background_b, format_background_a) : QColor()), (format_bold != 0), (format_italic != 0), format_underlineStyle, ((format_underlineColor_valid != 0) ? QColor(format_underlineColor_r, format_underlineColor_g, format_underlineColor_b, format_underlineColor_a) : QColor())), (fullWidth != 0));
+}
+
+// Add many extra selections with the same format (e.g. all search matches): from `starts(i)` to `ends(i)`.
+QTF_API void qtf_qplaintextedit_addExtraSelections(void *self, const int *starts, const int *ends, int format_foreground_r, int format_foreground_g, int format_foreground_b, int format_foreground_a, int format_foreground_valid, int format_background_r, int format_background_g, int format_background_b, int format_background_a, int format_background_valid, int format_bold, int format_italic, int format_underlineStyle, int format_underlineColor_r, int format_underlineColor_g, int format_underlineColor_b, int format_underlineColor_a, int format_underlineColor_valid, int fullWidth, int n) {
+    qtf_add_extra_selections(as<QPlainTextEdit>(self), starts, ends, n, qtf_char_format(((format_foreground_valid != 0) ? QColor(format_foreground_r, format_foreground_g, format_foreground_b, format_foreground_a) : QColor()), ((format_background_valid != 0) ? QColor(format_background_r, format_background_g, format_background_b, format_background_a) : QColor()), (format_bold != 0), (format_italic != 0), format_underlineStyle, ((format_underlineColor_valid != 0) ? QColor(format_underlineColor_r, format_underlineColor_g, format_underlineColor_b, format_underlineColor_a) : QColor())), (fullWidth != 0));
+}
+
+// Remove all extra selections.
+QTF_API void qtf_qplaintextedit_clearExtraSelections(void *self) {
+    as<QPlainTextEdit>(self)->setExtraSelections(QList<QTextEdit::ExtraSelection>());
+}
+
+// The number of extra selections.
+QTF_API int qtf_qplaintextedit_extraSelectionCount(void *self) {
+    return int(as<QPlainTextEdit>(self)->extraSelections().size());
+}
+
+// ---------------------------------------------------------------------------
+// QtfPlainTextEdit
+
+// A code editor with initial `text`.
+QTF_API void *qtf_qtfplaintextedit_new(const char *text, int text_len, void *parent) {
+    return new QtfPlainTextEdit(qtf_qstring(text, text_len), as<QWidget>(parent));
+}
+
+// The number of the first (partly) visible block (line).
+QTF_API int qtf_qtfplaintextedit_firstVisibleBlockNumber(void *self) {
+    return as<QtfPlainTextEdit>(self)->firstVisibleBlockNumber();
+}
+
+// The number of the last (partly) visible block.
+QTF_API int qtf_qtfplaintextedit_lastVisibleBlockNumber(void *self) {
+    return as<QtfPlainTextEdit>(self)->lastVisibleBlockNumber();
+}
+
+// The rectangle of block `number` in viewport coordinates (QPlainTextEdit::blockBoundingGeometry moved by the content offset); empty if there is no such block. Its `y` is where to draw the line's number in the gutter.
+QTF_API void qtf_qtfplaintextedit_blockBoundingGeometry(void *self, int number, double *res_x, double *res_y, double *res_width, double *res_height) {
+    const auto v_ = as<QtfPlainTextEdit>(self)->blockGeometry(number);
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// The content's origin in viewport coordinates (it moves as the text scrolls).
+QTF_API void qtf_qtfplaintextedit_contentOffset(void *self, double *res_x, double *res_y) {
+    const auto v_ = as<QtfPlainTextEdit>(self)->offset();
+    *res_x = v_.x();
+    *res_y = v_.y();
+}
+
+// Space around the viewport, e.g. for widgets placed beside the text (the left margin is the gutter's, see `setGutterWidth`).
+QTF_API void qtf_qtfplaintextedit_setViewportMargins(void *self, int left, int top, int right, int bottom) {
+    as<QtfPlainTextEdit>(self)->setMargins(left, top, right, bottom);
+}
+
+// The space around the viewport.
+QTF_API void qtf_qtfplaintextedit_viewportMargins(void *self, int *res_left, int *res_top, int *res_right, int *res_bottom) {
+    const auto v_ = as<QtfPlainTextEdit>(self)->margins();
+    *res_left = v_.left();
+    *res_top = v_.top();
+    *res_right = v_.right();
+    *res_bottom = v_.bottom();
+}
+
+// Show the gutter `width` pixels wide left of the text (0: hide it).
+QTF_API void qtf_qtfplaintextedit_setGutterWidth(void *self, int width) {
+    as<QtfPlainTextEdit>(self)->setGutterWidth(width);
+}
+
+// The gutter's width (0: hidden).
+QTF_API int qtf_qtfplaintextedit_gutterWidth(void *self) { return as<QtfPlainTextEdit>(self)->gutterWidth(); }
+
+// The gutter: a QtfWidget left of the text; connect its paintEvent (and mouse events) to draw line numbers, markers, ...
+QTF_API void *qtf_qtfplaintextedit_gutter(void *self) { return as<QtfPlainTextEdit>(self)->gutter(); }
+
 // ---------------------------------------------------------------------------
 // QTabWidget
 
@@ -5573,6 +5951,28 @@ static const bool qtf_widgets_registered = [] {
     qtf_register_connector(QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QPlainTextEdit>(s), &QPlainTextEdit::textChanged, as<QPlainTextEdit>(s), [ref]() { qtf_emit(ref); }));
     });
+    qtf_register_connector(QTF_SIG_QPLAINTEXTEDIT_CURSORPOSITIONCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QPlainTextEdit>(s), &QPlainTextEdit::cursorPositionChanged, as<QPlainTextEdit>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QPLAINTEXTEDIT_SELECTIONCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QPlainTextEdit>(s), &QPlainTextEdit::selectionChanged, as<QPlainTextEdit>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QPLAINTEXTEDIT_BLOCKCOUNTCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QPlainTextEdit>(s), &QPlainTextEdit::blockCountChanged, as<QPlainTextEdit>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QPLAINTEXTEDIT_MODIFICATIONCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QPlainTextEdit>(s), &QPlainTextEdit::modificationChanged, as<QPlainTextEdit>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QPLAINTEXTEDIT_UNDOAVAILABLE, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QPlainTextEdit>(s), &QPlainTextEdit::undoAvailable, as<QPlainTextEdit>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QPLAINTEXTEDIT_REDOAVAILABLE, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QPlainTextEdit>(s), &QPlainTextEdit::redoAvailable, as<QPlainTextEdit>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QPLAINTEXTEDIT_COPYAVAILABLE, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QPlainTextEdit>(s), &QPlainTextEdit::copyAvailable, as<QPlainTextEdit>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QTFPLAINTEXTEDIT_VIEWPORTPAINTEVENT, connect_viewport_paint);
     qtf_register_connector(QTF_SIG_QTABWIDGET_CURRENTCHANGED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QTabWidget>(s), &QTabWidget::currentChanged, as<QTabWidget>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });

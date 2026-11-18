@@ -239,7 +239,7 @@ Portability rules for sources:
 ```sh
 pixi run build             # fpm build with Qt flags
 pixi run test              # headless (QT_QPA_PLATFORM=offscreen)
-pixi run example hello     # run an example (hello, timer, form, plot, explorer, timeseries, fieldviewer, surface3d, orbit3d)
+pixi run example hello     # run an example (hello, timer, form, plot, explorer, timeseries, fieldviewer, datasets, geometry, editor, surface3d, orbit3d)
 pixi run gen               # specs -> shims + high-level modules -> raw bind(C) modules
 pixi run gen-check         # fail if any generated file is stale (CI)
 pixi run lint              # docstrings + implicit none in interface bodies (CI)
@@ -458,6 +458,27 @@ spec-only work now; items marked *(design)* need new machinery.
       `QtfPaintCell` (painter, model row/column/node, rectangle, state, text,
       text color, `drawBackground`, `drawDefault`); the painter state is
       saved and restored around the slots; `setSizeHint`.
+  - **Done (code editor):** `QTextDocument` (a QObject: text, blocks by
+    number, user states, find, undo; signals), `QTextBlock` (a Fortran value:
+    the document handle plus a block number, so nothing to delete; `next`,
+    `previous`, `text`, `position`, `userState`), `QTextCursor` (a handle
+    copied from the editor's: `delete` it; edits, selections, edit blocks),
+    `QTextCharFormat` (a value type in qt_gui_types: colors that may be unset
+    travel as the spec value type `QColorOpt`, with a `valid` field).
+    `QtfSyntaxHighlighter` delivers highlightBlock to Fortran slots as
+    (text, QtfHighlightBlock); `setFormat` offsets are bytes of the slot's
+    UTF-8 text, converted in the shim to Qt's UTF-16 positions.
+    QPlainTextEdit gained cursors, find, cursor rectangles, the viewport,
+    and extra selections. `QtfPlainTextEdit` makes the protected layout API
+    public (`firstVisibleBlockNumber`, `blockBoundingGeometry` already moved
+    by the content offset, `setViewportMargins`), paints over the text
+    (`viewportPaintEvent`, after Qt's paint), and keeps a gutter QtfWidget
+    placed (on resize) and scrolled (on updateRequest). Key and mouse
+    overrides reuse QtfEventFilter on the editor and its viewport.
+    `QWidget%setFont`/`font`/`textWidth`/`lineHeight`;
+    `QFontDatabase_fixedFamily` resolves the monospace family to an
+    installed font. Example: editor (multi-cursor editing with QTextCursors
+    that follow the edits, bookmarks as cursors at line starts).
 - **Gui**
   - **Done:** `QIcon` (from files or pixmaps), `QStyle_standardIcon(name)`, and
     icons on actions, buttons, tabs, table/tree items and windows.

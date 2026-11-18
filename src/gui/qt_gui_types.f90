@@ -97,6 +97,32 @@ module qt_gui_types
         logical :: italic = .false.
     end type QFont
 
+    ! QTextCharFormat::UnderlineStyle
+    integer(c_int), parameter, public :: QTextCharFormat_NoUnderline = 0
+    integer(c_int), parameter, public :: QTextCharFormat_SingleUnderline = 1
+    integer(c_int), parameter, public :: QTextCharFormat_DashUnderline = 2
+    integer(c_int), parameter, public :: QTextCharFormat_DotLine = 3
+    integer(c_int), parameter, public :: QTextCharFormat_DashDotLine = 4
+    integer(c_int), parameter, public :: QTextCharFormat_DashDotDotLine = 5
+    integer(c_int), parameter, public :: QTextCharFormat_WaveUnderline = 6
+    integer(c_int), parameter, public :: QTextCharFormat_SpellCheckUnderline = 7
+
+    !> How a piece of text looks: for syntax highlighting
+    !> (QtfHighlightBlock%setFormat) and extra selections
+    !> (QPlainTextEdit%addExtraSelection). Build it with keywords, e.g.
+    !> `QTextCharFormat(foreground=Qt_blue, bold=.true.)` or
+    !> `QTextCharFormat(underlineStyle=QTextCharFormat_WaveUnderline, underlineColor=Qt_red)`.
+    !> Parts left at their defaults (an invalid color, `.false.`,
+    !> QTextCharFormat_NoUnderline) are not set, so the text keeps its own.
+    type, public :: QTextCharFormat
+        type(QColor) :: foreground = QColor(0, 0, 0, 255, .false.)       !! text color (default: unset)
+        type(QColor) :: background = QColor(0, 0, 0, 255, .false.)       !! background color (default: unset)
+        logical :: bold = .false.                                        !! bold text
+        logical :: italic = .false.                                      !! italic text
+        integer :: underlineStyle = QTextCharFormat_NoUnderline          !! a QTextCharFormat_* underline style
+        type(QColor) :: underlineColor = QColor(0, 0, 0, 255, .false.)   !! underline color (default: the text color)
+    end type QTextCharFormat
+
 contains
 
     !> Parse a color name (SVG names, `#rgb`, `#rrggbb`); check `isValid()`.

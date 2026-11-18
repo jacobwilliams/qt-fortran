@@ -17,6 +17,13 @@ module qt_c_gui
     integer(c_int), parameter, public :: QTF_SIG_QWINDOW_HEIGHTCHANGED = 2006
     integer(c_int), parameter, public :: QTF_SIG_QWINDOW_VISIBLECHANGED = 2007
     integer(c_int), parameter, public :: QTF_SIG_QWINDOW_ACTIVECHANGED = 2008
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTDOCUMENT_CONTENTSCHANGED = 2009
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTDOCUMENT_CONTENTSCHANGE = 2010
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTDOCUMENT_BLOCKCOUNTCHANGED = 2011
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTDOCUMENT_MODIFICATIONCHANGED = 2012
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTDOCUMENT_UNDOAVAILABLE = 2013
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTDOCUMENT_REDOAVAILABLE = 2014
+    integer(c_int), parameter, public :: QTF_SIG_QTFSYNTAXHIGHLIGHTER_HIGHLIGHTBLOCK = 2015
 
     interface
 
@@ -4002,6 +4009,738 @@ module qt_c_gui
             type(c_ptr), value :: self
         end subroutine qtf_qwindow_requestUpdate
 
+        !> A document holding plain `text`.
+        !>
+        !> C: `void *qtf_qtextdocument_new(const char *text, int text_len, void *parent)`
+        function qtf_qtextdocument_new(text, text_len, parent) result(res) bind(C, name='qtf_qtextdocument_new')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qtextdocument_new
+
+        !> The text (lines separated by newlines).
+        !>
+        !> C: `char *qtf_qtextdocument_toPlainText(void *self, int *len)`
+        function qtf_qtextdocument_toPlainText(self, len) result(res) bind(C, name='qtf_qtextdocument_toPlainText')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qtextdocument_toPlainText
+
+        !> Replace the text (clears the undo history).
+        !>
+        !> C: `void qtf_qtextdocument_setPlainText(void *self, const char *text, int text_len)`
+        subroutine qtf_qtextdocument_setPlainText(self, text, text_len) bind(C, name='qtf_qtextdocument_setPlainText')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+        end subroutine qtf_qtextdocument_setPlainText
+
+        !> True if the document has no text.
+        !>
+        !> C: `int qtf_qtextdocument_isEmpty(void *self)`
+        function qtf_qtextdocument_isEmpty(self) result(res) bind(C, name='qtf_qtextdocument_isEmpty')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextdocument_isEmpty
+
+        !> The number of blocks (lines).
+        !>
+        !> C: `int qtf_qtextdocument_blockCount(void *self)`
+        function qtf_qtextdocument_blockCount(self) result(res) bind(C, name='qtf_qtextdocument_blockCount')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextdocument_blockCount
+
+        !> The number of characters, including the line breaks and a final paragraph separator.
+        !>
+        !> C: `int qtf_qtextdocument_characterCount(void *self)`
+        function qtf_qtextdocument_characterCount(self) result(res) bind(C, name='qtf_qtextdocument_characterCount')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextdocument_characterCount
+
+        !> True if the text changed since `setModified(.false.)` (e.g. since it was saved).
+        !>
+        !> C: `int qtf_qtextdocument_isModified(void *self)`
+        function qtf_qtextdocument_isModified(self) result(res) bind(C, name='qtf_qtextdocument_isModified')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextdocument_isModified
+
+        !> Set the modified flag (`.false.` after saving).
+        !>
+        !> C: `void qtf_qtextdocument_setModified(void *self, int modified)`
+        subroutine qtf_qtextdocument_setModified(self, modified) bind(C, name='qtf_qtextdocument_setModified')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: modified
+        end subroutine qtf_qtextdocument_setModified
+
+        !> True if there is an edit to undo.
+        !>
+        !> C: `int qtf_qtextdocument_isUndoAvailable(void *self)`
+        function qtf_qtextdocument_isUndoAvailable(self) result(res) bind(C, name='qtf_qtextdocument_isUndoAvailable')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextdocument_isUndoAvailable
+
+        !> True if there is an undone edit to redo.
+        !>
+        !> C: `int qtf_qtextdocument_isRedoAvailable(void *self)`
+        function qtf_qtextdocument_isRedoAvailable(self) result(res) bind(C, name='qtf_qtextdocument_isRedoAvailable')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextdocument_isRedoAvailable
+
+        !> Undo the last edit.
+        !>
+        !> C: `void qtf_qtextdocument_undo(void *self)`
+        subroutine qtf_qtextdocument_undo(self) bind(C, name='qtf_qtextdocument_undo')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtextdocument_undo
+
+        !> Redo the last undone edit.
+        !>
+        !> C: `void qtf_qtextdocument_redo(void *self)`
+        subroutine qtf_qtextdocument_redo(self) bind(C, name='qtf_qtextdocument_redo')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtextdocument_redo
+
+        !> Record edits for undo (the default) or not.
+        !>
+        !> C: `void qtf_qtextdocument_setUndoRedoEnabled(void *self, int enable)`
+        subroutine qtf_qtextdocument_setUndoRedoEnabled(self, enable) &
+                bind(C, name='qtf_qtextdocument_setUndoRedoEnabled')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enable
+        end subroutine qtf_qtextdocument_setUndoRedoEnabled
+
+        !> A new cursor selecting the first match of `text` at or after `position` (with QTextDocument_FindBackward: before it); `isNull()` if there is none. Flags: QTextDocument_Find* combined with ior. Delete the cursor when done.
+        !>
+        !> C: `void *qtf_qtextdocument_find(void *self, const char *text, int text_len, int position, int flags)`
+        function qtf_qtextdocument_find(self, text, text_len, position, flags) &
+                result(res) bind(C, name='qtf_qtextdocument_find')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+            integer(c_int), value :: position
+            integer(c_int), value :: flags
+            type(c_ptr) :: res
+        end function qtf_qtextdocument_find
+
+        !> As `find`, for a regular expression (Perl syntax; a match does not span lines).
+        !>
+        !> C: `void *qtf_qtextdocument_findRegularExpression(void *self, const char *pattern, int pattern_len, int position, int flags)`
+        function qtf_qtextdocument_findRegularExpression(self, pattern, pattern_len, position, flags) &
+                result(res) bind(C, name='qtf_qtextdocument_findRegularExpression')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: pattern
+            integer(c_int), value :: pattern_len
+            integer(c_int), value :: position
+            integer(c_int), value :: flags
+            type(c_ptr) :: res
+        end function qtf_qtextdocument_findRegularExpression
+
+        !> The text of block `number` ('' if there is none).
+        !>
+        !> C: `char *qtf_qtextdocument_blockText(void *self, int number, int *len)`
+        function qtf_qtextdocument_blockText(self, number, len) result(res) bind(C, name='qtf_qtextdocument_blockText')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: number
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qtextdocument_blockText
+
+        !> The position of the first character of block `number` (-1 if there is none).
+        !>
+        !> C: `int qtf_qtextdocument_blockPosition(void *self, int number)`
+        function qtf_qtextdocument_blockPosition(self, number) &
+                result(res) bind(C, name='qtf_qtextdocument_blockPosition')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: number
+            integer(c_int) :: res
+        end function qtf_qtextdocument_blockPosition
+
+        !> The length of block `number`, including its line break (-1 if there is none).
+        !>
+        !> C: `int qtf_qtextdocument_blockLength(void *self, int number)`
+        function qtf_qtextdocument_blockLength(self, number) result(res) bind(C, name='qtf_qtextdocument_blockLength')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: number
+            integer(c_int) :: res
+        end function qtf_qtextdocument_blockLength
+
+        !> The number of the block containing `position` (-1 if out of range).
+        !>
+        !> C: `int qtf_qtextdocument_blockNumberAt(void *self, int position)`
+        function qtf_qtextdocument_blockNumberAt(self, position) &
+                result(res) bind(C, name='qtf_qtextdocument_blockNumberAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: position
+            integer(c_int) :: res
+        end function qtf_qtextdocument_blockNumberAt
+
+        !> The user state of block `number` (-1 if unset or there is no such block).
+        !>
+        !> C: `int qtf_qtextdocument_blockUserState(void *self, int number)`
+        function qtf_qtextdocument_blockUserState(self, number) &
+                result(res) bind(C, name='qtf_qtextdocument_blockUserState')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: number
+            integer(c_int) :: res
+        end function qtf_qtextdocument_blockUserState
+
+        !> Set the user state of block `number`.
+        !>
+        !> C: `void qtf_qtextdocument_setBlockUserState(void *self, int number, int state)`
+        subroutine qtf_qtextdocument_setBlockUserState(self, number, state) &
+                bind(C, name='qtf_qtextdocument_setBlockUserState')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: number
+            integer(c_int), value :: state
+        end subroutine qtf_qtextdocument_setBlockUserState
+
+        !> The character at `position` (a line break is a newline).
+        !>
+        !> C: `char *qtf_qtextdocument_characterAt(void *self, int position, int *len)`
+        function qtf_qtextdocument_characterAt(self, position, len) &
+                result(res) bind(C, name='qtf_qtextdocument_characterAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: position
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qtextdocument_characterAt
+
+        !> The text color a syntax highlighter gave the character at `position`, as '#rrggbb' ('' if none).
+        !>
+        !> C: `char *qtf_qtextdocument_formatForegroundAt(void *self, int position, int *len)`
+        function qtf_qtextdocument_formatForegroundAt(self, position, len) &
+                result(res) bind(C, name='qtf_qtextdocument_formatForegroundAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: position
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qtextdocument_formatForegroundAt
+
+        !> The background color a syntax highlighter gave the character at `position` ('' if none).
+        !>
+        !> C: `char *qtf_qtextdocument_formatBackgroundAt(void *self, int position, int *len)`
+        function qtf_qtextdocument_formatBackgroundAt(self, position, len) &
+                result(res) bind(C, name='qtf_qtextdocument_formatBackgroundAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: position
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qtextdocument_formatBackgroundAt
+
+        !> True if a syntax highlighter made the character at `position` bold.
+        !>
+        !> C: `int qtf_qtextdocument_formatIsBoldAt(void *self, int position)`
+        function qtf_qtextdocument_formatIsBoldAt(self, position) &
+                result(res) bind(C, name='qtf_qtextdocument_formatIsBoldAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: position
+            integer(c_int) :: res
+        end function qtf_qtextdocument_formatIsBoldAt
+
+        !> True if a syntax highlighter made the character at `position` italic.
+        !>
+        !> C: `int qtf_qtextdocument_formatIsItalicAt(void *self, int position)`
+        function qtf_qtextdocument_formatIsItalicAt(self, position) &
+                result(res) bind(C, name='qtf_qtextdocument_formatIsItalicAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: position
+            integer(c_int) :: res
+        end function qtf_qtextdocument_formatIsItalicAt
+
+        !> The underline style (a QTextCharFormat_* constant) a syntax highlighter gave the character at `position`.
+        !>
+        !> C: `int qtf_qtextdocument_formatUnderlineStyleAt(void *self, int position)`
+        function qtf_qtextdocument_formatUnderlineStyleAt(self, position) &
+                result(res) bind(C, name='qtf_qtextdocument_formatUnderlineStyleAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: position
+            integer(c_int) :: res
+        end function qtf_qtextdocument_formatUnderlineStyleAt
+
+        !> Release a cursor.
+        !>
+        !> C: `void qtf_qtextcursor_delete(void *self)`
+        subroutine qtf_qtextcursor_delete(self) bind(C, name='qtf_qtextcursor_delete')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtextcursor_delete
+
+        !> A cursor at the start of `document`.
+        !>
+        !> C: `void *qtf_qtextcursor_new(void *document)`
+        function qtf_qtextcursor_new(document) result(res) bind(C, name='qtf_qtextcursor_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: document
+            type(c_ptr) :: res
+        end function qtf_qtextcursor_new
+
+        !> True for a cursor without a document (e.g. a failed `find`).
+        !>
+        !> C: `int qtf_qtextcursor_isNull(void *self)`
+        function qtf_qtextcursor_isNull(self) result(res) bind(C, name='qtf_qtextcursor_isNull')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextcursor_isNull
+
+        !> The cursor position.
+        !>
+        !> C: `int qtf_qtextcursor_position(void *self)`
+        function qtf_qtextcursor_position(self) result(res) bind(C, name='qtf_qtextcursor_position')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextcursor_position
+
+        !> The other end of the selection (equal to `position()` without one).
+        !>
+        !> C: `int qtf_qtextcursor_anchor(void *self)`
+        function qtf_qtextcursor_anchor(self) result(res) bind(C, name='qtf_qtextcursor_anchor')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextcursor_anchor
+
+        !> Move to `position`; with QTextCursor_KeepAnchor, select from the anchor to there.
+        !>
+        !> C: `void qtf_qtextcursor_setPosition(void *self, int position, int mode)`
+        subroutine qtf_qtextcursor_setPosition(self, position, mode) bind(C, name='qtf_qtextcursor_setPosition')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: position
+            integer(c_int), value :: mode
+        end subroutine qtf_qtextcursor_setPosition
+
+        !> Move `n` times (QTextCursor_NextWord, _EndOfBlock, ...); with QTextCursor_KeepAnchor extend the selection. False if it could not move all the way.
+        !>
+        !> C: `int qtf_qtextcursor_movePosition(void *self, int op, int mode, int n)`
+        function qtf_qtextcursor_movePosition(self, op, mode, n) &
+                result(res) bind(C, name='qtf_qtextcursor_movePosition')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: op
+            integer(c_int), value :: mode
+            integer(c_int), value :: n
+            integer(c_int) :: res
+        end function qtf_qtextcursor_movePosition
+
+        !> True if text is selected.
+        !>
+        !> C: `int qtf_qtextcursor_hasSelection(void *self)`
+        function qtf_qtextcursor_hasSelection(self) result(res) bind(C, name='qtf_qtextcursor_hasSelection')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextcursor_hasSelection
+
+        !> The start of the selection (the smaller of position and anchor).
+        !>
+        !> C: `int qtf_qtextcursor_selectionStart(void *self)`
+        function qtf_qtextcursor_selectionStart(self) result(res) bind(C, name='qtf_qtextcursor_selectionStart')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextcursor_selectionStart
+
+        !> The end of the selection.
+        !>
+        !> C: `int qtf_qtextcursor_selectionEnd(void *self)`
+        function qtf_qtextcursor_selectionEnd(self) result(res) bind(C, name='qtf_qtextcursor_selectionEnd')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextcursor_selectionEnd
+
+        !> The selected text (lines separated by newlines).
+        !>
+        !> C: `char *qtf_qtextcursor_selectedText(void *self, int *len)`
+        function qtf_qtextcursor_selectedText(self, len) result(res) bind(C, name='qtf_qtextcursor_selectedText')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qtextcursor_selectedText
+
+        !> Drop the selection (the anchor moves to the position).
+        !>
+        !> C: `void qtf_qtextcursor_clearSelection(void *self)`
+        subroutine qtf_qtextcursor_clearSelection(self) bind(C, name='qtf_qtextcursor_clearSelection')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtextcursor_clearSelection
+
+        !> Select the word, line or block under the cursor (QTextCursor_WordUnderCursor, _LineUnderCursor, _BlockUnderCursor), or the whole document (QTextCursor_SelectionType_Document).
+        !>
+        !> C: `void qtf_qtextcursor_select(void *self, int selection)`
+        subroutine qtf_qtextcursor_select(self, selection) bind(C, name='qtf_qtextcursor_select')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: selection
+        end subroutine qtf_qtextcursor_select
+
+        !> Insert `text` at the cursor, replacing the selection.
+        !>
+        !> C: `void qtf_qtextcursor_insertText(void *self, const char *text, int text_len)`
+        subroutine qtf_qtextcursor_insertText(self, text, text_len) bind(C, name='qtf_qtextcursor_insertText')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+        end subroutine qtf_qtextcursor_insertText
+
+        !> Delete the selected text.
+        !>
+        !> C: `void qtf_qtextcursor_removeSelectedText(void *self)`
+        subroutine qtf_qtextcursor_removeSelectedText(self) bind(C, name='qtf_qtextcursor_removeSelectedText')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtextcursor_removeSelectedText
+
+        !> Delete the selection, or the character after the cursor.
+        !>
+        !> C: `void qtf_qtextcursor_deleteChar(void *self)`
+        subroutine qtf_qtextcursor_deleteChar(self) bind(C, name='qtf_qtextcursor_deleteChar')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtextcursor_deleteChar
+
+        !> Delete the selection, or the character before the cursor.
+        !>
+        !> C: `void qtf_qtextcursor_deletePreviousChar(void *self)`
+        subroutine qtf_qtextcursor_deletePreviousChar(self) bind(C, name='qtf_qtextcursor_deletePreviousChar')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtextcursor_deletePreviousChar
+
+        !> Start a group of edits that undo as one step.
+        !>
+        !> C: `void qtf_qtextcursor_beginEditBlock(void *self)`
+        subroutine qtf_qtextcursor_beginEditBlock(self) bind(C, name='qtf_qtextcursor_beginEditBlock')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtextcursor_beginEditBlock
+
+        !> End the group started with `beginEditBlock`.
+        !>
+        !> C: `void qtf_qtextcursor_endEditBlock(void *self)`
+        subroutine qtf_qtextcursor_endEditBlock(self) bind(C, name='qtf_qtextcursor_endEditBlock')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtextcursor_endEditBlock
+
+        !> Add the following edits to the previous undo step (end with `endEditBlock`).
+        !>
+        !> C: `void qtf_qtextcursor_joinPreviousEditBlock(void *self)`
+        subroutine qtf_qtextcursor_joinPreviousEditBlock(self) bind(C, name='qtf_qtextcursor_joinPreviousEditBlock')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtextcursor_joinPreviousEditBlock
+
+        !> True at the start of the document.
+        !>
+        !> C: `int qtf_qtextcursor_atStart(void *self)`
+        function qtf_qtextcursor_atStart(self) result(res) bind(C, name='qtf_qtextcursor_atStart')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextcursor_atStart
+
+        !> True at the end of the document.
+        !>
+        !> C: `int qtf_qtextcursor_atEnd(void *self)`
+        function qtf_qtextcursor_atEnd(self) result(res) bind(C, name='qtf_qtextcursor_atEnd')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextcursor_atEnd
+
+        !> True at the start of a block (line).
+        !>
+        !> C: `int qtf_qtextcursor_atBlockStart(void *self)`
+        function qtf_qtextcursor_atBlockStart(self) result(res) bind(C, name='qtf_qtextcursor_atBlockStart')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextcursor_atBlockStart
+
+        !> True at the end of a block (line).
+        !>
+        !> C: `int qtf_qtextcursor_atBlockEnd(void *self)`
+        function qtf_qtextcursor_atBlockEnd(self) result(res) bind(C, name='qtf_qtextcursor_atBlockEnd')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextcursor_atBlockEnd
+
+        !> The number of the block (line) the cursor is in (0-based).
+        !>
+        !> C: `int qtf_qtextcursor_blockNumber(void *self)`
+        function qtf_qtextcursor_blockNumber(self) result(res) bind(C, name='qtf_qtextcursor_blockNumber')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextcursor_blockNumber
+
+        !> The column of the cursor in its line (0-based).
+        !>
+        !> C: `int qtf_qtextcursor_columnNumber(void *self)`
+        function qtf_qtextcursor_columnNumber(self) result(res) bind(C, name='qtf_qtextcursor_columnNumber')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextcursor_columnNumber
+
+        !> The position relative to the start of its block.
+        !>
+        !> C: `int qtf_qtextcursor_positionInBlock(void *self)`
+        function qtf_qtextcursor_positionInBlock(self) result(res) bind(C, name='qtf_qtextcursor_positionInBlock')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtextcursor_positionInBlock
+
+        !> The document.
+        !>
+        !> C: `void *qtf_qtextcursor_document(void *self)`
+        function qtf_qtextcursor_document(self) result(res) bind(C, name='qtf_qtextcursor_document')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qtextcursor_document
+
+        !> A copy of the cursor (delete it when done).
+        !>
+        !> C: `void *qtf_qtextcursor_copy(void *self)`
+        function qtf_qtextcursor_copy(self) result(res) bind(C, name='qtf_qtextcursor_copy')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qtextcursor_copy
+
+        !> A highlighter for `document` (owned by it).
+        !>
+        !> C: `void *qtf_qtfsyntaxhighlighter_new(void *document)`
+        function qtf_qtfsyntaxhighlighter_new(document) result(res) bind(C, name='qtf_qtfsyntaxhighlighter_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: document
+            type(c_ptr) :: res
+        end function qtf_qtfsyntaxhighlighter_new
+
+        !> Highlight the whole document again (e.g. after the rules changed).
+        !>
+        !> C: `void qtf_qtfsyntaxhighlighter_rehighlight(void *self)`
+        subroutine qtf_qtfsyntaxhighlighter_rehighlight(self) bind(C, name='qtf_qtfsyntaxhighlighter_rehighlight')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtfsyntaxhighlighter_rehighlight
+
+        !> Highlight block `number` again.
+        !>
+        !> C: `void qtf_qtfsyntaxhighlighter_rehighlightBlock(void *self, int number)`
+        subroutine qtf_qtfsyntaxhighlighter_rehighlightBlock(self, number) &
+                bind(C, name='qtf_qtfsyntaxhighlighter_rehighlightBlock')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: number
+        end subroutine qtf_qtfsyntaxhighlighter_rehighlightBlock
+
+        !> The document being highlighted.
+        !>
+        !> C: `void *qtf_qtfsyntaxhighlighter_document(void *self)`
+        function qtf_qtfsyntaxhighlighter_document(self) result(res) bind(C, name='qtf_qtfsyntaxhighlighter_document')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qtfsyntaxhighlighter_document
+
+        !> The block's text (the slot also gets it as `text`).
+        !>
+        !> C: `char *qtf_qtfhighlightblock_text(void *self, int *len)`
+        function qtf_qtfhighlightblock_text(self, len) result(res) bind(C, name='qtf_qtfhighlightblock_text')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qtfhighlightblock_text
+
+        !> Format `count` bytes of the text starting at byte offset `start` (0-based); later calls override earlier ones where they overlap.
+        !>
+        !> C: `void qtf_qtfhighlightblock_setFormat(void *self, int start, int count, int format_foreground_r, int format_foreground_g, int format_foreground_b, int format_foreground_a, int format_foreground_valid, int format_background_r, int format_background_g, int format_background_b, int format_background_a, int format_background_valid, int format_bold, int format_italic, int format_underlineStyle, int format_underlineColor_r, int format_underlineColor_g, int format_underlineColor_b, int format_underlineColor_a, int format_underlineColor_valid)`
+        subroutine qtf_qtfhighlightblock_setFormat(self, start, count, format_foreground_r, format_foreground_g, format_foreground_b, format_foreground_a, format_foreground_valid, format_background_r, format_background_g, format_background_b, format_background_a, format_background_valid, format_bold, format_italic, format_underlineStyle, format_underlineColor_r, format_underlineColor_g, format_underlineColor_b, format_underlineColor_a, format_underlineColor_valid) &
+                bind(C, name='qtf_qtfhighlightblock_setFormat')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: start
+            integer(c_int), value :: count
+            integer(c_int), value :: format_foreground_r
+            integer(c_int), value :: format_foreground_g
+            integer(c_int), value :: format_foreground_b
+            integer(c_int), value :: format_foreground_a
+            integer(c_int), value :: format_foreground_valid
+            integer(c_int), value :: format_background_r
+            integer(c_int), value :: format_background_g
+            integer(c_int), value :: format_background_b
+            integer(c_int), value :: format_background_a
+            integer(c_int), value :: format_background_valid
+            integer(c_int), value :: format_bold
+            integer(c_int), value :: format_italic
+            integer(c_int), value :: format_underlineStyle
+            integer(c_int), value :: format_underlineColor_r
+            integer(c_int), value :: format_underlineColor_g
+            integer(c_int), value :: format_underlineColor_b
+            integer(c_int), value :: format_underlineColor_a
+            integer(c_int), value :: format_underlineColor_valid
+        end subroutine qtf_qtfhighlightblock_setFormat
+
+        !> The state the previous line ended in (-1: none, e.g. the first line).
+        !>
+        !> C: `int qtf_qtfhighlightblock_previousBlockState(void *self)`
+        function qtf_qtfhighlightblock_previousBlockState(self) &
+                result(res) bind(C, name='qtf_qtfhighlightblock_previousBlockState')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfhighlightblock_previousBlockState
+
+        !> This line's state (as set by `setCurrentBlockState`; -1 if not set yet).
+        !>
+        !> C: `int qtf_qtfhighlightblock_currentBlockState(void *self)`
+        function qtf_qtfhighlightblock_currentBlockState(self) &
+                result(res) bind(C, name='qtf_qtfhighlightblock_currentBlockState')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfhighlightblock_currentBlockState
+
+        !> Set the state this line ends in (e.g. 1 inside an unterminated string); the next line sees it as `previousBlockState()`.
+        !>
+        !> C: `void qtf_qtfhighlightblock_setCurrentBlockState(void *self, int state)`
+        subroutine qtf_qtfhighlightblock_setCurrentBlockState(self, state) &
+                bind(C, name='qtf_qtfhighlightblock_setCurrentBlockState')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: state
+        end subroutine qtf_qtfhighlightblock_setCurrentBlockState
+
+        !> The block's number (0-based line number).
+        !>
+        !> C: `int qtf_qtfhighlightblock_blockNumber(void *self)`
+        function qtf_qtfhighlightblock_blockNumber(self) result(res) bind(C, name='qtf_qtfhighlightblock_blockNumber')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfhighlightblock_blockNumber
+
+        !> The document position of the block's first character.
+        !>
+        !> C: `int qtf_qtfhighlightblock_position(void *self)`
+        function qtf_qtfhighlightblock_position(self) result(res) bind(C, name='qtf_qtfhighlightblock_position')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfhighlightblock_position
+
         !> The system clipboard (needs the application object).
         !>
         !> C: `void *qtf_QGuiApplication_clipboard(void)`
@@ -4124,6 +4863,16 @@ module qt_c_gui
             integer(c_int), intent(out) :: res_y
         end subroutine qtf_QCursor_pos
 
+        !> The system's fixed-pitch (monospace) font family, e.g. for a code editor: `call editor%setFont(QFont(QFontDatabase_fixedFamily(), 12d0))`.
+        !>
+        !> C: `char *qtf_QFontDatabase_fixedFamily(int *len)`
+        function qtf_QFontDatabase_fixedFamily(len) result(res) bind(C, name='qtf_QFontDatabase_fixedFamily')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_QFontDatabase_fixedFamily
+
     end interface
 
     public :: qtf_qcolor_fromString, qtf_qimage_fromArray, qtf_qimage_colorbar, qtf_qimage_delete
@@ -4228,10 +4977,36 @@ module qt_c_gui
     public :: qtf_qwindow_geometry, qtf_qwindow_setGeometry, qtf_qwindow_mapToGlobal
     public :: qtf_qwindow_mapFromGlobal, qtf_qwindow_devicePixelRatio, qtf_qwindow_winId
     public :: qtf_qwindow_setTitle, qtf_qwindow_title, qtf_qwindow_screen, qtf_qwindow_requestUpdate
-    public :: qtf_QGuiApplication_clipboard, qtf_QGuiApplication_primaryScreen
-    public :: qtf_QGuiApplication_screenCount, qtf_QGuiApplication_screen, qtf_QGuiApplication_screenAt
-    public :: qtf_QGuiApplication_setOverrideCursor, qtf_QGuiApplication_changeOverrideCursor
-    public :: qtf_QGuiApplication_restoreOverrideCursor, qtf_QGuiApplication_overrideCursorShape
-    public :: qtf_QCursor_x, qtf_QCursor_y, qtf_QCursor_setPos, qtf_QCursor_pos
+    public :: qtf_qtextdocument_new, qtf_qtextdocument_toPlainText, qtf_qtextdocument_setPlainText
+    public :: qtf_qtextdocument_isEmpty, qtf_qtextdocument_blockCount, qtf_qtextdocument_characterCount
+    public :: qtf_qtextdocument_isModified, qtf_qtextdocument_setModified, qtf_qtextdocument_isUndoAvailable
+    public :: qtf_qtextdocument_isRedoAvailable, qtf_qtextdocument_undo, qtf_qtextdocument_redo
+    public :: qtf_qtextdocument_setUndoRedoEnabled, qtf_qtextdocument_find
+    public :: qtf_qtextdocument_findRegularExpression, qtf_qtextdocument_blockText
+    public :: qtf_qtextdocument_blockPosition, qtf_qtextdocument_blockLength, qtf_qtextdocument_blockNumberAt
+    public :: qtf_qtextdocument_blockUserState, qtf_qtextdocument_setBlockUserState
+    public :: qtf_qtextdocument_characterAt, qtf_qtextdocument_formatForegroundAt
+    public :: qtf_qtextdocument_formatBackgroundAt, qtf_qtextdocument_formatIsBoldAt
+    public :: qtf_qtextdocument_formatIsItalicAt, qtf_qtextdocument_formatUnderlineStyleAt
+    public :: qtf_qtextcursor_delete, qtf_qtextcursor_new, qtf_qtextcursor_isNull, qtf_qtextcursor_position
+    public :: qtf_qtextcursor_anchor, qtf_qtextcursor_setPosition, qtf_qtextcursor_movePosition
+    public :: qtf_qtextcursor_hasSelection, qtf_qtextcursor_selectionStart, qtf_qtextcursor_selectionEnd
+    public :: qtf_qtextcursor_selectedText, qtf_qtextcursor_clearSelection, qtf_qtextcursor_select
+    public :: qtf_qtextcursor_insertText, qtf_qtextcursor_removeSelectedText, qtf_qtextcursor_deleteChar
+    public :: qtf_qtextcursor_deletePreviousChar, qtf_qtextcursor_beginEditBlock
+    public :: qtf_qtextcursor_endEditBlock, qtf_qtextcursor_joinPreviousEditBlock, qtf_qtextcursor_atStart
+    public :: qtf_qtextcursor_atEnd, qtf_qtextcursor_atBlockStart, qtf_qtextcursor_atBlockEnd
+    public :: qtf_qtextcursor_blockNumber, qtf_qtextcursor_columnNumber, qtf_qtextcursor_positionInBlock
+    public :: qtf_qtextcursor_document, qtf_qtextcursor_copy, qtf_qtfsyntaxhighlighter_new
+    public :: qtf_qtfsyntaxhighlighter_rehighlight, qtf_qtfsyntaxhighlighter_rehighlightBlock
+    public :: qtf_qtfsyntaxhighlighter_document, qtf_qtfhighlightblock_text, qtf_qtfhighlightblock_setFormat
+    public :: qtf_qtfhighlightblock_previousBlockState, qtf_qtfhighlightblock_currentBlockState
+    public :: qtf_qtfhighlightblock_setCurrentBlockState, qtf_qtfhighlightblock_blockNumber
+    public :: qtf_qtfhighlightblock_position, qtf_QGuiApplication_clipboard
+    public :: qtf_QGuiApplication_primaryScreen, qtf_QGuiApplication_screenCount, qtf_QGuiApplication_screen
+    public :: qtf_QGuiApplication_screenAt, qtf_QGuiApplication_setOverrideCursor
+    public :: qtf_QGuiApplication_changeOverrideCursor, qtf_QGuiApplication_restoreOverrideCursor
+    public :: qtf_QGuiApplication_overrideCursorShape, qtf_QCursor_x, qtf_QCursor_y, qtf_QCursor_setPos
+    public :: qtf_QCursor_pos, qtf_QFontDatabase_fixedFamily
 
 end module qt_c_gui

@@ -89,73 +89,81 @@ module qt_c_widgets
     integer(c_int), parameter, public :: QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1078
     integer(c_int), parameter, public :: QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1079
     integer(c_int), parameter, public :: QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1080
-    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1081
-    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1082
-    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABBARCLICKED = 1083
-    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1084
-    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1085
-    integer(c_int), parameter, public :: QTF_SIG_QSPLITTER_SPLITTERMOVED = 1086
-    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_TOGGLED = 1087
-    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_CLICKED = 1088
-    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1089
-    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1090
-    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1091
-    integer(c_int), parameter, public :: QTF_SIG_QBUTTONGROUP_IDCLICKED = 1092
-    integer(c_int), parameter, public :: QTF_SIG_QDATEEDIT_DATECHANGED = 1093
-    integer(c_int), parameter, public :: QTF_SIG_QTIMEEDIT_TIMECHANGED = 1094
-    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1095
-    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_CLICKED = 1096
-    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1097
-    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSDIALOG_CANCELED = 1098
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED = 1099
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_REJECTED = 1100
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED = 1101
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_CLICKED = 1102
-    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE = 1103
-    integer(c_int), parameter, public :: QTF_SIG_QCOMPLETER_ACTIVATED = 1104
-    integer(c_int), parameter, public :: QTF_SIG_QCOMPLETER_HIGHLIGHTED = 1105
-    integer(c_int), parameter, public :: QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED = 1106
-    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_ANCHORCLICKED = 1107
-    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_SOURCECHANGED = 1108
-    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE = 1109
-    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE = 1110
-    integer(c_int), parameter, public :: QTF_SIG_QTOOLBOX_CURRENTCHANGED = 1111
-    integer(c_int), parameter, public :: QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED = 1112
-    integer(c_int), parameter, public :: QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE = 1113
-    integer(c_int), parameter, public :: QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED = 1114
-    integer(c_int), parameter, public :: QTF_SIG_QWIZARDPAGE_COMPLETECHANGED = 1115
-    integer(c_int), parameter, public :: QTF_SIG_QWIZARD_CURRENTIDCHANGED = 1116
-    integer(c_int), parameter, public :: QTF_SIG_QWIZARD_HELPREQUESTED = 1117
-    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_REDOREQUESTED = 1118
-    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_UNDOREQUESTED = 1119
-    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_CANUNDOCHANGED = 1120
-    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_CANREDOCHANGED = 1121
-    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_INDEXCHANGED = 1122
-    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1123
-    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1124
-    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1125
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT = 1126
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT = 1127
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT = 1128
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT = 1129
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_WHEELEVENT = 1130
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT = 1131
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT = 1132
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_DRAGENTEREVENT = 1133
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_DRAGMOVEEVENT = 1134
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_DRAGLEAVEEVENT = 1135
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_DROPEVENT = 1136
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_RESIZEEVENT = 1137
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT = 1138
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST = 1139
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_ENTEREVENT = 1140
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_LEAVEEVENT = 1141
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT = 1142
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1143
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1144
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1145
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_SURFACECREATED = 1146
-    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED = 1147
+    integer(c_int), parameter, public :: QTF_SIG_QPLAINTEXTEDIT_CURSORPOSITIONCHANGED = 1081
+    integer(c_int), parameter, public :: QTF_SIG_QPLAINTEXTEDIT_SELECTIONCHANGED = 1082
+    integer(c_int), parameter, public :: QTF_SIG_QPLAINTEXTEDIT_BLOCKCOUNTCHANGED = 1083
+    integer(c_int), parameter, public :: QTF_SIG_QPLAINTEXTEDIT_MODIFICATIONCHANGED = 1084
+    integer(c_int), parameter, public :: QTF_SIG_QPLAINTEXTEDIT_UNDOAVAILABLE = 1085
+    integer(c_int), parameter, public :: QTF_SIG_QPLAINTEXTEDIT_REDOAVAILABLE = 1086
+    integer(c_int), parameter, public :: QTF_SIG_QPLAINTEXTEDIT_COPYAVAILABLE = 1087
+    integer(c_int), parameter, public :: QTF_SIG_QTFPLAINTEXTEDIT_VIEWPORTPAINTEVENT = 1088
+    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1089
+    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1090
+    integer(c_int), parameter, public :: QTF_SIG_QTABWIDGET_TABBARCLICKED = 1091
+    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1092
+    integer(c_int), parameter, public :: QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1093
+    integer(c_int), parameter, public :: QTF_SIG_QSPLITTER_SPLITTERMOVED = 1094
+    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_TOGGLED = 1095
+    integer(c_int), parameter, public :: QTF_SIG_QGROUPBOX_CLICKED = 1096
+    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1097
+    integer(c_int), parameter, public :: QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1098
+    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1099
+    integer(c_int), parameter, public :: QTF_SIG_QBUTTONGROUP_IDCLICKED = 1100
+    integer(c_int), parameter, public :: QTF_SIG_QDATEEDIT_DATECHANGED = 1101
+    integer(c_int), parameter, public :: QTF_SIG_QTIMEEDIT_TIMECHANGED = 1102
+    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1103
+    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_CLICKED = 1104
+    integer(c_int), parameter, public :: QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1105
+    integer(c_int), parameter, public :: QTF_SIG_QPROGRESSDIALOG_CANCELED = 1106
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED = 1107
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_REJECTED = 1108
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED = 1109
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_CLICKED = 1110
+    integer(c_int), parameter, public :: QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE = 1111
+    integer(c_int), parameter, public :: QTF_SIG_QCOMPLETER_ACTIVATED = 1112
+    integer(c_int), parameter, public :: QTF_SIG_QCOMPLETER_HIGHLIGHTED = 1113
+    integer(c_int), parameter, public :: QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED = 1114
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_ANCHORCLICKED = 1115
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_SOURCECHANGED = 1116
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE = 1117
+    integer(c_int), parameter, public :: QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE = 1118
+    integer(c_int), parameter, public :: QTF_SIG_QTOOLBOX_CURRENTCHANGED = 1119
+    integer(c_int), parameter, public :: QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED = 1120
+    integer(c_int), parameter, public :: QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE = 1121
+    integer(c_int), parameter, public :: QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED = 1122
+    integer(c_int), parameter, public :: QTF_SIG_QWIZARDPAGE_COMPLETECHANGED = 1123
+    integer(c_int), parameter, public :: QTF_SIG_QWIZARD_CURRENTIDCHANGED = 1124
+    integer(c_int), parameter, public :: QTF_SIG_QWIZARD_HELPREQUESTED = 1125
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_REDOREQUESTED = 1126
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_UNDOREQUESTED = 1127
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_CANUNDOCHANGED = 1128
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_CANREDOCHANGED = 1129
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_INDEXCHANGED = 1130
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1131
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1132
+    integer(c_int), parameter, public :: QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1133
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT = 1134
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT = 1135
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT = 1136
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT = 1137
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_WHEELEVENT = 1138
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT = 1139
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT = 1140
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_DRAGENTEREVENT = 1141
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_DRAGMOVEEVENT = 1142
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_DRAGLEAVEEVENT = 1143
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_DROPEVENT = 1144
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_RESIZEEVENT = 1145
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT = 1146
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST = 1147
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_ENTEREVENT = 1148
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_LEAVEEVENT = 1149
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT = 1150
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1151
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1152
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1153
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_SURFACECREATED = 1154
+    integer(c_int), parameter, public :: QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED = 1155
 
     interface
 
@@ -287,6 +295,64 @@ module qt_c_widgets
             integer(c_int), intent(out) :: len
             type(c_ptr) :: res
         end function qtf_qapplication_applicationName
+
+        !> Set a widget's font from the fields of a Fortran QFont (an empty family or
+        !> pointSize <= 0 keeps the widget's).
+        !>
+        !> C: `void qtf_qwidget_setFont(void *self, const char *family, int len, double pointSize, int bold, int italic)`
+        subroutine qtf_qwidget_setFont(self, family, len, pointSize, bold, italic) bind(C, name='qtf_qwidget_setFont')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: family
+            integer(c_int), value :: len
+            real(c_double), value :: pointSize
+            integer(c_int), value :: bold
+            integer(c_int), value :: italic
+        end subroutine qtf_qwidget_setFont
+
+        !> The family of a widget's font.
+        !>
+        !> C: `char *qtf_qwidget_fontFamily(void *self, int *len)`
+        function qtf_qwidget_fontFamily(self, len) result(res) bind(C, name='qtf_qwidget_fontFamily')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qwidget_fontFamily
+
+        !> The point size of a widget's font.
+        !>
+        !> C: `double qtf_qwidget_fontPointSize(void *self)`
+        function qtf_qwidget_fontPointSize(self) result(res) bind(C, name='qtf_qwidget_fontPointSize')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qwidget_fontPointSize
+
+        !> The width of `text` in a widget's font, in pixels.
+        !>
+        !> C: `int qtf_qwidget_textWidth(void *self, const char *text, int len)`
+        function qtf_qwidget_textWidth(self, text, len) result(res) bind(C, name='qtf_qwidget_textWidth')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: len
+            integer(c_int) :: res
+        end function qtf_qwidget_textWidth
+
+        !> The line height (ascent + descent) of a widget's font, in pixels.
+        !>
+        !> C: `int qtf_qwidget_lineHeight(void *self)`
+        function qtf_qwidget_lineHeight(self) result(res) bind(C, name='qtf_qwidget_lineHeight')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwidget_lineHeight
 
         !> Create a widget; without a parent it is a top-level window.
         !>
@@ -6370,6 +6436,492 @@ module qt_c_widgets
             type(c_ptr), value :: self
         end subroutine qtf_qplaintextedit_redo
 
+        !> Cut the selection to the clipboard.
+        !>
+        !> C: `void qtf_qplaintextedit_cut(void *self)`
+        subroutine qtf_qplaintextedit_cut(self) bind(C, name='qtf_qplaintextedit_cut')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qplaintextedit_cut
+
+        !> Copy the selection to the clipboard.
+        !>
+        !> C: `void qtf_qplaintextedit_copy(void *self)`
+        subroutine qtf_qplaintextedit_copy(self) bind(C, name='qtf_qplaintextedit_copy')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qplaintextedit_copy
+
+        !> Paste the clipboard at the cursor.
+        !>
+        !> C: `void qtf_qplaintextedit_paste(void *self)`
+        subroutine qtf_qplaintextedit_paste(self) bind(C, name='qtf_qplaintextedit_paste')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qplaintextedit_paste
+
+        !> The text document (owned by the editor).
+        !>
+        !> C: `void *qtf_qplaintextedit_document(void *self)`
+        function qtf_qplaintextedit_document(self) result(res) bind(C, name='qtf_qplaintextedit_document')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qplaintextedit_document
+
+        !> A copy of the editor's cursor (delete it when done); to move the editor's cursor, pass it to `setTextCursor`.
+        !>
+        !> C: `void *qtf_qplaintextedit_textCursor(void *self)`
+        function qtf_qplaintextedit_textCursor(self) result(res) bind(C, name='qtf_qplaintextedit_textCursor')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qplaintextedit_textCursor
+
+        !> Make the editor's cursor (and selection) a copy of `cursor`.
+        !>
+        !> C: `void qtf_qplaintextedit_setTextCursor(void *self, void *cursor)`
+        subroutine qtf_qplaintextedit_setTextCursor(self, cursor) bind(C, name='qtf_qplaintextedit_setTextCursor')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: cursor
+        end subroutine qtf_qplaintextedit_setTextCursor
+
+        !> The position of the editor's cursor.
+        !>
+        !> C: `int qtf_qplaintextedit_cursorPosition(void *self)`
+        function qtf_qplaintextedit_cursorPosition(self) result(res) bind(C, name='qtf_qplaintextedit_cursorPosition')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qplaintextedit_cursorPosition
+
+        !> Move the editor's cursor to `position` (dropping the selection).
+        !>
+        !> C: `void qtf_qplaintextedit_setCursorPosition(void *self, int position)`
+        subroutine qtf_qplaintextedit_setCursorPosition(self, position) &
+                bind(C, name='qtf_qplaintextedit_setCursorPosition')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: position
+        end subroutine qtf_qplaintextedit_setCursorPosition
+
+        !> A new cursor at the text under viewport point (x, y) (delete it when done).
+        !>
+        !> C: `void *qtf_qplaintextedit_cursorForPosition(void *self, int x, int y)`
+        function qtf_qplaintextedit_cursorForPosition(self, x, y) &
+                result(res) bind(C, name='qtf_qplaintextedit_cursorForPosition')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: x
+            integer(c_int), value :: y
+            type(c_ptr) :: res
+        end function qtf_qplaintextedit_cursorForPosition
+
+        !> The document position of the text under viewport point (x, y).
+        !>
+        !> C: `int qtf_qplaintextedit_positionAt(void *self, int x, int y)`
+        function qtf_qplaintextedit_positionAt(self, x, y) result(res) bind(C, name='qtf_qplaintextedit_positionAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: x
+            integer(c_int), value :: y
+            integer(c_int) :: res
+        end function qtf_qplaintextedit_positionAt
+
+        !> The rectangle of the editor's cursor, in viewport coordinates (e.g. to place a completion popup).
+        !>
+        !> C: `void qtf_qplaintextedit_cursorRect(void *self, int *res_x, int *res_y, int *res_width, int *res_height)`
+        subroutine qtf_qplaintextedit_cursorRect(self, res_x, res_y, res_width, res_height) &
+                bind(C, name='qtf_qplaintextedit_cursorRect')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qplaintextedit_cursorRect
+
+        !> The rectangle a cursor at `position` would have, in viewport coordinates.
+        !>
+        !> C: `void qtf_qplaintextedit_cursorRectAt(void *self, int position, int *res_x, int *res_y, int *res_width, int *res_height)`
+        subroutine qtf_qplaintextedit_cursorRectAt(self, position, res_x, res_y, res_width, res_height) &
+                bind(C, name='qtf_qplaintextedit_cursorRectAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: position
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qplaintextedit_cursorRectAt
+
+        !> Scroll so that the cursor is vertically centered.
+        !>
+        !> C: `void qtf_qplaintextedit_centerCursor(void *self)`
+        subroutine qtf_qplaintextedit_centerCursor(self) bind(C, name='qtf_qplaintextedit_centerCursor')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qplaintextedit_centerCursor
+
+        !> Scroll so that the cursor is visible.
+        !>
+        !> C: `void qtf_qplaintextedit_ensureCursorVisible(void *self)`
+        subroutine qtf_qplaintextedit_ensureCursorVisible(self) bind(C, name='qtf_qplaintextedit_ensureCursorVisible')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qplaintextedit_ensureCursorVisible
+
+        !> Select the next match of `text` after the cursor (QTextDocument_FindBackward: before it); false (and no change) if there is none.
+        !>
+        !> C: `int qtf_qplaintextedit_find(void *self, const char *text, int text_len, int flags)`
+        function qtf_qplaintextedit_find(self, text, text_len, flags) &
+                result(res) bind(C, name='qtf_qplaintextedit_find')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+            integer(c_int), value :: flags
+            integer(c_int) :: res
+        end function qtf_qplaintextedit_find
+
+        !> As `find`, for a regular expression.
+        !>
+        !> C: `int qtf_qplaintextedit_findRegularExpression(void *self, const char *pattern, int pattern_len, int flags)`
+        function qtf_qplaintextedit_findRegularExpression(self, pattern, pattern_len, flags) &
+                result(res) bind(C, name='qtf_qplaintextedit_findRegularExpression')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: pattern
+            integer(c_int), value :: pattern_len
+            integer(c_int), value :: flags
+            integer(c_int) :: res
+        end function qtf_qplaintextedit_findRegularExpression
+
+        !> The width of a tab, in pixels (e.g. 4 times a character width).
+        !>
+        !> C: `void qtf_qplaintextedit_setTabStopDistance(void *self, double distance)`
+        subroutine qtf_qplaintextedit_setTabStopDistance(self, distance) &
+                bind(C, name='qtf_qplaintextedit_setTabStopDistance')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: distance
+        end subroutine qtf_qplaintextedit_setTabStopDistance
+
+        !> The width of a tab, in pixels.
+        !>
+        !> C: `double qtf_qplaintextedit_tabStopDistance(void *self)`
+        function qtf_qplaintextedit_tabStopDistance(self) result(res) bind(C, name='qtf_qplaintextedit_tabStopDistance')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double) :: res
+        end function qtf_qplaintextedit_tabStopDistance
+
+        !> Typing replaces the text after the cursor (insert key).
+        !>
+        !> C: `void qtf_qplaintextedit_setOverwriteMode(void *self, int overwrite)`
+        subroutine qtf_qplaintextedit_setOverwriteMode(self, overwrite) &
+                bind(C, name='qtf_qplaintextedit_setOverwriteMode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: overwrite
+        end subroutine qtf_qplaintextedit_setOverwriteMode
+
+        !> True in overwrite mode.
+        !>
+        !> C: `int qtf_qplaintextedit_overwriteMode(void *self)`
+        function qtf_qplaintextedit_overwriteMode(self) result(res) bind(C, name='qtf_qplaintextedit_overwriteMode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qplaintextedit_overwriteMode
+
+        !> The width of the text cursor, in pixels.
+        !>
+        !> C: `void qtf_qplaintextedit_setCursorWidth(void *self, int width)`
+        subroutine qtf_qplaintextedit_setCursorWidth(self, width) bind(C, name='qtf_qplaintextedit_setCursorWidth')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: width
+        end subroutine qtf_qplaintextedit_setCursorWidth
+
+        !> Allow scrolling past the end, so the last line can be centered.
+        !>
+        !> C: `void qtf_qplaintextedit_setCenterOnScroll(void *self, int enabled)`
+        subroutine qtf_qplaintextedit_setCenterOnScroll(self, enabled) &
+                bind(C, name='qtf_qplaintextedit_setCenterOnScroll')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enabled
+        end subroutine qtf_qplaintextedit_setCenterOnScroll
+
+        !> Record edits for undo (the default) or not.
+        !>
+        !> C: `void qtf_qplaintextedit_setUndoRedoEnabled(void *self, int enable)`
+        subroutine qtf_qplaintextedit_setUndoRedoEnabled(self, enable) &
+                bind(C, name='qtf_qplaintextedit_setUndoRedoEnabled')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enable
+        end subroutine qtf_qplaintextedit_setUndoRedoEnabled
+
+        !> The widget the text is drawn on, which gets the mouse events (e.g. for a QtfEventFilter).
+        !>
+        !> C: `void *qtf_qplaintextedit_viewport(void *self)`
+        function qtf_qplaintextedit_viewport(self) result(res) bind(C, name='qtf_qplaintextedit_viewport')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qplaintextedit_viewport
+
+        !> The vertical scroll position (the first visible line, for plain text).
+        !>
+        !> C: `int qtf_qplaintextedit_verticalScrollValue(void *self)`
+        function qtf_qplaintextedit_verticalScrollValue(self) &
+                result(res) bind(C, name='qtf_qplaintextedit_verticalScrollValue')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qplaintextedit_verticalScrollValue
+
+        !> Scroll vertically (to make line `value` the first visible one).
+        !>
+        !> C: `void qtf_qplaintextedit_setVerticalScrollValue(void *self, int value)`
+        subroutine qtf_qplaintextedit_setVerticalScrollValue(self, value) &
+                bind(C, name='qtf_qplaintextedit_setVerticalScrollValue')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: value
+        end subroutine qtf_qplaintextedit_setVerticalScrollValue
+
+        !> Show text from position `start` to `end` with `format` (e.g. a background color), without changing the text. `fullWidth`: color the whole line (with start = end, e.g. the current line).
+        !>
+        !> C: `void qtf_qplaintextedit_addExtraSelection(void *self, int start, int end, int format_foreground_r, int format_foreground_g, int format_foreground_b, int format_foreground_a, int format_foreground_valid, int format_background_r, int format_background_g, int format_background_b, int format_background_a, int format_background_valid, int format_bold, int format_italic, int format_underlineStyle, int format_underlineColor_r, int format_underlineColor_g, int format_underlineColor_b, int format_underlineColor_a, int format_underlineColor_valid, int fullWidth)`
+        subroutine qtf_qplaintextedit_addExtraSelection(self, start, end, format_foreground_r, format_foreground_g, format_foreground_b, format_foreground_a, format_foreground_valid, format_background_r, format_background_g, format_background_b, format_background_a, format_background_valid, format_bold, format_italic, format_underlineStyle, format_underlineColor_r, format_underlineColor_g, format_underlineColor_b, format_underlineColor_a, format_underlineColor_valid, fullWidth) &
+                bind(C, name='qtf_qplaintextedit_addExtraSelection')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: start
+            integer(c_int), value :: end
+            integer(c_int), value :: format_foreground_r
+            integer(c_int), value :: format_foreground_g
+            integer(c_int), value :: format_foreground_b
+            integer(c_int), value :: format_foreground_a
+            integer(c_int), value :: format_foreground_valid
+            integer(c_int), value :: format_background_r
+            integer(c_int), value :: format_background_g
+            integer(c_int), value :: format_background_b
+            integer(c_int), value :: format_background_a
+            integer(c_int), value :: format_background_valid
+            integer(c_int), value :: format_bold
+            integer(c_int), value :: format_italic
+            integer(c_int), value :: format_underlineStyle
+            integer(c_int), value :: format_underlineColor_r
+            integer(c_int), value :: format_underlineColor_g
+            integer(c_int), value :: format_underlineColor_b
+            integer(c_int), value :: format_underlineColor_a
+            integer(c_int), value :: format_underlineColor_valid
+            integer(c_int), value :: fullWidth
+        end subroutine qtf_qplaintextedit_addExtraSelection
+
+        !> Add many extra selections with the same format (e.g. all search matches): from `starts(i)` to `ends(i)`.
+        !>
+        !> C: `void qtf_qplaintextedit_addExtraSelections(void *self, const int *starts, const int *ends, int format_foreground_r, int format_foreground_g, int format_foreground_b, int format_foreground_a, int format_foreground_valid, int format_background_r, int format_background_g, int format_background_b, int format_background_a, int format_background_valid, int format_bold, int format_italic, int format_underlineStyle, int format_underlineColor_r, int format_underlineColor_g, int format_underlineColor_b, int format_underlineColor_a, int format_underlineColor_valid, int fullWidth, int n)`
+        subroutine qtf_qplaintextedit_addExtraSelections(self, starts, ends, format_foreground_r, format_foreground_g, format_foreground_b, format_foreground_a, format_foreground_valid, format_background_r, format_background_g, format_background_b, format_background_a, format_background_valid, format_bold, format_italic, format_underlineStyle, format_underlineColor_r, format_underlineColor_g, format_underlineColor_b, format_underlineColor_a, format_underlineColor_valid, fullWidth, n) &
+                bind(C, name='qtf_qplaintextedit_addExtraSelections')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), dimension(*), intent(in) :: starts
+            integer(c_int), dimension(*), intent(in) :: ends
+            integer(c_int), value :: format_foreground_r
+            integer(c_int), value :: format_foreground_g
+            integer(c_int), value :: format_foreground_b
+            integer(c_int), value :: format_foreground_a
+            integer(c_int), value :: format_foreground_valid
+            integer(c_int), value :: format_background_r
+            integer(c_int), value :: format_background_g
+            integer(c_int), value :: format_background_b
+            integer(c_int), value :: format_background_a
+            integer(c_int), value :: format_background_valid
+            integer(c_int), value :: format_bold
+            integer(c_int), value :: format_italic
+            integer(c_int), value :: format_underlineStyle
+            integer(c_int), value :: format_underlineColor_r
+            integer(c_int), value :: format_underlineColor_g
+            integer(c_int), value :: format_underlineColor_b
+            integer(c_int), value :: format_underlineColor_a
+            integer(c_int), value :: format_underlineColor_valid
+            integer(c_int), value :: fullWidth
+            integer(c_int), value :: n
+        end subroutine qtf_qplaintextedit_addExtraSelections
+
+        !> Remove all extra selections.
+        !>
+        !> C: `void qtf_qplaintextedit_clearExtraSelections(void *self)`
+        subroutine qtf_qplaintextedit_clearExtraSelections(self) bind(C, name='qtf_qplaintextedit_clearExtraSelections')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qplaintextedit_clearExtraSelections
+
+        !> The number of extra selections.
+        !>
+        !> C: `int qtf_qplaintextedit_extraSelectionCount(void *self)`
+        function qtf_qplaintextedit_extraSelectionCount(self) &
+                result(res) bind(C, name='qtf_qplaintextedit_extraSelectionCount')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qplaintextedit_extraSelectionCount
+
+        !> A code editor with initial `text`.
+        !>
+        !> C: `void *qtf_qtfplaintextedit_new(const char *text, int text_len, void *parent)`
+        function qtf_qtfplaintextedit_new(text, text_len, parent) result(res) bind(C, name='qtf_qtfplaintextedit_new')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qtfplaintextedit_new
+
+        !> The number of the first (partly) visible block (line).
+        !>
+        !> C: `int qtf_qtfplaintextedit_firstVisibleBlockNumber(void *self)`
+        function qtf_qtfplaintextedit_firstVisibleBlockNumber(self) &
+                result(res) bind(C, name='qtf_qtfplaintextedit_firstVisibleBlockNumber')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfplaintextedit_firstVisibleBlockNumber
+
+        !> The number of the last (partly) visible block.
+        !>
+        !> C: `int qtf_qtfplaintextedit_lastVisibleBlockNumber(void *self)`
+        function qtf_qtfplaintextedit_lastVisibleBlockNumber(self) &
+                result(res) bind(C, name='qtf_qtfplaintextedit_lastVisibleBlockNumber')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfplaintextedit_lastVisibleBlockNumber
+
+        !> The rectangle of block `number` in viewport coordinates (QPlainTextEdit::blockBoundingGeometry moved by the content offset); empty if there is no such block. Its `y` is where to draw the line's number in the gutter.
+        !>
+        !> C: `void qtf_qtfplaintextedit_blockBoundingGeometry(void *self, int number, double *res_x, double *res_y, double *res_width, double *res_height)`
+        subroutine qtf_qtfplaintextedit_blockBoundingGeometry(self, number, res_x, res_y, res_width, res_height) &
+                bind(C, name='qtf_qtfplaintextedit_blockBoundingGeometry')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: number
+            real(c_double), intent(out) :: res_x
+            real(c_double), intent(out) :: res_y
+            real(c_double), intent(out) :: res_width
+            real(c_double), intent(out) :: res_height
+        end subroutine qtf_qtfplaintextedit_blockBoundingGeometry
+
+        !> The content's origin in viewport coordinates (it moves as the text scrolls).
+        !>
+        !> C: `void qtf_qtfplaintextedit_contentOffset(void *self, double *res_x, double *res_y)`
+        subroutine qtf_qtfplaintextedit_contentOffset(self, res_x, res_y) &
+                bind(C, name='qtf_qtfplaintextedit_contentOffset')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), intent(out) :: res_x
+            real(c_double), intent(out) :: res_y
+        end subroutine qtf_qtfplaintextedit_contentOffset
+
+        !> Space around the viewport, e.g. for widgets placed beside the text (the left margin is the gutter's, see `setGutterWidth`).
+        !>
+        !> C: `void qtf_qtfplaintextedit_setViewportMargins(void *self, int left, int top, int right, int bottom)`
+        subroutine qtf_qtfplaintextedit_setViewportMargins(self, left, top, right, bottom) &
+                bind(C, name='qtf_qtfplaintextedit_setViewportMargins')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: left
+            integer(c_int), value :: top
+            integer(c_int), value :: right
+            integer(c_int), value :: bottom
+        end subroutine qtf_qtfplaintextedit_setViewportMargins
+
+        !> The space around the viewport.
+        !>
+        !> C: `void qtf_qtfplaintextedit_viewportMargins(void *self, int *res_left, int *res_top, int *res_right, int *res_bottom)`
+        subroutine qtf_qtfplaintextedit_viewportMargins(self, res_left, res_top, res_right, res_bottom) &
+                bind(C, name='qtf_qtfplaintextedit_viewportMargins')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: res_left
+            integer(c_int), intent(out) :: res_top
+            integer(c_int), intent(out) :: res_right
+            integer(c_int), intent(out) :: res_bottom
+        end subroutine qtf_qtfplaintextedit_viewportMargins
+
+        !> Show the gutter `width` pixels wide left of the text (0: hide it).
+        !>
+        !> C: `void qtf_qtfplaintextedit_setGutterWidth(void *self, int width)`
+        subroutine qtf_qtfplaintextedit_setGutterWidth(self, width) bind(C, name='qtf_qtfplaintextedit_setGutterWidth')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: width
+        end subroutine qtf_qtfplaintextedit_setGutterWidth
+
+        !> The gutter's width (0: hidden).
+        !>
+        !> C: `int qtf_qtfplaintextedit_gutterWidth(void *self)`
+        function qtf_qtfplaintextedit_gutterWidth(self) result(res) bind(C, name='qtf_qtfplaintextedit_gutterWidth')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtfplaintextedit_gutterWidth
+
+        !> The gutter: a QtfWidget left of the text; connect its paintEvent (and mouse events) to draw line numbers, markers, ...
+        !>
+        !> C: `void *qtf_qtfplaintextedit_gutter(void *self)`
+        function qtf_qtfplaintextedit_gutter(self) result(res) bind(C, name='qtf_qtfplaintextedit_gutter')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qtfplaintextedit_gutter
+
         !> Create an empty tab widget.
         !>
         !> C: `void *qtf_qtabwidget_new(void *parent)`
@@ -9550,27 +10102,28 @@ module qt_c_widgets
     public :: qtf_qapplication_setAttribute, qtf_qapplication_testAttribute
     public :: qtf_qapplication_setOrganizationName, qtf_qapplication_organizationName
     public :: qtf_qapplication_setOrganizationDomain, qtf_qapplication_setApplicationName
-    public :: qtf_qapplication_applicationName, qtf_qwidget_new, qtf_qwidget_show, qtf_qwidget_hide
-    public :: qtf_qwidget_close, qtf_qwidget_setVisible, qtf_qwidget_isVisible, qtf_qwidget_setEnabled
-    public :: qtf_qwidget_isEnabled, qtf_qwidget_resize, qtf_qwidget_width, qtf_qwidget_height
-    public :: qtf_qwidget_setMinimumSize, qtf_qwidget_setFixedSize, qtf_qwidget_setWindowTitle
-    public :: qtf_qwidget_windowTitle, qtf_qwidget_setToolTip, qtf_qwidget_toolTip, qtf_qwidget_setStyleSheet
-    public :: qtf_qwidget_setFocus, qtf_qwidget_setLayout, qtf_qwidget_layout, qtf_qwidget_update
-    public :: qtf_qwidget_repaint, qtf_qwidget_setMouseTracking, qtf_qwidget_hasMouseTracking
-    public :: qtf_qwidget_setFocusPolicy, qtf_qwidget_hasFocus, qtf_qwidget_grab, qtf_qwidget_addAction
-    public :: qtf_qwidget_insertAction, qtf_qwidget_removeAction, qtf_qwidget_setMaximumSize
-    public :: qtf_qwidget_setMinimumWidth, qtf_qwidget_setMinimumHeight, qtf_qwidget_setMaximumWidth
-    public :: qtf_qwidget_setMaximumHeight, qtf_qwidget_setFixedWidth, qtf_qwidget_setFixedHeight
-    public :: qtf_qwidget_setSizePolicy, qtf_qwidget_setContentsMargins, qtf_qwidget_setWindowIcon
-    public :: qtf_qwidget_saveGeometry, qtf_qwidget_restoreGeometry, qtf_qwidget_isWindow
-    public :: qtf_qwidget_setCursor, qtf_qwidget_setCursorPixmap, qtf_qwidget_unsetCursor
-    public :: qtf_qwidget_cursorShape, qtf_qwidget_setAcceptDrops, qtf_qwidget_acceptDrops
-    public :: qtf_qwidget_screen, qtf_qwidget_devicePixelRatio, qtf_qwidget_createWindowContainer
-    public :: qtf_qwidget_showMaximized, qtf_qwidget_showMinimized, qtf_qwidget_showNormal
-    public :: qtf_qwidget_showFullScreen, qtf_qwidget_isMaximized, qtf_qwidget_isMinimized
-    public :: qtf_qwidget_activateWindow, qtf_qwidget_raise, qtf_qwidget_repolish, qtf_qwidget_x
-    public :: qtf_qwidget_y, qtf_qwidget_move, qtf_qwidget_pos, qtf_qwidget_movePoint, qtf_qwidget_size
-    public :: qtf_qwidget_resizeSize, qtf_qwidget_geometry, qtf_qwidget_setGeometry
+    public :: qtf_qapplication_applicationName, qtf_qwidget_setFont, qtf_qwidget_fontFamily
+    public :: qtf_qwidget_fontPointSize, qtf_qwidget_textWidth, qtf_qwidget_lineHeight, qtf_qwidget_new
+    public :: qtf_qwidget_show, qtf_qwidget_hide, qtf_qwidget_close, qtf_qwidget_setVisible
+    public :: qtf_qwidget_isVisible, qtf_qwidget_setEnabled, qtf_qwidget_isEnabled, qtf_qwidget_resize
+    public :: qtf_qwidget_width, qtf_qwidget_height, qtf_qwidget_setMinimumSize, qtf_qwidget_setFixedSize
+    public :: qtf_qwidget_setWindowTitle, qtf_qwidget_windowTitle, qtf_qwidget_setToolTip
+    public :: qtf_qwidget_toolTip, qtf_qwidget_setStyleSheet, qtf_qwidget_setFocus, qtf_qwidget_setLayout
+    public :: qtf_qwidget_layout, qtf_qwidget_update, qtf_qwidget_repaint, qtf_qwidget_setMouseTracking
+    public :: qtf_qwidget_hasMouseTracking, qtf_qwidget_setFocusPolicy, qtf_qwidget_hasFocus
+    public :: qtf_qwidget_grab, qtf_qwidget_addAction, qtf_qwidget_insertAction, qtf_qwidget_removeAction
+    public :: qtf_qwidget_setMaximumSize, qtf_qwidget_setMinimumWidth, qtf_qwidget_setMinimumHeight
+    public :: qtf_qwidget_setMaximumWidth, qtf_qwidget_setMaximumHeight, qtf_qwidget_setFixedWidth
+    public :: qtf_qwidget_setFixedHeight, qtf_qwidget_setSizePolicy, qtf_qwidget_setContentsMargins
+    public :: qtf_qwidget_setWindowIcon, qtf_qwidget_saveGeometry, qtf_qwidget_restoreGeometry
+    public :: qtf_qwidget_isWindow, qtf_qwidget_setCursor, qtf_qwidget_setCursorPixmap
+    public :: qtf_qwidget_unsetCursor, qtf_qwidget_cursorShape, qtf_qwidget_setAcceptDrops
+    public :: qtf_qwidget_acceptDrops, qtf_qwidget_screen, qtf_qwidget_devicePixelRatio
+    public :: qtf_qwidget_createWindowContainer, qtf_qwidget_showMaximized, qtf_qwidget_showMinimized
+    public :: qtf_qwidget_showNormal, qtf_qwidget_showFullScreen, qtf_qwidget_isMaximized
+    public :: qtf_qwidget_isMinimized, qtf_qwidget_activateWindow, qtf_qwidget_raise, qtf_qwidget_repolish
+    public :: qtf_qwidget_x, qtf_qwidget_y, qtf_qwidget_move, qtf_qwidget_pos, qtf_qwidget_movePoint
+    public :: qtf_qwidget_size, qtf_qwidget_resizeSize, qtf_qwidget_geometry, qtf_qwidget_setGeometry
     public :: qtf_qwidget_frameGeometry, qtf_qwidget_rect, qtf_qwidget_contentsRect, qtf_qwidget_sizeHint
     public :: qtf_qwidget_minimumSize, qtf_qwidget_maximumSize, qtf_qwidget_setMinimumSizeSize
     public :: qtf_qwidget_setMaximumSizeSize, qtf_qwidget_setFixedSizeSize, qtf_qwidget_contentsMargins
@@ -9743,65 +10296,83 @@ module qt_c_widgets
     public :: qtf_qplaintextedit_setPlaceholderText, qtf_qplaintextedit_setMaximumBlockCount
     public :: qtf_qplaintextedit_maximumBlockCount, qtf_qplaintextedit_blockCount
     public :: qtf_qplaintextedit_setLineWrapMode, qtf_qplaintextedit_selectAll, qtf_qplaintextedit_undo
-    public :: qtf_qplaintextedit_redo, qtf_qtabwidget_new, qtf_qtabwidget_addTab, qtf_qtabwidget_insertTab
-    public :: qtf_qtabwidget_removeTab, qtf_qtabwidget_count, qtf_qtabwidget_currentIndex
-    public :: qtf_qtabwidget_setCurrentIndex, qtf_qtabwidget_setCurrentWidget, qtf_qtabwidget_widget
-    public :: qtf_qtabwidget_setTabText, qtf_qtabwidget_tabText, qtf_qtabwidget_setTabToolTip
-    public :: qtf_qtabwidget_setTabIcon, qtf_qtabwidget_setTabEnabled, qtf_qtabwidget_setTabsClosable
-    public :: qtf_qtabwidget_setTabPosition, qtf_qtabwidget_setMovable, qtf_qtabwidget_setDocumentMode
-    public :: qtf_qstackedwidget_new, qtf_qstackedwidget_addWidget, qtf_qstackedwidget_insertWidget
-    public :: qtf_qstackedwidget_removeWidget, qtf_qstackedwidget_count, qtf_qstackedwidget_currentIndex
-    public :: qtf_qstackedwidget_setCurrentIndex, qtf_qstackedwidget_setCurrentWidget
-    public :: qtf_qstackedwidget_widget, qtf_qstackedwidget_currentWidget, qtf_qsplitter_new
-    public :: qtf_qsplitter_addWidget, qtf_qsplitter_insertWidget, qtf_qsplitter_count
-    public :: qtf_qsplitter_setSizes, qtf_qsplitter_sizes, qtf_qsplitter_setStretchFactor
-    public :: qtf_qsplitter_setOrientation, qtf_qsplitter_orientation, qtf_qsplitter_setChildrenCollapsible
-    public :: qtf_qsplitter_setHandleWidth, qtf_qscrollarea_new, qtf_qscrollarea_setWidget
-    public :: qtf_qscrollarea_widget, qtf_qscrollarea_setWidgetResizable, qtf_qscrollarea_widgetResizable
-    public :: qtf_qscrollarea_setHorizontalScrollBarPolicy, qtf_qscrollarea_setVerticalScrollBarPolicy
-    public :: qtf_qscrollarea_ensureVisible, qtf_qscrollarea_setAlignment, qtf_qgroupbox_new
-    public :: qtf_qgroupbox_setTitle, qtf_qgroupbox_title, qtf_qgroupbox_setCheckable
-    public :: qtf_qgroupbox_isCheckable, qtf_qgroupbox_setChecked, qtf_qgroupbox_isChecked
-    public :: qtf_qgroupbox_setFlat, qtf_qgroupbox_isFlat, qtf_qgroupbox_setAlignment, qtf_qdockwidget_new
-    public :: qtf_qdockwidget_setWidget, qtf_qdockwidget_widget, qtf_qdockwidget_setFloating
-    public :: qtf_qdockwidget_isFloating, qtf_qdockwidget_setFeatures, qtf_qdockwidget_setAllowedAreas
-    public :: qtf_qdockwidget_toggleViewAction, qtf_qprogressbar_new, qtf_qprogressbar_setRange
-    public :: qtf_qprogressbar_minimum, qtf_qprogressbar_maximum, qtf_qprogressbar_setValue
-    public :: qtf_qprogressbar_value, qtf_qprogressbar_reset, qtf_qprogressbar_setFormat
-    public :: qtf_qprogressbar_setTextVisible, qtf_qprogressbar_setOrientation
-    public :: qtf_qprogressbar_setInvertedAppearance, qtf_qtoolbutton_new, qtf_qtoolbutton_setDefaultAction
-    public :: qtf_qtoolbutton_defaultAction, qtf_qtoolbutton_setPopupMode, qtf_qtoolbutton_setToolButtonStyle
-    public :: qtf_qtoolbutton_setAutoRaise, qtf_qtoolbutton_setMenu, qtf_qtoolbutton_showMenu
-    public :: qtf_qbuttongroup_new, qtf_qbuttongroup_addButton, qtf_qbuttongroup_removeButton
-    public :: qtf_qbuttongroup_checkedId, qtf_qbuttongroup_setExclusive, qtf_qbuttongroup_exclusive
-    public :: qtf_qbuttongroup_button, qtf_qbuttongroup_setId, qtf_qbuttongroup_id, qtf_qdial_new
-    public :: qtf_qdial_setNotchesVisible, qtf_qdial_notchesVisible, qtf_qdial_setWrapping
-    public :: qtf_qdial_wrapping, qtf_qdial_setNotchTarget, qtf_qlcdnumber_new, qtf_qlcdnumber_displayInt
-    public :: qtf_qlcdnumber_displayDouble, qtf_qlcdnumber_displayString, qtf_qlcdnumber_value
-    public :: qtf_qlcdnumber_intValue, qtf_qlcdnumber_setDigitCount, qtf_qlcdnumber_digitCount
-    public :: qtf_qlcdnumber_setMode, qtf_qlcdnumber_setSegmentStyle, qtf_qlcdnumber_setSmallDecimalPoint
-    public :: qtf_qlcdnumber_checkOverflow, qtf_qdateedit_new, qtf_qdateedit_setDate, qtf_qdateedit_date
-    public :: qtf_qdateedit_setMinimumDate, qtf_qdateedit_setMaximumDate, qtf_qdateedit_setDisplayFormat
-    public :: qtf_qdateedit_displayFormat, qtf_qdateedit_setCalendarPopup, qtf_qtimeedit_new
-    public :: qtf_qtimeedit_setTime, qtf_qtimeedit_time, qtf_qtimeedit_setMinimumTime
-    public :: qtf_qtimeedit_setMaximumTime, qtf_qtimeedit_setDisplayFormat, qtf_qtimeedit_displayFormat
-    public :: qtf_qcalendarwidget_new, qtf_qcalendarwidget_setSelectedDate, qtf_qcalendarwidget_selectedDate
-    public :: qtf_qcalendarwidget_setMinimumDate, qtf_qcalendarwidget_setMaximumDate
-    public :: qtf_qcalendarwidget_setGridVisible, qtf_qinputdialog_getText, qtf_qinputdialog_getMultiLineText
-    public :: qtf_qinputdialog_getInt, qtf_qinputdialog_getDouble, qtf_qinputdialog_getItem
-    public :: qtf_qcolordialog_getColor, qtf_qfontdialog_getFont, qtf_qprogressdialog_new
-    public :: qtf_qprogressdialog_setValue, qtf_qprogressdialog_value, qtf_qprogressdialog_setRange
-    public :: qtf_qprogressdialog_setLabelText, qtf_qprogressdialog_wasCanceled
-    public :: qtf_qprogressdialog_setMinimumDuration, qtf_qprogressdialog_reset, qtf_qprogressdialog_cancel
-    public :: qtf_qprogressdialog_setAutoClose, qtf_qprogressdialog_setAutoReset, qtf_qformlayout_new
-    public :: qtf_qformlayout_addRow, qtf_qformlayout_addRowLayout, qtf_qformlayout_addRowWidget
-    public :: qtf_qformlayout_rowCount, qtf_qformlayout_setLabelAlignment
-    public :: qtf_qformlayout_setHorizontalSpacing, qtf_qformlayout_setVerticalSpacing
-    public :: qtf_qstyle_standardIcon, qtf_qdialogbuttonbox_new, qtf_qdialogbuttonbox_setStandardButtons
-    public :: qtf_qdialogbuttonbox_standardButtons, qtf_qdialogbuttonbox_button
-    public :: qtf_qdialogbuttonbox_addButton, qtf_qdialogbuttonbox_setOrientation
-    public :: qtf_qdialogbuttonbox_setCenterButtons, qtf_qcompleter_new, qtf_qcompleter_setItems
-    public :: qtf_qcompleter_setCaseSensitivity, qtf_qcompleter_setFilterMode
+    public :: qtf_qplaintextedit_redo, qtf_qplaintextedit_cut, qtf_qplaintextedit_copy
+    public :: qtf_qplaintextedit_paste, qtf_qplaintextedit_document, qtf_qplaintextedit_textCursor
+    public :: qtf_qplaintextedit_setTextCursor, qtf_qplaintextedit_cursorPosition
+    public :: qtf_qplaintextedit_setCursorPosition, qtf_qplaintextedit_cursorForPosition
+    public :: qtf_qplaintextedit_positionAt, qtf_qplaintextedit_cursorRect, qtf_qplaintextedit_cursorRectAt
+    public :: qtf_qplaintextedit_centerCursor, qtf_qplaintextedit_ensureCursorVisible
+    public :: qtf_qplaintextedit_find, qtf_qplaintextedit_findRegularExpression
+    public :: qtf_qplaintextedit_setTabStopDistance, qtf_qplaintextedit_tabStopDistance
+    public :: qtf_qplaintextedit_setOverwriteMode, qtf_qplaintextedit_overwriteMode
+    public :: qtf_qplaintextedit_setCursorWidth, qtf_qplaintextedit_setCenterOnScroll
+    public :: qtf_qplaintextedit_setUndoRedoEnabled, qtf_qplaintextedit_viewport
+    public :: qtf_qplaintextedit_verticalScrollValue, qtf_qplaintextedit_setVerticalScrollValue
+    public :: qtf_qplaintextedit_addExtraSelection, qtf_qplaintextedit_addExtraSelections
+    public :: qtf_qplaintextedit_clearExtraSelections, qtf_qplaintextedit_extraSelectionCount
+    public :: qtf_qtfplaintextedit_new, qtf_qtfplaintextedit_firstVisibleBlockNumber
+    public :: qtf_qtfplaintextedit_lastVisibleBlockNumber, qtf_qtfplaintextedit_blockBoundingGeometry
+    public :: qtf_qtfplaintextedit_contentOffset, qtf_qtfplaintextedit_setViewportMargins
+    public :: qtf_qtfplaintextedit_viewportMargins, qtf_qtfplaintextedit_setGutterWidth
+    public :: qtf_qtfplaintextedit_gutterWidth, qtf_qtfplaintextedit_gutter, qtf_qtabwidget_new
+    public :: qtf_qtabwidget_addTab, qtf_qtabwidget_insertTab, qtf_qtabwidget_removeTab, qtf_qtabwidget_count
+    public :: qtf_qtabwidget_currentIndex, qtf_qtabwidget_setCurrentIndex, qtf_qtabwidget_setCurrentWidget
+    public :: qtf_qtabwidget_widget, qtf_qtabwidget_setTabText, qtf_qtabwidget_tabText
+    public :: qtf_qtabwidget_setTabToolTip, qtf_qtabwidget_setTabIcon, qtf_qtabwidget_setTabEnabled
+    public :: qtf_qtabwidget_setTabsClosable, qtf_qtabwidget_setTabPosition, qtf_qtabwidget_setMovable
+    public :: qtf_qtabwidget_setDocumentMode, qtf_qstackedwidget_new, qtf_qstackedwidget_addWidget
+    public :: qtf_qstackedwidget_insertWidget, qtf_qstackedwidget_removeWidget, qtf_qstackedwidget_count
+    public :: qtf_qstackedwidget_currentIndex, qtf_qstackedwidget_setCurrentIndex
+    public :: qtf_qstackedwidget_setCurrentWidget, qtf_qstackedwidget_widget
+    public :: qtf_qstackedwidget_currentWidget, qtf_qsplitter_new, qtf_qsplitter_addWidget
+    public :: qtf_qsplitter_insertWidget, qtf_qsplitter_count, qtf_qsplitter_setSizes, qtf_qsplitter_sizes
+    public :: qtf_qsplitter_setStretchFactor, qtf_qsplitter_setOrientation, qtf_qsplitter_orientation
+    public :: qtf_qsplitter_setChildrenCollapsible, qtf_qsplitter_setHandleWidth, qtf_qscrollarea_new
+    public :: qtf_qscrollarea_setWidget, qtf_qscrollarea_widget, qtf_qscrollarea_setWidgetResizable
+    public :: qtf_qscrollarea_widgetResizable, qtf_qscrollarea_setHorizontalScrollBarPolicy
+    public :: qtf_qscrollarea_setVerticalScrollBarPolicy, qtf_qscrollarea_ensureVisible
+    public :: qtf_qscrollarea_setAlignment, qtf_qgroupbox_new, qtf_qgroupbox_setTitle, qtf_qgroupbox_title
+    public :: qtf_qgroupbox_setCheckable, qtf_qgroupbox_isCheckable, qtf_qgroupbox_setChecked
+    public :: qtf_qgroupbox_isChecked, qtf_qgroupbox_setFlat, qtf_qgroupbox_isFlat
+    public :: qtf_qgroupbox_setAlignment, qtf_qdockwidget_new, qtf_qdockwidget_setWidget
+    public :: qtf_qdockwidget_widget, qtf_qdockwidget_setFloating, qtf_qdockwidget_isFloating
+    public :: qtf_qdockwidget_setFeatures, qtf_qdockwidget_setAllowedAreas, qtf_qdockwidget_toggleViewAction
+    public :: qtf_qprogressbar_new, qtf_qprogressbar_setRange, qtf_qprogressbar_minimum
+    public :: qtf_qprogressbar_maximum, qtf_qprogressbar_setValue, qtf_qprogressbar_value
+    public :: qtf_qprogressbar_reset, qtf_qprogressbar_setFormat, qtf_qprogressbar_setTextVisible
+    public :: qtf_qprogressbar_setOrientation, qtf_qprogressbar_setInvertedAppearance, qtf_qtoolbutton_new
+    public :: qtf_qtoolbutton_setDefaultAction, qtf_qtoolbutton_defaultAction, qtf_qtoolbutton_setPopupMode
+    public :: qtf_qtoolbutton_setToolButtonStyle, qtf_qtoolbutton_setAutoRaise, qtf_qtoolbutton_setMenu
+    public :: qtf_qtoolbutton_showMenu, qtf_qbuttongroup_new, qtf_qbuttongroup_addButton
+    public :: qtf_qbuttongroup_removeButton, qtf_qbuttongroup_checkedId, qtf_qbuttongroup_setExclusive
+    public :: qtf_qbuttongroup_exclusive, qtf_qbuttongroup_button, qtf_qbuttongroup_setId
+    public :: qtf_qbuttongroup_id, qtf_qdial_new, qtf_qdial_setNotchesVisible, qtf_qdial_notchesVisible
+    public :: qtf_qdial_setWrapping, qtf_qdial_wrapping, qtf_qdial_setNotchTarget, qtf_qlcdnumber_new
+    public :: qtf_qlcdnumber_displayInt, qtf_qlcdnumber_displayDouble, qtf_qlcdnumber_displayString
+    public :: qtf_qlcdnumber_value, qtf_qlcdnumber_intValue, qtf_qlcdnumber_setDigitCount
+    public :: qtf_qlcdnumber_digitCount, qtf_qlcdnumber_setMode, qtf_qlcdnumber_setSegmentStyle
+    public :: qtf_qlcdnumber_setSmallDecimalPoint, qtf_qlcdnumber_checkOverflow, qtf_qdateedit_new
+    public :: qtf_qdateedit_setDate, qtf_qdateedit_date, qtf_qdateedit_setMinimumDate
+    public :: qtf_qdateedit_setMaximumDate, qtf_qdateedit_setDisplayFormat, qtf_qdateedit_displayFormat
+    public :: qtf_qdateedit_setCalendarPopup, qtf_qtimeedit_new, qtf_qtimeedit_setTime, qtf_qtimeedit_time
+    public :: qtf_qtimeedit_setMinimumTime, qtf_qtimeedit_setMaximumTime, qtf_qtimeedit_setDisplayFormat
+    public :: qtf_qtimeedit_displayFormat, qtf_qcalendarwidget_new, qtf_qcalendarwidget_setSelectedDate
+    public :: qtf_qcalendarwidget_selectedDate, qtf_qcalendarwidget_setMinimumDate
+    public :: qtf_qcalendarwidget_setMaximumDate, qtf_qcalendarwidget_setGridVisible
+    public :: qtf_qinputdialog_getText, qtf_qinputdialog_getMultiLineText, qtf_qinputdialog_getInt
+    public :: qtf_qinputdialog_getDouble, qtf_qinputdialog_getItem, qtf_qcolordialog_getColor
+    public :: qtf_qfontdialog_getFont, qtf_qprogressdialog_new, qtf_qprogressdialog_setValue
+    public :: qtf_qprogressdialog_value, qtf_qprogressdialog_setRange, qtf_qprogressdialog_setLabelText
+    public :: qtf_qprogressdialog_wasCanceled, qtf_qprogressdialog_setMinimumDuration
+    public :: qtf_qprogressdialog_reset, qtf_qprogressdialog_cancel, qtf_qprogressdialog_setAutoClose
+    public :: qtf_qprogressdialog_setAutoReset, qtf_qformlayout_new, qtf_qformlayout_addRow
+    public :: qtf_qformlayout_addRowLayout, qtf_qformlayout_addRowWidget, qtf_qformlayout_rowCount
+    public :: qtf_qformlayout_setLabelAlignment, qtf_qformlayout_setHorizontalSpacing
+    public :: qtf_qformlayout_setVerticalSpacing, qtf_qstyle_standardIcon, qtf_qdialogbuttonbox_new
+    public :: qtf_qdialogbuttonbox_setStandardButtons, qtf_qdialogbuttonbox_standardButtons
+    public :: qtf_qdialogbuttonbox_button, qtf_qdialogbuttonbox_addButton
+    public :: qtf_qdialogbuttonbox_setOrientation, qtf_qdialogbuttonbox_setCenterButtons, qtf_qcompleter_new
+    public :: qtf_qcompleter_setItems, qtf_qcompleter_setCaseSensitivity, qtf_qcompleter_setFilterMode
     public :: qtf_qcompleter_setCompletionMode, qtf_qcompleter_setMaxVisibleItems
     public :: qtf_qcompleter_setCompletionPrefix, qtf_qcompleter_completionCount
     public :: qtf_qcompleter_currentCompletion, qtf_qcompleter_setCurrentRow, qtf_qdatetimeedit_new

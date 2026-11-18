@@ -20,6 +20,8 @@
 #include <QDragMoveEvent>
 #include <QDropEvent>
 #include <QFont>
+#include <QFontDatabase>
+#include <QFontInfo>
 #include <QFontMetrics>
 #include <QGuiApplication>
 #include <QIcon>
@@ -40,11 +42,18 @@
 #include <QRegularExpressionValidator>
 #include <QResizeEvent>
 #include <QScreen>
+#include <QSyntaxHighlighter>
+#include <QTextBlock>
+#include <QTextCharFormat>
+#include <QTextCursor>
+#include <QTextDocument>
+#include <QTextLayout>
 #include <QTransform>
 #include <QUrl>
 #include <QValidator>
 #include <QWheelEvent>
 #include <QWindow>
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -61,6 +70,13 @@ enum : int {
     QTF_SIG_QWINDOW_HEIGHTCHANGED = 2006,
     QTF_SIG_QWINDOW_VISIBLECHANGED = 2007,
     QTF_SIG_QWINDOW_ACTIVECHANGED = 2008,
+    QTF_SIG_QTEXTDOCUMENT_CONTENTSCHANGED = 2009,
+    QTF_SIG_QTEXTDOCUMENT_CONTENTSCHANGE = 2010,
+    QTF_SIG_QTEXTDOCUMENT_BLOCKCOUNTCHANGED = 2011,
+    QTF_SIG_QTEXTDOCUMENT_MODIFICATIONCHANGED = 2012,
+    QTF_SIG_QTEXTDOCUMENT_UNDOAVAILABLE = 2013,
+    QTF_SIG_QTEXTDOCUMENT_REDOAVAILABLE = 2014,
+    QTF_SIG_QTFSYNTAXHIGHLIGHTER_HIGHLIGHTBLOCK = 2015,
 };
 
 // Validate `text` with a validator: QValidator_Invalid, _Intermediate or _Acceptable.
@@ -218,6 +234,135 @@ static QPolygonF qtf_polygon(const double *xs, const double *ys, int n) {
     poly.reserve(n);
     for (int i = 0; i < n; ++i) poly << QPointF(xs[i], ys[i]);
     return poly;
+}
+
+// ---------------------------------------------------------------------------
+// text documents
+
+// A character format from the fields of a Fortran QTextCharFormat: invalid
+// colors, false flags and QTextCharFormat_NoUnderline leave that part unset.
+// (Not static: the widgets shim uses it too.)
+QTextCharFormat qtf_char_format(const QColor &fg, const QColor &bg, bool bold, bool italic, int underline,
+                                const QColor &underlineColor) {
+    QTextCharFormat f;
+    if (fg.isValid()) f.setForeground(fg);
+    if (bg.isValid()) f.setBackground(bg);
+    if (bold) f.setFontWeight(QFont::Bold);
+    if (italic) f.setFontItalic(true);
+    if (underline != QTextCharFormat::NoUnderline) f.setUnderlineStyle(QTextCharFormat::UnderlineStyle(underline));
+    if (underlineColor.isValid()) f.setUnderlineColor(underlineColor);
+    return f;
+}
+
+// Text with Qt's paragraph and line separators (in selections) as newlines.
+static QString qtf_plain(QString s) {
+    s.replace(QChar::ParagraphSeparator, u'\n');
+    s.replace(QChar::LineSeparator, u'\n');
+    return s;
+}
+
+// Properties of block `n` of a document; -1 if there is no such block.
+static int qtf_block_position(const QTextDocument *d, int n) {
+    const QTextBlock b = d->findBlockByNumber(n);
+    return b.isValid() ? b.position() : -1;
+}
+
+static int qtf_block_length(const QTextDocument *d, int n) {
+    const QTextBlock b = d->findBlockByNumber(n);
+    return b.isValid() ? b.length() : -1;
+}
+
+static int qtf_block_state(const QTextDocument *d, int n) {
+    const QTextBlock b = d->findBlockByNumber(n);
+    return b.isValid() ? b.userState() : -1;
+}
+
+static void qtf_set_block_state(const QTextDocument *d, int n, int state) {
+    QTextBlock b = d->findBlockByNumber(n);
+    if (b.isValid()) b.setUserState(state);
+}
+
+// The number of the block containing `position`; -1 if out of range.
+static int qtf_block_number_at(const QTextDocument *d, int position) {
+    const QTextBlock b = d->findBlock(position);
+    return b.isValid() ? b.blockNumber() : -1;
+}
+
+// The highlighting format (from a syntax highlighter) of the character at `position`.
+static QTextCharFormat qtf_format_at(const QTextDocument *d, int position) {
+    const QTextBlock b = d->findBlock(position);
+    if (!b.isValid() || !b.layout()) return {};
+    const int rel = position - b.position();
+    for (const QTextLayout::FormatRange &r : b.layout()->formats())
+        if (rel >= r.start && rel < r.start + r.length) return r.format;
+    return {};
+}
+
+// The system's fixed-pitch font family, resolved to an installed font (the
+// system font may be a generic name, e.g. "monospace" on some platforms).
+static QString qtf_fixed_family() {
+    QFont f = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    f.setStyleHint(QFont::Monospace);
+    f.setFixedPitch(true);
+    return QFontInfo(f).family();
+}
+
+// A brush's color name ("#rrggbb"), or "" if the brush is not set.
+static QString qtf_brush_name(const QBrush &b) { return b.style() == Qt::NoBrush ? QString() : b.color().name(); }
+
+// QtfSyntaxHighlighter: highlightBlock is delivered to Fortran slots, which
+// format the block through a QtfHighlightBlock (the protected API made public).
+class QtfSyntaxHighlighter : public QSyntaxHighlighter {
+  public:
+    explicit QtfSyntaxHighlighter(QTextDocument *doc) : QSyntaxHighlighter(doc) {}
+    std::vector<qtf_slot> handlers;
+
+    void format(int start, int count, const QTextCharFormat &f) { setFormat(start, count, f); }
+    int previousState() const { return previousBlockState(); }
+    int state() const { return currentBlockState(); }
+    void setState(int s) { setCurrentBlockState(s); }
+    QTextBlock block() const { return currentBlock(); }
+
+  protected:
+    void highlightBlock(const QString &text) override;
+};
+
+// The block being highlighted, as the Fortran slots see it: its text as
+// UTF-8, with positions in bytes of that text (converted to Qt's UTF-16
+// positions here, so non-ASCII text formats correctly).
+struct QtfHighlightBlock {
+    QtfSyntaxHighlighter *h;
+    const QString &text;
+    QByteArray utf8;
+
+    int index(int byte) const {
+        byte = std::clamp(byte, 0, int(utf8.size()));
+        if (utf8.size() == text.size()) return byte;   // ASCII: bytes are characters
+        return int(QString::fromUtf8(utf8.constData(), byte).size());
+    }
+
+    void setFormat(int start, int count, const QTextCharFormat &f) const {
+        const int a = index(start), b = index(start + std::max(count, 0));
+        if (b > a) h->format(a, b - a, f);
+    }
+};
+
+void QtfSyntaxHighlighter::highlightBlock(const QString &text) {
+    if (handlers.empty()) return;
+    QtfHighlightBlock b{this, text, text.toUtf8()};
+    qtf_args a{};
+    a.p = &b;
+    qtf_emit_all(handlers, a);
+}
+
+// Attach a slot to a QtfSyntaxHighlighter's highlightBlock, and highlight the
+// document with it right away.
+static bool connect_highlighter(void *s, const qtf_slot &ref) {
+    auto *h = dynamic_cast<QtfSyntaxHighlighter *>(static_cast<QObject *>(s));
+    if (!h) return false;
+    h->handlers.push_back(ref);
+    h->rehighlight();
+    return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -1834,6 +1979,301 @@ QTF_API void *qtf_qwindow_screen(void *self) { return as<QWindow>(self)->screen(
 QTF_API void qtf_qwindow_requestUpdate(void *self) { as<QWindow>(self)->requestUpdate(); }
 
 // ---------------------------------------------------------------------------
+// QTextDocument
+
+// A document holding plain `text`.
+QTF_API void *qtf_qtextdocument_new(const char *text, int text_len, void *parent) {
+    return new QTextDocument(qtf_qstring(text, text_len), as<QObject>(parent));
+}
+
+// The text (lines separated by newlines).
+QTF_API char *qtf_qtextdocument_toPlainText(void *self, int *len) {
+    return qtf_to_c(as<QTextDocument>(self)->toPlainText(), len);
+}
+
+// Replace the text (clears the undo history).
+QTF_API void qtf_qtextdocument_setPlainText(void *self, const char *text, int text_len) {
+    as<QTextDocument>(self)->setPlainText(qtf_qstring(text, text_len));
+}
+
+// True if the document has no text.
+QTF_API int qtf_qtextdocument_isEmpty(void *self) { return qtf_bool(as<QTextDocument>(self)->isEmpty()); }
+
+// The number of blocks (lines).
+QTF_API int qtf_qtextdocument_blockCount(void *self) { return as<QTextDocument>(self)->blockCount(); }
+
+// The number of characters, including the line breaks and a final paragraph separator.
+QTF_API int qtf_qtextdocument_characterCount(void *self) { return as<QTextDocument>(self)->characterCount(); }
+
+// True if the text changed since `setModified(.false.)` (e.g. since it was saved).
+QTF_API int qtf_qtextdocument_isModified(void *self) {
+    return qtf_bool(as<QTextDocument>(self)->isModified());
+}
+
+// Set the modified flag (`.false.` after saving).
+QTF_API void qtf_qtextdocument_setModified(void *self, int modified) {
+    as<QTextDocument>(self)->setModified((modified != 0));
+}
+
+// True if there is an edit to undo.
+QTF_API int qtf_qtextdocument_isUndoAvailable(void *self) {
+    return qtf_bool(as<QTextDocument>(self)->isUndoAvailable());
+}
+
+// True if there is an undone edit to redo.
+QTF_API int qtf_qtextdocument_isRedoAvailable(void *self) {
+    return qtf_bool(as<QTextDocument>(self)->isRedoAvailable());
+}
+
+// Undo the last edit.
+QTF_API void qtf_qtextdocument_undo(void *self) { as<QTextDocument>(self)->undo(); }
+
+// Redo the last undone edit.
+QTF_API void qtf_qtextdocument_redo(void *self) { as<QTextDocument>(self)->redo(); }
+
+// Record edits for undo (the default) or not.
+QTF_API void qtf_qtextdocument_setUndoRedoEnabled(void *self, int enable) {
+    as<QTextDocument>(self)->setUndoRedoEnabled((enable != 0));
+}
+
+// A new cursor selecting the first match of `text` at or after `position` (with QTextDocument_FindBackward: before it); `isNull()` if there is none. Flags: QTextDocument_Find* combined with ior. Delete the cursor when done.
+QTF_API void *qtf_qtextdocument_find(void *self, const char *text, int text_len, int position, int flags) {
+    return new QTextCursor(as<QTextDocument>(self)->find(qtf_qstring(text, text_len), position, QTextDocument::FindFlags(flags)));
+}
+
+// As `find`, for a regular expression (Perl syntax; a match does not span lines).
+QTF_API void *qtf_qtextdocument_findRegularExpression(void *self, const char *pattern, int pattern_len, int position, int flags) {
+    return new QTextCursor(as<QTextDocument>(self)->find(QRegularExpression(qtf_qstring(pattern, pattern_len)), position, QTextDocument::FindFlags(flags)));
+}
+
+// The text of block `number` ('' if there is none).
+QTF_API char *qtf_qtextdocument_blockText(void *self, int number, int *len) {
+    return qtf_to_c(as<QTextDocument>(self)->findBlockByNumber(number).text(), len);
+}
+
+// The position of the first character of block `number` (-1 if there is none).
+QTF_API int qtf_qtextdocument_blockPosition(void *self, int number) {
+    return qtf_block_position(as<QTextDocument>(self), number);
+}
+
+// The length of block `number`, including its line break (-1 if there is none).
+QTF_API int qtf_qtextdocument_blockLength(void *self, int number) {
+    return qtf_block_length(as<QTextDocument>(self), number);
+}
+
+// The number of the block containing `position` (-1 if out of range).
+QTF_API int qtf_qtextdocument_blockNumberAt(void *self, int position) {
+    return qtf_block_number_at(as<QTextDocument>(self), position);
+}
+
+// The user state of block `number` (-1 if unset or there is no such block).
+QTF_API int qtf_qtextdocument_blockUserState(void *self, int number) {
+    return qtf_block_state(as<QTextDocument>(self), number);
+}
+
+// Set the user state of block `number`.
+QTF_API void qtf_qtextdocument_setBlockUserState(void *self, int number, int state) {
+    qtf_set_block_state(as<QTextDocument>(self), number, state);
+}
+
+// The character at `position` (a line break is a newline).
+QTF_API char *qtf_qtextdocument_characterAt(void *self, int position, int *len) {
+    return qtf_to_c(qtf_plain(QString(as<QTextDocument>(self)->characterAt(position))), len);
+}
+
+// The text color a syntax highlighter gave the character at `position`, as '#rrggbb' ('' if none).
+QTF_API char *qtf_qtextdocument_formatForegroundAt(void *self, int position, int *len) {
+    return qtf_to_c(qtf_brush_name(qtf_format_at(as<QTextDocument>(self), position).foreground()), len);
+}
+
+// The background color a syntax highlighter gave the character at `position` ('' if none).
+QTF_API char *qtf_qtextdocument_formatBackgroundAt(void *self, int position, int *len) {
+    return qtf_to_c(qtf_brush_name(qtf_format_at(as<QTextDocument>(self), position).background()), len);
+}
+
+// True if a syntax highlighter made the character at `position` bold.
+QTF_API int qtf_qtextdocument_formatIsBoldAt(void *self, int position) {
+    return qtf_bool(qtf_format_at(as<QTextDocument>(self), position).fontWeight() >= QFont::Bold);
+}
+
+// True if a syntax highlighter made the character at `position` italic.
+QTF_API int qtf_qtextdocument_formatIsItalicAt(void *self, int position) {
+    return qtf_bool(qtf_format_at(as<QTextDocument>(self), position).fontItalic());
+}
+
+// The underline style (a QTextCharFormat_* constant) a syntax highlighter gave the character at `position`.
+QTF_API int qtf_qtextdocument_formatUnderlineStyleAt(void *self, int position) {
+    return int(qtf_format_at(as<QTextDocument>(self), position).underlineStyle());
+}
+
+// ---------------------------------------------------------------------------
+// QTextCursor
+
+// Release a cursor.
+QTF_API void qtf_qtextcursor_delete(void *self) { delete as<QTextCursor>(self); }
+
+// A cursor at the start of `document`.
+QTF_API void *qtf_qtextcursor_new(void *document) { return new QTextCursor(as<QTextDocument>(document)); }
+
+// True for a cursor without a document (e.g. a failed `find`).
+QTF_API int qtf_qtextcursor_isNull(void *self) { return qtf_bool(as<QTextCursor>(self)->isNull()); }
+
+// The cursor position.
+QTF_API int qtf_qtextcursor_position(void *self) { return as<QTextCursor>(self)->position(); }
+
+// The other end of the selection (equal to `position()` without one).
+QTF_API int qtf_qtextcursor_anchor(void *self) { return as<QTextCursor>(self)->anchor(); }
+
+// Move to `position`; with QTextCursor_KeepAnchor, select from the anchor to there.
+QTF_API void qtf_qtextcursor_setPosition(void *self, int position, int mode) {
+    as<QTextCursor>(self)->setPosition(position, QTextCursor::MoveMode(mode));
+}
+
+// Move `n` times (QTextCursor_NextWord, _EndOfBlock, ...); with QTextCursor_KeepAnchor extend the selection. False if it could not move all the way.
+QTF_API int qtf_qtextcursor_movePosition(void *self, int op, int mode, int n) {
+    return qtf_bool(as<QTextCursor>(self)->movePosition(QTextCursor::MoveOperation(op), QTextCursor::MoveMode(mode), n));
+}
+
+// True if text is selected.
+QTF_API int qtf_qtextcursor_hasSelection(void *self) {
+    return qtf_bool(as<QTextCursor>(self)->hasSelection());
+}
+
+// The start of the selection (the smaller of position and anchor).
+QTF_API int qtf_qtextcursor_selectionStart(void *self) { return as<QTextCursor>(self)->selectionStart(); }
+
+// The end of the selection.
+QTF_API int qtf_qtextcursor_selectionEnd(void *self) { return as<QTextCursor>(self)->selectionEnd(); }
+
+// The selected text (lines separated by newlines).
+QTF_API char *qtf_qtextcursor_selectedText(void *self, int *len) {
+    return qtf_to_c(qtf_plain(as<QTextCursor>(self)->selectedText()), len);
+}
+
+// Drop the selection (the anchor moves to the position).
+QTF_API void qtf_qtextcursor_clearSelection(void *self) { as<QTextCursor>(self)->clearSelection(); }
+
+// Select the word, line or block under the cursor (QTextCursor_WordUnderCursor, _LineUnderCursor, _BlockUnderCursor), or the whole document (QTextCursor_SelectionType_Document).
+QTF_API void qtf_qtextcursor_select(void *self, int selection) {
+    as<QTextCursor>(self)->select(QTextCursor::SelectionType(selection));
+}
+
+// Insert `text` at the cursor, replacing the selection.
+QTF_API void qtf_qtextcursor_insertText(void *self, const char *text, int text_len) {
+    as<QTextCursor>(self)->insertText(qtf_qstring(text, text_len));
+}
+
+// Delete the selected text.
+QTF_API void qtf_qtextcursor_removeSelectedText(void *self) { as<QTextCursor>(self)->removeSelectedText(); }
+
+// Delete the selection, or the character after the cursor.
+QTF_API void qtf_qtextcursor_deleteChar(void *self) { as<QTextCursor>(self)->deleteChar(); }
+
+// Delete the selection, or the character before the cursor.
+QTF_API void qtf_qtextcursor_deletePreviousChar(void *self) { as<QTextCursor>(self)->deletePreviousChar(); }
+
+// Start a group of edits that undo as one step.
+QTF_API void qtf_qtextcursor_beginEditBlock(void *self) { as<QTextCursor>(self)->beginEditBlock(); }
+
+// End the group started with `beginEditBlock`.
+QTF_API void qtf_qtextcursor_endEditBlock(void *self) { as<QTextCursor>(self)->endEditBlock(); }
+
+// Add the following edits to the previous undo step (end with `endEditBlock`).
+QTF_API void qtf_qtextcursor_joinPreviousEditBlock(void *self) {
+    as<QTextCursor>(self)->joinPreviousEditBlock();
+}
+
+// True at the start of the document.
+QTF_API int qtf_qtextcursor_atStart(void *self) { return qtf_bool(as<QTextCursor>(self)->atStart()); }
+
+// True at the end of the document.
+QTF_API int qtf_qtextcursor_atEnd(void *self) { return qtf_bool(as<QTextCursor>(self)->atEnd()); }
+
+// True at the start of a block (line).
+QTF_API int qtf_qtextcursor_atBlockStart(void *self) {
+    return qtf_bool(as<QTextCursor>(self)->atBlockStart());
+}
+
+// True at the end of a block (line).
+QTF_API int qtf_qtextcursor_atBlockEnd(void *self) { return qtf_bool(as<QTextCursor>(self)->atBlockEnd()); }
+
+// The number of the block (line) the cursor is in (0-based).
+QTF_API int qtf_qtextcursor_blockNumber(void *self) { return as<QTextCursor>(self)->blockNumber(); }
+
+// The column of the cursor in its line (0-based).
+QTF_API int qtf_qtextcursor_columnNumber(void *self) { return as<QTextCursor>(self)->columnNumber(); }
+
+// The position relative to the start of its block.
+QTF_API int qtf_qtextcursor_positionInBlock(void *self) { return as<QTextCursor>(self)->positionInBlock(); }
+
+// The document.
+QTF_API void *qtf_qtextcursor_document(void *self) { return as<QTextCursor>(self)->document(); }
+
+// A copy of the cursor (delete it when done).
+QTF_API void *qtf_qtextcursor_copy(void *self) { return new QTextCursor(*as<QTextCursor>(self)); }
+
+// ---------------------------------------------------------------------------
+// QtfSyntaxHighlighter
+
+// A highlighter for `document` (owned by it).
+QTF_API void *qtf_qtfsyntaxhighlighter_new(void *document) {
+    return new QtfSyntaxHighlighter(as<QTextDocument>(document));
+}
+
+// Highlight the whole document again (e.g. after the rules changed).
+QTF_API void qtf_qtfsyntaxhighlighter_rehighlight(void *self) {
+    as<QtfSyntaxHighlighter>(self)->rehighlight();
+}
+
+// Highlight block `number` again.
+QTF_API void qtf_qtfsyntaxhighlighter_rehighlightBlock(void *self, int number) {
+    as<QtfSyntaxHighlighter>(self)->rehighlightBlock(as<QtfSyntaxHighlighter>(self)->document()->findBlockByNumber(number));
+}
+
+// The document being highlighted.
+QTF_API void *qtf_qtfsyntaxhighlighter_document(void *self) {
+    return as<QtfSyntaxHighlighter>(self)->document();
+}
+
+// ---------------------------------------------------------------------------
+// QtfHighlightBlock
+
+// The block's text (the slot also gets it as `text`).
+QTF_API char *qtf_qtfhighlightblock_text(void *self, int *len) {
+    return qtf_to_c(as<QtfHighlightBlock>(self)->text, len);
+}
+
+// Format `count` bytes of the text starting at byte offset `start` (0-based); later calls override earlier ones where they overlap.
+QTF_API void qtf_qtfhighlightblock_setFormat(void *self, int start, int count, int format_foreground_r, int format_foreground_g, int format_foreground_b, int format_foreground_a, int format_foreground_valid, int format_background_r, int format_background_g, int format_background_b, int format_background_a, int format_background_valid, int format_bold, int format_italic, int format_underlineStyle, int format_underlineColor_r, int format_underlineColor_g, int format_underlineColor_b, int format_underlineColor_a, int format_underlineColor_valid) {
+    as<QtfHighlightBlock>(self)->setFormat(start, count, qtf_char_format(((format_foreground_valid != 0) ? QColor(format_foreground_r, format_foreground_g, format_foreground_b, format_foreground_a) : QColor()), ((format_background_valid != 0) ? QColor(format_background_r, format_background_g, format_background_b, format_background_a) : QColor()), (format_bold != 0), (format_italic != 0), format_underlineStyle, ((format_underlineColor_valid != 0) ? QColor(format_underlineColor_r, format_underlineColor_g, format_underlineColor_b, format_underlineColor_a) : QColor())));
+}
+
+// The state the previous line ended in (-1: none, e.g. the first line).
+QTF_API int qtf_qtfhighlightblock_previousBlockState(void *self) {
+    return as<QtfHighlightBlock>(self)->h->previousState();
+}
+
+// This line's state (as set by `setCurrentBlockState`; -1 if not set yet).
+QTF_API int qtf_qtfhighlightblock_currentBlockState(void *self) {
+    return as<QtfHighlightBlock>(self)->h->state();
+}
+
+// Set the state this line ends in (e.g. 1 inside an unterminated string); the next line sees it as `previousBlockState()`.
+QTF_API void qtf_qtfhighlightblock_setCurrentBlockState(void *self, int state) {
+    as<QtfHighlightBlock>(self)->h->setState(state);
+}
+
+// The block's number (0-based line number).
+QTF_API int qtf_qtfhighlightblock_blockNumber(void *self) {
+    return as<QtfHighlightBlock>(self)->h->block().blockNumber();
+}
+
+// The document position of the block's first character.
+QTF_API int qtf_qtfhighlightblock_position(void *self) {
+    return as<QtfHighlightBlock>(self)->h->block().position();
+}
+
+// ---------------------------------------------------------------------------
 // functions
 
 // The system clipboard (needs the application object).
@@ -1887,6 +2327,9 @@ QTF_API void qtf_QCursor_pos(int *res_x, int *res_y) {
     *res_y = v_.y();
 }
 
+// The system's fixed-pitch (monospace) font family, e.g. for a code editor: `call editor%setFont(QFont(QFontDatabase_fixedFamily(), 12d0))`.
+QTF_API char *qtf_QFontDatabase_fixedFamily(int *len) { return qtf_to_c(qtf_fixed_family(), len); }
+
 // ---------------------------------------------------------------------------
 // signal connectors
 
@@ -1918,6 +2361,25 @@ static const bool qtf_gui_registered = [] {
     qtf_register_connector(QTF_SIG_QWINDOW_ACTIVECHANGED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QWindow>(s), &QWindow::activeChanged, as<QWindow>(s), [ref]() { qtf_emit(ref); }));
     });
+    qtf_register_connector(QTF_SIG_QTEXTDOCUMENT_CONTENTSCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTextDocument>(s), &QTextDocument::contentsChanged, as<QTextDocument>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QTEXTDOCUMENT_CONTENTSCHANGE, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTextDocument>(s), &QTextDocument::contentsChange, as<QTextDocument>(s), [ref](int a, int b, int c) { qtf_emit_ints(ref, {a, b, c}); }));
+    });
+    qtf_register_connector(QTF_SIG_QTEXTDOCUMENT_BLOCKCOUNTCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTextDocument>(s), &QTextDocument::blockCountChanged, as<QTextDocument>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QTEXTDOCUMENT_MODIFICATIONCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTextDocument>(s), &QTextDocument::modificationChanged, as<QTextDocument>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QTEXTDOCUMENT_UNDOAVAILABLE, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTextDocument>(s), &QTextDocument::undoAvailable, as<QTextDocument>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QTEXTDOCUMENT_REDOAVAILABLE, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTextDocument>(s), &QTextDocument::redoAvailable, as<QTextDocument>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QTFSYNTAXHIGHLIGHTER_HIGHLIGHTBLOCK, connect_highlighter);
     return true;
 }();
 

@@ -26,7 +26,9 @@ cpp_includes = [
     "QGuiApplication", "QClipboard", "QCursor", "QMimeData", "QDrag", "QDropEvent", "QDragEnterEvent",
     "QDragMoveEvent", "QScreen", "QUrl",
     "QValidator", "QIntValidator", "QDoubleValidator", "QRegularExpressionValidator", "QRegularExpression", "QLocale",
-    "cmath", "vector",
+    "QTextCursor", "QTextDocument", "QTextBlock", "QTextCharFormat", "QTextLayout", "QSyntaxHighlighter",
+    "QFontDatabase", "QFontInfo",
+    "cmath", "vector", "algorithm",
 ]
 
 cpp_prelude = """
@@ -186,10 +188,145 @@ static QPolygonF qtf_polygon(const double *xs, const double *ys, int n) {
     for (int i = 0; i < n; ++i) poly << QPointF(xs[i], ys[i]);
     return poly;
 }
+
+// ---------------------------------------------------------------------------
+// text documents
+
+// A character format from the fields of a Fortran QTextCharFormat: invalid
+// colors, false flags and QTextCharFormat_NoUnderline leave that part unset.
+// (Not static: the widgets shim uses it too.)
+QTextCharFormat qtf_char_format(const QColor &fg, const QColor &bg, bool bold, bool italic, int underline,
+                                const QColor &underlineColor) {
+    QTextCharFormat f;
+    if (fg.isValid()) f.setForeground(fg);
+    if (bg.isValid()) f.setBackground(bg);
+    if (bold) f.setFontWeight(QFont::Bold);
+    if (italic) f.setFontItalic(true);
+    if (underline != QTextCharFormat::NoUnderline) f.setUnderlineStyle(QTextCharFormat::UnderlineStyle(underline));
+    if (underlineColor.isValid()) f.setUnderlineColor(underlineColor);
+    return f;
+}
+
+// Text with Qt's paragraph and line separators (in selections) as newlines.
+static QString qtf_plain(QString s) {
+    s.replace(QChar::ParagraphSeparator, u'\\n');
+    s.replace(QChar::LineSeparator, u'\\n');
+    return s;
+}
+
+// Properties of block `n` of a document; -1 if there is no such block.
+static int qtf_block_position(const QTextDocument *d, int n) {
+    const QTextBlock b = d->findBlockByNumber(n);
+    return b.isValid() ? b.position() : -1;
+}
+
+static int qtf_block_length(const QTextDocument *d, int n) {
+    const QTextBlock b = d->findBlockByNumber(n);
+    return b.isValid() ? b.length() : -1;
+}
+
+static int qtf_block_state(const QTextDocument *d, int n) {
+    const QTextBlock b = d->findBlockByNumber(n);
+    return b.isValid() ? b.userState() : -1;
+}
+
+static void qtf_set_block_state(const QTextDocument *d, int n, int state) {
+    QTextBlock b = d->findBlockByNumber(n);
+    if (b.isValid()) b.setUserState(state);
+}
+
+// The number of the block containing `position`; -1 if out of range.
+static int qtf_block_number_at(const QTextDocument *d, int position) {
+    const QTextBlock b = d->findBlock(position);
+    return b.isValid() ? b.blockNumber() : -1;
+}
+
+// The highlighting format (from a syntax highlighter) of the character at `position`.
+static QTextCharFormat qtf_format_at(const QTextDocument *d, int position) {
+    const QTextBlock b = d->findBlock(position);
+    if (!b.isValid() || !b.layout()) return {};
+    const int rel = position - b.position();
+    for (const QTextLayout::FormatRange &r : b.layout()->formats())
+        if (rel >= r.start && rel < r.start + r.length) return r.format;
+    return {};
+}
+
+// The system's fixed-pitch font family, resolved to an installed font (the
+// system font may be a generic name, e.g. "monospace" on some platforms).
+static QString qtf_fixed_family() {
+    QFont f = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    f.setStyleHint(QFont::Monospace);
+    f.setFixedPitch(true);
+    return QFontInfo(f).family();
+}
+
+// A brush's color name ("#rrggbb"), or "" if the brush is not set.
+static QString qtf_brush_name(const QBrush &b) { return b.style() == Qt::NoBrush ? QString() : b.color().name(); }
+
+// QtfSyntaxHighlighter: highlightBlock is delivered to Fortran slots, which
+// format the block through a QtfHighlightBlock (the protected API made public).
+class QtfSyntaxHighlighter : public QSyntaxHighlighter {
+  public:
+    explicit QtfSyntaxHighlighter(QTextDocument *doc) : QSyntaxHighlighter(doc) {}
+    std::vector<qtf_slot> handlers;
+
+    void format(int start, int count, const QTextCharFormat &f) { setFormat(start, count, f); }
+    int previousState() const { return previousBlockState(); }
+    int state() const { return currentBlockState(); }
+    void setState(int s) { setCurrentBlockState(s); }
+    QTextBlock block() const { return currentBlock(); }
+
+  protected:
+    void highlightBlock(const QString &text) override;
+};
+
+// The block being highlighted, as the Fortran slots see it: its text as
+// UTF-8, with positions in bytes of that text (converted to Qt's UTF-16
+// positions here, so non-ASCII text formats correctly).
+struct QtfHighlightBlock {
+    QtfSyntaxHighlighter *h;
+    const QString &text;
+    QByteArray utf8;
+
+    int index(int byte) const {
+        byte = std::clamp(byte, 0, int(utf8.size()));
+        if (utf8.size() == text.size()) return byte;   // ASCII: bytes are characters
+        return int(QString::fromUtf8(utf8.constData(), byte).size());
+    }
+
+    void setFormat(int start, int count, const QTextCharFormat &f) const {
+        const int a = index(start), b = index(start + std::max(count, 0));
+        if (b > a) h->format(a, b - a, f);
+    }
+};
+
+void QtfSyntaxHighlighter::highlightBlock(const QString &text) {
+    if (handlers.empty()) return;
+    QtfHighlightBlock b{this, text, text.toUtf8()};
+    qtf_args a{};
+    a.p = &b;
+    qtf_emit_all(handlers, a);
+}
+
+// Attach a slot to a QtfSyntaxHighlighter's highlightBlock, and highlight the
+// document with it right away.
+static bool connect_highlighter(void *s, const qtf_slot &ref) {
+    auto *h = dynamic_cast<QtfSyntaxHighlighter *>(static_cast<QObject *>(s));
+    if (!h) return false;
+    h->handlers.push_back(ref);
+    h->rehighlight();
+    return true;
+}
 """
 
 fortran_decls = """
     public :: QImage_fromArray, QImage_colorbar
+
+    !> A block to highlight (QtfSyntaxHighlighter%highlightBlock): slots get (text, block).
+    type, extends(QtfSignal), public :: QSignalHighlightBlock
+    contains
+        procedure :: connect => qsignalhighlightblock_connect
+    end type QSignalHighlightBlock
 """
 
 functions = [
@@ -206,6 +343,7 @@ functions = [
     { sig = "QCursor_y() -> int", cpp = "QCursor::pos().y()", doc = "The mouse cursor's y position on the screen." },
     { sig = "QCursor_setPos(x: int, y: int)", cpp = "QCursor::setPos({x}, {y})", doc = "Move the mouse cursor to (x, y) on the screen (where the system allows it)." },
     { sig = "QCursor_pos() -> QPoint", cpp = "QCursor::pos()", doc = "The mouse cursor's position on the screen (virtual desktop)." },
+    { sig = "QFontDatabase_fixedFamily() -> string", cpp = "qtf_fixed_family()", doc = "The system's fixed-pitch (monospace) font family, e.g. for a code editor: `call editor%setFont(QFont(QFontDatabase_fixedFamily(), 12d0))`." },
 ]
 
 # ---------------------------------------------------------------------------
@@ -382,6 +520,50 @@ fortran_decls_after = '''
     contains
         procedure :: invoke => context_menu_handler_invoke
     end type context_menu_handler
+
+    abstract interface
+        !> Slot highlighting one block (line) of a document: `text` is the
+        !> block's text, and `block%setFormat(start, count, format)` formats
+        !> part of it (`start`: a 0-based byte offset into `text`).
+        subroutine qt_slot_highlight_block(text, block, data)
+            import :: QtfHighlightBlock
+            implicit none
+            character(len=*), intent(in) :: text
+            type(QtfHighlightBlock), intent(in) :: block
+            class(*), intent(inout), optional :: data
+        end subroutine qt_slot_highlight_block
+    end interface
+    public :: qt_slot_highlight_block
+
+    !> Slot handler for QSignalHighlightBlock.
+    type, extends(qt_slot_handler) :: highlight_block_handler
+        procedure(qt_slot_highlight_block), pointer, nopass :: f => null()
+    contains
+        procedure :: invoke => highlight_block_handler_invoke
+    end type highlight_block_handler
+
+    !> A block of a QTextDocument: a paragraph, i.e. one line of a plain-text
+    !> document. It is a plain value (the document and the 0-based block
+    !> number), so there is nothing to delete. Get one from
+    !> `doc%findBlockByNumber(n)`, `doc%findBlock(position)`, `doc%firstBlock()`,
+    !> `cursor%block()` or `editor%firstVisibleBlock()`, and walk the document
+    !> with `next()` / `previous()` while `isValid()`. Positions are in Qt's
+    !> characters (UTF-16 code units: bytes, for ASCII text).
+    type, public :: QTextBlock
+        type(QTextDocument) :: document   !! the document
+        integer :: number = -1            !! the block number (0-based; -1: no block)
+    contains
+        procedure :: isValid => qtextblock_isValid
+        procedure :: blockNumber => qtextblock_blockNumber
+        procedure :: text => qtextblock_text
+        procedure :: position => qtextblock_position
+        procedure :: length => qtextblock_length
+        procedure :: containsPosition => qtextblock_containsPosition
+        procedure :: userState => qtextblock_userState
+        procedure :: setUserState => qtextblock_setUserState
+        procedure :: next => qtextblock_next
+        procedure :: previous => qtextblock_previous
+    end type QTextBlock
 '''
 
 fortran_procedures = '''
@@ -584,6 +766,104 @@ fortran_procedures = '''
             call self%f(e)
         end if
     end subroutine context_menu_handler_invoke
+
+    !> Connect a slot (with optional user data) to this signal.
+    subroutine qsignalhighlightblock_connect(self, slot, data, connection)
+        class(QSignalHighlightBlock), intent(in) :: self
+        procedure(qt_slot_highlight_block) :: slot
+        class(*), intent(inout), target, optional :: data
+        type(QMetaObject_Connection), intent(out), optional :: connection   !! to disconnect it later
+        type(highlight_block_handler) :: h
+        h%f => slot
+        call qt_connect_handler(self, h, data, connection)
+    end subroutine qsignalhighlightblock_connect
+
+    !> Call the slot with the block's text and the block (borrowed: valid during the call).
+    subroutine highlight_block_handler_invoke(self, args, data)
+        class(highlight_block_handler), intent(in) :: self
+        type(qtf_args), intent(in) :: args
+        class(*), pointer, intent(in) :: data
+        type(QtfHighlightBlock) :: block
+        character(len=:), allocatable :: text
+        block%ptr = args%p
+        text = block%text()
+        if (associated(data)) then
+            call self%f(text, block, data)
+        else
+            call self%f(text, block)
+        end if
+    end subroutine highlight_block_handler_invoke
+
+    !> True if the block exists (its document is alive and has this many blocks).
+    logical function qtextblock_isValid(self)
+        class(QTextBlock), intent(in) :: self
+        qtextblock_isValid = .false.
+        if (self%number < 0) return
+        if (self%document%isNull()) return
+        qtextblock_isValid = self%number < self%document%blockCount()
+    end function qtextblock_isValid
+
+    !> The block number (0-based; the line number minus 1), -1 for no block.
+    integer function qtextblock_blockNumber(self)
+        class(QTextBlock), intent(in) :: self
+        qtextblock_blockNumber = self%number
+    end function qtextblock_blockNumber
+
+    !> The block's text (without the line break).
+    function qtextblock_text(self) result(text)
+        class(QTextBlock), intent(in) :: self
+        character(len=:), allocatable :: text
+        text = self%document%blockText(self%number)
+    end function qtextblock_text
+
+    !> The position of the block's first character in the document (-1: no block).
+    integer function qtextblock_position(self)
+        class(QTextBlock), intent(in) :: self
+        qtextblock_position = self%document%blockPosition(self%number)
+    end function qtextblock_position
+
+    !> The block's length in characters, including its line break (-1: no block).
+    integer function qtextblock_length(self)
+        class(QTextBlock), intent(in) :: self
+        qtextblock_length = self%document%blockLength(self%number)
+    end function qtextblock_length
+
+    !> True if document position `position` is in this block.
+    logical function qtextblock_containsPosition(self, position)
+        class(QTextBlock), intent(in) :: self
+        integer, intent(in) :: position
+        qtextblock_containsPosition = self%number >= 0 .and. self%document%blockNumberAt(position) == self%number
+    end function qtextblock_containsPosition
+
+    !> The block's user state (e.g. set by a syntax highlighter); -1 if none.
+    integer function qtextblock_userState(self)
+        class(QTextBlock), intent(in) :: self
+        qtextblock_userState = self%document%blockUserState(self%number)
+    end function qtextblock_userState
+
+    !> Set the block's user state (an integer kept with the block).
+    subroutine qtextblock_setUserState(self, state)
+        class(QTextBlock), intent(in) :: self
+        integer, intent(in) :: state
+        call self%document%setBlockUserState(self%number, state)
+    end subroutine qtextblock_setUserState
+
+    !> The next block (not valid after the last one).
+    function qtextblock_next(self) result(block)
+        class(QTextBlock), intent(in) :: self
+        type(QTextBlock) :: block
+        block%document = self%document
+        if (self%number >= 0) block%number = self%number + 1
+        if (.not. block%isValid()) block%number = -1
+    end function qtextblock_next
+
+    !> The previous block (not valid before the first one).
+    function qtextblock_previous(self) result(block)
+        class(QTextBlock), intent(in) :: self
+        type(QTextBlock) :: block
+        block%document = self%document
+        block%number = max(self%number - 1, -1)
+    end function qtextblock_previous
 '''
 
 # Fortran value types (qt_gui_types) passed to C++ field by field
@@ -633,8 +913,44 @@ out = { x = "{v}.x()", y = "{v}.y()", width = "{v}.width()", height = "{v}.heigh
 fields = ["x1: double", "y1: double", "x2: double", "y2: double"]
 cpp = "QLineF({x1}, {y1}, {x2}, {y2})"
 
+# a QColor that may be unset (invalid): a QTextCharFormat field
+[value_types.QColorOpt]
+fields = ["r: int", "g: int", "b: int", "a: int", "valid: bool"]
+cpp = "({valid} ? QColor({r}, {g}, {b}, {a}) : QColor())"
+
+[value_types.QTextCharFormat]
+fields = ["foreground: QColorOpt", "background: QColorOpt", "bold: bool", "italic: bool", "underlineStyle: int", "underlineColor: QColorOpt"]
+cpp = "qtf_char_format({foreground}, {background}, {bold}, {italic}, {underlineStyle}, {underlineColor})"
+
 # ---------------------------------------------------------------------------
 # enums
+
+[[enum]]
+doc = "QTextCursor::MoveOperation"
+values = [
+    "QTextCursor_NoMove = 0", "QTextCursor_Start = 1", "QTextCursor_Up = 2", "QTextCursor_StartOfLine = 3",
+    "QTextCursor_StartOfBlock = 4", "QTextCursor_StartOfWord = 5", "QTextCursor_PreviousBlock = 6",
+    "QTextCursor_PreviousCharacter = 7", "QTextCursor_PreviousWord = 8", "QTextCursor_Left = 9",
+    "QTextCursor_WordLeft = 10", "QTextCursor_End = 11", "QTextCursor_Down = 12", "QTextCursor_EndOfLine = 13",
+    "QTextCursor_EndOfWord = 14", "QTextCursor_EndOfBlock = 15", "QTextCursor_NextBlock = 16",
+    "QTextCursor_NextCharacter = 17", "QTextCursor_NextWord = 18", "QTextCursor_Right = 19",
+    "QTextCursor_WordRight = 20",
+]
+
+[[enum]]
+doc = "QTextCursor::MoveMode"
+values = ["QTextCursor_MoveAnchor = 0", "QTextCursor_KeepAnchor = 1"]
+
+[[enum]]
+doc = "QTextCursor::SelectionType"
+values = [
+    "QTextCursor_WordUnderCursor = 0", "QTextCursor_LineUnderCursor = 1", "QTextCursor_BlockUnderCursor = 2",
+    "QTextCursor_SelectionType_Document = 3",
+]
+
+[[enum]]
+doc = "QTextDocument::FindFlag (combine with ior)"
+values = ["QTextDocument_FindBackward = 1", "QTextDocument_FindCaseSensitively = 2", "QTextDocument_FindWholeWords = 4"]
 
 [[enum]]
 doc = "QPainter::RenderHint"
@@ -1729,4 +2045,208 @@ methods = [
     "title() -> string -- The window title.",
     "screen() -> QScreen -- The screen the window is on.",
     "requestUpdate() -- Ask for an UpdateRequest event (a QtfEventFilter's `updateRequest`) at the next frame, for render loops on the GUI thread.",
+]
+
+# ---------------------------------------------------------------------------
+# text documents, cursors and syntax highlighting
+
+[[class]]
+name = "QTextDocument"
+doc = """
+The text of a text editor (`editor%document()`), or a standalone document.
+It is a sequence of blocks (paragraphs: the lines of plain text), numbered
+from 0, each with a text and an integer user state; see QTextBlock. Edit it
+through a QTextCursor. Positions count Qt's characters (UTF-16 code units,
+which are bytes for ASCII text) from 0; each line break counts as one."""
+ctor = "(text: string = '', parent: QObject?) -- A document holding plain `text`."
+signals = [
+    "contentsChanged: void -- The text changed.",
+    { sig = "contentsChange: int3", doc = "The text changed: slots get (position, charsRemoved, charsAdded)." },
+    "blockCountChanged: int -- The number of blocks (lines) changed: the new count.",
+    "modificationChanged: bool -- The modified flag changed.",
+    "undoAvailable: bool -- Undo became possible (or impossible).",
+    "redoAvailable: bool -- Redo became possible (or impossible).",
+]
+methods = [
+    "toPlainText() -> string -- The text (lines separated by newlines).",
+    "setPlainText(text: string) -- Replace the text (clears the undo history).",
+    "isEmpty() -> bool -- True if the document has no text.",
+    "blockCount() -> int -- The number of blocks (lines).",
+    "characterCount() -> int -- The number of characters, including the line breaks and a final paragraph separator.",
+    "isModified() -> bool -- True if the text changed since `setModified(.false.)` (e.g. since it was saved).",
+    "setModified(modified: bool = .true.) -- Set the modified flag (`.false.` after saving).",
+    "isUndoAvailable() -> bool -- True if there is an edit to undo.",
+    "isRedoAvailable() -> bool -- True if there is an undone edit to redo.",
+    { sig = "undo()", cpp = "{self}->undo()", doc = "Undo the last edit." },
+    { sig = "redo()", cpp = "{self}->redo()", doc = "Redo the last undone edit." },
+    "setUndoRedoEnabled(enable: bool) -- Record edits for undo (the default) or not.",
+    { sig = "find(text: string, position: int = 0, flags: QTextDocument::FindFlags = 0) -> QTextCursor", cpp = "new QTextCursor({self}->find({text}, {position}, {flags}))", doc = "A new cursor selecting the first match of `text` at or after `position` (with QTextDocument_FindBackward: before it); `isNull()` if there is none. Flags: QTextDocument_Find* combined with ior. Delete the cursor when done." },
+    { sig = "findRegularExpression(pattern: string, position: int = 0, flags: QTextDocument::FindFlags = 0) -> QTextCursor", cpp = "new QTextCursor({self}->find(QRegularExpression({pattern}), {position}, {flags}))", doc = "As `find`, for a regular expression (Perl syntax; a match does not span lines)." },
+    { sig = "blockText(number: int) -> string", cpp = "{self}->findBlockByNumber({number}).text()", doc = "The text of block `number` ('' if there is none)." },
+    { sig = "blockPosition(number: int) -> int", cpp = "qtf_block_position({self}, {number})", doc = "The position of the first character of block `number` (-1 if there is none)." },
+    { sig = "blockLength(number: int) -> int", cpp = "qtf_block_length({self}, {number})", doc = "The length of block `number`, including its line break (-1 if there is none)." },
+    { sig = "blockNumberAt(position: int) -> int", cpp = "qtf_block_number_at({self}, {position})", doc = "The number of the block containing `position` (-1 if out of range)." },
+    { sig = "blockUserState(number: int) -> int", cpp = "qtf_block_state({self}, {number})", doc = "The user state of block `number` (-1 if unset or there is no such block)." },
+    { sig = "setBlockUserState(number: int, state: int)", cpp = "qtf_set_block_state({self}, {number}, {state})", doc = "Set the user state of block `number`." },
+    { sig = "characterAt(position: int) -> string", cpp = "qtf_plain(QString({self}->characterAt({position})))", doc = "The character at `position` (a line break is a newline)." },
+    { sig = "formatForegroundAt(position: int) -> string", cpp = "qtf_brush_name(qtf_format_at({self}, {position}).foreground())", doc = "The text color a syntax highlighter gave the character at `position`, as '#rrggbb' ('' if none)." },
+    { sig = "formatBackgroundAt(position: int) -> string", cpp = "qtf_brush_name(qtf_format_at({self}, {position}).background())", doc = "The background color a syntax highlighter gave the character at `position` ('' if none)." },
+    { sig = "formatIsBoldAt(position: int) -> bool", cpp = "qtf_format_at({self}, {position}).fontWeight() >= QFont::Bold", doc = "True if a syntax highlighter made the character at `position` bold." },
+    { sig = "formatIsItalicAt(position: int) -> bool", cpp = "qtf_format_at({self}, {position}).fontItalic()", doc = "True if a syntax highlighter made the character at `position` italic." },
+    { sig = "formatUnderlineStyleAt(position: int) -> int", cpp = "int(qtf_format_at({self}, {position}).underlineStyle())", doc = "The underline style (a QTextCharFormat_* constant) a syntax highlighter gave the character at `position`." },
+]
+fortran_bindings = """
+procedure :: findBlockByNumber => qtextdocument_findBlockByNumber
+procedure :: findBlock => qtextdocument_findBlock
+procedure :: firstBlock => qtextdocument_firstBlock
+procedure :: lastBlock => qtextdocument_lastBlock
+"""
+fortran_procedures = """
+    !> Block `number` (0-based; not valid if out of range).
+    function qtextdocument_findBlockByNumber(self, number) result(block)
+        class(QTextDocument), intent(in) :: self
+        integer, intent(in) :: number
+        type(QTextBlock) :: block
+        block%document = self
+        if (number >= 0 .and. number < self%blockCount()) block%number = number
+    end function qtextdocument_findBlockByNumber
+
+    !> The block containing `position` (not valid if out of range).
+    function qtextdocument_findBlock(self, position) result(block)
+        class(QTextDocument), intent(in) :: self
+        integer, intent(in) :: position
+        type(QTextBlock) :: block
+        block%document = self
+        block%number = self%blockNumberAt(position)
+    end function qtextdocument_findBlock
+
+    !> The first block.
+    function qtextdocument_firstBlock(self) result(block)
+        class(QTextDocument), intent(in) :: self
+        type(QTextBlock) :: block
+        block = self%findBlockByNumber(0)
+    end function qtextdocument_firstBlock
+
+    !> The last block.
+    function qtextdocument_lastBlock(self) result(block)
+        class(QTextDocument), intent(in) :: self
+        type(QTextBlock) :: block
+        block = self%findBlockByNumber(self%blockCount() - 1)
+    end function qtextdocument_lastBlock
+"""
+
+[[class]]
+name = "QTextCursor"
+handle = true
+doc = """
+A position in a QTextDocument, with an optional selection (from `anchor()`
+to `position()`), through which the text is read and edited. Editing at a
+cursor is undoable; group several edits into one undo step with
+`beginEditBlock` / `endEditBlock`. The cursor follows edits made elsewhere
+in the document. A cursor is yours to `delete` (also the ones that
+`editor%textCursor()` and `doc%find` return): it is a copy, so to move the
+editor's cursor, change the copy and pass it to `editor%setTextCursor`.
+Positions count Qt's characters (UTF-16 code units: bytes for ASCII text)."""
+ctor = "(document: QTextDocument) -- A cursor at the start of `document`."
+cpp_ctor = "new QTextCursor({document})"
+methods = [
+    "isNull() -> bool -- True for a cursor without a document (e.g. a failed `find`).",
+    "position() -> int -- The cursor position.",
+    "anchor() -> int -- The other end of the selection (equal to `position()` without one).",
+    "setPosition(position: int, mode: QTextCursor::MoveMode = QTextCursor_MoveAnchor) -- Move to `position`; with QTextCursor_KeepAnchor, select from the anchor to there.",
+    "movePosition(op: QTextCursor::MoveOperation, mode: QTextCursor::MoveMode = QTextCursor_MoveAnchor, n: int = 1) -> bool -- Move `n` times (QTextCursor_NextWord, _EndOfBlock, ...); with QTextCursor_KeepAnchor extend the selection. False if it could not move all the way.",
+    "hasSelection() -> bool -- True if text is selected.",
+    "selectionStart() -> int -- The start of the selection (the smaller of position and anchor).",
+    "selectionEnd() -> int -- The end of the selection.",
+    { sig = "selectedText() -> string", cpp = "qtf_plain({self}->selectedText())", doc = "The selected text (lines separated by newlines)." },
+    "clearSelection() -- Drop the selection (the anchor moves to the position).",
+    "select(selection: QTextCursor::SelectionType) -- Select the word, line or block under the cursor (QTextCursor_WordUnderCursor, _LineUnderCursor, _BlockUnderCursor), or the whole document (QTextCursor_SelectionType_Document).",
+    "insertText(text: string) -- Insert `text` at the cursor, replacing the selection.",
+    "removeSelectedText() -- Delete the selected text.",
+    "deleteChar() -- Delete the selection, or the character after the cursor.",
+    "deletePreviousChar() -- Delete the selection, or the character before the cursor.",
+    "beginEditBlock() -- Start a group of edits that undo as one step.",
+    "endEditBlock() -- End the group started with `beginEditBlock`.",
+    "joinPreviousEditBlock() -- Add the following edits to the previous undo step (end with `endEditBlock`).",
+    "atStart() -> bool -- True at the start of the document.",
+    "atEnd() -> bool -- True at the end of the document.",
+    "atBlockStart() -> bool -- True at the start of a block (line).",
+    "atBlockEnd() -> bool -- True at the end of a block (line).",
+    "blockNumber() -> int -- The number of the block (line) the cursor is in (0-based).",
+    "columnNumber() -> int -- The column of the cursor in its line (0-based).",
+    "positionInBlock() -> int -- The position relative to the start of its block.",
+    "document() -> QTextDocument -- The document.",
+    { sig = "copy() -> QTextCursor", cpp = "new QTextCursor(*{self})", doc = "A copy of the cursor (delete it when done)." },
+]
+cpp = """
+// Release a cursor.
+QTF_API void qtf_qtextcursor_delete(void *self) { delete as<QTextCursor>(self); }
+"""
+fortran_bindings = """
+procedure :: delete => qtextcursor_delete
+procedure :: block => qtextcursor_block
+"""
+fortran_procedures = """
+    !> Release the cursor.
+    subroutine qtextcursor_delete(self)
+        class(QTextCursor), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qtextcursor_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qtextcursor_delete
+
+    !> The block (line) the cursor is in.
+    function qtextcursor_block(self) result(block)
+        class(QTextCursor), intent(in) :: self
+        type(QTextBlock) :: block
+        if (self%isNull()) return
+        block%document = self%document()
+        block%number = self%blockNumber()
+    end function qtextcursor_block
+"""
+
+[[class]]
+name = "QtfSyntaxHighlighter"
+doc = """
+Syntax highlighting for a QTextDocument (e.g. a code editor's
+`editor%document()`), done by Fortran: Qt calls the `highlightBlock` slots
+for each line that needs (re)formatting, and they format parts of it with
+`block%setFormat(start, count, format)`. This is QSyntaxHighlighter with
+highlightBlock delivered to Fortran (`Qtf` marks a qt-fortran class).
+
+Formats only change how the text looks (they are not saved with the text).
+Constructs spanning lines (strings, block comments) carry over through the
+block state: read the previous line's with `block%previousBlockState()`
+and set this line's with `block%setCurrentBlockState(state)`; when it
+changes, Qt highlights the next line again too.
+
+The document owns the highlighter. Connecting a slot highlights the whole
+document; call `rehighlight` after the rules change."""
+ctor = "(document: QTextDocument) -- A highlighter for `document` (owned by it)."
+cpp_ctor = "new QtfSyntaxHighlighter({document})"
+signals = [
+    { sig = "highlightBlock: custom", fortran_type = "QSignalHighlightBlock", connector = "connect_highlighter", doc = "A block (line) needs highlighting: slots get (text, block) and call `block%setFormat`." },
+]
+methods = [
+    "rehighlight() -- Highlight the whole document again (e.g. after the rules changed).",
+    { sig = "rehighlightBlock(number: int)", cpp = "{self}->rehighlightBlock({self}->document()->findBlockByNumber({number}))", doc = "Highlight block `number` again." },
+    "document() -> QTextDocument -- The document being highlighted.",
+]
+
+[[class]]
+name = "QtfHighlightBlock"
+handle = true
+doc = """
+The block (line) being highlighted, as a QtfSyntaxHighlighter's
+`highlightBlock` slots get it (valid only during the slot). Offsets are
+0-based **byte** offsets into the slot's `text` argument (so `index(text,
+'x') - 1` for a 1-based Fortran index), converted to Qt's character
+positions, so non-ASCII text highlights correctly."""
+methods = [
+    { sig = "text() -> string", cpp = "{self}->text", doc = "The block's text (the slot also gets it as `text`)." },
+    { sig = "setFormat(start: int, count: int, format: QTextCharFormat)", cpp = "{self}->setFormat({start}, {count}, {format})", doc = "Format `count` bytes of the text starting at byte offset `start` (0-based); later calls override earlier ones where they overlap." },
+    { sig = "previousBlockState() -> int", cpp = "{self}->h->previousState()", doc = "The state the previous line ended in (-1: none, e.g. the first line)." },
+    { sig = "currentBlockState() -> int", cpp = "{self}->h->state()", doc = "This line's state (as set by `setCurrentBlockState`; -1 if not set yet)." },
+    { sig = "setCurrentBlockState(state: int)", cpp = "{self}->h->setState({state})", doc = "Set the state this line ends in (e.g. 1 inside an unterminated string); the next line sees it as `previousBlockState()`." },
+    { sig = "blockNumber() -> int", cpp = "{self}->h->block().blockNumber()", doc = "The block's number (0-based line number)." },
+    { sig = "position() -> int", cpp = "{self}->h->block().position()", doc = "The document position of the block's first character." },
 ]

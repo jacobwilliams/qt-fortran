@@ -98,6 +98,7 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 | Widgets | `QWidget`, `QFrame`, `QLabel`, `QPushButton`, `QToolButton`, `QCheckBox`, `QRadioButton`, `QButtonGroup`, `QLineEdit`, `QSpinBox`, `QDoubleSpinBox`, `QSlider`, `QDial`, `QComboBox`, `QProgressBar`, `QLCDNumber`, `QDateEdit`, `QTimeEdit`, `QCalendarWidget`, `QtfWidget` (custom painting/events) |
 | Input helpers | `QDateTimeEdit`, validators (`QIntValidator`, `QDoubleValidator`, `QRegularExpressionValidator`), `QCompleter` |
 | Text | `QTextEdit`, `QPlainTextEdit`, `QTextBrowser` (help pages with links) |
+| Code editors | `QtfPlainTextEdit` (a gutter for line numbers and markers, painting over the text, the visible lines and their geometry), `QTextDocument`, `QTextBlock`, `QTextCursor` (editing, selections, undo steps), `QtfSyntaxHighlighter` (highlighting done by Fortran, with state across lines), `QTextCharFormat`, extra selections |
 | Item views | `QTableWidget`, `QListWidget`, `QTreeWidget`; `QTableView` with `QtfTableModel`, `QListView` with `QtfListModel` and `QTreeView` with `QtfTreeModel` (cells come from Fortran on demand, so large arrays aren't copied; with icons, check boxes, tool tips, colors, alignment and bold/italic); `QSortFilterProxyModel`, `QFileSystemModel`, `QtfItemDelegate` (combo / spin-box cell editors, custom-painted cells) |
 | Containers | `QTabWidget`, `QStackedWidget`, `QSplitter`, `QScrollArea`, `QGroupBox`, `QDockWidget`, `QToolBox`, `QMdiArea` |
 | Undo | `QUndoStack` (commands are Fortran slots), `QUndoView` |
@@ -150,7 +151,7 @@ variable. No paths go on the command line, so paths with spaces
 ```sh
 pixi run build                  # build the library and examples
 pixi run test                   # run the test suite (headless)
-pixi run example hello          # run an example: hello, timer, form, plot, explorer, timeseries, fieldviewer, datasets, geometry, surface3d, orbit3d
+pixi run example hello          # run an example: hello, timer, form, plot, explorer, timeseries, fieldviewer, datasets, geometry, editor, surface3d, orbit3d
 ```
 
 Examples:
@@ -165,6 +166,7 @@ Examples:
 | [timeseries](example/timeseries.f90) | a simulation workbench: a dock of parameters (group boxes, form layouts, dial + LCD, radio group), cancellable runs in a worker thread with a progress bar, tabs with a splitter, a million-row table served from Fortran arrays (`QtfTableModel`), a statistics tree, a log console, a tool-button preset menu, input and color dialogs, a plot context menu, settings remembered between sessions, confirmation before quitting |
 | [fieldviewer](example/fieldviewer.f90) | 2D fields computed in Fortran shown with `QImage_fromArray`: interference, masked peaks (NaN), Mandelbrot, and an interactive heat-diffusion solver; colormaps, colorbar, hover readout, standard icons |
 | [geometry](example/geometry.f90) | the geometry and 3D math value types: drag the handles of `QLineF` segments and `QRectF` rectangles to see intersections, angles and unions; a cube painted with `QPainter` that slerps between `QQuaternion` orientations, rotates by dragging, is projected with `QMatrix4x4` and `QVector3D_project`, and picks the vertex under the mouse with `QVector3D_unproject` |
+| [editor](example/editor.f90) | a Fortran code editor: syntax highlighting (strings continued across lines), a gutter with line numbers and clickable bookmarks, the current line and every occurrence of the word under the cursor highlighted, a column-80 ruler with a wavy underline past it, auto-indent, Alt+click for several cursors that type together, a find bar |
 | [surface3d](example/surface3d.f90) | an interactive 3D surface plot with modern OpenGL: GLSL shaders, an indexed mesh with lighting, orbit/zoom with the mouse, auto-rotation, PNG export |
 | [datasets](example/datasets.f90) | a data catalog: datasets in a table with check boxes, color swatches and painted bar cells, a color grid (QListView), a chart of QPainterPath curves with gradient fills; drop files or text to add datasets, drag the chart out as an image, copy and paste through the clipboard |
 | [orbit3d](example/orbit3d.f90) | a spacecraft orbit viewer: Kepler propagation, orbital elements and presets in a side panel, a rotating lit planet, time warp, live readouts, OpenGL 3D view |
@@ -174,7 +176,7 @@ A separate project, [demos/openframes](demos/openframes), renders an
 render thread into a qt-fortran window. It builds OpenFrames from source in
 its own pixi environment.
 
-The `plot` and `explorer` examples can render themselves to an image without
+The `plot`, `explorer` and `editor` examples (among others) can render themselves to an image without
 opening a window, which is handy on servers and in CI:
 
 ```sh
@@ -195,6 +197,8 @@ pixi run example surface3d -- --screenshot surface.png
 ![Field viewer example](media/fieldviewer.png)
 
 ![Datasets example](media/datasets.png)
+
+![Code editor example](media/editor.png)
 
 ![3D surface example](media/surface3d.png)
 
@@ -473,6 +477,36 @@ A few conventions to know (the full list is in [plans/plan.md](plans/plan.md)):
   `undoRequested(id)` slot, which reverses it. Keep what each id needs (old
   and new values) in your own arrays. `stack%createUndoAction(window)` makes
   a menu action that tracks the stack.
+- **Code editors**: `QtfPlainTextEdit` is a `QPlainTextEdit` with what a code
+  editor needs. Its text is a `QTextDocument` of numbered blocks (lines).
+  Read and edit it through `QTextCursor` copies (`editor%textCursor()`,
+  changed and passed back with `setTextCursor`; delete them when done).
+  - *Highlighting*: a `QtfSyntaxHighlighter(doc)` calls its `highlightBlock`
+    slots for each line that needs formatting. The slot gets the line's
+    text and formats parts of it with 0-based byte offsets. A construct that
+    continues on the next line sets the block state:
+
+    ```fortran
+    subroutine on_highlight(text, block, data)
+        character(len=*), intent(in) :: text
+        type(QtfHighlightBlock), intent(in) :: block
+        class(*), intent(inout), optional :: data
+        integer :: k
+        k = index(text, '!')
+        if (k > 0) call block%setFormat(k - 1, len(text) - k + 1, &
+                                        QTextCharFormat(foreground=Qt_darkGreen, italic=.true.))
+    end subroutine on_highlight
+    ```
+  - *Gutter*: `editor%setGutterWidth(w)` makes room for `editor%gutter()`, a
+    `QtfWidget` that scrolls with the text. Its `paintEvent` draws the lines
+    from `firstVisibleBlockNumber()` to `lastVisibleBlockNumber()`, each at
+    `blockBoundingGeometry(n)%y`.
+  - *Overlays*: extra selections (`addExtraSelection(start, end, format,
+    fullWidth)`) color text without changing it. `viewportPaintEvent` slots
+    draw over the text after Qt has painted it.
+  - *Keys and mouse*: a `QtfEventFilter` on the editor (keys) or on
+    `editor%viewport()` (mouse) can take over an event with
+    `event%accept()`, e.g. for auto-indent or extra cursors.
 - **Dates and times**: `QDateTime` is a value type with fields `year` …
   `msec`, in local time.
 
