@@ -8,15 +8,16 @@ signal_base = 4000
 doc = """
 QtCore classes: persistent application settings (QSettings), worker
 threads (QThread), external programs (QProcess, QProcessEnvironment),
-watching files for changes (QFileSystemWatcher), and portable directory
-functions (QDir_*), which standard Fortran lacks.
+watching files for changes (QFileSystemWatcher), event-loop notifications
+for file descriptors and Windows handles (QSocketNotifier, QWinEventNotifier),
+and portable directory functions (QDir_*), which standard Fortran lacks.
 """
 uses = [
     "use qt_c_util",
     "use qt_c_core_classes",
     "use qt_core",
 ]
-cpp_includes = ["QDir", "QSettings", "QStringList", "QThread", "QVariant", "QProcess", "QProcessEnvironment", "QFileSystemWatcher", "QFileInfo", "cstdlib", "cstring"]
+cpp_includes = ["QDir", "QSettings", "QStringList", "QThread", "QVariant", "QProcess", "QProcessEnvironment", "QFileSystemWatcher", "QFileInfo", "QSocketNotifier", "cstdlib", "cstring"]
 
 cpp_prelude = """
 // Runs (op 0) or frees (op 1) the Fortran task of a thread.
@@ -66,6 +67,39 @@ static char *qtf_bytes(const QByteArray &b, int *len) {
 QTF_API void *qtf_qthread_create(void *task, void *parent) {
     return new QtfThread(task, static_cast<QObject *>(parent));
 }
+
+// QWinEventNotifier exists only on Windows. Elsewhere a stand-in keeps the
+// same API but never fires, so portable code compiles everywhere.
+#ifdef Q_OS_WIN
+#include <QWinEventNotifier>
+static bool qtf_win_supported() { return true; }
+#else
+class QWinEventNotifier : public QObject {
+  public:
+    QWinEventNotifier(void *handle, QObject *parent) : QObject(parent), h(handle) {}
+    void setHandle(void *handle) { h = handle; }
+    void *handle() const { return h; }
+    void setEnabled(bool e) { enabled = e; }
+    bool isEnabled() const { return enabled; }
+
+  private:
+    void *h;
+    bool enabled = true;
+};
+static bool qtf_win_supported() { return false; }
+#endif
+
+// Attach a slot to QWinEventNotifier::activated (a no-op where it never fires).
+static bool connect_win_notifier(void *s, const qtf_slot &ref) {
+#ifdef Q_OS_WIN
+    auto *n = static_cast<QWinEventNotifier *>(s);
+    return qtf_track(ref, QObject::connect(n, &QWinEventNotifier::activated, n, [ref](HANDLE) { qtf_emit(ref); }));
+#else
+    (void)s;
+    (void)ref;
+    return true;
+#endif
+}
 """
 
 fortran_decls = '''
@@ -79,6 +113,7 @@ fortran_decls = '''
 '''
 
 functions = [
+    { sig = "QWinEventNotifier_isSupported() -> bool", cpp = "qtf_win_supported()", doc = "True on Windows, where QWinEventNotifier works; elsewhere its `activated` never fires." },
     { sig = "QDir_mkpath(path: string) -> bool", cpp = "QDir().mkpath({path})", doc = "Create a directory and any missing parents (like `mkdir -p`); true if it exists afterwards. `/` works as the separator on every platform." },
     { sig = "QDir_exists(path: string) -> bool", cpp = "QDir({path}).exists()", doc = "True if the directory exists." },
     { sig = "QDir_removeRecursively(path: string) -> bool", cpp = "QDir({path}).removeRecursively()", doc = "Delete a directory with everything in it; true on success (also if it did not exist)." },
@@ -450,4 +485,51 @@ methods = [
     "removePaths(paths: strings) -> strings -- Stop watching several; returns the paths that were not watched.",
     "files() -> strings -- The watched files.",
     "directories() -> strings -- The watched directories.",
+]
+
+[[enum]]
+doc = "QSocketNotifier::Type"
+values = ["QSocketNotifier_Read = 0", "QSocketNotifier_Write = 1", "QSocketNotifier_Exception = 2"]
+
+[[class]]
+name = "QSocketNotifier"
+doc = """
+Calls a slot from the event loop when a file descriptor has data to read
+(or can be written), e.g. the output of a pseudo-terminal or a pipe, so the
+GUI never blocks waiting for it. In the `activated` slot, read what is
+available. While data stays unread the notifier fires again, so read it
+all, or `setEnabled(.false.)` until you can. On Windows it works only for
+sockets: use QWinEventNotifier (or a thread) for pipes and consoles."""
+ctor = "(socket: int, what: QSocketNotifier::Type, parent: QObject?) -- Watch a file descriptor for QSocketNotifier_Read, QSocketNotifier_Write or QSocketNotifier_Exception; enabled at once."
+cpp_ctor = "new QSocketNotifier(qintptr({socket}), QSocketNotifier::Type({what}), {parent})"
+signals = [
+    { sig = "activated: custom", fortran_type = "QSignalInt", lambda = "", emit = "qtf_emit_int(ref, int(as<QSocketNotifier>(s)->socket()))", doc = "The descriptor is ready: slots get it." },
+]
+methods = [
+    { sig = "socket() -> int", cpp = "int({self}->socket())", doc = "The watched file descriptor (-1 if none)." },
+    { sig = "setSocket(socket: int)", cpp = "{self}->setSocket(qintptr({socket}))", doc = "Watch another descriptor (disables the notifier: enable it again)." },
+    { sig = "notifierType() -> QSocketNotifier::Type", cpp = "int({self}->type())", doc = "What it watches for: QSocketNotifier_Read, _Write or _Exception." },
+    "setEnabled(enable: bool) -- Start or stop watching (e.g. stop until the data can be handled).",
+    "isEnabled() -> bool -- True if watching.",
+    "isValid() -> bool -- True if it has a valid descriptor.",
+]
+
+[[class]]
+name = "QWinEventNotifier"
+doc = """
+Windows only: calls a slot from the event loop when a Windows handle is
+signaled (an event object, a process or thread handle, a ConPTY pipe's
+overlapped event, ...). Handles are integers (`integer(c_long_long)`, the
+value of a HANDLE). Elsewhere the class exists so portable code compiles,
+but `activated` never fires: check `QWinEventNotifier_isSupported()`."""
+ctor = "(handle: int64, parent: QObject?) -- Watch a handle (enabled at once)."
+cpp_ctor = "new QWinEventNotifier(reinterpret_cast<void *>(static_cast<qintptr>({handle})), {parent})"
+signals = [
+    { sig = "activated: custom", fortran_type = "QSignal", connector = "connect_win_notifier", doc = "The handle was signaled." },
+]
+methods = [
+    { sig = "setHandle(handle: int64)", cpp = "{self}->setHandle(reinterpret_cast<void *>(static_cast<qintptr>({handle})))", doc = "Watch another handle." },
+    { sig = "handle() -> int64", cpp = "static_cast<long long>(reinterpret_cast<qintptr>({self}->handle()))", doc = "The watched handle." },
+    "setEnabled(enable: bool) -- Start or stop watching.",
+    "isEnabled() -> bool -- True if watching.",
 ]

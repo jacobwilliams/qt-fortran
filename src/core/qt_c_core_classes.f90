@@ -19,6 +19,8 @@ module qt_c_core_classes
     integer(c_int), parameter, public :: QTF_SIG_QPROCESS_READYREAD = 4008
     integer(c_int), parameter, public :: QTF_SIG_QFILESYSTEMWATCHER_FILECHANGED = 4009
     integer(c_int), parameter, public :: QTF_SIG_QFILESYSTEMWATCHER_DIRECTORYCHANGED = 4010
+    integer(c_int), parameter, public :: QTF_SIG_QSOCKETNOTIFIER_ACTIVATED = 4011
+    integer(c_int), parameter, public :: QTF_SIG_QWINEVENTNOTIFIER_ACTIVATED = 4012
 
     interface
 
@@ -1109,6 +1111,138 @@ module qt_c_core_classes
             type(c_ptr) :: res
         end function qtf_qfilesystemwatcher_directories
 
+        !> Watch a file descriptor for QSocketNotifier_Read, QSocketNotifier_Write or QSocketNotifier_Exception; enabled at once.
+        !>
+        !> C: `void *qtf_qsocketnotifier_new(int socket, int what, void *parent)`
+        function qtf_qsocketnotifier_new(socket, what, parent) result(res) bind(C, name='qtf_qsocketnotifier_new')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), value :: socket
+            integer(c_int), value :: what
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qsocketnotifier_new
+
+        !> The watched file descriptor (-1 if none).
+        !>
+        !> C: `int qtf_qsocketnotifier_socket(void *self)`
+        function qtf_qsocketnotifier_socket(self) result(res) bind(C, name='qtf_qsocketnotifier_socket')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qsocketnotifier_socket
+
+        !> Watch another descriptor (disables the notifier: enable it again).
+        !>
+        !> C: `void qtf_qsocketnotifier_setSocket(void *self, int socket)`
+        subroutine qtf_qsocketnotifier_setSocket(self, socket) bind(C, name='qtf_qsocketnotifier_setSocket')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: socket
+        end subroutine qtf_qsocketnotifier_setSocket
+
+        !> What it watches for: QSocketNotifier_Read, _Write or _Exception.
+        !>
+        !> C: `int qtf_qsocketnotifier_notifierType(void *self)`
+        function qtf_qsocketnotifier_notifierType(self) result(res) bind(C, name='qtf_qsocketnotifier_notifierType')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qsocketnotifier_notifierType
+
+        !> Start or stop watching (e.g. stop until the data can be handled).
+        !>
+        !> C: `void qtf_qsocketnotifier_setEnabled(void *self, int enable)`
+        subroutine qtf_qsocketnotifier_setEnabled(self, enable) bind(C, name='qtf_qsocketnotifier_setEnabled')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enable
+        end subroutine qtf_qsocketnotifier_setEnabled
+
+        !> True if watching.
+        !>
+        !> C: `int qtf_qsocketnotifier_isEnabled(void *self)`
+        function qtf_qsocketnotifier_isEnabled(self) result(res) bind(C, name='qtf_qsocketnotifier_isEnabled')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qsocketnotifier_isEnabled
+
+        !> True if it has a valid descriptor.
+        !>
+        !> C: `int qtf_qsocketnotifier_isValid(void *self)`
+        function qtf_qsocketnotifier_isValid(self) result(res) bind(C, name='qtf_qsocketnotifier_isValid')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qsocketnotifier_isValid
+
+        !> Watch a handle (enabled at once).
+        !>
+        !> C: `void *qtf_qwineventnotifier_new(long long handle, void *parent)`
+        function qtf_qwineventnotifier_new(handle, parent) result(res) bind(C, name='qtf_qwineventnotifier_new')
+            import :: c_long_long, c_ptr
+            implicit none
+            integer(c_long_long), value :: handle
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qwineventnotifier_new
+
+        !> Watch another handle.
+        !>
+        !> C: `void qtf_qwineventnotifier_setHandle(void *self, long long handle)`
+        subroutine qtf_qwineventnotifier_setHandle(self, handle) bind(C, name='qtf_qwineventnotifier_setHandle')
+            import :: c_long_long, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_long_long), value :: handle
+        end subroutine qtf_qwineventnotifier_setHandle
+
+        !> The watched handle.
+        !>
+        !> C: `long long qtf_qwineventnotifier_handle(void *self)`
+        function qtf_qwineventnotifier_handle(self) result(res) bind(C, name='qtf_qwineventnotifier_handle')
+            import :: c_long_long, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_long_long) :: res
+        end function qtf_qwineventnotifier_handle
+
+        !> Start or stop watching.
+        !>
+        !> C: `void qtf_qwineventnotifier_setEnabled(void *self, int enable)`
+        subroutine qtf_qwineventnotifier_setEnabled(self, enable) bind(C, name='qtf_qwineventnotifier_setEnabled')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enable
+        end subroutine qtf_qwineventnotifier_setEnabled
+
+        !> True if watching.
+        !>
+        !> C: `int qtf_qwineventnotifier_isEnabled(void *self)`
+        function qtf_qwineventnotifier_isEnabled(self) result(res) bind(C, name='qtf_qwineventnotifier_isEnabled')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwineventnotifier_isEnabled
+
+        !> True on Windows, where QWinEventNotifier works; elsewhere its `activated` never fires.
+        !>
+        !> C: `int qtf_QWinEventNotifier_isSupported(void)`
+        function qtf_QWinEventNotifier_isSupported() result(res) bind(C, name='qtf_QWinEventNotifier_isSupported')
+            import :: c_int
+            implicit none
+            integer(c_int) :: res
+        end function qtf_QWinEventNotifier_isSupported
+
         !> Create a directory and any missing parents (like `mkdir -p`); true if it exists afterwards. `/` works as the separator on every platform.
         !>
         !> C: `int qtf_QDir_mkpath(const char *path, int path_len)`
@@ -1230,8 +1364,12 @@ module qt_c_core_classes
     public :: qtf_qprocess_execute, qtf_qprocess_splitCommand, qtf_qprocess_nullDevice
     public :: qtf_qfilesystemwatcher_new, qtf_qfilesystemwatcher_addPath, qtf_qfilesystemwatcher_addPaths
     public :: qtf_qfilesystemwatcher_removePath, qtf_qfilesystemwatcher_removePaths
-    public :: qtf_qfilesystemwatcher_files, qtf_qfilesystemwatcher_directories, qtf_QDir_mkpath
-    public :: qtf_QDir_exists, qtf_QDir_removeRecursively, qtf_QDir_currentPath, qtf_QDir_homePath
-    public :: qtf_QDir_tempPath, qtf_QDir_entryList, qtf_QDir_isDir
+    public :: qtf_qfilesystemwatcher_files, qtf_qfilesystemwatcher_directories, qtf_qsocketnotifier_new
+    public :: qtf_qsocketnotifier_socket, qtf_qsocketnotifier_setSocket, qtf_qsocketnotifier_notifierType
+    public :: qtf_qsocketnotifier_setEnabled, qtf_qsocketnotifier_isEnabled, qtf_qsocketnotifier_isValid
+    public :: qtf_qwineventnotifier_new, qtf_qwineventnotifier_setHandle, qtf_qwineventnotifier_handle
+    public :: qtf_qwineventnotifier_setEnabled, qtf_qwineventnotifier_isEnabled
+    public :: qtf_QWinEventNotifier_isSupported, qtf_QDir_mkpath, qtf_QDir_exists, qtf_QDir_removeRecursively
+    public :: qtf_QDir_currentPath, qtf_QDir_homePath, qtf_QDir_tempPath, qtf_QDir_entryList, qtf_QDir_isDir
 
 end module qt_c_core_classes

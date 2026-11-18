@@ -213,7 +213,8 @@ milestone below is now port work.
 
 Not checked against the app's source; add them when the port needs them:
 
-- `QSocketNotifier`, for a pseudo-terminal's file descriptor (gap C).
+- ~~`QSocketNotifier`, for a pseudo-terminal's file descriptor (gap C).~~
+  *Done, with `QWinEventNotifier` for ConPTY handles on Windows.*
 - A `lessThan` sort callback on `QtfSortFilterProxyModel`, if sorting in
   Fortran is needed beyond `QtfTableModel`'s `sortRequested`.
 - Anything else a ported module uses that isn't bound: most such additions

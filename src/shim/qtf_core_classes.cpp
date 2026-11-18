@@ -14,6 +14,7 @@
 #include <QProcess>
 #include <QProcessEnvironment>
 #include <QSettings>
+#include <QSocketNotifier>
 #include <QStringList>
 #include <QThread>
 #include <QVariant>
@@ -35,6 +36,8 @@ enum : int {
     QTF_SIG_QPROCESS_READYREAD = 4008,
     QTF_SIG_QFILESYSTEMWATCHER_FILECHANGED = 4009,
     QTF_SIG_QFILESYSTEMWATCHER_DIRECTORYCHANGED = 4010,
+    QTF_SIG_QSOCKETNOTIFIER_ACTIVATED = 4011,
+    QTF_SIG_QWINEVENTNOTIFIER_ACTIVATED = 4012,
 };
 
 // Runs (op 0) or frees (op 1) the Fortran task of a thread.
@@ -83,6 +86,39 @@ static char *qtf_bytes(const QByteArray &b, int *len) {
 // A new thread that will run the Fortran task `task`, owned by `parent` if given.
 QTF_API void *qtf_qthread_create(void *task, void *parent) {
     return new QtfThread(task, static_cast<QObject *>(parent));
+}
+
+// QWinEventNotifier exists only on Windows. Elsewhere a stand-in keeps the
+// same API but never fires, so portable code compiles everywhere.
+#ifdef Q_OS_WIN
+#include <QWinEventNotifier>
+static bool qtf_win_supported() { return true; }
+#else
+class QWinEventNotifier : public QObject {
+  public:
+    QWinEventNotifier(void *handle, QObject *parent) : QObject(parent), h(handle) {}
+    void setHandle(void *handle) { h = handle; }
+    void *handle() const { return h; }
+    void setEnabled(bool e) { enabled = e; }
+    bool isEnabled() const { return enabled; }
+
+  private:
+    void *h;
+    bool enabled = true;
+};
+static bool qtf_win_supported() { return false; }
+#endif
+
+// Attach a slot to QWinEventNotifier::activated (a no-op where it never fires).
+static bool connect_win_notifier(void *s, const qtf_slot &ref) {
+#ifdef Q_OS_WIN
+    auto *n = static_cast<QWinEventNotifier *>(s);
+    return qtf_track(ref, QObject::connect(n, &QWinEventNotifier::activated, n, [ref](HANDLE) { qtf_emit(ref); }));
+#else
+    (void)s;
+    (void)ref;
+    return true;
+#endif
 }
 
 // ---------------------------------------------------------------------------
@@ -516,7 +552,72 @@ QTF_API char *qtf_qfilesystemwatcher_directories(void *self, int *len) {
 }
 
 // ---------------------------------------------------------------------------
+// QSocketNotifier
+
+// Watch a file descriptor for QSocketNotifier_Read, QSocketNotifier_Write or QSocketNotifier_Exception; enabled at once.
+QTF_API void *qtf_qsocketnotifier_new(int socket, int what, void *parent) {
+    return new QSocketNotifier(qintptr(socket), QSocketNotifier::Type(QSocketNotifier::Type(what)), as<QObject>(parent));
+}
+
+// The watched file descriptor (-1 if none).
+QTF_API int qtf_qsocketnotifier_socket(void *self) { return int(as<QSocketNotifier>(self)->socket()); }
+
+// Watch another descriptor (disables the notifier: enable it again).
+QTF_API void qtf_qsocketnotifier_setSocket(void *self, int socket) {
+    as<QSocketNotifier>(self)->setSocket(qintptr(socket));
+}
+
+// What it watches for: QSocketNotifier_Read, _Write or _Exception.
+QTF_API int qtf_qsocketnotifier_notifierType(void *self) {
+    return int(int(as<QSocketNotifier>(self)->type()));
+}
+
+// Start or stop watching (e.g. stop until the data can be handled).
+QTF_API void qtf_qsocketnotifier_setEnabled(void *self, int enable) {
+    as<QSocketNotifier>(self)->setEnabled((enable != 0));
+}
+
+// True if watching.
+QTF_API int qtf_qsocketnotifier_isEnabled(void *self) {
+    return qtf_bool(as<QSocketNotifier>(self)->isEnabled());
+}
+
+// True if it has a valid descriptor.
+QTF_API int qtf_qsocketnotifier_isValid(void *self) { return qtf_bool(as<QSocketNotifier>(self)->isValid()); }
+
+// ---------------------------------------------------------------------------
+// QWinEventNotifier
+
+// Watch a handle (enabled at once).
+QTF_API void *qtf_qwineventnotifier_new(long long handle, void *parent) {
+    return new QWinEventNotifier(reinterpret_cast<void *>(static_cast<qintptr>(handle)), as<QObject>(parent));
+}
+
+// Watch another handle.
+QTF_API void qtf_qwineventnotifier_setHandle(void *self, long long handle) {
+    as<QWinEventNotifier>(self)->setHandle(reinterpret_cast<void *>(static_cast<qintptr>(handle)));
+}
+
+// The watched handle.
+QTF_API long long qtf_qwineventnotifier_handle(void *self) {
+    return static_cast<long long>(static_cast<long long>(reinterpret_cast<qintptr>(as<QWinEventNotifier>(self)->handle())));
+}
+
+// Start or stop watching.
+QTF_API void qtf_qwineventnotifier_setEnabled(void *self, int enable) {
+    as<QWinEventNotifier>(self)->setEnabled((enable != 0));
+}
+
+// True if watching.
+QTF_API int qtf_qwineventnotifier_isEnabled(void *self) {
+    return qtf_bool(as<QWinEventNotifier>(self)->isEnabled());
+}
+
+// ---------------------------------------------------------------------------
 // functions
+
+// True on Windows, where QWinEventNotifier works; elsewhere its `activated` never fires.
+QTF_API int qtf_QWinEventNotifier_isSupported(void) { return qtf_bool(qtf_win_supported()); }
 
 // Create a directory and any missing parents (like `mkdir -p`); true if it exists afterwards. `/` works as the separator on every platform.
 QTF_API int qtf_QDir_mkpath(const char *path, int path_len) {
@@ -589,6 +690,10 @@ static const bool qtf_core_classes_registered = [] {
     qtf_register_connector(QTF_SIG_QFILESYSTEMWATCHER_DIRECTORYCHANGED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QFileSystemWatcher>(s), &QFileSystemWatcher::directoryChanged, as<QFileSystemWatcher>(s), [ref](const QString &v) { qtf_emit(ref, v); }));
     });
+    qtf_register_connector(QTF_SIG_QSOCKETNOTIFIER_ACTIVATED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QSocketNotifier>(s), &QSocketNotifier::activated, as<QSocketNotifier>(s), [ref, s]() { qtf_emit_int(ref, int(as<QSocketNotifier>(s)->socket())); }));
+    });
+    qtf_register_connector(QTF_SIG_QWINEVENTNOTIFIER_ACTIVATED, connect_win_notifier);
     return true;
 }();
 

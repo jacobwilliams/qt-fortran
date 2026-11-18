@@ -537,6 +537,13 @@ spec-only work now; items marked *(design)* need new machinery.
     `verticalScrollValue`/`setVerticalScrollValue` were dropped for
     `verticalScrollBar()`. The gui QColor value type gained `out`, so gui
     methods can return colors. Example: themes; test: test_theming.
+  - **Done:** `QSocketNotifier` (a descriptor as `int`; `activated` gives
+    it; `notifierType`, since `type` is awkward as a Fortran binding name)
+    and `QWinEventNotifier` (handles as int64). QWinEventNotifier exists only
+    on Windows, so elsewhere the shim defines a stand-in QObject with the
+    same API whose `activated` connector does nothing;
+    `QWinEventNotifier_isSupported()` says which. test_notifiers runs itself
+    as a child whose notifier watches its standard input.
   - **Done (application panels):** docks (`splitDockWidget`, `resizeDocks`,
     `tabifiedDockWidgets`, `dockWidgetArea`, `setCorner`, `setTabPosition`,
     `setTabShape`, `setDockOptions`; `QDockWidget%setTitleBarWidget`,
