@@ -7,15 +7,15 @@ src_dir = "core"
 signal_base = 4000
 doc = """
 QtCore classes: persistent application settings (QSettings), worker
-threads (QThread), and portable directory functions (QDir_*), which standard
-Fortran lacks.
+threads (QThread), external programs (QProcess, QProcessEnvironment), and
+portable directory functions (QDir_*), which standard Fortran lacks.
 """
 uses = [
     "use qt_c_util",
     "use qt_c_core_classes",
     "use qt_core",
 ]
-cpp_includes = ["QDir", "QSettings", "QStringList", "QThread", "QVariant"]
+cpp_includes = ["QDir", "QSettings", "QStringList", "QThread", "QVariant", "QProcess", "QProcessEnvironment", "cstdlib", "cstring"]
 
 cpp_prelude = """
 // Runs (op 0) or frees (op 1) the Fortran task of a thread.
@@ -51,6 +51,16 @@ static void qtf_thread_wait(QThread *t, int msecs) {
     else t->wait(QDeadlineTimer(msecs));
 }
 
+// Bytes for Fortran: a malloc'd copy (released by qtf_free) and its length.
+// Process output is passed as raw bytes, not decoded and re-encoded.
+static char *qtf_bytes(const QByteArray &b, int *len) {
+    *len = static_cast<int>(b.size());
+    char *p = static_cast<char *>(std::malloc(b.size() + 1));
+    std::memcpy(p, b.constData(), b.size());
+    p[b.size()] = 0;
+    return p;
+}
+
 // A new thread that will run the Fortran task `task`, owned by `parent` if given.
 QTF_API void *qtf_qthread_create(void *task, void *parent) {
     return new QtfThread(task, static_cast<QObject *>(parent));
@@ -74,6 +84,32 @@ functions = [
     { sig = "QDir_currentPath() -> string", cpp = "QDir::currentPath()", doc = "The current working directory (with `/` separators)." },
     { sig = "QDir_homePath() -> string", cpp = "QDir::homePath()", doc = "The user's home directory." },
     { sig = "QDir_tempPath() -> string", cpp = "QDir::tempPath()", doc = "The system's directory for temporary files." },
+]
+
+[[enum]]
+doc = "QProcess::ProcessState"
+values = ["QProcess_NotRunning = 0", "QProcess_Starting = 1", "QProcess_Running = 2"]
+
+[[enum]]
+doc = "QProcess::ProcessError"
+values = [
+    "QProcess_FailedToStart = 0", "QProcess_Crashed = 1", "QProcess_Timedout = 2", "QProcess_ReadError = 3",
+    "QProcess_WriteError = 4", "QProcess_UnknownError = 5",
+]
+
+[[enum]]
+doc = "QProcess::ExitStatus"
+values = ["QProcess_NormalExit = 0", "QProcess_CrashExit = 1"]
+
+[[enum]]
+doc = "QProcess::ProcessChannel"
+values = ["QProcess_StandardOutput = 0", "QProcess_StandardError = 1"]
+
+[[enum]]
+doc = "QProcess::ProcessChannelMode"
+values = [
+    "QProcess_SeparateChannels = 0", "QProcess_MergedChannels = 1", "QProcess_ForwardedChannels = 2",
+    "QProcess_ForwardedOutputChannel = 3", "QProcess_ForwardedErrorChannel = 4",
 ]
 
 [[enum]]
@@ -191,3 +227,193 @@ fortran_procedures = '''
         end if
     end subroutine qtf_thread_task
 '''
+
+# ---------------------------------------------------------------------------
+# external programs
+
+[[class]]
+name = "QProcessEnvironment"
+handle = true
+doc = """
+Environment variables for a QProcess: start from
+`QProcessEnvironment_systemEnvironment()` (this program's environment) or
+empty (`QProcessEnvironment()`), change it, and give it to
+`process%setProcessEnvironment`. Release it with `delete`."""
+ctor = "() -- An empty environment."
+methods = [
+    { sig = "static systemEnvironment() -> QProcessEnvironment", cpp = "new QProcessEnvironment(QProcessEnvironment::systemEnvironment())", doc = "A copy of this program's environment (delete it when done)." },
+    "insert(name: string, value: string) -- Set variable `name` to `value`.",
+    "remove(name: string) -- Remove variable `name`.",
+    "contains(name: string) -> bool -- True if variable `name` is set.",
+    "value(name: string, defaultValue: string = '') -> string -- The value of `name` (`defaultValue` if it is not set).",
+    "keys() -> strings -- The names of all variables.",
+    "clear() -- Remove all variables.",
+    "isEmpty() -> bool -- True if no variable is set.",
+    { sig = "copy() -> QProcessEnvironment", cpp = "new QProcessEnvironment(*{self})", doc = "A copy (delete it when done)." },
+]
+cpp = """
+// Release an environment.
+QTF_API void qtf_qprocessenvironment_delete(void *self) { delete as<QProcessEnvironment>(self); }
+"""
+fortran_bindings = "procedure :: delete => qprocessenvironment_delete"
+fortran_procedures = """
+    !> Release the environment.
+    subroutine qprocessenvironment_delete(self)
+        class(QProcessEnvironment), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qprocessenvironment_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qprocessenvironment_delete
+"""
+
+[[class]]
+name = "QProcess"
+doc = """
+Runs an external program (a compiler, fpm, git, a language server, ...) and
+talks to it through its standard input, output and error.
+
+```fortran
+proc = QProcess(window)
+call proc%readyReadStandardOutput%connect(on_output, state)   ! read it as it comes
+call proc%finished%connect(on_finished, state)                ! (exitCode, exitStatus)
+call proc%setWorkingDirectory(project_dir)
+call proc%start('fpm', [character(len=5) :: 'build'])
+```
+
+The program is found on the PATH (or given as a path), and its arguments
+are passed as they are, without a shell (to run a shell command line, start
+`sh` with `['-c', line]`, or `cmd` with `['/c', line]` on Windows). Starting
+returns at once: the process runs alongside the event loop, and its signals
+arrive in slots. Outside an event loop (scripts, tests) wait with
+`waitForStarted` / `waitForFinished` instead, which return false on a
+timeout (default 30 s; -1: none).
+
+Output is read as raw bytes (`readAllStandardOutput`, `readLine`, ...),
+so text in any encoding comes through unchanged. Standard output and
+error are kept apart unless `setProcessChannelMode(QProcess_MergedChannels)`.
+Input is sent with `write`, and `closeWriteChannel` signals its end.
+
+A process failing to start is reported to `errorOccurred`
+(QProcess_FailedToStart), not to `finished`. Deleting a QProcess kills a
+program that is still running."""
+ctor = "(parent: QObject?) -- A process object (nothing runs until `start`)."
+signals = [
+    "started: void -- The program has started.",
+    "finished: int2 -- The program has finished: slots get (exitCode, exitStatus), exitStatus QProcess_NormalExit or QProcess_CrashExit.",
+    "errorOccurred: int -- An error occurred: slots get a QProcess_* error (QProcess_FailedToStart, _Crashed, _Timedout, ...).",
+    "stateChanged: int -- The state changed: slots get QProcess_NotRunning, QProcess_Starting or QProcess_Running.",
+    "readyReadStandardOutput: void -- New standard output can be read.",
+    "readyReadStandardError: void -- New standard error output can be read.",
+    "readyRead: void -- New data can be read from the current read channel (`setReadChannel`).",
+]
+methods = [
+    "setProgram(program: string) -- The program to run with `start()` (a name found on the PATH, or a path).",
+    "program() -> string -- The program.",
+    "setArguments(arguments: strings) -- The arguments for `start()`, passed as they are (no shell quoting).",
+    "arguments() -> strings -- The arguments.",
+    { sig = "start()", cpp = "{self}->start()", doc = "Start the program set with `setProgram` and `setArguments`." },
+    { sig = "startProgram(program: string)", fortran_name = "start", cpp = "{self}->start({program}, QStringList())", doc = "Start `program` without arguments." },
+    { sig = "startWithArguments(program: string, arguments: strings)", fortran_name = "start", cpp = "{self}->start({program}, {arguments})", doc = "Start `program` with `arguments` (passed as they are, without a shell)." },
+    "startCommand(command: string) -- Start a command line, split into the program and its arguments as `QProcess_splitCommand` does (quotes group words; no shell features such as pipes).",
+    { sig = "startDetached() -> bool", cpp = "{self}->startDetached()", doc = "Start the program set with `setProgram` etc. as an independent process that keeps running after this program exits; no output is read and no signals are emitted. False if it could not be started." },
+    "waitForStarted(msecs: int = 30000) -> bool -- Wait until the program has started (or failed to); false on failure or timeout (-1: no timeout).",
+    "waitForFinished(msecs: int = 30000) -> bool -- Wait until the program has finished; false on timeout, failure or if it was not running. Signals are emitted during the wait.",
+    "waitForReadyRead(msecs: int = 30000) -> bool -- Wait until new output can be read; false on timeout or when the program has finished.",
+    "waitForBytesWritten(msecs: int = 30000) -> bool -- Wait until written input has been passed to the program.",
+    "terminate() -- Ask the program to exit (SIGTERM on Unix, WM_CLOSE on Windows); it may ignore the request.",
+    "kill() -- End the program at once.",
+    "close() -- Kill the program if it is running and close all channels.",
+    { sig = "write(data: string) -> int", cpp = "int({self}->write(data, data_len))", doc = "Send `data` (bytes, as they are) to the program's standard input; returns the number of bytes queued, or -1 on error. Add a newline for line-oriented programs." },
+    "closeWriteChannel() -- Close the program's standard input (once queued data is written), so it sees the end of its input.",
+    { sig = "canReadLine() -> bool", doc = "True if a complete line can be read from the current read channel." },
+    { sig = "bytesAvailable() -> int", cpp = "int({self}->bytesAvailable())", doc = "The number of bytes waiting in the current read channel." },
+    "setReadChannel(channel: QProcess::ProcessChannel) -- The channel `readAll`, `readLine` and `readyRead` use: QProcess_StandardOutput (default) or QProcess_StandardError.",
+    "readChannel() -> QProcess::ProcessChannel -- The current read channel.",
+    "setProcessChannelMode(mode: QProcess::ProcessChannelMode) -- QProcess_SeparateChannels (default), QProcess_MergedChannels (standard error into standard output), QProcess_ForwardedChannels (both to this program's own output), ...",
+    "processChannelMode() -> QProcess::ProcessChannelMode -- The channel mode.",
+    "setStandardInputFile(fileName: string) -- Read the program's standard input from a file.",
+    { sig = "setStandardOutputFile(fileName: string, append: bool = .false.)", cpp = "{self}->setStandardOutputFile({fileName}, {append} ? QIODevice::Append : QIODevice::Truncate)", doc = "Write the program's standard output to a file (replaced, or appended to)." },
+    { sig = "setStandardErrorFile(fileName: string, append: bool = .false.)", cpp = "{self}->setStandardErrorFile({fileName}, {append} ? QIODevice::Append : QIODevice::Truncate)", doc = "Write the program's standard error to a file (replaced, or appended to)." },
+    "setWorkingDirectory(dir: string) -- The directory the program runs in (default: this program's current directory).",
+    "workingDirectory() -> string -- The working directory ('' for the default).",
+    { sig = "setProcessEnvironment(environment: QProcessEnvironment)", cpp = "{self}->setProcessEnvironment(*{environment})", doc = "The program's environment variables (copied; default: this program's)." },
+    { sig = "processEnvironment() -> QProcessEnvironment", cpp = "new QProcessEnvironment({self}->processEnvironment())", doc = "A copy of the environment set with `setProcessEnvironment` (empty if none was set; delete it when done)." },
+    "state() -> QProcess::ProcessState -- QProcess_NotRunning, QProcess_Starting or QProcess_Running.",
+    "exitCode() -> int -- The exit code of the program that finished last.",
+    "exitStatus() -> QProcess::ExitStatus -- QProcess_NormalExit, or QProcess_CrashExit if it crashed or was killed.",
+    "error() -> QProcess::ProcessError -- The last error (QProcess_UnknownError if none).",
+    "errorString() -> string -- A description of the last error.",
+    "processId() -> int64 -- The program's process id (0 if it is not running).",
+    { sig = "static execute(program: string, arguments: strings) -> int", doc = "Run `program` with `arguments`, wait for it to finish, and return its exit code (-2: it could not be started, -1: it crashed). Its output goes to this program's own standard output and error." },
+    { sig = "static splitCommand(command: string) -> strings", doc = "Split a command line into words as `startCommand` does: spaces separate words, double quotes group them." },
+    { sig = "static nullDevice() -> string", doc = "The null device ('/dev/null', or 'NUL' on Windows), e.g. to discard output with `setStandardOutputFile`." },
+]
+cpp = """
+// All standard output read so far, as bytes.
+QTF_API char *qtf_qprocess_readAllStandardOutput(void *self, int *len) {
+    return qtf_bytes(as<QProcess>(self)->readAllStandardOutput(), len);
+}
+
+// All standard error output read so far, as bytes.
+QTF_API char *qtf_qprocess_readAllStandardError(void *self, int *len) {
+    return qtf_bytes(as<QProcess>(self)->readAllStandardError(), len);
+}
+
+// Everything available in the current read channel, as bytes.
+QTF_API char *qtf_qprocess_readAll(void *self, int *len) { return qtf_bytes(as<QProcess>(self)->readAll(), len); }
+
+// One line from the current read channel, without its line break ("\\n" or "\\r\\n").
+QTF_API char *qtf_qprocess_readLine(void *self, int *len) {
+    QByteArray line = as<QProcess>(self)->readLine();
+    if (line.endsWith('\\n')) line.chop(1);
+    if (line.endsWith('\\r')) line.chop(1);
+    return qtf_bytes(line, len);
+}
+"""
+fortran_bindings = """
+procedure :: readAllStandardOutput => qprocess_readAllStandardOutput
+procedure :: readAllStandardError => qprocess_readAllStandardError
+procedure :: readAll => qprocess_readAll
+procedure :: readLine => qprocess_readLine
+"""
+fortran_procedures = """
+    !> The standard output received since the last read (bytes, as the program wrote them).
+    function qprocess_readAllStandardOutput(self) result(res)
+        class(QProcess), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n
+        type(c_ptr) :: p
+        p = qtf_qprocess_readAllStandardOutput(qtf_live(self, 'QProcess%readAllStandardOutput'), n)
+        res = qtf_take_string(p, n)
+    end function qprocess_readAllStandardOutput
+
+    !> The standard error output received since the last read.
+    function qprocess_readAllStandardError(self) result(res)
+        class(QProcess), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n
+        type(c_ptr) :: p
+        p = qtf_qprocess_readAllStandardError(qtf_live(self, 'QProcess%readAllStandardError'), n)
+        res = qtf_take_string(p, n)
+    end function qprocess_readAllStandardError
+
+    !> Everything waiting in the current read channel (see `setReadChannel`).
+    function qprocess_readAll(self) result(res)
+        class(QProcess), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n
+        type(c_ptr) :: p
+        p = qtf_qprocess_readAll(qtf_live(self, 'QProcess%readAll'), n)
+        res = qtf_take_string(p, n)
+    end function qprocess_readAll
+
+    !> The next line of the current read channel, without its line break
+    !> (check `canReadLine()` first; at the end of the output, what is left).
+    function qprocess_readLine(self) result(res)
+        class(QProcess), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n
+        type(c_ptr) :: p
+        p = qtf_qprocess_readLine(qtf_live(self, 'QProcess%readLine'), n)
+        res = qtf_take_string(p, n)
+    end function qprocess_readLine
+"""

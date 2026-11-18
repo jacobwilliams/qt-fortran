@@ -10,6 +10,13 @@ module qt_c_core_classes
     ! Signal ids: must match `enum qtf_signal` in src/shim/qtf_common.h.
     integer(c_int), parameter, public :: QTF_SIG_QTHREAD_STARTED = 4000
     integer(c_int), parameter, public :: QTF_SIG_QTHREAD_FINISHED = 4001
+    integer(c_int), parameter, public :: QTF_SIG_QPROCESS_STARTED = 4002
+    integer(c_int), parameter, public :: QTF_SIG_QPROCESS_FINISHED = 4003
+    integer(c_int), parameter, public :: QTF_SIG_QPROCESS_ERROROCCURRED = 4004
+    integer(c_int), parameter, public :: QTF_SIG_QPROCESS_STATECHANGED = 4005
+    integer(c_int), parameter, public :: QTF_SIG_QPROCESS_READYREADSTANDARDOUTPUT = 4006
+    integer(c_int), parameter, public :: QTF_SIG_QPROCESS_READYREADSTANDARDERROR = 4007
+    integer(c_int), parameter, public :: QTF_SIG_QPROCESS_READYREAD = 4008
 
     interface
 
@@ -398,6 +405,619 @@ module qt_c_core_classes
             integer(c_int), value :: msecs
         end subroutine qtf_qthread_msleep
 
+        !> Release an environment.
+        !>
+        !> C: `void qtf_qprocessenvironment_delete(void *self)`
+        subroutine qtf_qprocessenvironment_delete(self) bind(C, name='qtf_qprocessenvironment_delete')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qprocessenvironment_delete
+
+        !> An empty environment.
+        !>
+        !> C: `void *qtf_qprocessenvironment_new(void)`
+        function qtf_qprocessenvironment_new() result(res) bind(C, name='qtf_qprocessenvironment_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr) :: res
+        end function qtf_qprocessenvironment_new
+
+        !> A copy of this program's environment (delete it when done).
+        !>
+        !> C: `void *qtf_qprocessenvironment_systemEnvironment(void)`
+        function qtf_qprocessenvironment_systemEnvironment() &
+                result(res) bind(C, name='qtf_qprocessenvironment_systemEnvironment')
+            import :: c_ptr
+            implicit none
+            type(c_ptr) :: res
+        end function qtf_qprocessenvironment_systemEnvironment
+
+        !> Set variable `name` to `value`.
+        !>
+        !> C: `void qtf_qprocessenvironment_insert(void *self, const char *name, int name_len, const char *value, int value_len)`
+        subroutine qtf_qprocessenvironment_insert(self, name, name_len, value, value_len) &
+                bind(C, name='qtf_qprocessenvironment_insert')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+            character(kind=c_char), dimension(*), intent(in) :: value
+            integer(c_int), value :: value_len
+        end subroutine qtf_qprocessenvironment_insert
+
+        !> Remove variable `name`.
+        !>
+        !> C: `void qtf_qprocessenvironment_remove(void *self, const char *name, int name_len)`
+        subroutine qtf_qprocessenvironment_remove(self, name, name_len) bind(C, name='qtf_qprocessenvironment_remove')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+        end subroutine qtf_qprocessenvironment_remove
+
+        !> True if variable `name` is set.
+        !>
+        !> C: `int qtf_qprocessenvironment_contains(void *self, const char *name, int name_len)`
+        function qtf_qprocessenvironment_contains(self, name, name_len) &
+                result(res) bind(C, name='qtf_qprocessenvironment_contains')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+            integer(c_int) :: res
+        end function qtf_qprocessenvironment_contains
+
+        !> The value of `name` (`defaultValue` if it is not set).
+        !>
+        !> C: `char *qtf_qprocessenvironment_value(void *self, const char *name, int name_len, const char *defaultValue, int defaultValue_len, int *len)`
+        function qtf_qprocessenvironment_value(self, name, name_len, defaultValue, defaultValue_len, len) &
+                result(res) bind(C, name='qtf_qprocessenvironment_value')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+            character(kind=c_char), dimension(*), intent(in) :: defaultValue
+            integer(c_int), value :: defaultValue_len
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qprocessenvironment_value
+
+        !> The names of all variables.
+        !>
+        !> C: `char *qtf_qprocessenvironment_keys(void *self, int *len)`
+        function qtf_qprocessenvironment_keys(self, len) result(res) bind(C, name='qtf_qprocessenvironment_keys')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qprocessenvironment_keys
+
+        !> Remove all variables.
+        !>
+        !> C: `void qtf_qprocessenvironment_clear(void *self)`
+        subroutine qtf_qprocessenvironment_clear(self) bind(C, name='qtf_qprocessenvironment_clear')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qprocessenvironment_clear
+
+        !> True if no variable is set.
+        !>
+        !> C: `int qtf_qprocessenvironment_isEmpty(void *self)`
+        function qtf_qprocessenvironment_isEmpty(self) result(res) bind(C, name='qtf_qprocessenvironment_isEmpty')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qprocessenvironment_isEmpty
+
+        !> A copy (delete it when done).
+        !>
+        !> C: `void *qtf_qprocessenvironment_copy(void *self)`
+        function qtf_qprocessenvironment_copy(self) result(res) bind(C, name='qtf_qprocessenvironment_copy')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qprocessenvironment_copy
+
+        !> All standard output read so far, as bytes.
+        !>
+        !> C: `char *qtf_qprocess_readAllStandardOutput(void *self, int *len)`
+        function qtf_qprocess_readAllStandardOutput(self, len) &
+                result(res) bind(C, name='qtf_qprocess_readAllStandardOutput')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qprocess_readAllStandardOutput
+
+        !> All standard error output read so far, as bytes.
+        !>
+        !> C: `char *qtf_qprocess_readAllStandardError(void *self, int *len)`
+        function qtf_qprocess_readAllStandardError(self, len) &
+                result(res) bind(C, name='qtf_qprocess_readAllStandardError')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qprocess_readAllStandardError
+
+        !> Everything available in the current read channel, as bytes.
+        !>
+        !> C: `char *qtf_qprocess_readAll(void *self, int *len)`
+        function qtf_qprocess_readAll(self, len) result(res) bind(C, name='qtf_qprocess_readAll')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qprocess_readAll
+
+        !> One line from the current read channel, without its line break ("\n" or "\r\n").
+        !>
+        !> C: `char *qtf_qprocess_readLine(void *self, int *len)`
+        function qtf_qprocess_readLine(self, len) result(res) bind(C, name='qtf_qprocess_readLine')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qprocess_readLine
+
+        !> A process object (nothing runs until `start`).
+        !>
+        !> C: `void *qtf_qprocess_new(void *parent)`
+        function qtf_qprocess_new(parent) result(res) bind(C, name='qtf_qprocess_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qprocess_new
+
+        !> The program to run with `start()` (a name found on the PATH, or a path).
+        !>
+        !> C: `void qtf_qprocess_setProgram(void *self, const char *program, int program_len)`
+        subroutine qtf_qprocess_setProgram(self, program, program_len) bind(C, name='qtf_qprocess_setProgram')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: program
+            integer(c_int), value :: program_len
+        end subroutine qtf_qprocess_setProgram
+
+        !> The program.
+        !>
+        !> C: `char *qtf_qprocess_program(void *self, int *len)`
+        function qtf_qprocess_program(self, len) result(res) bind(C, name='qtf_qprocess_program')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qprocess_program
+
+        !> The arguments for `start()`, passed as they are (no shell quoting).
+        !>
+        !> C: `void qtf_qprocess_setArguments(void *self, const char *arguments, int arguments_len, int n)`
+        subroutine qtf_qprocess_setArguments(self, arguments, arguments_len, n) &
+                bind(C, name='qtf_qprocess_setArguments')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: arguments
+            integer(c_int), value :: arguments_len
+            integer(c_int), value :: n
+        end subroutine qtf_qprocess_setArguments
+
+        !> The arguments.
+        !>
+        !> C: `char *qtf_qprocess_arguments(void *self, int *len)`
+        function qtf_qprocess_arguments(self, len) result(res) bind(C, name='qtf_qprocess_arguments')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qprocess_arguments
+
+        !> Start the program set with `setProgram` and `setArguments`.
+        !>
+        !> C: `void qtf_qprocess_start(void *self)`
+        subroutine qtf_qprocess_start(self) bind(C, name='qtf_qprocess_start')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qprocess_start
+
+        !> Start `program` without arguments.
+        !>
+        !> C: `void qtf_qprocess_startProgram(void *self, const char *program, int program_len)`
+        subroutine qtf_qprocess_startProgram(self, program, program_len) bind(C, name='qtf_qprocess_startProgram')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: program
+            integer(c_int), value :: program_len
+        end subroutine qtf_qprocess_startProgram
+
+        !> Start `program` with `arguments` (passed as they are, without a shell).
+        !>
+        !> C: `void qtf_qprocess_startWithArguments(void *self, const char *program, int program_len, const char *arguments, int arguments_len, int n)`
+        subroutine qtf_qprocess_startWithArguments(self, program, program_len, arguments, arguments_len, n) &
+                bind(C, name='qtf_qprocess_startWithArguments')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: program
+            integer(c_int), value :: program_len
+            character(kind=c_char), dimension(*), intent(in) :: arguments
+            integer(c_int), value :: arguments_len
+            integer(c_int), value :: n
+        end subroutine qtf_qprocess_startWithArguments
+
+        !> Start a command line, split into the program and its arguments as `QProcess_splitCommand` does (quotes group words; no shell features such as pipes).
+        !>
+        !> C: `void qtf_qprocess_startCommand(void *self, const char *command, int command_len)`
+        subroutine qtf_qprocess_startCommand(self, command, command_len) bind(C, name='qtf_qprocess_startCommand')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: command
+            integer(c_int), value :: command_len
+        end subroutine qtf_qprocess_startCommand
+
+        !> Start the program set with `setProgram` etc. as an independent process that keeps running after this program exits; no output is read and no signals are emitted. False if it could not be started.
+        !>
+        !> C: `int qtf_qprocess_startDetached(void *self)`
+        function qtf_qprocess_startDetached(self) result(res) bind(C, name='qtf_qprocess_startDetached')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qprocess_startDetached
+
+        !> Wait until the program has started (or failed to); false on failure or timeout (-1: no timeout).
+        !>
+        !> C: `int qtf_qprocess_waitForStarted(void *self, int msecs)`
+        function qtf_qprocess_waitForStarted(self, msecs) result(res) bind(C, name='qtf_qprocess_waitForStarted')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: msecs
+            integer(c_int) :: res
+        end function qtf_qprocess_waitForStarted
+
+        !> Wait until the program has finished; false on timeout, failure or if it was not running. Signals are emitted during the wait.
+        !>
+        !> C: `int qtf_qprocess_waitForFinished(void *self, int msecs)`
+        function qtf_qprocess_waitForFinished(self, msecs) result(res) bind(C, name='qtf_qprocess_waitForFinished')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: msecs
+            integer(c_int) :: res
+        end function qtf_qprocess_waitForFinished
+
+        !> Wait until new output can be read; false on timeout or when the program has finished.
+        !>
+        !> C: `int qtf_qprocess_waitForReadyRead(void *self, int msecs)`
+        function qtf_qprocess_waitForReadyRead(self, msecs) result(res) bind(C, name='qtf_qprocess_waitForReadyRead')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: msecs
+            integer(c_int) :: res
+        end function qtf_qprocess_waitForReadyRead
+
+        !> Wait until written input has been passed to the program.
+        !>
+        !> C: `int qtf_qprocess_waitForBytesWritten(void *self, int msecs)`
+        function qtf_qprocess_waitForBytesWritten(self, msecs) &
+                result(res) bind(C, name='qtf_qprocess_waitForBytesWritten')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: msecs
+            integer(c_int) :: res
+        end function qtf_qprocess_waitForBytesWritten
+
+        !> Ask the program to exit (SIGTERM on Unix, WM_CLOSE on Windows); it may ignore the request.
+        !>
+        !> C: `void qtf_qprocess_terminate(void *self)`
+        subroutine qtf_qprocess_terminate(self) bind(C, name='qtf_qprocess_terminate')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qprocess_terminate
+
+        !> End the program at once.
+        !>
+        !> C: `void qtf_qprocess_kill(void *self)`
+        subroutine qtf_qprocess_kill(self) bind(C, name='qtf_qprocess_kill')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qprocess_kill
+
+        !> Kill the program if it is running and close all channels.
+        !>
+        !> C: `void qtf_qprocess_close(void *self)`
+        subroutine qtf_qprocess_close(self) bind(C, name='qtf_qprocess_close')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qprocess_close
+
+        !> Send `data` (bytes, as they are) to the program's standard input; returns the number of bytes queued, or -1 on error. Add a newline for line-oriented programs.
+        !>
+        !> C: `int qtf_qprocess_write(void *self, const char *data, int data_len)`
+        function qtf_qprocess_write(self, data, data_len) result(res) bind(C, name='qtf_qprocess_write')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: data
+            integer(c_int), value :: data_len
+            integer(c_int) :: res
+        end function qtf_qprocess_write
+
+        !> Close the program's standard input (once queued data is written), so it sees the end of its input.
+        !>
+        !> C: `void qtf_qprocess_closeWriteChannel(void *self)`
+        subroutine qtf_qprocess_closeWriteChannel(self) bind(C, name='qtf_qprocess_closeWriteChannel')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qprocess_closeWriteChannel
+
+        !> True if a complete line can be read from the current read channel.
+        !>
+        !> C: `int qtf_qprocess_canReadLine(void *self)`
+        function qtf_qprocess_canReadLine(self) result(res) bind(C, name='qtf_qprocess_canReadLine')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qprocess_canReadLine
+
+        !> The number of bytes waiting in the current read channel.
+        !>
+        !> C: `int qtf_qprocess_bytesAvailable(void *self)`
+        function qtf_qprocess_bytesAvailable(self) result(res) bind(C, name='qtf_qprocess_bytesAvailable')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qprocess_bytesAvailable
+
+        !> The channel `readAll`, `readLine` and `readyRead` use: QProcess_StandardOutput (default) or QProcess_StandardError.
+        !>
+        !> C: `void qtf_qprocess_setReadChannel(void *self, int channel)`
+        subroutine qtf_qprocess_setReadChannel(self, channel) bind(C, name='qtf_qprocess_setReadChannel')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: channel
+        end subroutine qtf_qprocess_setReadChannel
+
+        !> The current read channel.
+        !>
+        !> C: `int qtf_qprocess_readChannel(void *self)`
+        function qtf_qprocess_readChannel(self) result(res) bind(C, name='qtf_qprocess_readChannel')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qprocess_readChannel
+
+        !> QProcess_SeparateChannels (default), QProcess_MergedChannels (standard error into standard output), QProcess_ForwardedChannels (both to this program's own output), ...
+        !>
+        !> C: `void qtf_qprocess_setProcessChannelMode(void *self, int mode)`
+        subroutine qtf_qprocess_setProcessChannelMode(self, mode) bind(C, name='qtf_qprocess_setProcessChannelMode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: mode
+        end subroutine qtf_qprocess_setProcessChannelMode
+
+        !> The channel mode.
+        !>
+        !> C: `int qtf_qprocess_processChannelMode(void *self)`
+        function qtf_qprocess_processChannelMode(self) result(res) bind(C, name='qtf_qprocess_processChannelMode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qprocess_processChannelMode
+
+        !> Read the program's standard input from a file.
+        !>
+        !> C: `void qtf_qprocess_setStandardInputFile(void *self, const char *fileName, int fileName_len)`
+        subroutine qtf_qprocess_setStandardInputFile(self, fileName, fileName_len) &
+                bind(C, name='qtf_qprocess_setStandardInputFile')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: fileName
+            integer(c_int), value :: fileName_len
+        end subroutine qtf_qprocess_setStandardInputFile
+
+        !> Write the program's standard output to a file (replaced, or appended to).
+        !>
+        !> C: `void qtf_qprocess_setStandardOutputFile(void *self, const char *fileName, int fileName_len, int append)`
+        subroutine qtf_qprocess_setStandardOutputFile(self, fileName, fileName_len, append) &
+                bind(C, name='qtf_qprocess_setStandardOutputFile')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: fileName
+            integer(c_int), value :: fileName_len
+            integer(c_int), value :: append
+        end subroutine qtf_qprocess_setStandardOutputFile
+
+        !> Write the program's standard error to a file (replaced, or appended to).
+        !>
+        !> C: `void qtf_qprocess_setStandardErrorFile(void *self, const char *fileName, int fileName_len, int append)`
+        subroutine qtf_qprocess_setStandardErrorFile(self, fileName, fileName_len, append) &
+                bind(C, name='qtf_qprocess_setStandardErrorFile')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: fileName
+            integer(c_int), value :: fileName_len
+            integer(c_int), value :: append
+        end subroutine qtf_qprocess_setStandardErrorFile
+
+        !> The directory the program runs in (default: this program's current directory).
+        !>
+        !> C: `void qtf_qprocess_setWorkingDirectory(void *self, const char *dir, int dir_len)`
+        subroutine qtf_qprocess_setWorkingDirectory(self, dir, dir_len) bind(C, name='qtf_qprocess_setWorkingDirectory')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: dir
+            integer(c_int), value :: dir_len
+        end subroutine qtf_qprocess_setWorkingDirectory
+
+        !> The working directory ('' for the default).
+        !>
+        !> C: `char *qtf_qprocess_workingDirectory(void *self, int *len)`
+        function qtf_qprocess_workingDirectory(self, len) result(res) bind(C, name='qtf_qprocess_workingDirectory')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qprocess_workingDirectory
+
+        !> The program's environment variables (copied; default: this program's).
+        !>
+        !> C: `void qtf_qprocess_setProcessEnvironment(void *self, void *environment)`
+        subroutine qtf_qprocess_setProcessEnvironment(self, environment) &
+                bind(C, name='qtf_qprocess_setProcessEnvironment')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: environment
+        end subroutine qtf_qprocess_setProcessEnvironment
+
+        !> A copy of the environment set with `setProcessEnvironment` (empty if none was set; delete it when done).
+        !>
+        !> C: `void *qtf_qprocess_processEnvironment(void *self)`
+        function qtf_qprocess_processEnvironment(self) result(res) bind(C, name='qtf_qprocess_processEnvironment')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qprocess_processEnvironment
+
+        !> QProcess_NotRunning, QProcess_Starting or QProcess_Running.
+        !>
+        !> C: `int qtf_qprocess_state(void *self)`
+        function qtf_qprocess_state(self) result(res) bind(C, name='qtf_qprocess_state')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qprocess_state
+
+        !> The exit code of the program that finished last.
+        !>
+        !> C: `int qtf_qprocess_exitCode(void *self)`
+        function qtf_qprocess_exitCode(self) result(res) bind(C, name='qtf_qprocess_exitCode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qprocess_exitCode
+
+        !> QProcess_NormalExit, or QProcess_CrashExit if it crashed or was killed.
+        !>
+        !> C: `int qtf_qprocess_exitStatus(void *self)`
+        function qtf_qprocess_exitStatus(self) result(res) bind(C, name='qtf_qprocess_exitStatus')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qprocess_exitStatus
+
+        !> The last error (QProcess_UnknownError if none).
+        !>
+        !> C: `int qtf_qprocess_error(void *self)`
+        function qtf_qprocess_error(self) result(res) bind(C, name='qtf_qprocess_error')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qprocess_error
+
+        !> A description of the last error.
+        !>
+        !> C: `char *qtf_qprocess_errorString(void *self, int *len)`
+        function qtf_qprocess_errorString(self, len) result(res) bind(C, name='qtf_qprocess_errorString')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qprocess_errorString
+
+        !> The program's process id (0 if it is not running).
+        !>
+        !> C: `long long qtf_qprocess_processId(void *self)`
+        function qtf_qprocess_processId(self) result(res) bind(C, name='qtf_qprocess_processId')
+            import :: c_long_long, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_long_long) :: res
+        end function qtf_qprocess_processId
+
+        !> Run `program` with `arguments`, wait for it to finish, and return its exit code (-2: it could not be started, -1: it crashed). Its output goes to this program's own standard output and error.
+        !>
+        !> C: `int qtf_qprocess_execute(const char *program, int program_len, const char *arguments, int arguments_len, int n)`
+        function qtf_qprocess_execute(program, program_len, arguments, arguments_len, n) &
+                result(res) bind(C, name='qtf_qprocess_execute')
+            import :: c_char, c_int
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: program
+            integer(c_int), value :: program_len
+            character(kind=c_char), dimension(*), intent(in) :: arguments
+            integer(c_int), value :: arguments_len
+            integer(c_int), value :: n
+            integer(c_int) :: res
+        end function qtf_qprocess_execute
+
+        !> Split a command line into words as `startCommand` does: spaces separate words, double quotes group them.
+        !>
+        !> C: `char *qtf_qprocess_splitCommand(const char *command, int command_len, int *len)`
+        function qtf_qprocess_splitCommand(command, command_len, len) &
+                result(res) bind(C, name='qtf_qprocess_splitCommand')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: command
+            integer(c_int), value :: command_len
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qprocess_splitCommand
+
+        !> The null device ('/dev/null', or 'NUL' on Windows), e.g. to discard output with `setStandardOutputFile`.
+        !>
+        !> C: `char *qtf_qprocess_nullDevice(int *len)`
+        function qtf_qprocess_nullDevice(len) result(res) bind(C, name='qtf_qprocess_nullDevice')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qprocess_nullDevice
+
         !> Create a directory and any missing parents (like `mkdir -p`); true if it exists afterwards. `/` works as the separator on every platform.
         !>
         !> C: `int qtf_QDir_mkpath(const char *path, int path_len)`
@@ -473,7 +1093,27 @@ module qt_c_core_classes
     public :: qtf_qsettings_status, qtf_qsettings_isWritable, qtf_qthread_start, qtf_qthread_wait
     public :: qtf_qthread_isRunning, qtf_qthread_isFinished, qtf_qthread_requestInterruption
     public :: qtf_qthread_isInterruptionRequested, qtf_qthread_currentThread, qtf_qthread_idealThreadCount
-    public :: qtf_qthread_msleep, qtf_QDir_mkpath, qtf_QDir_exists, qtf_QDir_removeRecursively
-    public :: qtf_QDir_currentPath, qtf_QDir_homePath, qtf_QDir_tempPath
+    public :: qtf_qthread_msleep, qtf_qprocessenvironment_delete, qtf_qprocessenvironment_new
+    public :: qtf_qprocessenvironment_systemEnvironment, qtf_qprocessenvironment_insert
+    public :: qtf_qprocessenvironment_remove, qtf_qprocessenvironment_contains, qtf_qprocessenvironment_value
+    public :: qtf_qprocessenvironment_keys, qtf_qprocessenvironment_clear, qtf_qprocessenvironment_isEmpty
+    public :: qtf_qprocessenvironment_copy, qtf_qprocess_readAllStandardOutput
+    public :: qtf_qprocess_readAllStandardError, qtf_qprocess_readAll, qtf_qprocess_readLine
+    public :: qtf_qprocess_new, qtf_qprocess_setProgram, qtf_qprocess_program, qtf_qprocess_setArguments
+    public :: qtf_qprocess_arguments, qtf_qprocess_start, qtf_qprocess_startProgram
+    public :: qtf_qprocess_startWithArguments, qtf_qprocess_startCommand, qtf_qprocess_startDetached
+    public :: qtf_qprocess_waitForStarted, qtf_qprocess_waitForFinished, qtf_qprocess_waitForReadyRead
+    public :: qtf_qprocess_waitForBytesWritten, qtf_qprocess_terminate, qtf_qprocess_kill, qtf_qprocess_close
+    public :: qtf_qprocess_write, qtf_qprocess_closeWriteChannel, qtf_qprocess_canReadLine
+    public :: qtf_qprocess_bytesAvailable, qtf_qprocess_setReadChannel, qtf_qprocess_readChannel
+    public :: qtf_qprocess_setProcessChannelMode, qtf_qprocess_processChannelMode
+    public :: qtf_qprocess_setStandardInputFile, qtf_qprocess_setStandardOutputFile
+    public :: qtf_qprocess_setStandardErrorFile, qtf_qprocess_setWorkingDirectory
+    public :: qtf_qprocess_workingDirectory, qtf_qprocess_setProcessEnvironment
+    public :: qtf_qprocess_processEnvironment, qtf_qprocess_state, qtf_qprocess_exitCode
+    public :: qtf_qprocess_exitStatus, qtf_qprocess_error, qtf_qprocess_errorString, qtf_qprocess_processId
+    public :: qtf_qprocess_execute, qtf_qprocess_splitCommand, qtf_qprocess_nullDevice, qtf_QDir_mkpath
+    public :: qtf_QDir_exists, qtf_QDir_removeRecursively, qtf_QDir_currentPath, qtf_QDir_homePath
+    public :: qtf_QDir_tempPath
 
 end module qt_c_core_classes

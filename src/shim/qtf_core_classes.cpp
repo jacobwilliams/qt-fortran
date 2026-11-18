@@ -9,10 +9,14 @@
 #include "qtf_common.h"
 
 #include <QDir>
+#include <QProcess>
+#include <QProcessEnvironment>
 #include <QSettings>
 #include <QStringList>
 #include <QThread>
 #include <QVariant>
+#include <cstdlib>
+#include <cstring>
 
 template <typename T> static T *as(void *p) { return static_cast<T *>(p); }
 
@@ -20,6 +24,13 @@ template <typename T> static T *as(void *p) { return static_cast<T *>(p); }
 enum : int {
     QTF_SIG_QTHREAD_STARTED = 4000,
     QTF_SIG_QTHREAD_FINISHED = 4001,
+    QTF_SIG_QPROCESS_STARTED = 4002,
+    QTF_SIG_QPROCESS_FINISHED = 4003,
+    QTF_SIG_QPROCESS_ERROROCCURRED = 4004,
+    QTF_SIG_QPROCESS_STATECHANGED = 4005,
+    QTF_SIG_QPROCESS_READYREADSTANDARDOUTPUT = 4006,
+    QTF_SIG_QPROCESS_READYREADSTANDARDERROR = 4007,
+    QTF_SIG_QPROCESS_READYREAD = 4008,
 };
 
 // Runs (op 0) or frees (op 1) the Fortran task of a thread.
@@ -53,6 +64,16 @@ class QtfThread : public QThread {
 static void qtf_thread_wait(QThread *t, int msecs) {
     if (msecs < 0) t->wait();
     else t->wait(QDeadlineTimer(msecs));
+}
+
+// Bytes for Fortran: a malloc'd copy (released by qtf_free) and its length.
+// Process output is passed as raw bytes, not decoded and re-encoded.
+static char *qtf_bytes(const QByteArray &b, int *len) {
+    *len = static_cast<int>(b.size());
+    char *p = static_cast<char *>(std::malloc(b.size() + 1));
+    std::memcpy(p, b.constData(), b.size());
+    p[b.size()] = 0;
+    return p;
 }
 
 // A new thread that will run the Fortran task `task`, owned by `parent` if given.
@@ -204,6 +225,257 @@ QTF_API int qtf_qthread_idealThreadCount(void) { return QThread::idealThreadCoun
 QTF_API void qtf_qthread_msleep(int msecs) { QThread::msleep(msecs); }
 
 // ---------------------------------------------------------------------------
+// QProcessEnvironment
+
+// Release an environment.
+QTF_API void qtf_qprocessenvironment_delete(void *self) { delete as<QProcessEnvironment>(self); }
+
+// An empty environment.
+QTF_API void *qtf_qprocessenvironment_new(void) { return new QProcessEnvironment(); }
+
+// A copy of this program's environment (delete it when done).
+QTF_API void *qtf_qprocessenvironment_systemEnvironment(void) {
+    return new QProcessEnvironment(QProcessEnvironment::systemEnvironment());
+}
+
+// Set variable `name` to `value`.
+QTF_API void qtf_qprocessenvironment_insert(void *self, const char *name, int name_len, const char *value, int value_len) {
+    as<QProcessEnvironment>(self)->insert(qtf_qstring(name, name_len), qtf_qstring(value, value_len));
+}
+
+// Remove variable `name`.
+QTF_API void qtf_qprocessenvironment_remove(void *self, const char *name, int name_len) {
+    as<QProcessEnvironment>(self)->remove(qtf_qstring(name, name_len));
+}
+
+// True if variable `name` is set.
+QTF_API int qtf_qprocessenvironment_contains(void *self, const char *name, int name_len) {
+    return qtf_bool(as<QProcessEnvironment>(self)->contains(qtf_qstring(name, name_len)));
+}
+
+// The value of `name` (`defaultValue` if it is not set).
+QTF_API char *qtf_qprocessenvironment_value(void *self, const char *name, int name_len, const char *defaultValue, int defaultValue_len, int *len) {
+    return qtf_to_c(as<QProcessEnvironment>(self)->value(qtf_qstring(name, name_len), qtf_qstring(defaultValue, defaultValue_len)), len);
+}
+
+// The names of all variables.
+QTF_API char *qtf_qprocessenvironment_keys(void *self, int *len) {
+    return qtf_list_to_c(as<QProcessEnvironment>(self)->keys(), len);
+}
+
+// Remove all variables.
+QTF_API void qtf_qprocessenvironment_clear(void *self) { as<QProcessEnvironment>(self)->clear(); }
+
+// True if no variable is set.
+QTF_API int qtf_qprocessenvironment_isEmpty(void *self) {
+    return qtf_bool(as<QProcessEnvironment>(self)->isEmpty());
+}
+
+// A copy (delete it when done).
+QTF_API void *qtf_qprocessenvironment_copy(void *self) {
+    return new QProcessEnvironment(*as<QProcessEnvironment>(self));
+}
+
+// ---------------------------------------------------------------------------
+// QProcess
+
+// All standard output read so far, as bytes.
+QTF_API char *qtf_qprocess_readAllStandardOutput(void *self, int *len) {
+    return qtf_bytes(as<QProcess>(self)->readAllStandardOutput(), len);
+}
+
+// All standard error output read so far, as bytes.
+QTF_API char *qtf_qprocess_readAllStandardError(void *self, int *len) {
+    return qtf_bytes(as<QProcess>(self)->readAllStandardError(), len);
+}
+
+// Everything available in the current read channel, as bytes.
+QTF_API char *qtf_qprocess_readAll(void *self, int *len) { return qtf_bytes(as<QProcess>(self)->readAll(), len); }
+
+// One line from the current read channel, without its line break ("\n" or "\r\n").
+QTF_API char *qtf_qprocess_readLine(void *self, int *len) {
+    QByteArray line = as<QProcess>(self)->readLine();
+    if (line.endsWith('\n')) line.chop(1);
+    if (line.endsWith('\r')) line.chop(1);
+    return qtf_bytes(line, len);
+}
+
+// A process object (nothing runs until `start`).
+QTF_API void *qtf_qprocess_new(void *parent) { return new QProcess(as<QObject>(parent)); }
+
+// The program to run with `start()` (a name found on the PATH, or a path).
+QTF_API void qtf_qprocess_setProgram(void *self, const char *program, int program_len) {
+    as<QProcess>(self)->setProgram(qtf_qstring(program, program_len));
+}
+
+// The program.
+QTF_API char *qtf_qprocess_program(void *self, int *len) {
+    return qtf_to_c(as<QProcess>(self)->program(), len);
+}
+
+// The arguments for `start()`, passed as they are (no shell quoting).
+QTF_API void qtf_qprocess_setArguments(void *self, const char *arguments, int arguments_len, int n) {
+    as<QProcess>(self)->setArguments(qtf_qstringlist(arguments, arguments_len, n));
+}
+
+// The arguments.
+QTF_API char *qtf_qprocess_arguments(void *self, int *len) {
+    return qtf_list_to_c(as<QProcess>(self)->arguments(), len);
+}
+
+// Start the program set with `setProgram` and `setArguments`.
+QTF_API void qtf_qprocess_start(void *self) { as<QProcess>(self)->start(); }
+
+// Start `program` without arguments.
+QTF_API void qtf_qprocess_startProgram(void *self, const char *program, int program_len) {
+    as<QProcess>(self)->start(qtf_qstring(program, program_len), QStringList());
+}
+
+// Start `program` with `arguments` (passed as they are, without a shell).
+QTF_API void qtf_qprocess_startWithArguments(void *self, const char *program, int program_len, const char *arguments, int arguments_len, int n) {
+    as<QProcess>(self)->start(qtf_qstring(program, program_len), qtf_qstringlist(arguments, arguments_len, n));
+}
+
+// Start a command line, split into the program and its arguments as `QProcess_splitCommand` does (quotes group words; no shell features such as pipes).
+QTF_API void qtf_qprocess_startCommand(void *self, const char *command, int command_len) {
+    as<QProcess>(self)->startCommand(qtf_qstring(command, command_len));
+}
+
+// Start the program set with `setProgram` etc. as an independent process that keeps running after this program exits; no output is read and no signals are emitted. False if it could not be started.
+QTF_API int qtf_qprocess_startDetached(void *self) { return qtf_bool(as<QProcess>(self)->startDetached()); }
+
+// Wait until the program has started (or failed to); false on failure or timeout (-1: no timeout).
+QTF_API int qtf_qprocess_waitForStarted(void *self, int msecs) {
+    return qtf_bool(as<QProcess>(self)->waitForStarted(msecs));
+}
+
+// Wait until the program has finished; false on timeout, failure or if it was not running. Signals are emitted during the wait.
+QTF_API int qtf_qprocess_waitForFinished(void *self, int msecs) {
+    return qtf_bool(as<QProcess>(self)->waitForFinished(msecs));
+}
+
+// Wait until new output can be read; false on timeout or when the program has finished.
+QTF_API int qtf_qprocess_waitForReadyRead(void *self, int msecs) {
+    return qtf_bool(as<QProcess>(self)->waitForReadyRead(msecs));
+}
+
+// Wait until written input has been passed to the program.
+QTF_API int qtf_qprocess_waitForBytesWritten(void *self, int msecs) {
+    return qtf_bool(as<QProcess>(self)->waitForBytesWritten(msecs));
+}
+
+// Ask the program to exit (SIGTERM on Unix, WM_CLOSE on Windows); it may ignore the request.
+QTF_API void qtf_qprocess_terminate(void *self) { as<QProcess>(self)->terminate(); }
+
+// End the program at once.
+QTF_API void qtf_qprocess_kill(void *self) { as<QProcess>(self)->kill(); }
+
+// Kill the program if it is running and close all channels.
+QTF_API void qtf_qprocess_close(void *self) { as<QProcess>(self)->close(); }
+
+// Send `data` (bytes, as they are) to the program's standard input; returns the number of bytes queued, or -1 on error. Add a newline for line-oriented programs.
+QTF_API int qtf_qprocess_write(void *self, const char *data, int data_len) {
+    return int(as<QProcess>(self)->write(data, data_len));
+}
+
+// Close the program's standard input (once queued data is written), so it sees the end of its input.
+QTF_API void qtf_qprocess_closeWriteChannel(void *self) { as<QProcess>(self)->closeWriteChannel(); }
+
+// True if a complete line can be read from the current read channel.
+QTF_API int qtf_qprocess_canReadLine(void *self) { return qtf_bool(as<QProcess>(self)->canReadLine()); }
+
+// The number of bytes waiting in the current read channel.
+QTF_API int qtf_qprocess_bytesAvailable(void *self) { return int(as<QProcess>(self)->bytesAvailable()); }
+
+// The channel `readAll`, `readLine` and `readyRead` use: QProcess_StandardOutput (default) or QProcess_StandardError.
+QTF_API void qtf_qprocess_setReadChannel(void *self, int channel) {
+    as<QProcess>(self)->setReadChannel(QProcess::ProcessChannel(channel));
+}
+
+// The current read channel.
+QTF_API int qtf_qprocess_readChannel(void *self) { return int(as<QProcess>(self)->readChannel()); }
+
+// QProcess_SeparateChannels (default), QProcess_MergedChannels (standard error into standard output), QProcess_ForwardedChannels (both to this program's own output), ...
+QTF_API void qtf_qprocess_setProcessChannelMode(void *self, int mode) {
+    as<QProcess>(self)->setProcessChannelMode(QProcess::ProcessChannelMode(mode));
+}
+
+// The channel mode.
+QTF_API int qtf_qprocess_processChannelMode(void *self) {
+    return int(as<QProcess>(self)->processChannelMode());
+}
+
+// Read the program's standard input from a file.
+QTF_API void qtf_qprocess_setStandardInputFile(void *self, const char *fileName, int fileName_len) {
+    as<QProcess>(self)->setStandardInputFile(qtf_qstring(fileName, fileName_len));
+}
+
+// Write the program's standard output to a file (replaced, or appended to).
+QTF_API void qtf_qprocess_setStandardOutputFile(void *self, const char *fileName, int fileName_len, int append) {
+    as<QProcess>(self)->setStandardOutputFile(qtf_qstring(fileName, fileName_len), (append != 0) ? QIODevice::Append : QIODevice::Truncate);
+}
+
+// Write the program's standard error to a file (replaced, or appended to).
+QTF_API void qtf_qprocess_setStandardErrorFile(void *self, const char *fileName, int fileName_len, int append) {
+    as<QProcess>(self)->setStandardErrorFile(qtf_qstring(fileName, fileName_len), (append != 0) ? QIODevice::Append : QIODevice::Truncate);
+}
+
+// The directory the program runs in (default: this program's current directory).
+QTF_API void qtf_qprocess_setWorkingDirectory(void *self, const char *dir, int dir_len) {
+    as<QProcess>(self)->setWorkingDirectory(qtf_qstring(dir, dir_len));
+}
+
+// The working directory ('' for the default).
+QTF_API char *qtf_qprocess_workingDirectory(void *self, int *len) {
+    return qtf_to_c(as<QProcess>(self)->workingDirectory(), len);
+}
+
+// The program's environment variables (copied; default: this program's).
+QTF_API void qtf_qprocess_setProcessEnvironment(void *self, void *environment) {
+    as<QProcess>(self)->setProcessEnvironment(*as<QProcessEnvironment>(environment));
+}
+
+// A copy of the environment set with `setProcessEnvironment` (empty if none was set; delete it when done).
+QTF_API void *qtf_qprocess_processEnvironment(void *self) {
+    return new QProcessEnvironment(as<QProcess>(self)->processEnvironment());
+}
+
+// QProcess_NotRunning, QProcess_Starting or QProcess_Running.
+QTF_API int qtf_qprocess_state(void *self) { return int(as<QProcess>(self)->state()); }
+
+// The exit code of the program that finished last.
+QTF_API int qtf_qprocess_exitCode(void *self) { return as<QProcess>(self)->exitCode(); }
+
+// QProcess_NormalExit, or QProcess_CrashExit if it crashed or was killed.
+QTF_API int qtf_qprocess_exitStatus(void *self) { return int(as<QProcess>(self)->exitStatus()); }
+
+// The last error (QProcess_UnknownError if none).
+QTF_API int qtf_qprocess_error(void *self) { return int(as<QProcess>(self)->error()); }
+
+// A description of the last error.
+QTF_API char *qtf_qprocess_errorString(void *self, int *len) {
+    return qtf_to_c(as<QProcess>(self)->errorString(), len);
+}
+
+// The program's process id (0 if it is not running).
+QTF_API long long qtf_qprocess_processId(void *self) {
+    return static_cast<long long>(as<QProcess>(self)->processId());
+}
+
+// Run `program` with `arguments`, wait for it to finish, and return its exit code (-2: it could not be started, -1: it crashed). Its output goes to this program's own standard output and error.
+QTF_API int qtf_qprocess_execute(const char *program, int program_len, const char *arguments, int arguments_len, int n) {
+    return QProcess::execute(qtf_qstring(program, program_len), qtf_qstringlist(arguments, arguments_len, n));
+}
+
+// Split a command line into words as `startCommand` does: spaces separate words, double quotes group them.
+QTF_API char *qtf_qprocess_splitCommand(const char *command, int command_len, int *len) {
+    return qtf_list_to_c(QProcess::splitCommand(qtf_qstring(command, command_len)), len);
+}
+
+// The null device ('/dev/null', or 'NUL' on Windows), e.g. to discard output with `setStandardOutputFile`.
+QTF_API char *qtf_qprocess_nullDevice(int *len) { return qtf_to_c(QProcess::nullDevice(), len); }
+
+// ---------------------------------------------------------------------------
 // functions
 
 // Create a directory and any missing parents (like `mkdir -p`); true if it exists afterwards. `/` works as the separator on every platform.
@@ -239,6 +511,27 @@ static const bool qtf_core_classes_registered = [] {
     });
     qtf_register_connector(QTF_SIG_QTHREAD_FINISHED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QThread>(s), &QThread::finished, as<QThread>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QPROCESS_STARTED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QProcess>(s), &QProcess::started, as<QProcess>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QPROCESS_FINISHED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QProcess>(s), &QProcess::finished, as<QProcess>(s), [ref](int a, int b) { qtf_emit_ints(ref, {a, b}); }));
+    });
+    qtf_register_connector(QTF_SIG_QPROCESS_ERROROCCURRED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QProcess>(s), &QProcess::errorOccurred, as<QProcess>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QPROCESS_STATECHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QProcess>(s), &QProcess::stateChanged, as<QProcess>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QPROCESS_READYREADSTANDARDOUTPUT, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QProcess>(s), &QProcess::readyReadStandardOutput, as<QProcess>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QPROCESS_READYREADSTANDARDERROR, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QProcess>(s), &QProcess::readyReadStandardError, as<QProcess>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QPROCESS_READYREAD, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QProcess>(s), &QProcess::readyRead, as<QProcess>(s), [ref]() { qtf_emit(ref); }));
     });
     return true;
 }();

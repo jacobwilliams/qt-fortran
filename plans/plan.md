@@ -519,6 +519,15 @@ spec-only work now; items marked *(design)* need new machinery.
     and main window state round-trip as base64 text: `saveGeometry`/`restoreGeometry`,
     `saveState`/`restoreState`. `QApplication_setOrganizationName` /
     `setApplicationName` choose the store.
+  - **Done:** `QProcess` and `QProcessEnvironment` (spec/core_classes.toml):
+    start (generic: set program/arguments, a program, or a program and
+    arguments; `startCommand` for a command line), waits, write /
+    closeWriteChannel, channel modes, files for the standard streams,
+    working directory, environment, exit code/status, and the signals
+    started, finished (int2: code, status), errorOccurred, stateChanged and
+    readyRead*. Output is returned as raw bytes (`qtf_bytes`), so any
+    encoding survives. test_process runs its own executable as the child
+    program, so it needs no other program on any CI platform.
   - **Done:** `QApplication()` passes the program's command-line arguments to Qt
     (so -style, -platform, ... work); `QApplication_arguments()` returns the rest.
   - **Done:** `QDateTime` (a value type in qt_core: local time, format/parse,

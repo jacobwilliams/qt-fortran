@@ -54,35 +54,37 @@ card, progress line, git stats, animated logo, blame column and terminal view.
 
 ### A. Spec-only additions (the generator handles these)
 
-- [ ] **`QProcess`** and `QProcessEnvironment`: start, kill, terminate,
+- [x] **`QProcess`** and `QProcessEnvironment`: start, kill, terminate,
       write, closeWriteChannel, working directory, environment, merged
       channels, waitForFinished, startDetached; signals `started`, `finished`
       (exit code and status), `errorOccurred`, `readyReadStandardOutput`/`Error`.
       The app runs fpm, git and the language servers through it (`.start`
-      x115, `finished` x40). **Do this first.**
-- [ ] Painting: `QPainterPath`, `QLinearGradient`, `QFontMetrics(F)`
+      x115, `finished` x40). *Done (spec/core_classes.toml,
+      test/test_process.f90); output is read as raw bytes.*
+- [x] Painting: `QPainterPath`, `QLinearGradient`, `QFontMetrics(F)`
       (horizontalAdvance, height, elidedText), more `QPointF`/`QRectF`
-      drawing calls.
+      drawing calls. *Done.*
 - [ ] Theming: `QPalette` (roles x groups; `setColor`, `QApplication_setPalette`)
       and `QStyleFactory` / `QApplication_setStyle('Fusion')`. The app uses
       `QPalette` 149 times for its themes and dark mode.
 - [ ] Services:
-  - `QClipboard` (text);
-  - `QToolTip_showText` / `hideText`;
-  - `QDesktopServices_openUrl`;
-  - `QCursor_pos`, override cursor;
-  - `QFontDatabase_systemFont(FixedFont)`;
-  - `QKeySequence` standard keys and native text.
+  - [x] `QClipboard` (text);
+  - [ ] `QToolTip_showText` / `hideText`;
+  - [ ] `QDesktopServices_openUrl`;
+  - [x] `QCursor_pos`, override cursor;
+  - [x] `QFontDatabase_systemFont(FixedFont)` (as `QFontDatabase_fixedFamily`);
+  - [ ] `QKeySequence` standard keys and native text (shortcuts as strings
+        already work: `QAction%setShortcut('Ctrl+O')`).
 - [ ] Widgets and layout:
   - `QActionGroup`, `QStackedLayout`;
   - `QTabBar` (standalone);
   - `QHeaderView` options (resize modes, section sizes);
   - `QScrollBar` access (value, range, signals).
 - [ ] Docks:
-  - `resizeDocks`, `splitDockWidget`, `setCorner`, `setTitleBarWidget`;
-  - `setFloating`/`isFloating`, `tabifiedDockWidgets`, `setTabPosition`,
-    `setDockOptions`, `setAllowedAreas`;
-  - signals `topLevelChanged`, `dockLocationChanged`, `visibilityChanged`.
+  - [ ] `resizeDocks`, `splitDockWidget`, `setCorner`, `setTitleBarWidget`;
+  - [ ] `tabifiedDockWidgets`, `setTabPosition`, `setDockOptions`
+        (done: `setFloating`/`isFloating`, `setAllowedAreas`, `tabifyDockWidget`);
+  - [ ] signal `dockLocationChanged` (done: `topLevelChanged`, `visibilityChanged`).
 - [ ] Files: `QFileSystemWatcher`, `QFileIconProvider`.
 - [ ] QtSvg: `QSvgRenderer` (SVG icons) and `QSvgGenerator` (graph export).
       Add `Qt6Svg` to the link list (it is already in the pixi env).
@@ -90,9 +92,10 @@ card, progress line, git stats, animated logo, blame column and terminal view.
       `QTableWidgetItem` and `QListWidgetItem`. The app attaches objects to
       items 46 times (`Qt.UserRole`); in Fortran, store an index into your own
       arrays.
-- [ ] More cell roles for `QtfTableModel`/`QtfTreeModel`: tooltip,
+- [x] More cell roles for `QtfTableModel`/`QtfTreeModel`: tooltip,
       foreground and background color, font, icon
-      (`request%setToolTip(...)`, ...).
+      (`request%setToolTip(...)`, ...). *Done (also check boxes, status
+      tips, alignment).*
 
 ### B. New machinery
 
@@ -136,17 +139,19 @@ card, progress line, git stats, animated logo, blame column and terminal view.
    It also overrides `keyPressEvent` on `QLineEdit`, `QTreeWidget` and
    `QDialog`, `mouseReleaseEvent` on `QMenu`, and `sizeHint`/
    `minimumSizeHint` (16 times).
-   - [ ] Extend `QtfEventFilter` to forward mouse/key/wheel/resize events from
+   - [x] Extend `QtfEventFilter` to forward mouse/key/wheel/resize events from
          any object, with a "consume" result, and allow installing it on
          objects other than the widget itself (including the application).
+         *Done: `QtfEventFilter(target)` on any QObject.*
    - [ ] `QtfWidget%setSizeHint` / `setMinimumSizeHint`; a few `Qtf`
          subclasses where a widget's size hint must come from Fortran.
 3. **Custom-painted item delegates.** There are 10 `QStyledItemDelegate`
    subclasses with `paint` (most with `sizeHint`): build rows, test results,
    the git log graph, completion kinds, search results.
-   - [ ] A `QtfItemDelegate` paint hook: a slot that gets a painter, the cell
+   - [x] A `QtfItemDelegate` paint hook: a slot that gets a painter, the cell
          rectangle, its state (selected, hover, focus) and the cell (row and
-         column, or node); plus a size request.
+         column, or node); plus a size request. *Done: `paintCell` with a
+         `QtfPaintCell`, and `setSizeHint`.*
    - [ ] A `QSortFilterProxyModel` filter callback into Fortran
          (`filterAcceptsRow`).
 

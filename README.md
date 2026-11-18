@@ -93,7 +93,7 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 
 | Area | Classes |
 |------|---------|
-| Core | `QObject` (with dynamic properties and `findChild`), `QTimer`, `QEvent`, `QDateTime`, `QSettings` (persistent preferences, window geometry and layout), `QThread` (run Fortran work in a worker thread), `QDir_mkpath`/`exists`/`removeRecursively` and standard paths (portable directory handling, which standard Fortran lacks) |
+| Core | `QObject` (with dynamic properties and `findChild`), `QTimer`, `QEvent`, `QDateTime`, `QSettings` (persistent preferences, window geometry and layout), `QThread` (run Fortran work in a worker thread), `QProcess` and `QProcessEnvironment` (run external programs: arguments, environment, working directory, standard input/output/error, exit codes, signals), `QDir_mkpath`/`exists`/`removeRecursively` and standard paths (portable directory handling, which standard Fortran lacks) |
 | Application | `QApplication` (command-line arguments, organization/application names) |
 | Widgets | `QWidget`, `QFrame`, `QLabel`, `QPushButton`, `QToolButton`, `QCheckBox`, `QRadioButton`, `QButtonGroup`, `QLineEdit`, `QSpinBox`, `QDoubleSpinBox`, `QSlider`, `QDial`, `QComboBox`, `QProgressBar`, `QLCDNumber`, `QDateEdit`, `QTimeEdit`, `QCalendarWidget`, `QtfWidget` (custom painting/events) |
 | Input helpers | `QDateTimeEdit`, validators (`QIntValidator`, `QDoubleValidator`, `QRegularExpressionValidator`), `QCompleter` |
@@ -507,6 +507,22 @@ A few conventions to know (the full list is in [plans/plan.md](plans/plan.md)):
   - *Keys and mouse*: a `QtfEventFilter` on the editor (keys) or on
     `editor%viewport()` (mouse) can take over an event with
     `event%accept()`, e.g. for auto-indent or extra cursors.
+- **External programs**: `QProcess` runs a program (found on the PATH)
+  with its arguments, without a shell. In a GUI, connect its signals and
+  let it run alongside the event loop:
+
+  ```fortran
+  proc = QProcess(window)
+  call proc%readyReadStandardOutput%connect(on_output, state)   ! proc%readAllStandardOutput()
+  call proc%finished%connect(on_finished, state)                ! (exitCode, exitStatus)
+  call proc%setWorkingDirectory(project_dir)
+  call proc%start('fpm', [character(len=5) :: 'build'])
+  ```
+
+  In a script or a test, wait instead: `proc%waitForFinished()`, then read
+  the output. Output comes as raw bytes. `write` and `closeWriteChannel`
+  feed standard input, and `setProcessEnvironment` sets the environment
+  (start from `QProcessEnvironment_systemEnvironment()`).
 - **Dates and times**: `QDateTime` is a value type with fields `year` …
   `msec`, in local time.
 
