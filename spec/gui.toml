@@ -27,7 +27,7 @@ cpp_includes = [
     "QDragMoveEvent", "QScreen", "QUrl",
     "QValidator", "QIntValidator", "QDoubleValidator", "QRegularExpressionValidator", "QRegularExpression", "QLocale",
     "QTextCursor", "QTextDocument", "QTextBlock", "QTextCharFormat", "QTextLayout", "QSyntaxHighlighter",
-    "QFontDatabase", "QFontInfo",
+    "QFontDatabase", "QFontInfo", "QPalette", "QActionGroup", "QShortcut", "QDesktopServices", "QStyleHints",
     "cmath", "vector", "algorithm",
 ]
 
@@ -146,6 +146,16 @@ static QList<QUrl> qtf_urls(const QStringList &items) {
     QList<QUrl> urls;
     for (const QString &s : items) urls << (s.contains(QLatin1String("://")) ? QUrl(s) : QUrl::fromLocalFile(s));
     return urls;
+}
+
+// A URL from a string: "scheme://..." as given, anything else as a local file path.
+static QUrl qtf_url(const QString &s) { return s.contains(QLatin1String("://")) ? QUrl(s) : QUrl::fromLocalFile(s); }
+
+// All key bindings of a standard key, in portable text (e.g. "Ctrl+Z").
+static QStringList qtf_key_bindings(QKeySequence::StandardKey key) {
+    QStringList out;
+    for (const QKeySequence &k : QKeySequence::keyBindings(key)) out << k.toString(QKeySequence::PortableText);
+    return out;
 }
 
 // URLs as strings: local files as paths, others as URLs.
@@ -343,6 +353,13 @@ functions = [
     { sig = "QCursor_y() -> int", cpp = "QCursor::pos().y()", doc = "The mouse cursor's y position on the screen." },
     { sig = "QCursor_setPos(x: int, y: int)", cpp = "QCursor::setPos({x}, {y})", doc = "Move the mouse cursor to (x, y) on the screen (where the system allows it)." },
     { sig = "QCursor_pos() -> QPoint", cpp = "QCursor::pos()", doc = "The mouse cursor's position on the screen (virtual desktop)." },
+    { sig = "QGuiApplication_colorScheme() -> int", cpp = "int(QGuiApplication::styleHints()->colorScheme())", doc = "Whether the system (or the application, after QGuiApplication_setColorScheme) uses a light or dark appearance: Qt_ColorScheme_Light, Qt_ColorScheme_Dark or Qt_ColorScheme_Unknown." },
+    { sig = "QGuiApplication_setColorScheme(scheme: int)", cpp = "QGuiApplication::styleHints()->setColorScheme(Qt::ColorScheme({scheme}))", doc = "Ask for a light or dark appearance (Qt_ColorScheme_Light, _Dark), or follow the system again (Qt_ColorScheme_Unknown). The platform may not support it; check QGuiApplication_colorScheme." },
+    { sig = "QDesktopServices_openUrl(url: string) -> bool", cpp = "QDesktopServices::openUrl(qtf_url({url}))", doc = "Open a URL in the user's default application: a web page ('https://...') in the browser, 'mailto:...' in the mail program, or a local file or directory (a path) as if double-clicked. False if it could not be opened." },
+    { sig = "QKeySequence_standardKey(key: QKeySequence::StandardKey) -> string", cpp = "QKeySequence({key}).toString(QKeySequence::PortableText)", doc = "The platform's main key sequence for a standard action (QKeySequence_Open, _Undo, ...), in portable text, e.g. 'Ctrl+O' (Ctrl is Cmd on macOS); '' if the platform has none." },
+    { sig = "QKeySequence_standardKeyBindings(key: QKeySequence::StandardKey) -> strings", cpp = "qtf_key_bindings({key})", doc = "All of the platform's key sequences for a standard action (e.g. Redo is both 'Ctrl+Shift+Z' and 'Ctrl+Y' on some platforms), in portable text." },
+    { sig = "QKeySequence_nativeText(sequence: string) -> string", cpp = "QKeySequence::fromString({sequence}, QKeySequence::PortableText).toString(QKeySequence::NativeText)", doc = "A key sequence in portable text ('Ctrl+Shift+S') as the platform shows it in menus (e.g. '⇧⌘S' on macOS)." },
+    { sig = "QKeySequence_portableText(sequence: string) -> string", cpp = "QKeySequence::fromString({sequence}, QKeySequence::NativeText).toString(QKeySequence::PortableText)", doc = "A key sequence in the platform's native text as portable text." },
     { sig = "QFontDatabase_fixedFamily() -> string", cpp = "qtf_fixed_family()", doc = "The system's fixed-pitch (monospace) font family, e.g. for a code editor: `call editor%setFont(QFont(QFontDatabase_fixedFamily(), 12d0))`." },
 ]
 
@@ -870,6 +887,7 @@ fortran_procedures = '''
 [value_types.QColor]
 fields = ["r: int", "g: int", "b: int", "a: int"]
 cpp = "QColor({r}, {g}, {b}, {a})"
+out = { r = "{v}.red()", g = "{v}.green()", b = "{v}.blue()", a = "{v}.alpha()" }
 
 [value_types.QPen]
 fields = ["color: QColor", "width: double", "style: int"]
@@ -924,6 +942,61 @@ cpp = "qtf_char_format({foreground}, {background}, {bold}, {italic}, {underlineS
 
 # ---------------------------------------------------------------------------
 # enums
+
+[[enum]]
+doc = "QPalette::ColorRole"
+values = [
+    "QPalette_WindowText = 0", "QPalette_Button = 1", "QPalette_Light = 2", "QPalette_Midlight = 3",
+    "QPalette_Dark = 4", "QPalette_Mid = 5", "QPalette_Text = 6", "QPalette_BrightText = 7",
+    "QPalette_ButtonText = 8", "QPalette_Base = 9", "QPalette_Window = 10", "QPalette_Shadow = 11",
+    "QPalette_Highlight = 12", "QPalette_HighlightedText = 13", "QPalette_Link = 14", "QPalette_LinkVisited = 15",
+    "QPalette_AlternateBase = 16", "QPalette_NoRole = 17", "QPalette_ToolTipBase = 18", "QPalette_ToolTipText = 19",
+    "QPalette_PlaceholderText = 20", "QPalette_Accent = 21",
+]
+
+[[enum]]
+doc = "QPalette::ColorGroup"
+values = ["QPalette_Active = 0", "QPalette_Disabled = 1", "QPalette_Inactive = 2", "QPalette_All = 5", "QPalette_Normal = 0"]
+
+[[enum]]
+doc = "Qt::ColorScheme"
+values = ["Qt_ColorScheme_Unknown = 0", "Qt_ColorScheme_Light = 1", "Qt_ColorScheme_Dark = 2"]
+
+[[enum]]
+doc = "Qt::ShortcutContext"
+values = ["Qt_WidgetShortcut = 0", "Qt_WindowShortcut = 1", "Qt_ApplicationShortcut = 2", "Qt_WidgetWithChildrenShortcut = 3"]
+
+[[enum]]
+doc = "QActionGroup::ExclusionPolicy"
+values = ["QActionGroup_None = 0", "QActionGroup_Exclusive = 1", "QActionGroup_ExclusiveOptional = 2"]
+
+[[enum]]
+doc = "QKeySequence::StandardKey (the platform's keys for common actions)"
+values = [
+    "QKeySequence_UnknownKey = 0", "QKeySequence_HelpContents = 1", "QKeySequence_WhatsThis = 2", "QKeySequence_Open = 3",
+    "QKeySequence_Close = 4", "QKeySequence_Save = 5", "QKeySequence_New = 6", "QKeySequence_Delete = 7",
+    "QKeySequence_Cut = 8", "QKeySequence_Copy = 9", "QKeySequence_Paste = 10", "QKeySequence_Undo = 11",
+    "QKeySequence_Redo = 12", "QKeySequence_Back = 13", "QKeySequence_Forward = 14", "QKeySequence_Refresh = 15",
+    "QKeySequence_ZoomIn = 16", "QKeySequence_ZoomOut = 17", "QKeySequence_Print = 18", "QKeySequence_AddTab = 19",
+    "QKeySequence_NextChild = 20", "QKeySequence_PreviousChild = 21", "QKeySequence_Find = 22",
+    "QKeySequence_FindNext = 23", "QKeySequence_FindPrevious = 24", "QKeySequence_Replace = 25",
+    "QKeySequence_SelectAll = 26", "QKeySequence_Bold = 27", "QKeySequence_Italic = 28", "QKeySequence_Underline = 29",
+    "QKeySequence_MoveToNextChar = 30", "QKeySequence_MoveToPreviousChar = 31", "QKeySequence_MoveToNextWord = 32",
+    "QKeySequence_MoveToPreviousWord = 33", "QKeySequence_MoveToNextLine = 34", "QKeySequence_MoveToPreviousLine = 35",
+    "QKeySequence_MoveToNextPage = 36", "QKeySequence_MoveToPreviousPage = 37", "QKeySequence_MoveToStartOfLine = 38",
+    "QKeySequence_MoveToEndOfLine = 39", "QKeySequence_MoveToStartOfBlock = 40", "QKeySequence_MoveToEndOfBlock = 41",
+    "QKeySequence_MoveToStartOfDocument = 42", "QKeySequence_MoveToEndOfDocument = 43",
+    "QKeySequence_SelectNextChar = 44", "QKeySequence_SelectPreviousChar = 45", "QKeySequence_SelectNextWord = 46",
+    "QKeySequence_SelectPreviousWord = 47", "QKeySequence_SelectNextLine = 48", "QKeySequence_SelectPreviousLine = 49",
+    "QKeySequence_SelectNextPage = 50", "QKeySequence_SelectPreviousPage = 51", "QKeySequence_SelectStartOfLine = 52",
+    "QKeySequence_SelectEndOfLine = 53", "QKeySequence_SelectStartOfBlock = 54", "QKeySequence_SelectEndOfBlock = 55",
+    "QKeySequence_SelectStartOfDocument = 56", "QKeySequence_SelectEndOfDocument = 57",
+    "QKeySequence_DeleteStartOfWord = 58", "QKeySequence_DeleteEndOfWord = 59", "QKeySequence_DeleteEndOfLine = 60",
+    "QKeySequence_InsertParagraphSeparator = 61", "QKeySequence_InsertLineSeparator = 62", "QKeySequence_SaveAs = 63",
+    "QKeySequence_Preferences = 64", "QKeySequence_Quit = 65", "QKeySequence_FullScreen = 66",
+    "QKeySequence_Deselect = 67", "QKeySequence_DeleteCompleteLine = 68", "QKeySequence_Backspace = 69",
+    "QKeySequence_Cancel = 70",
+]
 
 [[enum]]
 doc = "QTextCursor::MoveOperation"
@@ -1945,6 +2018,9 @@ methods = [
     "setStatusTip(tip: string) -- Text shown in the status bar while the action is hovered.",
     "setToolTip(tip: string) -- Tool tip shown for the action (e.g. on tool bar buttons).",
     "trigger() -- Activate the action (emits triggered, and toggled if checkable).",
+    { sig = "setStandardShortcut(key: QKeySequence::StandardKey)", cpp = "{self}->setShortcuts({key})", doc = "Use the platform's key sequences for a standard action (QKeySequence_Open, _Save, _Undo, ...)." },
+    { sig = "shortcutNativeText() -> string", cpp = "{self}->shortcut().toString(QKeySequence::NativeText)", doc = "The shortcut as the platform shows it in menus (e.g. '⌘O' on macOS)." },
+    "setShortcutContext(context: Qt::ShortcutContext) -- Where the shortcut works: Qt_WindowShortcut (default: in the action's window), Qt_ApplicationShortcut, Qt_WidgetShortcut, ...",
     { sig = "setIcon(icon: QIcon)", cpp = "{self}->setIcon(*{icon})", doc = "Set the icon shown in menus and tool bars (the icon is copied)." },
 ]
 
@@ -2249,4 +2325,95 @@ methods = [
     { sig = "setCurrentBlockState(state: int)", cpp = "{self}->h->setState({state})", doc = "Set the state this line ends in (e.g. 1 inside an unterminated string); the next line sees it as `previousBlockState()`." },
     { sig = "blockNumber() -> int", cpp = "{self}->h->block().blockNumber()", doc = "The block's number (0-based line number)." },
     { sig = "position() -> int", cpp = "{self}->h->block().position()", doc = "The document position of the block's first character." },
+]
+
+# ---------------------------------------------------------------------------
+# theming, action groups and shortcuts
+
+[[class]]
+name = "QPalette"
+handle = true
+doc = """
+The colors widgets are drawn with, by role (QPalette_Window, _WindowText,
+_Base, _Text, _Button, _Highlight, ...) and color group (QPalette_Active,
+_Inactive, _Disabled). Make a theme by changing roles and applying it to the
+whole application with QApplication_setPalette (or to one widget with
+`setPalette`). The Fusion style (QApplication_setStyle('Fusion')) follows
+palettes fully; native styles may ignore some roles. Release it with
+`delete`."""
+ctors = [
+    { sig = "()", name = "new", cpp = "new QPalette(QGuiApplication::palette())", doc = "A copy of the application's current palette." },
+    { sig = "(button: QColor)", name = "fromButton", cpp = "new QPalette({button})", doc = "A palette derived from a button color (Qt computes the other roles)." },
+    { sig = "(button: QColor, window: QColor)", name = "fromButtonWindow", cpp = "new QPalette({button}, {window})", doc = "A palette derived from a button and a window color." },
+]
+methods = [
+    { sig = "setColor(role: QPalette::ColorRole, color: QColor, group: QPalette::ColorGroup = QPalette_All)", cpp = "{self}->setColor({group}, {role}, {color})", doc = "Set the color of `role` (in all groups, or in one: QPalette_Active, _Inactive, _Disabled)." },
+    { sig = "color(role: QPalette::ColorRole, group: QPalette::ColorGroup = QPalette_Active) -> QColor", cpp = "{self}->color({group}, {role})", doc = "The color of `role` in `group`." },
+    { sig = "isDark() -> bool", cpp = "{self}->color(QPalette::Window).lightness() < {self}->color(QPalette::WindowText).lightness()", doc = "True if the window color is darker than the text color (a dark theme)." },
+    { sig = "isEqual(other: QPalette) -> bool", cpp = "*{self} == *{other}", doc = "True if both palettes have the same colors." },
+    { sig = "copy() -> QPalette", cpp = "new QPalette(*{self})", doc = "A copy (delete it when done)." },
+]
+cpp = """
+// Release a palette.
+QTF_API void qtf_qpalette_delete(void *self) { delete as<QPalette>(self); }
+"""
+fortran_bindings = "procedure :: delete => qpalette_delete"
+fortran_procedures = """
+    !> Release the palette.
+    subroutine qpalette_delete(self)
+        class(QPalette), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qpalette_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qpalette_delete
+"""
+
+[[class]]
+name = "QActionGroup"
+doc = """
+Groups checkable actions so that one at a time is checked (like radio
+buttons), e.g. a View > Theme menu: add each action (made with
+`setCheckable(.true.)`) to the group and to a menu. Actions are numbered
+from 0 in the order they were added; `triggered` reports that number."""
+ctor = "(parent: QObject?) -- An empty, exclusive group."
+signals = [
+    { sig = "triggered: custom", fortran_type = "QSignalInt", lambda = "QAction *a", emit = "qtf_emit_int(ref, int(as<QActionGroup>(s)->actions().indexOf(a)))", doc = "An action of the group was triggered: slots get its index (0-based)." },
+    { sig = "hovered: custom", fortran_type = "QSignalInt", lambda = "QAction *a", emit = "qtf_emit_int(ref, int(as<QActionGroup>(s)->actions().indexOf(a)))", doc = "An action of the group was highlighted: its index." },
+]
+methods = [
+    { sig = "addAction(action: QAction)", cpp = "{self}->addAction({action})", doc = "Add an action (also add it to a menu or toolbar to show it)." },
+    "removeAction(action: QAction) -- Remove an action from the group.",
+    { sig = "count() -> int", cpp = "int({self}->actions().size())", doc = "The number of actions." },
+    { sig = "action(index: int) -> QAction", cpp = "{self}->actions().value({index}, nullptr)", doc = "The action at `index` (0-based; null if none)." },
+    "checkedAction() -> QAction -- The checked action (null if none).",
+    { sig = "checkedIndex() -> int", cpp = "int({self}->actions().indexOf({self}->checkedAction()))", doc = "The index of the checked action (-1 if none)." },
+    "setExclusive(exclusive: bool) -- One checked action at a time (the default), or any number.",
+    "isExclusive() -> bool -- True if at most one action is checked.",
+    "setExclusionPolicy(policy: QActionGroup::ExclusionPolicy) -- QActionGroup_Exclusive (one is always checked), QActionGroup_ExclusiveOptional (at most one; clicking the checked one unchecks it) or QActionGroup_None.",
+    "setEnabled(enabled: bool) -- Enable or disable all the actions.",
+    "setVisible(visible: bool) -- Show or hide all the actions.",
+]
+
+[[class]]
+name = "QShortcut"
+doc = """
+A keyboard shortcut without a menu action: `activated` is emitted when its
+keys are pressed in its parent's window (see `setContext`). Keys are in
+portable text ('Ctrl+K', 'F5', 'Ctrl+K, Ctrl+C' for a sequence), with Ctrl
+meaning Cmd on macOS, or a standard key (QKeySequence_Find, ...)."""
+ctors = [
+    { sig = "(key: string, parent: QObject)", name = "new", cpp = "new QShortcut(QKeySequence::fromString({key}, QKeySequence::PortableText), {parent})", doc = "A shortcut for `key` in the window of `parent` (a widget), which owns it." },
+    { sig = "(key: QKeySequence::StandardKey, parent: QObject)", name = "fromStandardKey", cpp = "new QShortcut({key}, {parent})", doc = "A shortcut for the platform's keys for a standard action." },
+]
+signals = [
+    "activated: void -- The keys were pressed.",
+    "activatedAmbiguously: void -- The keys were pressed, but another shortcut uses them too.",
+]
+methods = [
+    { sig = "setKey(key: string)", cpp = "{self}->setKey(QKeySequence::fromString({key}, QKeySequence::PortableText))", doc = "Change the keys (portable text)." },
+    { sig = "key() -> string", cpp = "{self}->key().toString(QKeySequence::PortableText)", doc = "The keys, in portable text." },
+    { sig = "nativeText() -> string", cpp = "{self}->key().toString(QKeySequence::NativeText)", doc = "The keys as the platform shows them." },
+    "setEnabled(enabled: bool) -- Enable or disable the shortcut.",
+    "isEnabled() -> bool -- True if the shortcut is enabled.",
+    "setContext(context: Qt::ShortcutContext) -- Where it works: Qt_WindowShortcut (default), Qt_WidgetShortcut (only when the parent has focus), Qt_WidgetWithChildrenShortcut, Qt_ApplicationShortcut.",
+    "setAutoRepeat(on: bool) -- Emit `activated` repeatedly while the keys are held (default: on).",
 ]

@@ -519,6 +519,24 @@ spec-only work now; items marked *(design)* need new machinery.
     and main window state round-trip as base64 text: `saveGeometry`/`restoreGeometry`,
     `saveState`/`restoreState`. `QApplication_setOrganizationName` /
     `setApplicationName` choose the store.
+  - **Done (theming, services, widgets):** `QPalette` (a handle: roles x
+    groups, `setColor` defaulting to all groups, `isDark`),
+    `QApplication_setPalette`/`palette`, `QWidget%setPalette`/`palette`,
+    `QApplication_setStyle(name)` through QStyleFactory, `QStyleFactory_keys`,
+    `QGuiApplication_colorScheme`/`setColorScheme`. `QToolTip_*`,
+    `QDesktopServices_openUrl`, `QKeySequence_standardKey(Bindings)` /
+    `nativeText` / `portableText` (portable text is the Fortran-side form),
+    `QAction%setStandardShortcut`, `QShortcut`. `QActionGroup` (`triggered`
+    gives the action's index in the group, so no QAction-carrying signal
+    type is needed), `QStackedLayout`, a standalone `QTabBar` (an integer per
+    tab via tabData), `QHeaderView` (from `horizontalHeader`,
+    `verticalHeader`, `header`), and a new `QAbstractScrollArea` base for
+    item views, text editors, QScrollArea and QMdiArea, carrying
+    `viewport`, the scroll-bar policies and `vertical`/`horizontalScrollBar`
+    (`QScrollBar`, a QAbstractSlider). QPlainTextEdit's
+    `verticalScrollValue`/`setVerticalScrollValue` were dropped for
+    `verticalScrollBar()`. The gui QColor value type gained `out`, so gui
+    methods can return colors. Example: themes; test: test_theming.
   - **Done:** `QProcess` and `QProcessEnvironment` (spec/core_classes.toml):
     start (generic: set program/arguments, a program, or a program and
     arguments; `startCommand` for a command line), waits, write /

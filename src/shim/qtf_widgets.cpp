@@ -10,6 +10,7 @@
 
 #include <QAbstractItemView>
 #include <QAbstractProxyModel>
+#include <QAbstractScrollArea>
 #include <QAbstractTableModel>
 #include <QAction>
 #include <QApplication>
@@ -68,6 +69,7 @@
 #include <QMimeData>
 #include <QPainter>
 #include <QPainter>
+#include <QPalette>
 #include <QPixmap>
 #include <QPlainTextEdit>
 #include <QPlatformSurfaceEvent>
@@ -84,12 +86,15 @@
 #include <QSpinBox>
 #include <QSplashScreen>
 #include <QSplitter>
+#include <QStackedLayout>
 #include <QStackedWidget>
 #include <QStatusBar>
 #include <QStringListModel>
 #include <QStyle>
+#include <QStyleFactory>
 #include <QStyleOptionViewItem>
 #include <QStyledItemDelegate>
+#include <QTabBar>
 #include <QTabWidget>
 #include <QTableView>
 #include <QTableWidget>
@@ -104,6 +109,7 @@
 #include <QToolBar>
 #include <QToolBox>
 #include <QToolButton>
+#include <QToolTip>
 #include <QTreeView>
 #include <QTreeWidget>
 #include <QUndoStack>
@@ -161,127 +167,148 @@ enum : int {
     QTF_SIG_QABSTRACTSLIDER_SLIDERMOVED = 1033,
     QTF_SIG_QABSTRACTSLIDER_SLIDERPRESSED = 1034,
     QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED = 1035,
-    QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1036,
-    QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1037,
-    QTF_SIG_QCOMBOBOX_ACTIVATED = 1038,
-    QTF_SIG_QDIALOG_ACCEPTED = 1039,
-    QTF_SIG_QDIALOG_REJECTED = 1040,
-    QTF_SIG_QDIALOG_FINISHED = 1041,
-    QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1042,
-    QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1043,
-    QTF_SIG_QTFTABLEMODEL_SORTREQUESTED = 1044,
-    QTF_SIG_QTFTABLEMODEL_CHECKCHANGED = 1045,
-    QTF_SIG_QTFTABLEMODEL_DRAGSTARTED = 1046,
-    QTF_SIG_QTFTABLEMODEL_DROPPED = 1047,
-    QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1048,
-    QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1049,
-    QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1050,
-    QTF_SIG_QTREEVIEW_NODECLICKED = 1051,
-    QTF_SIG_QTREEVIEW_NODEACTIVATED = 1052,
-    QTF_SIG_QTREEVIEW_CURRENTNODECHANGED = 1053,
-    QTF_SIG_QTREEVIEW_CURRENTFILECHANGED = 1054,
-    QTF_SIG_QTREEVIEW_FILEACTIVATED = 1055,
-    QTF_SIG_QTREEVIEW_EXPANDEDNODE = 1056,
-    QTF_SIG_QTREEVIEW_COLLAPSEDNODE = 1057,
-    QTF_SIG_QTFTREEMODEL_DATAREQUESTED = 1058,
-    QTF_SIG_QTFTREEMODEL_DATAEDITED = 1059,
-    QTF_SIG_QTFTREEMODEL_CHECKCHANGED = 1060,
-    QTF_SIG_QTFTREEMODEL_DRAGSTARTED = 1061,
-    QTF_SIG_QTFTREEMODEL_DROPPED = 1062,
-    QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED = 1063,
-    QTF_SIG_QFILESYSTEMMODEL_ROOTPATHCHANGED = 1064,
-    QTF_SIG_QTFITEMDELEGATE_PAINTCELL = 1065,
-    QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1066,
-    QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1067,
-    QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1068,
-    QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1069,
-    QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1070,
-    QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1071,
-    QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1072,
-    QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1073,
-    QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1074,
-    QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1075,
-    QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1076,
-    QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1077,
-    QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1078,
-    QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1079,
-    QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1080,
-    QTF_SIG_QPLAINTEXTEDIT_CURSORPOSITIONCHANGED = 1081,
-    QTF_SIG_QPLAINTEXTEDIT_SELECTIONCHANGED = 1082,
-    QTF_SIG_QPLAINTEXTEDIT_BLOCKCOUNTCHANGED = 1083,
-    QTF_SIG_QPLAINTEXTEDIT_MODIFICATIONCHANGED = 1084,
-    QTF_SIG_QPLAINTEXTEDIT_UNDOAVAILABLE = 1085,
-    QTF_SIG_QPLAINTEXTEDIT_REDOAVAILABLE = 1086,
-    QTF_SIG_QPLAINTEXTEDIT_COPYAVAILABLE = 1087,
-    QTF_SIG_QTFPLAINTEXTEDIT_VIEWPORTPAINTEVENT = 1088,
-    QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1089,
-    QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1090,
-    QTF_SIG_QTABWIDGET_TABBARCLICKED = 1091,
-    QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1092,
-    QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1093,
-    QTF_SIG_QSPLITTER_SPLITTERMOVED = 1094,
-    QTF_SIG_QGROUPBOX_TOGGLED = 1095,
-    QTF_SIG_QGROUPBOX_CLICKED = 1096,
-    QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1097,
-    QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1098,
-    QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1099,
-    QTF_SIG_QBUTTONGROUP_IDCLICKED = 1100,
-    QTF_SIG_QDATEEDIT_DATECHANGED = 1101,
-    QTF_SIG_QTIMEEDIT_TIMECHANGED = 1102,
-    QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1103,
-    QTF_SIG_QCALENDARWIDGET_CLICKED = 1104,
-    QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1105,
-    QTF_SIG_QPROGRESSDIALOG_CANCELED = 1106,
-    QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED = 1107,
-    QTF_SIG_QDIALOGBUTTONBOX_REJECTED = 1108,
-    QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED = 1109,
-    QTF_SIG_QDIALOGBUTTONBOX_CLICKED = 1110,
-    QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE = 1111,
-    QTF_SIG_QCOMPLETER_ACTIVATED = 1112,
-    QTF_SIG_QCOMPLETER_HIGHLIGHTED = 1113,
-    QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED = 1114,
-    QTF_SIG_QTEXTBROWSER_ANCHORCLICKED = 1115,
-    QTF_SIG_QTEXTBROWSER_SOURCECHANGED = 1116,
-    QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE = 1117,
-    QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE = 1118,
-    QTF_SIG_QTOOLBOX_CURRENTCHANGED = 1119,
-    QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED = 1120,
-    QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE = 1121,
-    QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED = 1122,
-    QTF_SIG_QWIZARDPAGE_COMPLETECHANGED = 1123,
-    QTF_SIG_QWIZARD_CURRENTIDCHANGED = 1124,
-    QTF_SIG_QWIZARD_HELPREQUESTED = 1125,
-    QTF_SIG_QUNDOSTACK_REDOREQUESTED = 1126,
-    QTF_SIG_QUNDOSTACK_UNDOREQUESTED = 1127,
-    QTF_SIG_QUNDOSTACK_CANUNDOCHANGED = 1128,
-    QTF_SIG_QUNDOSTACK_CANREDOCHANGED = 1129,
-    QTF_SIG_QUNDOSTACK_INDEXCHANGED = 1130,
-    QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1131,
-    QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1132,
-    QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1133,
-    QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT = 1134,
-    QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT = 1135,
-    QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT = 1136,
-    QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT = 1137,
-    QTF_SIG_QTFEVENTFILTER_WHEELEVENT = 1138,
-    QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT = 1139,
-    QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT = 1140,
-    QTF_SIG_QTFEVENTFILTER_DRAGENTEREVENT = 1141,
-    QTF_SIG_QTFEVENTFILTER_DRAGMOVEEVENT = 1142,
-    QTF_SIG_QTFEVENTFILTER_DRAGLEAVEEVENT = 1143,
-    QTF_SIG_QTFEVENTFILTER_DROPEVENT = 1144,
-    QTF_SIG_QTFEVENTFILTER_RESIZEEVENT = 1145,
-    QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT = 1146,
-    QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST = 1147,
-    QTF_SIG_QTFEVENTFILTER_ENTEREVENT = 1148,
-    QTF_SIG_QTFEVENTFILTER_LEAVEEVENT = 1149,
-    QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT = 1150,
-    QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1151,
-    QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1152,
-    QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1153,
-    QTF_SIG_QTFEVENTFILTER_SURFACECREATED = 1154,
-    QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED = 1155,
+    QTF_SIG_QSCROLLBAR_RANGECHANGED = 1036,
+    QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED = 1037,
+    QTF_SIG_QCOMBOBOX_CURRENTTEXTCHANGED = 1038,
+    QTF_SIG_QCOMBOBOX_ACTIVATED = 1039,
+    QTF_SIG_QSTACKEDLAYOUT_CURRENTCHANGED = 1040,
+    QTF_SIG_QSTACKEDLAYOUT_WIDGETREMOVED = 1041,
+    QTF_SIG_QDIALOG_ACCEPTED = 1042,
+    QTF_SIG_QDIALOG_REJECTED = 1043,
+    QTF_SIG_QDIALOG_FINISHED = 1044,
+    QTF_SIG_QTFTABLEMODEL_DATAREQUESTED = 1045,
+    QTF_SIG_QTFTABLEMODEL_DATAEDITED = 1046,
+    QTF_SIG_QTFTABLEMODEL_SORTREQUESTED = 1047,
+    QTF_SIG_QTFTABLEMODEL_CHECKCHANGED = 1048,
+    QTF_SIG_QTFTABLEMODEL_DRAGSTARTED = 1049,
+    QTF_SIG_QTFTABLEMODEL_DROPPED = 1050,
+    QTF_SIG_QABSTRACTITEMVIEW_CLICKED = 1051,
+    QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED = 1052,
+    QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED = 1053,
+    QTF_SIG_QHEADERVIEW_SECTIONCLICKED = 1054,
+    QTF_SIG_QHEADERVIEW_SECTIONDOUBLECLICKED = 1055,
+    QTF_SIG_QHEADERVIEW_SECTIONRESIZED = 1056,
+    QTF_SIG_QHEADERVIEW_SECTIONMOVED = 1057,
+    QTF_SIG_QHEADERVIEW_SORTINDICATORCHANGED = 1058,
+    QTF_SIG_QTREEVIEW_NODECLICKED = 1059,
+    QTF_SIG_QTREEVIEW_NODEACTIVATED = 1060,
+    QTF_SIG_QTREEVIEW_CURRENTNODECHANGED = 1061,
+    QTF_SIG_QTREEVIEW_CURRENTFILECHANGED = 1062,
+    QTF_SIG_QTREEVIEW_FILEACTIVATED = 1063,
+    QTF_SIG_QTREEVIEW_EXPANDEDNODE = 1064,
+    QTF_SIG_QTREEVIEW_COLLAPSEDNODE = 1065,
+    QTF_SIG_QTFTREEMODEL_DATAREQUESTED = 1066,
+    QTF_SIG_QTFTREEMODEL_DATAEDITED = 1067,
+    QTF_SIG_QTFTREEMODEL_CHECKCHANGED = 1068,
+    QTF_SIG_QTFTREEMODEL_DRAGSTARTED = 1069,
+    QTF_SIG_QTFTREEMODEL_DROPPED = 1070,
+    QTF_SIG_QFILESYSTEMMODEL_DIRECTORYLOADED = 1071,
+    QTF_SIG_QFILESYSTEMMODEL_ROOTPATHCHANGED = 1072,
+    QTF_SIG_QTFITEMDELEGATE_PAINTCELL = 1073,
+    QTF_SIG_QTABLEWIDGET_CELLCLICKED = 1074,
+    QTF_SIG_QTABLEWIDGET_CELLDOUBLECLICKED = 1075,
+    QTF_SIG_QTABLEWIDGET_CELLCHANGED = 1076,
+    QTF_SIG_QTABLEWIDGET_CURRENTCELLCHANGED = 1077,
+    QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED = 1078,
+    QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED = 1079,
+    QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED = 1080,
+    QTF_SIG_QTREEWIDGET_ITEMCLICKED = 1081,
+    QTF_SIG_QTREEWIDGET_ITEMDOUBLECLICKED = 1082,
+    QTF_SIG_QTREEWIDGET_ITEMCHANGED = 1083,
+    QTF_SIG_QTREEWIDGET_CURRENTITEMCHANGED = 1084,
+    QTF_SIG_QTREEWIDGET_ITEMEXPANDED = 1085,
+    QTF_SIG_QTREEWIDGET_ITEMCOLLAPSED = 1086,
+    QTF_SIG_QTEXTEDIT_TEXTCHANGED = 1087,
+    QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED = 1088,
+    QTF_SIG_QPLAINTEXTEDIT_CURSORPOSITIONCHANGED = 1089,
+    QTF_SIG_QPLAINTEXTEDIT_SELECTIONCHANGED = 1090,
+    QTF_SIG_QPLAINTEXTEDIT_BLOCKCOUNTCHANGED = 1091,
+    QTF_SIG_QPLAINTEXTEDIT_MODIFICATIONCHANGED = 1092,
+    QTF_SIG_QPLAINTEXTEDIT_UNDOAVAILABLE = 1093,
+    QTF_SIG_QPLAINTEXTEDIT_REDOAVAILABLE = 1094,
+    QTF_SIG_QPLAINTEXTEDIT_COPYAVAILABLE = 1095,
+    QTF_SIG_QTFPLAINTEXTEDIT_VIEWPORTPAINTEVENT = 1096,
+    QTF_SIG_QTABWIDGET_CURRENTCHANGED = 1097,
+    QTF_SIG_QTABWIDGET_TABCLOSEREQUESTED = 1098,
+    QTF_SIG_QTABWIDGET_TABBARCLICKED = 1099,
+    QTF_SIG_QTABBAR_CURRENTCHANGED = 1100,
+    QTF_SIG_QTABBAR_TABCLOSEREQUESTED = 1101,
+    QTF_SIG_QTABBAR_TABMOVED = 1102,
+    QTF_SIG_QTABBAR_TABBARCLICKED = 1103,
+    QTF_SIG_QTABBAR_TABBARDOUBLECLICKED = 1104,
+    QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED = 1105,
+    QTF_SIG_QSTACKEDWIDGET_WIDGETREMOVED = 1106,
+    QTF_SIG_QSPLITTER_SPLITTERMOVED = 1107,
+    QTF_SIG_QGROUPBOX_TOGGLED = 1108,
+    QTF_SIG_QGROUPBOX_CLICKED = 1109,
+    QTF_SIG_QDOCKWIDGET_VISIBILITYCHANGED = 1110,
+    QTF_SIG_QDOCKWIDGET_TOPLEVELCHANGED = 1111,
+    QTF_SIG_QPROGRESSBAR_VALUECHANGED = 1112,
+    QTF_SIG_QBUTTONGROUP_IDCLICKED = 1113,
+    QTF_SIG_QDATEEDIT_DATECHANGED = 1114,
+    QTF_SIG_QTIMEEDIT_TIMECHANGED = 1115,
+    QTF_SIG_QCALENDARWIDGET_SELECTIONCHANGED = 1116,
+    QTF_SIG_QCALENDARWIDGET_CLICKED = 1117,
+    QTF_SIG_QCALENDARWIDGET_ACTIVATED = 1118,
+    QTF_SIG_QPROGRESSDIALOG_CANCELED = 1119,
+    QTF_SIG_QDIALOGBUTTONBOX_ACCEPTED = 1120,
+    QTF_SIG_QDIALOGBUTTONBOX_REJECTED = 1121,
+    QTF_SIG_QDIALOGBUTTONBOX_HELPREQUESTED = 1122,
+    QTF_SIG_QDIALOGBUTTONBOX_CLICKED = 1123,
+    QTF_SIG_QDIALOGBUTTONBOX_CLICKEDROLE = 1124,
+    QTF_SIG_QCOMPLETER_ACTIVATED = 1125,
+    QTF_SIG_QCOMPLETER_HIGHLIGHTED = 1126,
+    QTF_SIG_QDATETIMEEDIT_DATETIMECHANGED = 1127,
+    QTF_SIG_QTEXTBROWSER_ANCHORCLICKED = 1128,
+    QTF_SIG_QTEXTBROWSER_SOURCECHANGED = 1129,
+    QTF_SIG_QTEXTBROWSER_BACKWARDAVAILABLE = 1130,
+    QTF_SIG_QTEXTBROWSER_FORWARDAVAILABLE = 1131,
+    QTF_SIG_QTOOLBOX_CURRENTCHANGED = 1132,
+    QTF_SIG_QSPLASHSCREEN_MESSAGECHANGED = 1133,
+    QTF_SIG_QMDISUBWINDOW_ABOUTTOACTIVATE = 1134,
+    QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED = 1135,
+    QTF_SIG_QWIZARDPAGE_COMPLETECHANGED = 1136,
+    QTF_SIG_QWIZARD_CURRENTIDCHANGED = 1137,
+    QTF_SIG_QWIZARD_HELPREQUESTED = 1138,
+    QTF_SIG_QUNDOSTACK_REDOREQUESTED = 1139,
+    QTF_SIG_QUNDOSTACK_UNDOREQUESTED = 1140,
+    QTF_SIG_QUNDOSTACK_CANUNDOCHANGED = 1141,
+    QTF_SIG_QUNDOSTACK_CANREDOCHANGED = 1142,
+    QTF_SIG_QUNDOSTACK_INDEXCHANGED = 1143,
+    QTF_SIG_QUNDOSTACK_CLEANCHANGED = 1144,
+    QTF_SIG_QUNDOSTACK_UNDOTEXTCHANGED = 1145,
+    QTF_SIG_QUNDOSTACK_REDOTEXTCHANGED = 1146,
+    QTF_SIG_QTFEVENTFILTER_MOUSEPRESSEVENT = 1147,
+    QTF_SIG_QTFEVENTFILTER_MOUSERELEASEEVENT = 1148,
+    QTF_SIG_QTFEVENTFILTER_MOUSEMOVEEVENT = 1149,
+    QTF_SIG_QTFEVENTFILTER_MOUSEDOUBLECLICKEVENT = 1150,
+    QTF_SIG_QTFEVENTFILTER_WHEELEVENT = 1151,
+    QTF_SIG_QTFEVENTFILTER_KEYPRESSEVENT = 1152,
+    QTF_SIG_QTFEVENTFILTER_KEYRELEASEEVENT = 1153,
+    QTF_SIG_QTFEVENTFILTER_DRAGENTEREVENT = 1154,
+    QTF_SIG_QTFEVENTFILTER_DRAGMOVEEVENT = 1155,
+    QTF_SIG_QTFEVENTFILTER_DRAGLEAVEEVENT = 1156,
+    QTF_SIG_QTFEVENTFILTER_DROPEVENT = 1157,
+    QTF_SIG_QTFEVENTFILTER_RESIZEEVENT = 1158,
+    QTF_SIG_QTFEVENTFILTER_EXPOSEEVENT = 1159,
+    QTF_SIG_QTFEVENTFILTER_UPDATEREQUEST = 1160,
+    QTF_SIG_QTFEVENTFILTER_ENTEREVENT = 1161,
+    QTF_SIG_QTFEVENTFILTER_LEAVEEVENT = 1162,
+    QTF_SIG_QTFEVENTFILTER_FOCUSINEVENT = 1163,
+    QTF_SIG_QTFEVENTFILTER_FOCUSOUTEVENT = 1164,
+    QTF_SIG_QTFEVENTFILTER_SHOWEVENT = 1165,
+    QTF_SIG_QTFEVENTFILTER_HIDEEVENT = 1166,
+    QTF_SIG_QTFEVENTFILTER_SURFACECREATED = 1167,
+    QTF_SIG_QTFEVENTFILTER_SURFACEABOUTTOBEDESTROYED = 1168,
 };
+
+// Use the style called `name` (QStyleFactory::keys); false if there is none.
+static bool qtf_set_style(const QString &name) {
+    QStyle *style = QStyleFactory::create(name);
+    if (!style) return false;
+    QApplication::setStyle(style);
+    return true;
+}
 
 // QApplication keeps references to argc/argv, so they must outlive it.
 static int qtf_argc = 0;
@@ -1509,6 +1536,20 @@ QTF_API char *qtf_qapplication_applicationName(int *len) {
     return qtf_to_c(QApplication::applicationName(), len);
 }
 
+// Use the style `name` for all widgets (one of QStyleFactory_keys(), e.g. 'Fusion', which looks the same on every platform and follows palettes fully); false if there is no such style.
+QTF_API int qtf_qapplication_setStyle(const char *name, int name_len) {
+    return qtf_bool(qtf_set_style(qtf_qstring(name, name_len)));
+}
+
+// The name of the current style (lower case, e.g. 'fusion').
+QTF_API char *qtf_qapplication_styleName(int *len) { return qtf_to_c(QApplication::style()->name(), len); }
+
+// Use `palette` (copied) for all widgets, e.g. a dark theme.
+QTF_API void qtf_qapplication_setPalette(void *palette) { QApplication::setPalette(*as<QPalette>(palette)); }
+
+// A copy of the application's palette (delete it when done).
+QTF_API void *qtf_qapplication_palette(void) { return new QPalette(QApplication::palette()); }
+
 // ---------------------------------------------------------------------------
 // QWidget
 
@@ -1951,6 +1992,19 @@ QTF_API void *qtf_qwidget_childAt(void *self, int p_x, int p_y) {
     return as<QWidget>(self)->childAt(QPoint(p_x, p_y));
 }
 
+// Use `palette` (copied) for this widget and its children.
+QTF_API void qtf_qwidget_setPalette(void *self, void *palette) {
+    as<QWidget>(self)->setPalette(*as<QPalette>(palette));
+}
+
+// A copy of the widget's palette (delete it when done).
+QTF_API void *qtf_qwidget_palette(void *self) { return new QPalette(as<QWidget>(self)->palette()); }
+
+// Fill the background with the palette's window color (e.g. for a widget with its own palette).
+QTF_API void qtf_qwidget_setAutoFillBackground(void *self, int enabled) {
+    as<QWidget>(self)->setAutoFillBackground((enabled != 0));
+}
+
 // ---------------------------------------------------------------------------
 // QtfWidget
 
@@ -1978,6 +2032,34 @@ QTF_API void qtf_qframe_setFrameShadow(void *self, int shadow) {
 
 // Set the frame line width in pixels.
 QTF_API void qtf_qframe_setLineWidth(void *self, int width) { as<QFrame>(self)->setLineWidth(width); }
+
+// ---------------------------------------------------------------------------
+// QAbstractScrollArea
+
+// The widget the contents are drawn on, which gets the mouse events (e.g. for a QtfEventFilter; for item views, mouse and drop positions are relative to it).
+QTF_API void *qtf_qabstractscrollarea_viewport(void *self) {
+    return as<QAbstractScrollArea>(self)->viewport();
+}
+
+// The vertical scroll bar (its value is the scroll position).
+QTF_API void *qtf_qabstractscrollarea_verticalScrollBar(void *self) {
+    return as<QAbstractScrollArea>(self)->verticalScrollBar();
+}
+
+// The horizontal scroll bar.
+QTF_API void *qtf_qabstractscrollarea_horizontalScrollBar(void *self) {
+    return as<QAbstractScrollArea>(self)->horizontalScrollBar();
+}
+
+// When to show the vertical scroll bar (Qt_ScrollBarAsNeeded, _AlwaysOff, _AlwaysOn).
+QTF_API void qtf_qabstractscrollarea_setVerticalScrollBarPolicy(void *self, int policy) {
+    as<QAbstractScrollArea>(self)->setVerticalScrollBarPolicy(Qt::ScrollBarPolicy(policy));
+}
+
+// When to show the horizontal scroll bar.
+QTF_API void qtf_qabstractscrollarea_setHorizontalScrollBarPolicy(void *self, int policy) {
+    as<QAbstractScrollArea>(self)->setHorizontalScrollBarPolicy(Qt::ScrollBarPolicy(policy));
+}
 
 // ---------------------------------------------------------------------------
 // QLabel
@@ -2305,6 +2387,20 @@ QTF_API void *qtf_qslider_new(int orientation, void *parent) {
 }
 
 // ---------------------------------------------------------------------------
+// QScrollBar
+
+// A standalone scroll bar.
+QTF_API void *qtf_qscrollbar_new(int orientation, void *parent) {
+    return new QScrollBar(Qt::Orientation(Qt::Orientation(orientation)), as<QWidget>(parent));
+}
+
+// The page step (the visible extent, for a scroll area's scroll bar).
+QTF_API int qtf_qscrollbar_pageStep(void *self) { return as<QScrollBar>(self)->pageStep(); }
+
+// The step of the arrow buttons and keys.
+QTF_API int qtf_qscrollbar_singleStep(void *self) { return as<QScrollBar>(self)->singleStep(); }
+
+// ---------------------------------------------------------------------------
 // QComboBox
 
 // Create an empty combo box.
@@ -2470,6 +2566,60 @@ QTF_API int qtf_qgridlayout_rowCount(void *self) { return as<QGridLayout>(self)-
 
 // Number of columns.
 QTF_API int qtf_qgridlayout_columnCount(void *self) { return as<QGridLayout>(self)->columnCount(); }
+
+// ---------------------------------------------------------------------------
+// QStackedLayout
+
+// A stacked layout (installed on `parent` if given).
+QTF_API void *qtf_qstackedlayout_new(void *parent) { return new QStackedLayout(as<QWidget>(parent)); }
+
+// Append a widget (hidden unless it is the current one).
+QTF_API void qtf_qstackedlayout_addWidget(void *self, void *widget) {
+    as<QStackedLayout>(self)->addWidget(as<QWidget>(widget));
+}
+
+// Insert a widget before `index`.
+QTF_API void qtf_qstackedlayout_insertWidget(void *self, int index, void *widget) {
+    as<QStackedLayout>(self)->insertWidget(index, as<QWidget>(widget));
+}
+
+// Remove a widget (it is not deleted).
+QTF_API void qtf_qstackedlayout_removeWidget(void *self, void *widget) {
+    as<QStackedLayout>(self)->removeWidget(as<QWidget>(widget));
+}
+
+// Index of the visible widget (-1 if none).
+QTF_API int qtf_qstackedlayout_currentIndex(void *self) { return as<QStackedLayout>(self)->currentIndex(); }
+
+// Show the widget at `index`.
+QTF_API void qtf_qstackedlayout_setCurrentIndex(void *self, int index) {
+    as<QStackedLayout>(self)->setCurrentIndex(index);
+}
+
+// Show `widget`.
+QTF_API void qtf_qstackedlayout_setCurrentWidget(void *self, void *widget) {
+    as<QStackedLayout>(self)->setCurrentWidget(as<QWidget>(widget));
+}
+
+// The visible widget (null if none).
+QTF_API void *qtf_qstackedlayout_currentWidget(void *self) {
+    return as<QStackedLayout>(self)->currentWidget();
+}
+
+// The widget at `index` (null if none).
+QTF_API void *qtf_qstackedlayout_widget(void *self, int index) {
+    return as<QStackedLayout>(self)->widget(index);
+}
+
+// QStackedLayout_StackOne (only the current widget is visible, the default) or QStackedLayout_StackAll (all are, the current one on top).
+QTF_API void qtf_qstackedlayout_setStackingMode(void *self, int mode) {
+    as<QStackedLayout>(self)->setStackingMode(QStackedLayout::StackingMode(mode));
+}
+
+// The stacking mode.
+QTF_API int qtf_qstackedlayout_stackingMode(void *self) {
+    return int(as<QStackedLayout>(self)->stackingMode());
+}
 
 // ---------------------------------------------------------------------------
 // QStatusBar
@@ -3097,9 +3247,6 @@ QTF_API void qtf_qabstractitemview_scrollToBottom(void *self) {
     as<QAbstractItemView>(self)->scrollToBottom();
 }
 
-// The widget the items are drawn on: mouse and drop positions are relative to it (e.g. for a QtfEventFilter).
-QTF_API void *qtf_qabstractitemview_viewport(void *self) { return as<QAbstractItemView>(self)->viewport(); }
-
 // Let the user drag the selected items (the model must allow it: e.g. QtfTableModel%setDragEnabled).
 QTF_API void qtf_qabstractitemview_setDragEnabled(void *self, int enable) {
     as<QAbstractItemView>(self)->setDragEnabled((enable != 0));
@@ -3151,10 +3298,198 @@ QTF_API int qtf_qabstractitemview_dragDropOverwriteMode(void *self) {
 }
 
 // ---------------------------------------------------------------------------
+// QHeaderView
+
+// A header (views make their own).
+QTF_API void *qtf_qheaderview_new(int orientation, void *parent) {
+    return new QHeaderView(Qt::Orientation(Qt::Orientation(orientation)), as<QWidget>(parent));
+}
+
+// How all sections are sized: QHeaderView_Interactive (by the user, the default), _Stretch (fill the view), _Fixed or _ResizeToContents.
+QTF_API void qtf_qheaderview_setSectionResizeModeAll(void *self, int mode) {
+    as<QHeaderView>(self)->setSectionResizeMode(QHeaderView::ResizeMode(QHeaderView::ResizeMode(mode)));
+}
+
+// How one section is sized.
+QTF_API void qtf_qheaderview_setSectionResizeModeOf(void *self, int logicalIndex, int mode) {
+    as<QHeaderView>(self)->setSectionResizeMode(logicalIndex, QHeaderView::ResizeMode(QHeaderView::ResizeMode(mode)));
+}
+
+// How a section is sized.
+QTF_API int qtf_qheaderview_sectionResizeMode(void *self, int logicalIndex) {
+    return int(as<QHeaderView>(self)->sectionResizeMode(logicalIndex));
+}
+
+// Set a section's width (or height), in pixels.
+QTF_API void qtf_qheaderview_resizeSection(void *self, int logicalIndex, int size) {
+    as<QHeaderView>(self)->resizeSection(logicalIndex, size);
+}
+
+// A section's width (or height).
+QTF_API int qtf_qheaderview_sectionSize(void *self, int logicalIndex) {
+    return as<QHeaderView>(self)->sectionSize(logicalIndex);
+}
+
+// Where a section starts (from the header's start, ignoring scrolling).
+QTF_API int qtf_qheaderview_sectionPosition(void *self, int logicalIndex) {
+    return as<QHeaderView>(self)->sectionPosition(logicalIndex);
+}
+
+// Resize all sections once by `mode` (e.g. QHeaderView_ResizeToContents).
+QTF_API void qtf_qheaderview_resizeSections(void *self, int mode) {
+    as<QHeaderView>(self)->resizeSections(QHeaderView::ResizeMode(mode));
+}
+
+// The size of new sections.
+QTF_API void qtf_qheaderview_setDefaultSectionSize(void *self, int size) {
+    as<QHeaderView>(self)->setDefaultSectionSize(size);
+}
+
+// The size of new sections.
+QTF_API int qtf_qheaderview_defaultSectionSize(void *self) {
+    return as<QHeaderView>(self)->defaultSectionSize();
+}
+
+// The smallest size the user can give a section.
+QTF_API void qtf_qheaderview_setMinimumSectionSize(void *self, int size) {
+    as<QHeaderView>(self)->setMinimumSectionSize(size);
+}
+
+// The smallest section size.
+QTF_API int qtf_qheaderview_minimumSectionSize(void *self) {
+    return as<QHeaderView>(self)->minimumSectionSize();
+}
+
+// The largest section size.
+QTF_API void qtf_qheaderview_setMaximumSectionSize(void *self, int size) {
+    as<QHeaderView>(self)->setMaximumSectionSize(size);
+}
+
+// Let the last section fill the remaining space.
+QTF_API void qtf_qheaderview_setStretchLastSection(void *self, int stretch) {
+    as<QHeaderView>(self)->setStretchLastSection((stretch != 0));
+}
+
+// True if the last section fills the remaining space.
+QTF_API int qtf_qheaderview_stretchLastSection(void *self) {
+    return qtf_bool(as<QHeaderView>(self)->stretchLastSection());
+}
+
+// Let the user reorder sections by dragging them.
+QTF_API void qtf_qheaderview_setSectionsMovable(void *self, int movable) {
+    as<QHeaderView>(self)->setSectionsMovable((movable != 0));
+}
+
+// True if sections can be moved.
+QTF_API int qtf_qheaderview_sectionsMovable(void *self) {
+    return qtf_bool(as<QHeaderView>(self)->sectionsMovable());
+}
+
+// Make sections clickable (emitting `sectionClicked`; needed for sorting).
+QTF_API void qtf_qheaderview_setSectionsClickable(void *self, int clickable) {
+    as<QHeaderView>(self)->setSectionsClickable((clickable != 0));
+}
+
+// True if sections are clickable.
+QTF_API int qtf_qheaderview_sectionsClickable(void *self) {
+    return qtf_bool(as<QHeaderView>(self)->sectionsClickable());
+}
+
+// Show the sort arrow on a section (with a sorting view, also sorts).
+QTF_API void qtf_qheaderview_setSortIndicator(void *self, int logicalIndex, int order) {
+    as<QHeaderView>(self)->setSortIndicator(logicalIndex, Qt::SortOrder(order));
+}
+
+// The section with the sort arrow (-1 if none).
+QTF_API int qtf_qheaderview_sortIndicatorSection(void *self) {
+    return as<QHeaderView>(self)->sortIndicatorSection();
+}
+
+// The sort order shown (Qt_AscendingOrder or Qt_DescendingOrder).
+QTF_API int qtf_qheaderview_sortIndicatorOrder(void *self) {
+    return int(as<QHeaderView>(self)->sortIndicatorOrder());
+}
+
+// Show the sort arrow.
+QTF_API void qtf_qheaderview_setSortIndicatorShown(void *self, int show) {
+    as<QHeaderView>(self)->setSortIndicatorShown((show != 0));
+}
+
+// True if the sort arrow is shown.
+QTF_API int qtf_qheaderview_isSortIndicatorShown(void *self) {
+    return qtf_bool(as<QHeaderView>(self)->isSortIndicatorShown());
+}
+
+// Hide or show a section.
+QTF_API void qtf_qheaderview_setSectionHidden(void *self, int logicalIndex, int hide) {
+    as<QHeaderView>(self)->setSectionHidden(logicalIndex, (hide != 0));
+}
+
+// True if the section is hidden.
+QTF_API int qtf_qheaderview_isSectionHidden(void *self, int logicalIndex) {
+    return qtf_bool(as<QHeaderView>(self)->isSectionHidden(logicalIndex));
+}
+
+// Hide a section.
+QTF_API void qtf_qheaderview_hideSection(void *self, int logicalIndex) {
+    as<QHeaderView>(self)->hideSection(logicalIndex);
+}
+
+// Show a hidden section.
+QTF_API void qtf_qheaderview_showSection(void *self, int logicalIndex) {
+    as<QHeaderView>(self)->showSection(logicalIndex);
+}
+
+// The number of sections.
+QTF_API int qtf_qheaderview_count(void *self) { return as<QHeaderView>(self)->count(); }
+
+// The total size of the sections.
+QTF_API int qtf_qheaderview_length(void *self) { return as<QHeaderView>(self)->length(); }
+
+// Move the section at visual index `from` to visual index `to`.
+QTF_API void qtf_qheaderview_moveSection(void *self, int from, int to) {
+    as<QHeaderView>(self)->moveSection(from, to);
+}
+
+// Where a section is on screen (its visual index).
+QTF_API int qtf_qheaderview_visualIndex(void *self, int logicalIndex) {
+    return as<QHeaderView>(self)->visualIndex(logicalIndex);
+}
+
+// The section at a visual index.
+QTF_API int qtf_qheaderview_logicalIndex(void *self, int visualIndex) {
+    return as<QHeaderView>(self)->logicalIndex(visualIndex);
+}
+
+// The section at a position along the header (-1 if none).
+QTF_API int qtf_qheaderview_logicalIndexAt(void *self, int position) {
+    return as<QHeaderView>(self)->logicalIndexAt(position);
+}
+
+// Highlight the sections of selected items.
+QTF_API void qtf_qheaderview_setHighlightSections(void *self, int highlight) {
+    as<QHeaderView>(self)->setHighlightSections((highlight != 0));
+}
+
+// The alignment of the section titles.
+QTF_API void qtf_qheaderview_setDefaultAlignment(void *self, int alignment) {
+    as<QHeaderView>(self)->setDefaultAlignment(Qt::Alignment(alignment));
+}
+
+// Qt_Horizontal (column titles) or Qt_Vertical (row titles).
+QTF_API int qtf_qheaderview_orientation(void *self) { return int(as<QHeaderView>(self)->orientation()); }
+
+// ---------------------------------------------------------------------------
 // QTableView
 
 // Create a table view.
 QTF_API void *qtf_qtableview_new(void *parent) { return new QTableView(as<QWidget>(parent)); }
+
+// The column titles.
+QTF_API void *qtf_qtableview_horizontalHeader(void *self) { return as<QTableView>(self)->horizontalHeader(); }
+
+// The row titles.
+QTF_API void *qtf_qtableview_verticalHeader(void *self) { return as<QTableView>(self)->verticalHeader(); }
 
 // Fit the column widths to their contents.
 QTF_API void qtf_qtableview_resizeColumnsToContents(void *self) {
@@ -3342,6 +3677,9 @@ QTF_API void qtf_qtreeview_setCurrentFile(void *self, const char *path, int path
 QTF_API void qtf_qtreeview_setRootPath(void *self, const char *path, int path_len) {
     qtf_set_root_path(as<QTreeView>(self), qtf_qstring(path, path_len));
 }
+
+// The column titles.
+QTF_API void *qtf_qtreeview_header(void *self) { return as<QTreeView>(self)->header(); }
 
 // Expand every node.
 QTF_API void qtf_qtreeview_expandAll(void *self) { as<QTreeView>(self)->expandAll(); }
@@ -3959,6 +4297,9 @@ QTF_API void qtf_qtreewidgetitem_setFlags(void *self, int flags) {
 // Create an empty tree.
 QTF_API void *qtf_qtreewidget_new(void *parent) { return new QTreeWidget(as<QWidget>(parent)); }
 
+// The column titles.
+QTF_API void *qtf_qtreewidget_header(void *self) { return as<QTreeWidget>(self)->header(); }
+
 // Set the number of columns.
 QTF_API void qtf_qtreewidget_setColumnCount(void *self, int columns) {
     as<QTreeWidget>(self)->setColumnCount(columns);
@@ -4288,19 +4629,6 @@ QTF_API void qtf_qplaintextedit_setUndoRedoEnabled(void *self, int enable) {
     as<QPlainTextEdit>(self)->setUndoRedoEnabled((enable != 0));
 }
 
-// The widget the text is drawn on, which gets the mouse events (e.g. for a QtfEventFilter).
-QTF_API void *qtf_qplaintextedit_viewport(void *self) { return as<QPlainTextEdit>(self)->viewport(); }
-
-// The vertical scroll position (the first visible line, for plain text).
-QTF_API int qtf_qplaintextedit_verticalScrollValue(void *self) {
-    return as<QPlainTextEdit>(self)->verticalScrollBar()->value();
-}
-
-// Scroll vertically (to make line `value` the first visible one).
-QTF_API void qtf_qplaintextedit_setVerticalScrollValue(void *self, int value) {
-    as<QPlainTextEdit>(self)->verticalScrollBar()->setValue(value);
-}
-
 // Show text from position `start` to `end` with `format` (e.g. a background color), without changing the text. `fullWidth`: color the whole line (with start = end, e.g. the current line).
 QTF_API void qtf_qplaintextedit_addExtraSelection(void *self, int start, int end, int format_foreground_r, int format_foreground_g, int format_foreground_b, int format_foreground_a, int format_foreground_valid, int format_background_r, int format_background_g, int format_background_b, int format_background_a, int format_background_valid, int format_bold, int format_italic, int format_underlineStyle, int format_underlineColor_r, int format_underlineColor_g, int format_underlineColor_b, int format_underlineColor_a, int format_underlineColor_valid, int fullWidth) {
     qtf_add_extra_selections(as<QPlainTextEdit>(self), &start, &end, 1, qtf_char_format(((format_foreground_valid != 0) ? QColor(format_foreground_r, format_foreground_g, format_foreground_b, format_foreground_a) : QColor()), ((format_background_valid != 0) ? QColor(format_background_r, format_background_g, format_background_b, format_background_a) : QColor()), (format_bold != 0), (format_italic != 0), format_underlineStyle, ((format_underlineColor_valid != 0) ? QColor(format_underlineColor_r, format_underlineColor_g, format_underlineColor_b, format_underlineColor_a) : QColor())), (fullWidth != 0));
@@ -4464,6 +4792,168 @@ QTF_API void qtf_qtabwidget_setDocumentMode(void *self, int set) {
 }
 
 // ---------------------------------------------------------------------------
+// QTabBar
+
+// An empty tab bar.
+QTF_API void *qtf_qtabbar_new(void *parent) { return new QTabBar(as<QWidget>(parent)); }
+
+// Append a tab.
+QTF_API void qtf_qtabbar_addTab(void *self, const char *text, int text_len) {
+    as<QTabBar>(self)->addTab(qtf_qstring(text, text_len));
+}
+
+// Append a tab with an icon.
+QTF_API void qtf_qtabbar_addTabIcon(void *self, void *icon, const char *text, int text_len) {
+    as<QTabBar>(self)->addTab(*as<QIcon>(icon), qtf_qstring(text, text_len));
+}
+
+// Insert a tab before `index`.
+QTF_API void qtf_qtabbar_insertTab(void *self, int index, const char *text, int text_len) {
+    as<QTabBar>(self)->insertTab(index, qtf_qstring(text, text_len));
+}
+
+// Remove a tab.
+QTF_API void qtf_qtabbar_removeTab(void *self, int index) { as<QTabBar>(self)->removeTab(index); }
+
+// Move a tab.
+QTF_API void qtf_qtabbar_moveTab(void *self, int from, int to) { as<QTabBar>(self)->moveTab(from, to); }
+
+// The number of tabs.
+QTF_API int qtf_qtabbar_count(void *self) { return as<QTabBar>(self)->count(); }
+
+// The current tab (-1 if none).
+QTF_API int qtf_qtabbar_currentIndex(void *self) { return as<QTabBar>(self)->currentIndex(); }
+
+// Make a tab current.
+QTF_API void qtf_qtabbar_setCurrentIndex(void *self, int index) { as<QTabBar>(self)->setCurrentIndex(index); }
+
+// Change a tab's text.
+QTF_API void qtf_qtabbar_setTabText(void *self, int index, const char *text, int text_len) {
+    as<QTabBar>(self)->setTabText(index, qtf_qstring(text, text_len));
+}
+
+// A tab's text.
+QTF_API char *qtf_qtabbar_tabText(void *self, int index, int *len) {
+    return qtf_to_c(as<QTabBar>(self)->tabText(index), len);
+}
+
+// A tab's tool tip.
+QTF_API void qtf_qtabbar_setTabToolTip(void *self, int index, const char *tip, int tip_len) {
+    as<QTabBar>(self)->setTabToolTip(index, qtf_qstring(tip, tip_len));
+}
+
+// A tab's tool tip.
+QTF_API char *qtf_qtabbar_tabToolTip(void *self, int index, int *len) {
+    return qtf_to_c(as<QTabBar>(self)->tabToolTip(index), len);
+}
+
+// Show an icon on a tab (copied).
+QTF_API void qtf_qtabbar_setTabIcon(void *self, int index, void *icon) {
+    as<QTabBar>(self)->setTabIcon(index, *as<QIcon>(icon));
+}
+
+// A tab's text color.
+QTF_API void qtf_qtabbar_setTabTextColor(void *self, int index, int color_r, int color_g, int color_b, int color_a, int color_valid) {
+    as<QTabBar>(self)->setTabTextColor(index, QColor(color_r, color_g, color_b, color_a));
+}
+
+// A tab's text color.
+QTF_API void qtf_qtabbar_tabTextColor(void *self, int index, int *res_r, int *res_g, int *res_b, int *res_a, int *res_valid) {
+    const auto v_ = as<QTabBar>(self)->tabTextColor(index);
+    *res_r = v_.red();
+    *res_g = v_.green();
+    *res_b = v_.blue();
+    *res_a = v_.alpha();
+    *res_valid = v_.isValid();
+}
+
+// Enable or disable a tab.
+QTF_API void qtf_qtabbar_setTabEnabled(void *self, int index, int enabled) {
+    as<QTabBar>(self)->setTabEnabled(index, (enabled != 0));
+}
+
+// True if the tab is enabled.
+QTF_API int qtf_qtabbar_isTabEnabled(void *self, int index) {
+    return qtf_bool(as<QTabBar>(self)->isTabEnabled(index));
+}
+
+// Show or hide a tab.
+QTF_API void qtf_qtabbar_setTabVisible(void *self, int index, int visible) {
+    as<QTabBar>(self)->setTabVisible(index, (visible != 0));
+}
+
+// True if the tab is shown.
+QTF_API int qtf_qtabbar_isTabVisible(void *self, int index) {
+    return qtf_bool(as<QTabBar>(self)->isTabVisible(index));
+}
+
+// Attach an integer to a tab (e.g. an index into your arrays); it moves with the tab.
+QTF_API void qtf_qtabbar_setTabData(void *self, int index, int value) {
+    as<QTabBar>(self)->setTabData(index, value);
+}
+
+// The integer attached to a tab (0 if none).
+QTF_API int qtf_qtabbar_tabData(void *self, int index) { return as<QTabBar>(self)->tabData(index).toInt(); }
+
+// The tab at point (x, y) of the bar (-1 if none).
+QTF_API int qtf_qtabbar_tabAt(void *self, int x, int y) { return as<QTabBar>(self)->tabAt(QPoint(x, y)); }
+
+// A tab's rectangle in the bar.
+QTF_API void qtf_qtabbar_tabRect(void *self, int index, int *res_x, int *res_y, int *res_width, int *res_height) {
+    const auto v_ = as<QTabBar>(self)->tabRect(index);
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
+}
+
+// Show close buttons on the tabs (they emit tabCloseRequested).
+QTF_API void qtf_qtabbar_setTabsClosable(void *self, int closable) {
+    as<QTabBar>(self)->setTabsClosable((closable != 0));
+}
+
+// True if tabs have close buttons.
+QTF_API int qtf_qtabbar_tabsClosable(void *self) { return qtf_bool(as<QTabBar>(self)->tabsClosable()); }
+
+// Let the user reorder the tabs (emitting tabMoved).
+QTF_API void qtf_qtabbar_setMovable(void *self, int movable) {
+    as<QTabBar>(self)->setMovable((movable != 0));
+}
+
+// True if tabs can be reordered.
+QTF_API int qtf_qtabbar_isMovable(void *self) { return qtf_bool(as<QTabBar>(self)->isMovable()); }
+
+// Stretch the tabs to fill the bar.
+QTF_API void qtf_qtabbar_setExpanding(void *self, int enabled) {
+    as<QTabBar>(self)->setExpanding((enabled != 0));
+}
+
+// A flatter, document-style look.
+QTF_API void qtf_qtabbar_setDocumentMode(void *self, int set) {
+    as<QTabBar>(self)->setDocumentMode((set != 0));
+}
+
+// Draw the base line under the tabs.
+QTF_API void qtf_qtabbar_setDrawBase(void *self, int drawBase) {
+    as<QTabBar>(self)->setDrawBase((drawBase != 0));
+}
+
+// Scroll buttons when the tabs do not fit (or elide/shrink them).
+QTF_API void qtf_qtabbar_setUsesScrollButtons(void *self, int useButtons) {
+    as<QTabBar>(self)->setUsesScrollButtons((useButtons != 0));
+}
+
+// Shorten long tab texts (Qt_ElideRight, ...; Qt_ElideNone).
+QTF_API void qtf_qtabbar_setElideMode(void *self, int mode) {
+    as<QTabBar>(self)->setElideMode(Qt::TextElideMode(mode));
+}
+
+// The tab shape and side: QTabBar_RoundedNorth (default), _RoundedSouth, _RoundedWest, _RoundedEast, or Triangular*.
+QTF_API void qtf_qtabbar_setShape(void *self, int shape) {
+    as<QTabBar>(self)->setShape(QTabBar::Shape(shape));
+}
+
+// ---------------------------------------------------------------------------
 // QStackedWidget
 
 // Create an empty stack.
@@ -4586,16 +5076,6 @@ QTF_API void qtf_qscrollarea_setWidgetResizable(void *self, int resizable) {
 // True if the widget is resized to fill the area.
 QTF_API int qtf_qscrollarea_widgetResizable(void *self) {
     return qtf_bool(as<QScrollArea>(self)->widgetResizable());
-}
-
-// When to show the horizontal scroll bar.
-QTF_API void qtf_qscrollarea_setHorizontalScrollBarPolicy(void *self, int policy) {
-    as<QScrollArea>(self)->setHorizontalScrollBarPolicy(Qt::ScrollBarPolicy(policy));
-}
-
-// When to show the vertical scroll bar.
-QTF_API void qtf_qscrollarea_setVerticalScrollBarPolicy(void *self, int policy) {
-    as<QScrollArea>(self)->setVerticalScrollBarPolicy(Qt::ScrollBarPolicy(policy));
 }
 
 // Scroll so that point (x, y) of the widget is visible.
@@ -5775,6 +6255,26 @@ QTF_API void qtf_qundoview_setEmptyLabel(void *self, const char *label, int labe
 QTF_API void *qtf_qtfeventfilter_new(void *target) { return new QtfEventFilter(as<QObject>(target)); }
 
 // ---------------------------------------------------------------------------
+// functions
+
+// Show a tool tip with `text` at screen position (x, y) (e.g. from `w%mapToGlobal`), now; '' hides it. With `widget`, it hides when the mouse leaves that widget.
+QTF_API void qtf_QToolTip_showText(int x, int y, const char *text, int text_len, void *widget) {
+    QToolTip::showText(QPoint(x, y), qtf_qstring(text, text_len), as<QWidget>(widget));
+}
+
+// Hide the tool tip.
+QTF_API void qtf_QToolTip_hideText(void) { QToolTip::hideText(); }
+
+// True if a tool tip is shown.
+QTF_API int qtf_QToolTip_isVisible(void) { return qtf_bool(QToolTip::isVisible()); }
+
+// The text of the tool tip shown ('' if none).
+QTF_API char *qtf_QToolTip_text(int *len) { return qtf_to_c(QToolTip::text(), len); }
+
+// The names of the available styles (e.g. 'Fusion', 'Windows', 'macOS'), for QApplication_setStyle.
+QTF_API char *qtf_QStyleFactory_keys(int *len) { return qtf_list_to_c(QStyleFactory::keys(), len); }
+
+// ---------------------------------------------------------------------------
 // signal connectors
 
 static const bool qtf_widgets_registered = [] {
@@ -5844,6 +6344,9 @@ static const bool qtf_widgets_registered = [] {
     qtf_register_connector(QTF_SIG_QABSTRACTSLIDER_SLIDERRELEASED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QAbstractSlider>(s), &QAbstractSlider::sliderReleased, as<QAbstractSlider>(s), [ref]() { qtf_emit(ref); }));
     });
+    qtf_register_connector(QTF_SIG_QSCROLLBAR_RANGECHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QScrollBar>(s), &QScrollBar::rangeChanged, as<QScrollBar>(s), [ref](int a, int b) { qtf_emit_ints(ref, {a, b}); }));
+    });
     qtf_register_connector(QTF_SIG_QCOMBOBOX_CURRENTINDEXCHANGED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QComboBox>(s), &QComboBox::currentIndexChanged, as<QComboBox>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
@@ -5852,6 +6355,12 @@ static const bool qtf_widgets_registered = [] {
     });
     qtf_register_connector(QTF_SIG_QCOMBOBOX_ACTIVATED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QComboBox>(s), &QComboBox::activated, as<QComboBox>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QSTACKEDLAYOUT_CURRENTCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QStackedLayout>(s), &QStackedLayout::currentChanged, as<QStackedLayout>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QSTACKEDLAYOUT_WIDGETREMOVED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QStackedLayout>(s), &QStackedLayout::widgetRemoved, as<QStackedLayout>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QDIALOG_ACCEPTED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QDialog>(s), &QDialog::accepted, as<QDialog>(s), [ref]() { qtf_emit(ref); }));
@@ -5876,6 +6385,21 @@ static const bool qtf_widgets_registered = [] {
     });
     qtf_register_connector(QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QAbstractItemView>(s), &QAbstractItemView::activated, as<QAbstractItemView>(s), [ref](const QModelIndex &i) { qtf_emit_ints(ref, {i.row(), i.column()}); }));
+    });
+    qtf_register_connector(QTF_SIG_QHEADERVIEW_SECTIONCLICKED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QHeaderView>(s), &QHeaderView::sectionClicked, as<QHeaderView>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QHEADERVIEW_SECTIONDOUBLECLICKED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QHeaderView>(s), &QHeaderView::sectionDoubleClicked, as<QHeaderView>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QHEADERVIEW_SECTIONRESIZED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QHeaderView>(s), &QHeaderView::sectionResized, as<QHeaderView>(s), [ref](int a, int b, int c) { qtf_emit_ints(ref, {a, b, c}); }));
+    });
+    qtf_register_connector(QTF_SIG_QHEADERVIEW_SECTIONMOVED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QHeaderView>(s), &QHeaderView::sectionMoved, as<QHeaderView>(s), [ref](int a, int b, int c) { qtf_emit_ints(ref, {a, b, c}); }));
+    });
+    qtf_register_connector(QTF_SIG_QHEADERVIEW_SORTINDICATORCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QHeaderView>(s), &QHeaderView::sortIndicatorChanged, as<QHeaderView>(s), [ref](int a, int b) { qtf_emit_ints(ref, {a, b}); }));
     });
     qtf_register_connector(QTF_SIG_QTREEVIEW_NODECLICKED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QTreeView>(s), &QTreeView::clicked, as<QTreeView>(s), [ref](const QModelIndex &i) { qtf_emit_int(ref, qtf_node(i)); }));
@@ -5981,6 +6505,21 @@ static const bool qtf_widgets_registered = [] {
     });
     qtf_register_connector(QTF_SIG_QTABWIDGET_TABBARCLICKED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QTabWidget>(s), &QTabWidget::tabBarClicked, as<QTabWidget>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QTABBAR_CURRENTCHANGED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTabBar>(s), &QTabBar::currentChanged, as<QTabBar>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QTABBAR_TABCLOSEREQUESTED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTabBar>(s), &QTabBar::tabCloseRequested, as<QTabBar>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QTABBAR_TABMOVED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTabBar>(s), &QTabBar::tabMoved, as<QTabBar>(s), [ref](int a, int b) { qtf_emit_ints(ref, {a, b}); }));
+    });
+    qtf_register_connector(QTF_SIG_QTABBAR_TABBARCLICKED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTabBar>(s), &QTabBar::tabBarClicked, as<QTabBar>(s), [ref](int v) { qtf_emit_int(ref, v); }));
+    });
+    qtf_register_connector(QTF_SIG_QTABBAR_TABBARDOUBLECLICKED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QTabBar>(s), &QTabBar::tabBarDoubleClicked, as<QTabBar>(s), [ref](int v) { qtf_emit_int(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QSTACKEDWIDGET_CURRENTCHANGED, [](void *s, const qtf_slot &ref) {
         return qtf_track(ref, QObject::connect(as<QStackedWidget>(s), &QStackedWidget::currentChanged, as<QStackedWidget>(s), [ref](int v) { qtf_emit_int(ref, v); }));

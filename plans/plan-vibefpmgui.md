@@ -64,22 +64,25 @@ card, progress line, git stats, animated logo, blame column and terminal view.
 - [x] Painting: `QPainterPath`, `QLinearGradient`, `QFontMetrics(F)`
       (horizontalAdvance, height, elidedText), more `QPointF`/`QRectF`
       drawing calls. *Done.*
-- [ ] Theming: `QPalette` (roles x groups; `setColor`, `QApplication_setPalette`)
+- [x] Theming: `QPalette` (roles x groups; `setColor`, `QApplication_setPalette`)
       and `QStyleFactory` / `QApplication_setStyle('Fusion')`. The app uses
-      `QPalette` 149 times for its themes and dark mode.
-- [ ] Services:
+      `QPalette` 149 times for its themes and dark mode. *Done, plus
+      `QGuiApplication_colorScheme`/`setColorScheme` (example/themes.f90).*
+- [x] Services:
   - [x] `QClipboard` (text);
-  - [ ] `QToolTip_showText` / `hideText`;
-  - [ ] `QDesktopServices_openUrl`;
+  - [x] `QToolTip_showText` / `hideText`;
+  - [x] `QDesktopServices_openUrl`;
   - [x] `QCursor_pos`, override cursor;
   - [x] `QFontDatabase_systemFont(FixedFont)` (as `QFontDatabase_fixedFamily`);
-  - [ ] `QKeySequence` standard keys and native text (shortcuts as strings
-        already work: `QAction%setShortcut('Ctrl+O')`).
-- [ ] Widgets and layout:
+  - [x] `QKeySequence` standard keys and native text
+        (`QKeySequence_standardKey`, `QKeySequence_nativeText`,
+        `QAction%setStandardShortcut`; also `QShortcut`).
+- [x] Widgets and layout:
   - `QActionGroup`, `QStackedLayout`;
   - `QTabBar` (standalone);
   - `QHeaderView` options (resize modes, section sizes);
   - `QScrollBar` access (value, range, signals).
+  *Done; the scroll bars come from a new `QAbstractScrollArea` base.*
 - [ ] Docks:
   - [ ] `resizeDocks`, `splitDockWidget`, `setCorner`, `setTitleBarWidget`;
   - [ ] `tabifiedDockWidgets`, `setTabPosition`, `setDockOptions`

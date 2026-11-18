@@ -9,11 +9,13 @@
 #include "qtf_common.h"
 
 #include <QAction>
+#include <QActionGroup>
 #include <QClipboard>
 #include <QCloseEvent>
 #include <QConicalGradient>
 #include <QContextMenuEvent>
 #include <QCursor>
+#include <QDesktopServices>
 #include <QDoubleValidator>
 #include <QDrag>
 #include <QDragEnterEvent>
@@ -35,6 +37,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
+#include <QPalette>
 #include <QPixmap>
 #include <QPolygonF>
 #include <QRadialGradient>
@@ -42,6 +45,8 @@
 #include <QRegularExpressionValidator>
 #include <QResizeEvent>
 #include <QScreen>
+#include <QShortcut>
+#include <QStyleHints>
 #include <QSyntaxHighlighter>
 #include <QTextBlock>
 #include <QTextCharFormat>
@@ -77,6 +82,10 @@ enum : int {
     QTF_SIG_QTEXTDOCUMENT_UNDOAVAILABLE = 2013,
     QTF_SIG_QTEXTDOCUMENT_REDOAVAILABLE = 2014,
     QTF_SIG_QTFSYNTAXHIGHLIGHTER_HIGHLIGHTBLOCK = 2015,
+    QTF_SIG_QACTIONGROUP_TRIGGERED = 2016,
+    QTF_SIG_QACTIONGROUP_HOVERED = 2017,
+    QTF_SIG_QSHORTCUT_ACTIVATED = 2018,
+    QTF_SIG_QSHORTCUT_ACTIVATEDAMBIGUOUSLY = 2019,
 };
 
 // Validate `text` with a validator: QValidator_Invalid, _Intermediate or _Acceptable.
@@ -193,6 +202,16 @@ static QList<QUrl> qtf_urls(const QStringList &items) {
     QList<QUrl> urls;
     for (const QString &s : items) urls << (s.contains(QLatin1String("://")) ? QUrl(s) : QUrl::fromLocalFile(s));
     return urls;
+}
+
+// A URL from a string: "scheme://..." as given, anything else as a local file path.
+static QUrl qtf_url(const QString &s) { return s.contains(QLatin1String("://")) ? QUrl(s) : QUrl::fromLocalFile(s); }
+
+// All key bindings of a standard key, in portable text (e.g. "Ctrl+Z").
+static QStringList qtf_key_bindings(QKeySequence::StandardKey key) {
+    QStringList out;
+    for (const QKeySequence &k : QKeySequence::keyBindings(key)) out << k.toString(QKeySequence::PortableText);
+    return out;
 }
 
 // URLs as strings: local files as paths, others as URLs.
@@ -1788,6 +1807,21 @@ QTF_API void qtf_qaction_setToolTip(void *self, const char *tip, int tip_len) {
 // Activate the action (emits triggered, and toggled if checkable).
 QTF_API void qtf_qaction_trigger(void *self) { as<QAction>(self)->trigger(); }
 
+// Use the platform's key sequences for a standard action (QKeySequence_Open, _Save, _Undo, ...).
+QTF_API void qtf_qaction_setStandardShortcut(void *self, int key) {
+    as<QAction>(self)->setShortcuts(QKeySequence::StandardKey(key));
+}
+
+// The shortcut as the platform shows it in menus (e.g. '⌘O' on macOS).
+QTF_API char *qtf_qaction_shortcutNativeText(void *self, int *len) {
+    return qtf_to_c(as<QAction>(self)->shortcut().toString(QKeySequence::NativeText), len);
+}
+
+// Where the shortcut works: Qt_WindowShortcut (default: in the action's window), Qt_ApplicationShortcut, Qt_WidgetShortcut, ...
+QTF_API void qtf_qaction_setShortcutContext(void *self, int context) {
+    as<QAction>(self)->setShortcutContext(Qt::ShortcutContext(context));
+}
+
 // Set the icon shown in menus and tool bars (the icon is copied).
 QTF_API void qtf_qaction_setIcon(void *self, void *icon) { as<QAction>(self)->setIcon(*as<QIcon>(icon)); }
 
@@ -2274,6 +2308,155 @@ QTF_API int qtf_qtfhighlightblock_position(void *self) {
 }
 
 // ---------------------------------------------------------------------------
+// QPalette
+
+// Release a palette.
+QTF_API void qtf_qpalette_delete(void *self) { delete as<QPalette>(self); }
+
+// A copy of the application's current palette.
+QTF_API void *qtf_qpalette_new(void) { return new QPalette(QGuiApplication::palette()); }
+
+// A palette derived from a button color (Qt computes the other roles).
+QTF_API void *qtf_qpalette_fromButton(int button_r, int button_g, int button_b, int button_a) {
+    return new QPalette(QColor(button_r, button_g, button_b, button_a));
+}
+
+// A palette derived from a button and a window color.
+QTF_API void *qtf_qpalette_fromButtonWindow(int button_r, int button_g, int button_b, int button_a, int window_r, int window_g, int window_b, int window_a) {
+    return new QPalette(QColor(button_r, button_g, button_b, button_a), QColor(window_r, window_g, window_b, window_a));
+}
+
+// Set the color of `role` (in all groups, or in one: QPalette_Active, _Inactive, _Disabled).
+QTF_API void qtf_qpalette_setColor(void *self, int role, int color_r, int color_g, int color_b, int color_a, int group) {
+    as<QPalette>(self)->setColor(QPalette::ColorGroup(group), QPalette::ColorRole(role), QColor(color_r, color_g, color_b, color_a));
+}
+
+// The color of `role` in `group`.
+QTF_API void qtf_qpalette_color(void *self, int role, int group, int *res_r, int *res_g, int *res_b, int *res_a) {
+    const auto v_ = as<QPalette>(self)->color(QPalette::ColorGroup(group), QPalette::ColorRole(role));
+    *res_r = v_.red();
+    *res_g = v_.green();
+    *res_b = v_.blue();
+    *res_a = v_.alpha();
+}
+
+// True if the window color is darker than the text color (a dark theme).
+QTF_API int qtf_qpalette_isDark(void *self) {
+    return qtf_bool(as<QPalette>(self)->color(QPalette::Window).lightness() < as<QPalette>(self)->color(QPalette::WindowText).lightness());
+}
+
+// True if both palettes have the same colors.
+QTF_API int qtf_qpalette_isEqual(void *self, void *other) {
+    return qtf_bool(*as<QPalette>(self) == *as<QPalette>(other));
+}
+
+// A copy (delete it when done).
+QTF_API void *qtf_qpalette_copy(void *self) { return new QPalette(*as<QPalette>(self)); }
+
+// ---------------------------------------------------------------------------
+// QActionGroup
+
+// An empty, exclusive group.
+QTF_API void *qtf_qactiongroup_new(void *parent) { return new QActionGroup(as<QObject>(parent)); }
+
+// Add an action (also add it to a menu or toolbar to show it).
+QTF_API void qtf_qactiongroup_addAction(void *self, void *action) {
+    as<QActionGroup>(self)->addAction(as<QAction>(action));
+}
+
+// Remove an action from the group.
+QTF_API void qtf_qactiongroup_removeAction(void *self, void *action) {
+    as<QActionGroup>(self)->removeAction(as<QAction>(action));
+}
+
+// The number of actions.
+QTF_API int qtf_qactiongroup_count(void *self) { return int(as<QActionGroup>(self)->actions().size()); }
+
+// The action at `index` (0-based; null if none).
+QTF_API void *qtf_qactiongroup_action(void *self, int index) {
+    return as<QActionGroup>(self)->actions().value(index, nullptr);
+}
+
+// The checked action (null if none).
+QTF_API void *qtf_qactiongroup_checkedAction(void *self) { return as<QActionGroup>(self)->checkedAction(); }
+
+// The index of the checked action (-1 if none).
+QTF_API int qtf_qactiongroup_checkedIndex(void *self) {
+    return int(as<QActionGroup>(self)->actions().indexOf(as<QActionGroup>(self)->checkedAction()));
+}
+
+// One checked action at a time (the default), or any number.
+QTF_API void qtf_qactiongroup_setExclusive(void *self, int exclusive) {
+    as<QActionGroup>(self)->setExclusive((exclusive != 0));
+}
+
+// True if at most one action is checked.
+QTF_API int qtf_qactiongroup_isExclusive(void *self) {
+    return qtf_bool(as<QActionGroup>(self)->isExclusive());
+}
+
+// QActionGroup_Exclusive (one is always checked), QActionGroup_ExclusiveOptional (at most one; clicking the checked one unchecks it) or QActionGroup_None.
+QTF_API void qtf_qactiongroup_setExclusionPolicy(void *self, int policy) {
+    as<QActionGroup>(self)->setExclusionPolicy(QActionGroup::ExclusionPolicy(policy));
+}
+
+// Enable or disable all the actions.
+QTF_API void qtf_qactiongroup_setEnabled(void *self, int enabled) {
+    as<QActionGroup>(self)->setEnabled((enabled != 0));
+}
+
+// Show or hide all the actions.
+QTF_API void qtf_qactiongroup_setVisible(void *self, int visible) {
+    as<QActionGroup>(self)->setVisible((visible != 0));
+}
+
+// ---------------------------------------------------------------------------
+// QShortcut
+
+// A shortcut for `key` in the window of `parent` (a widget), which owns it.
+QTF_API void *qtf_qshortcut_new(const char *key, int key_len, void *parent) {
+    return new QShortcut(QKeySequence::fromString(qtf_qstring(key, key_len), QKeySequence::PortableText), as<QObject>(parent));
+}
+
+// A shortcut for the platform's keys for a standard action.
+QTF_API void *qtf_qshortcut_fromStandardKey(int key, void *parent) {
+    return new QShortcut(QKeySequence::StandardKey(key), as<QObject>(parent));
+}
+
+// Change the keys (portable text).
+QTF_API void qtf_qshortcut_setKey(void *self, const char *key, int key_len) {
+    as<QShortcut>(self)->setKey(QKeySequence::fromString(qtf_qstring(key, key_len), QKeySequence::PortableText));
+}
+
+// The keys, in portable text.
+QTF_API char *qtf_qshortcut_key(void *self, int *len) {
+    return qtf_to_c(as<QShortcut>(self)->key().toString(QKeySequence::PortableText), len);
+}
+
+// The keys as the platform shows them.
+QTF_API char *qtf_qshortcut_nativeText(void *self, int *len) {
+    return qtf_to_c(as<QShortcut>(self)->key().toString(QKeySequence::NativeText), len);
+}
+
+// Enable or disable the shortcut.
+QTF_API void qtf_qshortcut_setEnabled(void *self, int enabled) {
+    as<QShortcut>(self)->setEnabled((enabled != 0));
+}
+
+// True if the shortcut is enabled.
+QTF_API int qtf_qshortcut_isEnabled(void *self) { return qtf_bool(as<QShortcut>(self)->isEnabled()); }
+
+// Where it works: Qt_WindowShortcut (default), Qt_WidgetShortcut (only when the parent has focus), Qt_WidgetWithChildrenShortcut, Qt_ApplicationShortcut.
+QTF_API void qtf_qshortcut_setContext(void *self, int context) {
+    as<QShortcut>(self)->setContext(Qt::ShortcutContext(context));
+}
+
+// Emit `activated` repeatedly while the keys are held (default: on).
+QTF_API void qtf_qshortcut_setAutoRepeat(void *self, int on) {
+    as<QShortcut>(self)->setAutoRepeat((on != 0));
+}
+
+// ---------------------------------------------------------------------------
 // functions
 
 // The system clipboard (needs the application object).
@@ -2325,6 +2508,41 @@ QTF_API void qtf_QCursor_pos(int *res_x, int *res_y) {
     const auto v_ = QCursor::pos();
     *res_x = v_.x();
     *res_y = v_.y();
+}
+
+// Whether the system (or the application, after QGuiApplication_setColorScheme) uses a light or dark appearance: Qt_ColorScheme_Light, Qt_ColorScheme_Dark or Qt_ColorScheme_Unknown.
+QTF_API int qtf_QGuiApplication_colorScheme(void) {
+    return int(QGuiApplication::styleHints()->colorScheme());
+}
+
+// Ask for a light or dark appearance (Qt_ColorScheme_Light, _Dark), or follow the system again (Qt_ColorScheme_Unknown). The platform may not support it; check QGuiApplication_colorScheme.
+QTF_API void qtf_QGuiApplication_setColorScheme(int scheme) {
+    QGuiApplication::styleHints()->setColorScheme(Qt::ColorScheme(scheme));
+}
+
+// Open a URL in the user's default application: a web page ('https://...') in the browser, 'mailto:...' in the mail program, or a local file or directory (a path) as if double-clicked. False if it could not be opened.
+QTF_API int qtf_QDesktopServices_openUrl(const char *url, int url_len) {
+    return qtf_bool(QDesktopServices::openUrl(qtf_url(qtf_qstring(url, url_len))));
+}
+
+// The platform's main key sequence for a standard action (QKeySequence_Open, _Undo, ...), in portable text, e.g. 'Ctrl+O' (Ctrl is Cmd on macOS); '' if the platform has none.
+QTF_API char *qtf_QKeySequence_standardKey(int key, int *len) {
+    return qtf_to_c(QKeySequence(QKeySequence::StandardKey(key)).toString(QKeySequence::PortableText), len);
+}
+
+// All of the platform's key sequences for a standard action (e.g. Redo is both 'Ctrl+Shift+Z' and 'Ctrl+Y' on some platforms), in portable text.
+QTF_API char *qtf_QKeySequence_standardKeyBindings(int key, int *len) {
+    return qtf_list_to_c(qtf_key_bindings(QKeySequence::StandardKey(key)), len);
+}
+
+// A key sequence in portable text ('Ctrl+Shift+S') as the platform shows it in menus (e.g. '⇧⌘S' on macOS).
+QTF_API char *qtf_QKeySequence_nativeText(const char *sequence, int sequence_len, int *len) {
+    return qtf_to_c(QKeySequence::fromString(qtf_qstring(sequence, sequence_len), QKeySequence::PortableText).toString(QKeySequence::NativeText), len);
+}
+
+// A key sequence in the platform's native text as portable text.
+QTF_API char *qtf_QKeySequence_portableText(const char *sequence, int sequence_len, int *len) {
+    return qtf_to_c(QKeySequence::fromString(qtf_qstring(sequence, sequence_len), QKeySequence::NativeText).toString(QKeySequence::PortableText), len);
 }
 
 // The system's fixed-pitch (monospace) font family, e.g. for a code editor: `call editor%setFont(QFont(QFontDatabase_fixedFamily(), 12d0))`.
@@ -2380,6 +2598,18 @@ static const bool qtf_gui_registered = [] {
         return qtf_track(ref, QObject::connect(as<QTextDocument>(s), &QTextDocument::redoAvailable, as<QTextDocument>(s), [ref](bool v) { qtf_emit_bool(ref, v); }));
     });
     qtf_register_connector(QTF_SIG_QTFSYNTAXHIGHLIGHTER_HIGHLIGHTBLOCK, connect_highlighter);
+    qtf_register_connector(QTF_SIG_QACTIONGROUP_TRIGGERED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QActionGroup>(s), &QActionGroup::triggered, as<QActionGroup>(s), [ref, s](QAction *a) { qtf_emit_int(ref, int(as<QActionGroup>(s)->actions().indexOf(a))); }));
+    });
+    qtf_register_connector(QTF_SIG_QACTIONGROUP_HOVERED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QActionGroup>(s), &QActionGroup::hovered, as<QActionGroup>(s), [ref, s](QAction *a) { qtf_emit_int(ref, int(as<QActionGroup>(s)->actions().indexOf(a))); }));
+    });
+    qtf_register_connector(QTF_SIG_QSHORTCUT_ACTIVATED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QShortcut>(s), &QShortcut::activated, as<QShortcut>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QSHORTCUT_ACTIVATEDAMBIGUOUSLY, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QShortcut>(s), &QShortcut::activatedAmbiguously, as<QShortcut>(s), [ref]() { qtf_emit(ref); }));
+    });
     return true;
 }();
 

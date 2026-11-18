@@ -16,7 +16,14 @@ uses = [
     "use qt_gui",
     "use qt_geometry",
 ]
-handle_types = ["QPixmap", "QImage", "QIcon", "QPainter", "QTextCursor"]
+handle_types = ["QPixmap", "QImage", "QIcon", "QPainter", "QTextCursor", "QPalette"]
+functions = [
+    { sig = "QToolTip_showText(x: int, y: int, text: string, widget: QWidget?)", cpp = "QToolTip::showText(QPoint({x}, {y}), {text}, {widget})", doc = "Show a tool tip with `text` at screen position (x, y) (e.g. from `w%mapToGlobal`), now; '' hides it. With `widget`, it hides when the mouse leaves that widget." },
+    { sig = "QToolTip_hideText()", cpp = "QToolTip::hideText()", doc = "Hide the tool tip." },
+    { sig = "QToolTip_isVisible() -> bool", cpp = "QToolTip::isVisible()", doc = "True if a tool tip is shown." },
+    { sig = "QToolTip_text() -> string", cpp = "QToolTip::text()", doc = "The text of the tool tip shown ('' if none)." },
+    { sig = "QStyleFactory_keys() -> strings", cpp = "QStyleFactory::keys()", doc = "The names of the available styles (e.g. 'Fusion', 'Windows', 'macOS'), for QApplication_setStyle." },
+]
 cpp_includes = [
     "QAction", "QApplication", "QBoxLayout", "QCheckBox", "QComboBox", "QDialog", "QDoubleSpinBox",
     "QFileDialog", "QGridLayout", "QLabel", "QLineEdit", "QMainWindow", "QMenu", "QMenuBar",
@@ -34,11 +41,20 @@ cpp_includes = [
     "QStringListModel", "QUrl", "QFileInfo", "QValidator", "QDateTime",
     "QBrush", "QColor", "QCursor", "QDragEnterEvent", "QDragLeaveEvent", "QDragMoveEvent", "QDropEvent", "QFont",
     "QListView", "QPainter", "QScreen", "QStyleOptionViewItem", "map",
-    "QMimeData", "algorithm",
+    "QMimeData", "algorithm", "QStyleFactory", "QToolTip", "QStackedLayout", "QTabBar", "QAbstractScrollArea",
+    "QPalette",
     "QTextCursor", "QTextDocument", "QTextBlock", "QTextCharFormat", "QScrollBar",
 ]
 
 cpp_prelude = """
+// Use the style called `name` (QStyleFactory::keys); false if there is none.
+static bool qtf_set_style(const QString &name) {
+    QStyle *style = QStyleFactory::create(name);
+    if (!style) return false;
+    QApplication::setStyle(style);
+    return true;
+}
+
 // QApplication keeps references to argc/argv, so they must outlive it.
 static int qtf_argc = 0;
 static std::vector<std::string> qtf_arg_strings;
@@ -1759,6 +1775,21 @@ values = [
 ]
 
 [[enum]]
+doc = "QHeaderView::ResizeMode"
+values = ["QHeaderView_Interactive = 0", "QHeaderView_Stretch = 1", "QHeaderView_Fixed = 2", "QHeaderView_ResizeToContents = 3"]
+
+[[enum]]
+doc = "QStackedLayout::StackingMode"
+values = ["QStackedLayout_StackOne = 0", "QStackedLayout_StackAll = 1"]
+
+[[enum]]
+doc = "QTabBar::Shape"
+values = [
+    "QTabBar_RoundedNorth = 0", "QTabBar_RoundedSouth = 1", "QTabBar_RoundedWest = 2", "QTabBar_RoundedEast = 3",
+    "QTabBar_TriangularNorth = 4", "QTabBar_TriangularSouth = 5", "QTabBar_TriangularWest = 6", "QTabBar_TriangularEast = 7",
+]
+
+[[enum]]
 doc = "Qt::SortOrder"
 values = ["Qt_AscendingOrder = 0", "Qt_DescendingOrder = 1"]
 
@@ -1915,6 +1946,10 @@ methods = [
     "static setOrganizationDomain(domain: string) -- Set the organization's Internet domain (used by QSettings on macOS).",
     "static setApplicationName(name: string) -- Set the application name (used by QSettings and in dialogs).",
     "static applicationName() -> string -- The application name.",
+    { sig = "static setStyle(name: string) -> bool", cpp = "qtf_set_style({name})", doc = "Use the style `name` for all widgets (one of QStyleFactory_keys(), e.g. 'Fusion', which looks the same on every platform and follows palettes fully); false if there is no such style." },
+    { sig = "static styleName() -> string", cpp = "QApplication::style()->name()", doc = "The name of the current style (lower case, e.g. 'fusion')." },
+    { sig = "static setPalette(palette: QPalette)", cpp = "QApplication::setPalette(*{palette})", doc = "Use `palette` (copied) for all widgets, e.g. a dark theme." },
+    { sig = "static palette() -> QPalette", cpp = "new QPalette(QApplication::palette())", doc = "A copy of the application's palette (delete it when done)." },
 ]
 
 [[class]]
@@ -2024,6 +2059,9 @@ methods = [
     "mapTo(parent: QWidget, p: QPoint) -> QPoint -- A point in widget coordinates as coordinates of `parent` (an ancestor).",
     "mapFrom(parent: QWidget, p: QPoint) -> QPoint -- A point in the coordinates of `parent` (an ancestor) as widget coordinates.",
     "childAt(p: QPoint) -> QWidget -- The visible child widget at `p` (a null handle if none).",
+    { sig = "setPalette(palette: QPalette)", cpp = "{self}->setPalette(*{palette})", doc = "Use `palette` (copied) for this widget and its children." },
+    { sig = "palette() -> QPalette", cpp = "new QPalette({self}->palette())", doc = "A copy of the widget's palette (delete it when done)." },
+    "setAutoFillBackground(enabled: bool) -- Fill the background with the palette's window color (e.g. for a widget with its own palette).",
 ]
 cpp = """
 // Set a widget's font from the fields of a Fortran QFont (an empty family or
@@ -2136,6 +2174,22 @@ methods = [
     "frameShape() -> QFrame::Shape -- The frame shape.",
     "setFrameShadow(shadow: QFrame::Shadow) -- Set the shadow (QFrame_Plain, QFrame_Raised, QFrame_Sunken).",
     "setLineWidth(width: int) -- Set the frame line width in pixels.",
+]
+
+[[class]]
+name = "QAbstractScrollArea"
+base = "QFrame"
+doc = """
+Base of the widgets that scroll their contents: item views, text editors,
+QScrollArea, QMdiArea. The contents are drawn on the `viewport()`; the
+scroll bars are QScrollBars (e.g. to follow or set the scroll position,
+or to keep two views scrolled together)."""
+methods = [
+    { sig = "viewport() -> QWidget", doc = "The widget the contents are drawn on, which gets the mouse events (e.g. for a QtfEventFilter; for item views, mouse and drop positions are relative to it)." },
+    "verticalScrollBar() -> QScrollBar -- The vertical scroll bar (its value is the scroll position).",
+    "horizontalScrollBar() -> QScrollBar -- The horizontal scroll bar.",
+    "setVerticalScrollBarPolicy(policy: Qt::ScrollBarPolicy) -- When to show the vertical scroll bar (Qt_ScrollBarAsNeeded, _AlwaysOff, _AlwaysOn).",
+    "setHorizontalScrollBarPolicy(policy: Qt::ScrollBarPolicy) -- When to show the horizontal scroll bar.",
 ]
 
 [[class]]
@@ -2301,6 +2355,23 @@ doc = "A horizontal or vertical slider."
 ctor = "(orientation: Qt::Orientation = Qt_Vertical, parent: QWidget?) -- A slider; `orientation` is Qt_Horizontal or Qt_Vertical (default, as in Qt)."
 
 [[class]]
+name = "QScrollBar"
+base = "QAbstractSlider"
+doc = """
+A scroll bar: a slider whose value is a scroll position. Get the ones of
+a scrolling widget with `verticalScrollBar()` / `horizontalScrollBar()`;
+`valueChanged` follows the scrolling and `setValue` scrolls."""
+ctor = "(orientation: Qt::Orientation = Qt_Vertical, parent: QWidget?) -- A standalone scroll bar."
+cpp_ctor = "new QScrollBar(Qt::Orientation({orientation}), {parent})"
+signals = [
+    "rangeChanged: int2 -- The range changed (e.g. the contents grew): slots get (minimum, maximum).",
+]
+methods = [
+    "pageStep() -> int -- The page step (the visible extent, for a scroll area's scroll bar).",
+    "singleStep() -> int -- The step of the arrow buttons and keys.",
+]
+
+[[class]]
 name = "QComboBox"
 base = "QWidget"
 doc = "A drop-down list of items."
@@ -2396,6 +2467,31 @@ methods = [
 
 # ---------------------------------------------------------------------------
 # main window, menus, tool bars
+
+[[class]]
+name = "QStackedLayout"
+base = "QLayout"
+doc = """
+A layout showing one of its widgets at a time, e.g. the pages selected by a
+standalone QTabBar or a list. Indices are 0-based. (QStackedWidget is the
+same as a widget.)"""
+ctor = "(parent: QWidget?) -- A stacked layout (installed on `parent` if given)."
+signals = [
+    "currentChanged: int -- The visible widget changed (its index).",
+    "widgetRemoved: int -- A widget was removed (its index).",
+]
+methods = [
+    { sig = "addWidget(widget: QWidget)", cpp = "{self}->addWidget({widget})", doc = "Append a widget (hidden unless it is the current one)." },
+    { sig = "insertWidget(index: int, widget: QWidget)", cpp = "{self}->insertWidget({index}, {widget})", doc = "Insert a widget before `index`." },
+    "removeWidget(widget: QWidget) -- Remove a widget (it is not deleted).",
+    "currentIndex() -> int -- Index of the visible widget (-1 if none).",
+    "setCurrentIndex(index: int) -- Show the widget at `index`.",
+    "setCurrentWidget(widget: QWidget) -- Show `widget`.",
+    "currentWidget() -> QWidget -- The visible widget (null if none).",
+    "widget(index: int) -> QWidget -- The widget at `index` (null if none).",
+    "setStackingMode(mode: QStackedLayout::StackingMode) -- QStackedLayout_StackOne (only the current widget is visible, the default) or QStackedLayout_StackAll (all are, the current one on top).",
+    "stackingMode() -> QStackedLayout::StackingMode -- The stacking mode.",
+]
 
 [[class]]
 name = "QStatusBar"
@@ -2669,7 +2765,7 @@ cpp_ctor = "new QtfListModel({rows}, {parent})"
 
 [[class]]
 name = "QAbstractItemView"
-base = "QFrame"
+base = "QAbstractScrollArea"
 doc = "Base of the item views (tables, lists, trees)."
 signals = [
     { sig = "clicked: custom", fortran_type = "QSignalInt2", lambda = "const QModelIndex &i", emit = "qtf_emit_ints(ref, {i.row(), i.column()})", doc = "A cell was clicked: (row, column)." },
@@ -2689,7 +2785,6 @@ methods = [
     "clearSelection() -- Deselect everything.",
     "scrollToTop() -- Scroll to the first row.",
     "scrollToBottom() -- Scroll to the last row.",
-    { sig = "viewport() -> QWidget", doc = "The widget the items are drawn on: mouse and drop positions are relative to it (e.g. for a QtfEventFilter)." },
     "setDragEnabled(enable: bool) -- Let the user drag the selected items (the model must allow it: e.g. QtfTableModel%setDragEnabled).",
     "dragEnabled() -> bool -- True if items can be dragged.",
     "setDragDropMode(mode: QAbstractItemView::DragDropMode) -- QAbstractItemView_DragOnly, _DropOnly, _DragDrop, _InternalMove (reorder within the view only) or _NoDragDrop; sets dragEnabled and acceptDrops to match.",
@@ -2703,11 +2798,69 @@ methods = [
 ]
 
 [[class]]
+name = "QHeaderView"
+base = "QAbstractItemView"
+doc = """
+The row or column titles of a table or tree view: `table%horizontalHeader()`,
+`table%verticalHeader()`, `tree%header()`. Sections are numbered by model
+column (or row): the logical index, which stays the same when the user
+moves sections; their order on screen is the visual index."""
+ctor = "(orientation: Qt::Orientation, parent: QWidget?) -- A header (views make their own)."
+cpp_ctor = "new QHeaderView(Qt::Orientation({orientation}), {parent})"
+signals = [
+    "sectionClicked: int -- A section was clicked: its logical index.",
+    "sectionDoubleClicked: int -- A section was double-clicked.",
+    "sectionResized: int3 -- A section was resized: (logicalIndex, oldSize, newSize).",
+    "sectionMoved: int3 -- A section was moved: (logicalIndex, oldVisualIndex, newVisualIndex).",
+    "sortIndicatorChanged: int2 -- The sort indicator changed: (logicalIndex, order) with order Qt_AscendingOrder or Qt_DescendingOrder.",
+]
+methods = [
+    { sig = "setSectionResizeModeAll(mode: QHeaderView::ResizeMode)", fortran_name = "setSectionResizeMode", cpp = "{self}->setSectionResizeMode(QHeaderView::ResizeMode({mode}))", doc = "How all sections are sized: QHeaderView_Interactive (by the user, the default), _Stretch (fill the view), _Fixed or _ResizeToContents." },
+    { sig = "setSectionResizeModeOf(logicalIndex: int, mode: QHeaderView::ResizeMode)", fortran_name = "setSectionResizeMode", cpp = "{self}->setSectionResizeMode({logicalIndex}, QHeaderView::ResizeMode({mode}))", doc = "How one section is sized." },
+    "sectionResizeMode(logicalIndex: int) -> QHeaderView::ResizeMode -- How a section is sized.",
+    "resizeSection(logicalIndex: int, size: int) -- Set a section's width (or height), in pixels.",
+    "sectionSize(logicalIndex: int) -> int -- A section's width (or height).",
+    "sectionPosition(logicalIndex: int) -> int -- Where a section starts (from the header's start, ignoring scrolling).",
+    "resizeSections(mode: QHeaderView::ResizeMode) -- Resize all sections once by `mode` (e.g. QHeaderView_ResizeToContents).",
+    "setDefaultSectionSize(size: int) -- The size of new sections.",
+    "defaultSectionSize() -> int -- The size of new sections.",
+    "setMinimumSectionSize(size: int) -- The smallest size the user can give a section.",
+    "minimumSectionSize() -> int -- The smallest section size.",
+    "setMaximumSectionSize(size: int) -- The largest section size.",
+    "setStretchLastSection(stretch: bool) -- Let the last section fill the remaining space.",
+    "stretchLastSection() -> bool -- True if the last section fills the remaining space.",
+    "setSectionsMovable(movable: bool) -- Let the user reorder sections by dragging them.",
+    "sectionsMovable() -> bool -- True if sections can be moved.",
+    "setSectionsClickable(clickable: bool) -- Make sections clickable (emitting `sectionClicked`; needed for sorting).",
+    "sectionsClickable() -> bool -- True if sections are clickable.",
+    "setSortIndicator(logicalIndex: int, order: Qt::SortOrder) -- Show the sort arrow on a section (with a sorting view, also sorts).",
+    "sortIndicatorSection() -> int -- The section with the sort arrow (-1 if none).",
+    "sortIndicatorOrder() -> Qt::SortOrder -- The sort order shown (Qt_AscendingOrder or Qt_DescendingOrder).",
+    "setSortIndicatorShown(show: bool) -- Show the sort arrow.",
+    "isSortIndicatorShown() -> bool -- True if the sort arrow is shown.",
+    "setSectionHidden(logicalIndex: int, hide: bool) -- Hide or show a section.",
+    "isSectionHidden(logicalIndex: int) -> bool -- True if the section is hidden.",
+    "hideSection(logicalIndex: int) -- Hide a section.",
+    "showSection(logicalIndex: int) -- Show a hidden section.",
+    "count() -> int -- The number of sections.",
+    "length() -> int -- The total size of the sections.",
+    "moveSection(from: int, to: int) -- Move the section at visual index `from` to visual index `to`.",
+    "visualIndex(logicalIndex: int) -> int -- Where a section is on screen (its visual index).",
+    "logicalIndex(visualIndex: int) -> int -- The section at a visual index.",
+    "logicalIndexAt(position: int) -> int -- The section at a position along the header (-1 if none).",
+    "setHighlightSections(highlight: bool) -- Highlight the sections of selected items.",
+    "setDefaultAlignment(alignment: Qt::Alignment) -- The alignment of the section titles.",
+    "orientation() -> Qt::Orientation -- Qt_Horizontal (column titles) or Qt_Vertical (row titles).",
+]
+
+[[class]]
 name = "QTableView"
 base = "QAbstractItemView"
 doc = "A table view of a model (use QtfTableModel to show Fortran data)."
 ctor = "(parent: QWidget?) -- Create a table view."
 methods = [
+    "horizontalHeader() -> QHeaderView -- The column titles.",
+    "verticalHeader() -> QHeaderView -- The row titles.",
     "resizeColumnsToContents() -- Fit the column widths to their contents.",
     "resizeRowsToContents() -- Fit the row heights to their contents.",
     "setColumnWidth(column: int, width: int) -- Set a column width in pixels.",
@@ -2783,6 +2936,7 @@ methods = [
     { sig = "currentFilePath() -> string", cpp = "qtf_file_path({self}->currentIndex())", doc = "The path of the current file of a QFileSystemModel (empty if none)." },
     { sig = "setCurrentFile(path: string)", cpp = "qtf_set_current_file({self}, {path})", doc = "Make the file `path` of the QFileSystemModel current." },
     { sig = "setRootPath(path: string)", cpp = "qtf_set_root_path({self}, {path})", doc = "Show only the directory `path` of the QFileSystemModel (set the model's root path too)." },
+    "header() -> QHeaderView -- The column titles.",
     "expandAll() -- Expand every node.",
     "collapseAll() -- Collapse every node.",
     "expandToDepth(depth: int) -- Expand nodes down to `depth` levels (0: the top level).",
@@ -3074,6 +3228,7 @@ signals = [
     { sig = "itemCollapsed: custom", fortran_type = "QSignalTreeItem", lambda = "QTreeWidgetItem *item", emit = "qtf_emit_ptr(ref, item)", doc = "An item was collapsed." },
 ]
 methods = [
+    "header() -> QHeaderView -- The column titles.",
     "setColumnCount(columns: int) -- Set the number of columns.",
     "columnCount() -> int -- Number of columns.",
     "setHeaderLabels(labels: strings) -- Set the column titles.",
@@ -3096,7 +3251,7 @@ methods = [
 
 [[class]]
 name = "QTextEdit"
-base = "QFrame"
+base = "QAbstractScrollArea"
 doc = "A multi-line rich-text editor (plain text, HTML or Markdown)."
 ctor = "(text: string = '', parent: QWidget?) -- An editor with initial plain `text`."
 signals = ["textChanged: void -- The text changed."]
@@ -3121,7 +3276,7 @@ methods = [
 
 [[class]]
 name = "QPlainTextEdit"
-base = "QFrame"
+base = "QAbstractScrollArea"
 doc = """
 A multi-line plain-text editor, efficient for large text and logs. For a log
 console: setReadOnly(.true.), setMaximumBlockCount(n), appendPlainText(line).
@@ -3184,9 +3339,6 @@ methods = [
     "setCursorWidth(width: int) -- The width of the text cursor, in pixels.",
     "setCenterOnScroll(enabled: bool) -- Allow scrolling past the end, so the last line can be centered.",
     { sig = "setUndoRedoEnabled(enable: bool)", doc = "Record edits for undo (the default) or not." },
-    { sig = "viewport() -> QWidget", doc = "The widget the text is drawn on, which gets the mouse events (e.g. for a QtfEventFilter)." },
-    { sig = "verticalScrollValue() -> int", cpp = "{self}->verticalScrollBar()->value()", doc = "The vertical scroll position (the first visible line, for plain text)." },
-    { sig = "setVerticalScrollValue(value: int)", cpp = "{self}->verticalScrollBar()->setValue({value})", doc = "Scroll vertically (to make line `value` the first visible one)." },
     { sig = "addExtraSelection(start: int, end: int, format: QTextCharFormat, fullWidth: bool = .false.)", cpp = "qtf_add_extra_selections({self}, &{start}, &{end}, 1, {format}, {fullWidth})", doc = "Show text from position `start` to `end` with `format` (e.g. a background color), without changing the text. `fullWidth`: color the whole line (with start = end, e.g. the current line)." },
     { sig = "addExtraSelections(starts: int[], ends: int[], format: QTextCharFormat, fullWidth: bool = .false.)", cpp = "qtf_add_extra_selections({self}, {starts}, {ends}, {n}, {format}, {fullWidth})", doc = "Add many extra selections with the same format (e.g. all search matches): from `starts(i)` to `ends(i)`." },
     { sig = "clearExtraSelections()", cpp = "{self}->setExtraSelections(QList<QTextEdit::ExtraSelection>())", doc = "Remove all extra selections." },
@@ -3287,6 +3439,58 @@ methods = [
 ]
 
 [[class]]
+name = "QTabBar"
+base = "QWidget"
+doc = """
+A row of tabs on its own, without pages (QTabWidget has both): for
+documents in an editor, or pages in a QStackedLayout. Indices are 0-based.
+Each tab can carry an integer (`setTabData`), e.g. an index into your own
+arrays, which follows the tab when it is moved."""
+ctor = "(parent: QWidget?) -- An empty tab bar."
+signals = [
+    "currentChanged: int -- The current tab changed (its index; -1 when none is left).",
+    "tabCloseRequested: int -- The close button of a tab was clicked (see setTabsClosable).",
+    "tabMoved: int2 -- The user moved a tab: (from, to).",
+    "tabBarClicked: int -- A tab was clicked (its index; -1 for empty space).",
+    "tabBarDoubleClicked: int -- A tab was double-clicked.",
+]
+methods = [
+    { sig = "addTab(text: string)", cpp = "{self}->addTab({text})", doc = "Append a tab." },
+    { sig = "addTabIcon(icon: QIcon, text: string)", fortran_name = "addTab", cpp = "{self}->addTab(*{icon}, {text})", doc = "Append a tab with an icon." },
+    { sig = "insertTab(index: int, text: string)", cpp = "{self}->insertTab({index}, {text})", doc = "Insert a tab before `index`." },
+    "removeTab(index: int) -- Remove a tab.",
+    "moveTab(from: int, to: int) -- Move a tab.",
+    "count() -> int -- The number of tabs.",
+    "currentIndex() -> int -- The current tab (-1 if none).",
+    "setCurrentIndex(index: int) -- Make a tab current.",
+    "setTabText(index: int, text: string) -- Change a tab's text.",
+    "tabText(index: int) -> string -- A tab's text.",
+    "setTabToolTip(index: int, tip: string) -- A tab's tool tip.",
+    "tabToolTip(index: int) -> string -- A tab's tool tip.",
+    { sig = "setTabIcon(index: int, icon: QIcon)", cpp = "{self}->setTabIcon({index}, *{icon})", doc = "Show an icon on a tab (copied)." },
+    "setTabTextColor(index: int, color: QColor) -- A tab's text color.",
+    "tabTextColor(index: int) -> QColor -- A tab's text color.",
+    "setTabEnabled(index: int, enabled: bool) -- Enable or disable a tab.",
+    "isTabEnabled(index: int) -> bool -- True if the tab is enabled.",
+    "setTabVisible(index: int, visible: bool) -- Show or hide a tab.",
+    "isTabVisible(index: int) -> bool -- True if the tab is shown.",
+    { sig = "setTabData(index: int, value: int)", cpp = "{self}->setTabData({index}, {value})", doc = "Attach an integer to a tab (e.g. an index into your arrays); it moves with the tab." },
+    { sig = "tabData(index: int) -> int", cpp = "{self}->tabData({index}).toInt()", doc = "The integer attached to a tab (0 if none)." },
+    { sig = "tabAt(x: int, y: int) -> int", cpp = "{self}->tabAt(QPoint({x}, {y}))", doc = "The tab at point (x, y) of the bar (-1 if none)." },
+    "tabRect(index: int) -> QRect -- A tab's rectangle in the bar.",
+    "setTabsClosable(closable: bool) -- Show close buttons on the tabs (they emit tabCloseRequested).",
+    "tabsClosable() -> bool -- True if tabs have close buttons.",
+    "setMovable(movable: bool) -- Let the user reorder the tabs (emitting tabMoved).",
+    "isMovable() -> bool -- True if tabs can be reordered.",
+    "setExpanding(enabled: bool) -- Stretch the tabs to fill the bar.",
+    "setDocumentMode(set: bool) -- A flatter, document-style look.",
+    "setDrawBase(drawBase: bool) -- Draw the base line under the tabs.",
+    "setUsesScrollButtons(useButtons: bool) -- Scroll buttons when the tabs do not fit (or elide/shrink them).",
+    "setElideMode(mode: Qt::TextElideMode) -- Shorten long tab texts (Qt_ElideRight, ...; Qt_ElideNone).",
+    "setShape(shape: QTabBar::Shape) -- The tab shape and side: QTabBar_RoundedNorth (default), _RoundedSouth, _RoundedWest, _RoundedEast, or Triangular*.",
+]
+
+[[class]]
 name = "QStackedWidget"
 base = "QFrame"
 doc = "A stack of widgets of which one is visible at a time. Indices are 0-based."
@@ -3328,7 +3532,7 @@ methods = [
 
 [[class]]
 name = "QScrollArea"
-base = "QFrame"
+base = "QAbstractScrollArea"
 doc = "Shows a (large) widget through a scrollable viewport."
 ctor = "(parent: QWidget?) -- Create an empty scroll area."
 methods = [
@@ -3336,8 +3540,6 @@ methods = [
     "widget() -> QWidget -- The scrolled widget (null if none).",
     "setWidgetResizable(resizable: bool) -- Resize the widget to fill the area when it is smaller.",
     "widgetResizable() -> bool -- True if the widget is resized to fill the area.",
-    "setHorizontalScrollBarPolicy(policy: Qt::ScrollBarPolicy) -- When to show the horizontal scroll bar.",
-    "setVerticalScrollBarPolicy(policy: Qt::ScrollBarPolicy) -- When to show the vertical scroll bar.",
     "ensureVisible(x: int, y: int) -- Scroll so that point (x, y) of the widget is visible.",
     "setAlignment(alignment: Qt::Alignment) -- Where the widget sits when smaller than the area.",
 ]
@@ -3770,7 +3972,7 @@ methods = [
 
 [[class]]
 name = "QMdiArea"
-base = "QFrame"
+base = "QAbstractScrollArea"
 doc = """
 A multiple-document area: several sub-windows inside one main window
 (typically its central widget), shown as windows or as tabs."""

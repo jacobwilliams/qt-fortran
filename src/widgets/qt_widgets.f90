@@ -118,6 +118,26 @@ module qt_widgets
     integer(c_int), parameter, public :: Qt_ItemIsUserCheckable = 16
     integer(c_int), parameter, public :: Qt_ItemIsEnabled = 32
 
+    ! QHeaderView::ResizeMode
+    integer(c_int), parameter, public :: QHeaderView_Interactive = 0
+    integer(c_int), parameter, public :: QHeaderView_Stretch = 1
+    integer(c_int), parameter, public :: QHeaderView_Fixed = 2
+    integer(c_int), parameter, public :: QHeaderView_ResizeToContents = 3
+
+    ! QStackedLayout::StackingMode
+    integer(c_int), parameter, public :: QStackedLayout_StackOne = 0
+    integer(c_int), parameter, public :: QStackedLayout_StackAll = 1
+
+    ! QTabBar::Shape
+    integer(c_int), parameter, public :: QTabBar_RoundedNorth = 0
+    integer(c_int), parameter, public :: QTabBar_RoundedSouth = 1
+    integer(c_int), parameter, public :: QTabBar_RoundedWest = 2
+    integer(c_int), parameter, public :: QTabBar_RoundedEast = 3
+    integer(c_int), parameter, public :: QTabBar_TriangularNorth = 4
+    integer(c_int), parameter, public :: QTabBar_TriangularSouth = 5
+    integer(c_int), parameter, public :: QTabBar_TriangularWest = 6
+    integer(c_int), parameter, public :: QTabBar_TriangularEast = 7
+
     ! Qt::SortOrder
     integer(c_int), parameter, public :: Qt_AscendingOrder = 0
     integer(c_int), parameter, public :: Qt_DescendingOrder = 1
@@ -448,6 +468,9 @@ module qt_widgets
         procedure :: mapTo => qwidget_mapTo
         procedure :: mapFrom => qwidget_mapFrom
         procedure :: childAt => qwidget_childAt
+        procedure :: setPalette => qwidget_setPalette
+        procedure :: palette => qwidget_palette
+        procedure :: setAutoFillBackground => qwidget_setAutoFillBackground
         procedure :: setFont => qwidget_setFont
         procedure :: font => qwidget_font
         procedure :: textWidth => qwidget_textWidth
@@ -496,6 +519,19 @@ module qt_widgets
     interface QFrame
         module procedure :: qframe_new
     end interface QFrame
+
+    !> Base of the widgets that scroll their contents: item views, text editors,
+    !> QScrollArea, QMdiArea. The contents are drawn on the `viewport()`; the
+    !> scroll bars are QScrollBars (e.g. to follow or set the scroll position,
+    !> or to keep two views scrolled together).
+    type, extends(QFrame), public :: QAbstractScrollArea
+    contains
+        procedure :: viewport => qabstractscrollarea_viewport
+        procedure :: verticalScrollBar => qabstractscrollarea_verticalScrollBar
+        procedure :: horizontalScrollBar => qabstractscrollarea_horizontalScrollBar
+        procedure :: setVerticalScrollBarPolicy => qabstractscrollarea_setVerticalScrollBarPolicy
+        procedure :: setHorizontalScrollBarPolicy => qabstractscrollarea_setHorizontalScrollBarPolicy
+    end type QAbstractScrollArea
 
     !> Displays text.
     type, extends(QFrame), public :: QLabel
@@ -658,6 +694,21 @@ module qt_widgets
         module procedure :: qslider_new
     end interface QSlider
 
+    !> A scroll bar: a slider whose value is a scroll position. Get the ones of
+    !> a scrolling widget with `verticalScrollBar()` / `horizontalScrollBar()`;
+    !> `valueChanged` follows the scrolling and `setValue` scrolls.
+    type, extends(QAbstractSlider), public :: QScrollBar
+        type(QSignalInt2) :: rangeChanged   !! The range changed (e.g. the contents grew): slots get (minimum, maximum).
+    contains
+        procedure :: attach => qscrollbar_attach
+        procedure :: pageStep => qscrollbar_pageStep
+        procedure :: singleStep => qscrollbar_singleStep
+    end type QScrollBar
+    !> Constructor: `QScrollBar([orientation, parent])`.
+    interface QScrollBar
+        module procedure :: qscrollbar_new
+    end interface QScrollBar
+
     !> A drop-down list of items.
     type, extends(QWidget), public :: QComboBox
         type(QSignalInt) :: currentIndexChanged   !! The current item changed (0-based index; -1 if none).
@@ -738,6 +789,30 @@ module qt_widgets
     interface QGridLayout
         module procedure :: qgridlayout_new
     end interface QGridLayout
+
+    !> A layout showing one of its widgets at a time, e.g. the pages selected by a
+    !> standalone QTabBar or a list. Indices are 0-based. (QStackedWidget is the
+    !> same as a widget.)
+    type, extends(QLayout), public :: QStackedLayout
+        type(QSignalInt) :: currentChanged   !! The visible widget changed (its index).
+        type(QSignalInt) :: widgetRemoved   !! A widget was removed (its index).
+    contains
+        procedure :: attach => qstackedlayout_attach
+        procedure :: addWidget => qstackedlayout_addWidget
+        procedure :: insertWidget => qstackedlayout_insertWidget
+        procedure :: removeWidget => qstackedlayout_removeWidget
+        procedure :: currentIndex => qstackedlayout_currentIndex
+        procedure :: setCurrentIndex => qstackedlayout_setCurrentIndex
+        procedure :: setCurrentWidget => qstackedlayout_setCurrentWidget
+        procedure :: currentWidget => qstackedlayout_currentWidget
+        procedure :: widget => qstackedlayout_widget
+        procedure :: setStackingMode => qstackedlayout_setStackingMode
+        procedure :: stackingMode => qstackedlayout_stackingMode
+    end type QStackedLayout
+    !> Constructor: `QStackedLayout([parent])`.
+    interface QStackedLayout
+        module procedure :: qstackedlayout_new
+    end interface QStackedLayout
 
     !> The status bar at the bottom of a main window.
     type, extends(QWidget), public :: QStatusBar
@@ -986,7 +1061,7 @@ module qt_widgets
     end interface QtfListModel
 
     !> Base of the item views (tables, lists, trees).
-    type, extends(QFrame), public :: QAbstractItemView
+    type, extends(QAbstractScrollArea), public :: QAbstractItemView
         type(QSignalInt2) :: clicked   !! A cell was clicked: (row, column).
         type(QSignalInt2) :: doubleClicked   !! A cell was double-clicked: (row, column).
         type(QSignalInt2) :: activated   !! A cell was activated (double-click or Enter): (row, column).
@@ -1004,7 +1079,6 @@ module qt_widgets
         procedure :: clearSelection => qabstractitemview_clearSelection
         procedure :: scrollToTop => qabstractitemview_scrollToTop
         procedure :: scrollToBottom => qabstractitemview_scrollToBottom
-        procedure :: viewport => qabstractitemview_viewport
         procedure :: setDragEnabled => qabstractitemview_setDragEnabled
         procedure :: dragEnabled => qabstractitemview_dragEnabled
         procedure :: setDragDropMode => qabstractitemview_setDragDropMode
@@ -1017,9 +1091,65 @@ module qt_widgets
         procedure :: dragDropOverwriteMode => qabstractitemview_dragDropOverwriteMode
     end type QAbstractItemView
 
+    !> The row or column titles of a table or tree view: `table%horizontalHeader()`,
+    !> `table%verticalHeader()`, `tree%header()`. Sections are numbered by model
+    !> column (or row): the logical index, which stays the same when the user
+    !> moves sections; their order on screen is the visual index.
+    type, extends(QAbstractItemView), public :: QHeaderView
+        type(QSignalInt) :: sectionClicked   !! A section was clicked: its logical index.
+        type(QSignalInt) :: sectionDoubleClicked   !! A section was double-clicked.
+        type(QSignalInt3) :: sectionResized   !! A section was resized: (logicalIndex, oldSize, newSize).
+        type(QSignalInt3) :: sectionMoved   !! A section was moved: (logicalIndex, oldVisualIndex, newVisualIndex).
+        type(QSignalInt2) :: sortIndicatorChanged   !! The sort indicator changed: (logicalIndex, order) with order Qt_AscendingOrder or Qt_DescendingOrder.
+    contains
+        procedure :: attach => qheaderview_attach
+        procedure, private :: qheaderview_setSectionResizeModeAll, qheaderview_setSectionResizeModeOf
+        generic :: setSectionResizeMode => qheaderview_setSectionResizeModeAll, qheaderview_setSectionResizeModeOf
+        procedure :: sectionResizeMode => qheaderview_sectionResizeMode
+        procedure :: resizeSection => qheaderview_resizeSection
+        procedure :: sectionSize => qheaderview_sectionSize
+        procedure :: sectionPosition => qheaderview_sectionPosition
+        procedure :: resizeSections => qheaderview_resizeSections
+        procedure :: setDefaultSectionSize => qheaderview_setDefaultSectionSize
+        procedure :: defaultSectionSize => qheaderview_defaultSectionSize
+        procedure :: setMinimumSectionSize => qheaderview_setMinimumSectionSize
+        procedure :: minimumSectionSize => qheaderview_minimumSectionSize
+        procedure :: setMaximumSectionSize => qheaderview_setMaximumSectionSize
+        procedure :: setStretchLastSection => qheaderview_setStretchLastSection
+        procedure :: stretchLastSection => qheaderview_stretchLastSection
+        procedure :: setSectionsMovable => qheaderview_setSectionsMovable
+        procedure :: sectionsMovable => qheaderview_sectionsMovable
+        procedure :: setSectionsClickable => qheaderview_setSectionsClickable
+        procedure :: sectionsClickable => qheaderview_sectionsClickable
+        procedure :: setSortIndicator => qheaderview_setSortIndicator
+        procedure :: sortIndicatorSection => qheaderview_sortIndicatorSection
+        procedure :: sortIndicatorOrder => qheaderview_sortIndicatorOrder
+        procedure :: setSortIndicatorShown => qheaderview_setSortIndicatorShown
+        procedure :: isSortIndicatorShown => qheaderview_isSortIndicatorShown
+        procedure :: setSectionHidden => qheaderview_setSectionHidden
+        procedure :: isSectionHidden => qheaderview_isSectionHidden
+        procedure :: hideSection => qheaderview_hideSection
+        procedure :: showSection => qheaderview_showSection
+        procedure :: count => qheaderview_count
+        procedure :: length => qheaderview_length
+        procedure :: moveSection => qheaderview_moveSection
+        procedure :: visualIndex => qheaderview_visualIndex
+        procedure :: logicalIndex => qheaderview_logicalIndex
+        procedure :: logicalIndexAt => qheaderview_logicalIndexAt
+        procedure :: setHighlightSections => qheaderview_setHighlightSections
+        procedure :: setDefaultAlignment => qheaderview_setDefaultAlignment
+        procedure :: orientation => qheaderview_orientation
+    end type QHeaderView
+    !> Constructor: `QHeaderView(orientation [, parent])`.
+    interface QHeaderView
+        module procedure :: qheaderview_new
+    end interface QHeaderView
+
     !> A table view of a model (use QtfTableModel to show Fortran data).
     type, extends(QAbstractItemView), public :: QTableView
     contains
+        procedure :: horizontalHeader => qtableview_horizontalHeader
+        procedure :: verticalHeader => qtableview_verticalHeader
         procedure :: resizeColumnsToContents => qtableview_resizeColumnsToContents
         procedure :: resizeRowsToContents => qtableview_resizeRowsToContents
         procedure :: setColumnWidth => qtableview_setColumnWidth
@@ -1093,6 +1223,7 @@ module qt_widgets
         procedure :: currentFilePath => qtreeview_currentFilePath
         procedure :: setCurrentFile => qtreeview_setCurrentFile
         procedure :: setRootPath => qtreeview_setRootPath
+        procedure :: header => qtreeview_header
         procedure :: expandAll => qtreeview_expandAll
         procedure :: collapseAll => qtreeview_collapseAll
         procedure :: expandToDepth => qtreeview_expandToDepth
@@ -1361,6 +1492,7 @@ module qt_widgets
         type(QSignalTreeItem) :: itemCollapsed   !! An item was collapsed.
     contains
         procedure :: attach => qtreewidget_attach
+        procedure :: header => qtreewidget_header
         procedure :: setColumnCount => qtreewidget_setColumnCount
         procedure :: columnCount => qtreewidget_columnCount
         procedure :: setHeaderLabels => qtreewidget_setHeaderLabels
@@ -1383,7 +1515,7 @@ module qt_widgets
     end interface QTreeWidget
 
     !> A multi-line rich-text editor (plain text, HTML or Markdown).
-    type, extends(QFrame), public :: QTextEdit
+    type, extends(QAbstractScrollArea), public :: QTextEdit
         type(QSignal) :: textChanged   !! The text changed.
     contains
         procedure :: attach => qtextedit_attach
@@ -1420,7 +1552,7 @@ module qt_widgets
     !> its `viewport()` (a slot that accepts the event replaces Qt's handling).
     !> Positions count Qt's characters (UTF-16 code units: bytes for ASCII text);
     !> pixel coordinates are the viewport's.
-    type, extends(QFrame), public :: QPlainTextEdit
+    type, extends(QAbstractScrollArea), public :: QPlainTextEdit
         type(QSignal) :: textChanged   !! The text changed.
         type(QSignal) :: cursorPositionChanged   !! The text cursor moved.
         type(QSignal) :: selectionChanged   !! The selection changed.
@@ -1469,9 +1601,6 @@ module qt_widgets
         procedure :: setCursorWidth => qplaintextedit_setCursorWidth
         procedure :: setCenterOnScroll => qplaintextedit_setCenterOnScroll
         procedure :: setUndoRedoEnabled => qplaintextedit_setUndoRedoEnabled
-        procedure :: viewport => qplaintextedit_viewport
-        procedure :: verticalScrollValue => qplaintextedit_verticalScrollValue
-        procedure :: setVerticalScrollValue => qplaintextedit_setVerticalScrollValue
         procedure :: addExtraSelection => qplaintextedit_addExtraSelection
         procedure :: addExtraSelections => qplaintextedit_addExtraSelections
         procedure :: clearExtraSelections => qplaintextedit_clearExtraSelections
@@ -1549,6 +1678,57 @@ module qt_widgets
         module procedure :: qtabwidget_new
     end interface QTabWidget
 
+    !> A row of tabs on its own, without pages (QTabWidget has both): for
+    !> documents in an editor, or pages in a QStackedLayout. Indices are 0-based.
+    !> Each tab can carry an integer (`setTabData`), e.g. an index into your own
+    !> arrays, which follows the tab when it is moved.
+    type, extends(QWidget), public :: QTabBar
+        type(QSignalInt) :: currentChanged   !! The current tab changed (its index; -1 when none is left).
+        type(QSignalInt) :: tabCloseRequested   !! The close button of a tab was clicked (see setTabsClosable).
+        type(QSignalInt2) :: tabMoved   !! The user moved a tab: (from, to).
+        type(QSignalInt) :: tabBarClicked   !! A tab was clicked (its index; -1 for empty space).
+        type(QSignalInt) :: tabBarDoubleClicked   !! A tab was double-clicked.
+    contains
+        procedure :: attach => qtabbar_attach
+        procedure, private :: qtabbar_addTab, qtabbar_addTabIcon
+        generic :: addTab => qtabbar_addTab, qtabbar_addTabIcon
+        procedure :: insertTab => qtabbar_insertTab
+        procedure :: removeTab => qtabbar_removeTab
+        procedure :: moveTab => qtabbar_moveTab
+        procedure :: count => qtabbar_count
+        procedure :: currentIndex => qtabbar_currentIndex
+        procedure :: setCurrentIndex => qtabbar_setCurrentIndex
+        procedure :: setTabText => qtabbar_setTabText
+        procedure :: tabText => qtabbar_tabText
+        procedure :: setTabToolTip => qtabbar_setTabToolTip
+        procedure :: tabToolTip => qtabbar_tabToolTip
+        procedure :: setTabIcon => qtabbar_setTabIcon
+        procedure :: setTabTextColor => qtabbar_setTabTextColor
+        procedure :: tabTextColor => qtabbar_tabTextColor
+        procedure :: setTabEnabled => qtabbar_setTabEnabled
+        procedure :: isTabEnabled => qtabbar_isTabEnabled
+        procedure :: setTabVisible => qtabbar_setTabVisible
+        procedure :: isTabVisible => qtabbar_isTabVisible
+        procedure :: setTabData => qtabbar_setTabData
+        procedure :: tabData => qtabbar_tabData
+        procedure :: tabAt => qtabbar_tabAt
+        procedure :: tabRect => qtabbar_tabRect
+        procedure :: setTabsClosable => qtabbar_setTabsClosable
+        procedure :: tabsClosable => qtabbar_tabsClosable
+        procedure :: setMovable => qtabbar_setMovable
+        procedure :: isMovable => qtabbar_isMovable
+        procedure :: setExpanding => qtabbar_setExpanding
+        procedure :: setDocumentMode => qtabbar_setDocumentMode
+        procedure :: setDrawBase => qtabbar_setDrawBase
+        procedure :: setUsesScrollButtons => qtabbar_setUsesScrollButtons
+        procedure :: setElideMode => qtabbar_setElideMode
+        procedure :: setShape => qtabbar_setShape
+    end type QTabBar
+    !> Constructor: `QTabBar([parent])`.
+    interface QTabBar
+        module procedure :: qtabbar_new
+    end interface QTabBar
+
     !> A stack of widgets of which one is visible at a time. Indices are 0-based.
     type, extends(QFrame), public :: QStackedWidget
         type(QSignalInt) :: currentChanged   !! The visible widget changed (its index).
@@ -1592,14 +1772,12 @@ module qt_widgets
     end interface QSplitter
 
     !> Shows a (large) widget through a scrollable viewport.
-    type, extends(QFrame), public :: QScrollArea
+    type, extends(QAbstractScrollArea), public :: QScrollArea
     contains
         procedure :: setWidget => qscrollarea_setWidget
         procedure :: widget => qscrollarea_widget
         procedure :: setWidgetResizable => qscrollarea_setWidgetResizable
         procedure :: widgetResizable => qscrollarea_widgetResizable
-        procedure :: setHorizontalScrollBarPolicy => qscrollarea_setHorizontalScrollBarPolicy
-        procedure :: setVerticalScrollBarPolicy => qscrollarea_setVerticalScrollBarPolicy
         procedure :: ensureVisible => qscrollarea_ensureVisible
         procedure :: setAlignment => qscrollarea_setAlignment
     end type QScrollArea
@@ -1989,7 +2167,7 @@ module qt_widgets
 
     !> A multiple-document area: several sub-windows inside one main window
     !> (typically its central widget), shown as windows or as tabs.
-    type, extends(QFrame), public :: QMdiArea
+    type, extends(QAbstractScrollArea), public :: QMdiArea
         type(QSignal) :: subWindowActivated   !! The active sub-window changed (see `activeSubWindow`).
     contains
         procedure :: attach => qmdiarea_attach
@@ -2294,6 +2472,10 @@ module qt_widgets
     public :: QApplication_setOrganizationDomain
     public :: QApplication_setApplicationName
     public :: QApplication_applicationName
+    public :: QApplication_setStyle
+    public :: QApplication_styleName
+    public :: QApplication_setPalette
+    public :: QApplication_palette
     public :: QWidget_createWindowContainer
     public :: QMessageBox_information
     public :: QMessageBox_warning
@@ -2310,6 +2492,11 @@ module qt_widgets
     public :: QInputDialog_getItem
     public :: QColorDialog_getColor
     public :: QStyle_standardIcon
+    public :: QToolTip_showText
+    public :: QToolTip_hideText
+    public :: QToolTip_isVisible
+    public :: QToolTip_text
+    public :: QStyleFactory_keys
 
 contains
 
@@ -2396,6 +2583,34 @@ contains
         p_ = qtf_qapplication_applicationName(n_)
         res = qtf_take_string(p_, n_)
     end function QApplication_applicationName
+
+    !> Use the style `name` for all widgets (one of QStyleFactory_keys(), e.g. 'Fusion', which looks the same on every platform and follows palettes fully); false if there is no such style.
+    function QApplication_setStyle(name) result(res)
+        character(len=*), intent(in) :: name
+        logical :: res
+        res = qtf_logical(qtf_qapplication_setStyle(name, len(name, c_int)))
+    end function QApplication_setStyle
+
+    !> The name of the current style (lower case, e.g. 'fusion').
+    function QApplication_styleName() result(res)
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qapplication_styleName(n_)
+        res = qtf_take_string(p_, n_)
+    end function QApplication_styleName
+
+    !> Use `palette` (copied) for all widgets, e.g. a dark theme.
+    subroutine QApplication_setPalette(palette)
+        class(QPalette), intent(in) :: palette
+        call qtf_qapplication_setPalette(palette%ptr)
+    end subroutine QApplication_setPalette
+
+    !> A copy of the application's palette (delete it when done).
+    function QApplication_palette() result(res)
+        type(QPalette) :: res
+        res%ptr = qtf_qapplication_palette()
+    end function QApplication_palette
 
     !> Bind to a C++ QWidget and its signals.
     subroutine qwidget_attach(self, ptr)
@@ -3162,6 +3377,27 @@ contains
         call res%attach(qtf_qwidget_childAt(qtf_live(self, 'QWidget%childAt'), int(p%x, c_int), int(p%y, c_int)))
     end function qwidget_childAt
 
+    !> Use `palette` (copied) for this widget and its children.
+    subroutine qwidget_setPalette(self, palette)
+        class(QWidget), intent(in) :: self
+        class(QPalette), intent(in) :: palette
+        call qtf_qwidget_setPalette(qtf_live(self, 'QWidget%setPalette'), palette%ptr)
+    end subroutine qwidget_setPalette
+
+    !> A copy of the widget's palette (delete it when done).
+    function qwidget_palette(self) result(res)
+        class(QWidget), intent(in) :: self
+        type(QPalette) :: res
+        res%ptr = qtf_qwidget_palette(qtf_live(self, 'QWidget%palette'))
+    end function qwidget_palette
+
+    !> Fill the background with the palette's window color (e.g. for a widget with its own palette).
+    subroutine qwidget_setAutoFillBackground(self, enabled)
+        class(QWidget), intent(in) :: self
+        logical, intent(in) :: enabled
+        call qtf_qwidget_setAutoFillBackground(qtf_live(self, 'QWidget%setAutoFillBackground'), qtf_int(enabled))
+    end subroutine qwidget_setAutoFillBackground
+
     !> Set the widget's font (and its children's); an empty family or a
     !> pointSize <= 0 keeps the current one, e.g.
     !> `call editor%setFont(QFont(QFontDatabase_fixedFamily(), 12d0))`.
@@ -3260,6 +3496,45 @@ contains
         integer, intent(in) :: width
         call qtf_qframe_setLineWidth(qtf_live(self, 'QFrame%setLineWidth'), int(width, c_int))
     end subroutine qframe_setLineWidth
+
+    !> The widget the contents are drawn on, which gets the mouse events (e.g. for a QtfEventFilter; for item views, mouse and drop positions are relative to it).
+    function qabstractscrollarea_viewport(self) result(res)
+        class(QAbstractScrollArea), intent(in) :: self
+        type(QWidget) :: res
+        call res%attach(qtf_qabstractscrollarea_viewport(qtf_live(self, 'QAbstractScrollArea%viewport')))
+    end function qabstractscrollarea_viewport
+
+    !> The vertical scroll bar (its value is the scroll position).
+    function qabstractscrollarea_verticalScrollBar(self) result(res)
+        class(QAbstractScrollArea), intent(in) :: self
+        type(QScrollBar) :: res
+        call res%attach(qtf_qabstractscrollarea_verticalScrollBar(qtf_live(self, &
+                'QAbstractScrollArea%verticalScrollBar')))
+    end function qabstractscrollarea_verticalScrollBar
+
+    !> The horizontal scroll bar.
+    function qabstractscrollarea_horizontalScrollBar(self) result(res)
+        class(QAbstractScrollArea), intent(in) :: self
+        type(QScrollBar) :: res
+        call res%attach(qtf_qabstractscrollarea_horizontalScrollBar(qtf_live(self, &
+                'QAbstractScrollArea%horizontalScrollBar')))
+    end function qabstractscrollarea_horizontalScrollBar
+
+    !> When to show the vertical scroll bar (Qt_ScrollBarAsNeeded, _AlwaysOff, _AlwaysOn).
+    subroutine qabstractscrollarea_setVerticalScrollBarPolicy(self, policy)
+        class(QAbstractScrollArea), intent(in) :: self
+        integer, intent(in) :: policy
+        call qtf_qabstractscrollarea_setVerticalScrollBarPolicy(qtf_live(self, &
+                'QAbstractScrollArea%setVerticalScrollBarPolicy'), int(policy, c_int))
+    end subroutine qabstractscrollarea_setVerticalScrollBarPolicy
+
+    !> When to show the horizontal scroll bar.
+    subroutine qabstractscrollarea_setHorizontalScrollBarPolicy(self, policy)
+        class(QAbstractScrollArea), intent(in) :: self
+        integer, intent(in) :: policy
+        call qtf_qabstractscrollarea_setHorizontalScrollBarPolicy(qtf_live(self, &
+                'QAbstractScrollArea%setHorizontalScrollBarPolicy'), int(policy, c_int))
+    end subroutine qabstractscrollarea_setHorizontalScrollBarPolicy
 
     !> Create a label showing `text`.
     function qlabel_new(text, parent) result(res)
@@ -3834,6 +4109,39 @@ contains
         call res%attach(qtf_qslider_new(orientation_, qtf_ptr(parent)))
     end function qslider_new
 
+    !> Bind to a C++ QScrollBar and its signals.
+    subroutine qscrollbar_attach(self, ptr)
+        class(QScrollBar), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QAbstractSlider%attach(ptr)
+        self%rangeChanged = QSignalInt2(ptr, QTF_SIG_QSCROLLBAR_RANGECHANGED, self%serial)
+    end subroutine qscrollbar_attach
+
+    !> A standalone scroll bar.
+    function qscrollbar_new(orientation, parent) result(res)
+        integer, intent(in), optional :: orientation
+        class(QWidget), intent(in), optional :: parent
+        type(QScrollBar) :: res
+        integer(c_int) :: orientation_
+        orientation_ = Qt_Vertical
+        if (present(orientation)) orientation_ = int(orientation, c_int)
+        call res%attach(qtf_qscrollbar_new(orientation_, qtf_ptr(parent)))
+    end function qscrollbar_new
+
+    !> The page step (the visible extent, for a scroll area's scroll bar).
+    function qscrollbar_pageStep(self) result(res)
+        class(QScrollBar), intent(in) :: self
+        integer :: res
+        res = qtf_qscrollbar_pageStep(qtf_live(self, 'QScrollBar%pageStep'))
+    end function qscrollbar_pageStep
+
+    !> The step of the arrow buttons and keys.
+    function qscrollbar_singleStep(self) result(res)
+        class(QScrollBar), intent(in) :: self
+        integer :: res
+        res = qtf_qscrollbar_singleStep(qtf_live(self, 'QScrollBar%singleStep'))
+    end function qscrollbar_singleStep
+
     !> Bind to a C++ QComboBox and its signals.
     subroutine qcombobox_attach(self, ptr)
         class(QComboBox), intent(inout) :: self
@@ -4173,6 +4481,98 @@ contains
         integer :: res
         res = qtf_qgridlayout_columnCount(qtf_live(self, 'QGridLayout%columnCount'))
     end function qgridlayout_columnCount
+
+    !> Bind to a C++ QStackedLayout and its signals.
+    subroutine qstackedlayout_attach(self, ptr)
+        class(QStackedLayout), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QLayout%attach(ptr)
+        self%currentChanged = QSignalInt(ptr, QTF_SIG_QSTACKEDLAYOUT_CURRENTCHANGED, self%serial)
+        self%widgetRemoved = QSignalInt(ptr, QTF_SIG_QSTACKEDLAYOUT_WIDGETREMOVED, self%serial)
+    end subroutine qstackedlayout_attach
+
+    !> A stacked layout (installed on `parent` if given).
+    function qstackedlayout_new(parent) result(res)
+        class(QWidget), intent(in), optional :: parent
+        type(QStackedLayout) :: res
+        call res%attach(qtf_qstackedlayout_new(qtf_ptr(parent)))
+    end function qstackedlayout_new
+
+    !> Append a widget (hidden unless it is the current one).
+    subroutine qstackedlayout_addWidget(self, widget)
+        class(QStackedLayout), intent(in) :: self
+        class(QWidget), intent(in) :: widget
+        call qtf_qstackedlayout_addWidget(qtf_live(self, 'QStackedLayout%addWidget'), qtf_live(widget, &
+                'QStackedLayout%addWidget'))
+    end subroutine qstackedlayout_addWidget
+
+    !> Insert a widget before `index`.
+    subroutine qstackedlayout_insertWidget(self, index, widget)
+        class(QStackedLayout), intent(in) :: self
+        integer, intent(in) :: index
+        class(QWidget), intent(in) :: widget
+        call qtf_qstackedlayout_insertWidget(qtf_live(self, 'QStackedLayout%insertWidget'), int(index, c_int), &
+                qtf_live(widget, 'QStackedLayout%insertWidget'))
+    end subroutine qstackedlayout_insertWidget
+
+    !> Remove a widget (it is not deleted).
+    subroutine qstackedlayout_removeWidget(self, widget)
+        class(QStackedLayout), intent(in) :: self
+        class(QWidget), intent(in) :: widget
+        call qtf_qstackedlayout_removeWidget(qtf_live(self, 'QStackedLayout%removeWidget'), qtf_live(widget, &
+                'QStackedLayout%removeWidget'))
+    end subroutine qstackedlayout_removeWidget
+
+    !> Index of the visible widget (-1 if none).
+    function qstackedlayout_currentIndex(self) result(res)
+        class(QStackedLayout), intent(in) :: self
+        integer :: res
+        res = qtf_qstackedlayout_currentIndex(qtf_live(self, 'QStackedLayout%currentIndex'))
+    end function qstackedlayout_currentIndex
+
+    !> Show the widget at `index`.
+    subroutine qstackedlayout_setCurrentIndex(self, index)
+        class(QStackedLayout), intent(in) :: self
+        integer, intent(in) :: index
+        call qtf_qstackedlayout_setCurrentIndex(qtf_live(self, 'QStackedLayout%setCurrentIndex'), int(index, c_int))
+    end subroutine qstackedlayout_setCurrentIndex
+
+    !> Show `widget`.
+    subroutine qstackedlayout_setCurrentWidget(self, widget)
+        class(QStackedLayout), intent(in) :: self
+        class(QWidget), intent(in) :: widget
+        call qtf_qstackedlayout_setCurrentWidget(qtf_live(self, 'QStackedLayout%setCurrentWidget'), qtf_live(widget, &
+                'QStackedLayout%setCurrentWidget'))
+    end subroutine qstackedlayout_setCurrentWidget
+
+    !> The visible widget (null if none).
+    function qstackedlayout_currentWidget(self) result(res)
+        class(QStackedLayout), intent(in) :: self
+        type(QWidget) :: res
+        call res%attach(qtf_qstackedlayout_currentWidget(qtf_live(self, 'QStackedLayout%currentWidget')))
+    end function qstackedlayout_currentWidget
+
+    !> The widget at `index` (null if none).
+    function qstackedlayout_widget(self, index) result(res)
+        class(QStackedLayout), intent(in) :: self
+        integer, intent(in) :: index
+        type(QWidget) :: res
+        call res%attach(qtf_qstackedlayout_widget(qtf_live(self, 'QStackedLayout%widget'), int(index, c_int)))
+    end function qstackedlayout_widget
+
+    !> QStackedLayout_StackOne (only the current widget is visible, the default) or QStackedLayout_StackAll (all are, the current one on top).
+    subroutine qstackedlayout_setStackingMode(self, mode)
+        class(QStackedLayout), intent(in) :: self
+        integer, intent(in) :: mode
+        call qtf_qstackedlayout_setStackingMode(qtf_live(self, 'QStackedLayout%setStackingMode'), int(mode, c_int))
+    end subroutine qstackedlayout_setStackingMode
+
+    !> The stacking mode.
+    function qstackedlayout_stackingMode(self) result(res)
+        class(QStackedLayout), intent(in) :: self
+        integer :: res
+        res = qtf_qstackedlayout_stackingMode(qtf_live(self, 'QStackedLayout%stackingMode'))
+    end function qstackedlayout_stackingMode
 
     !> Show a message; it is cleared after `timeout` ms (default 0: stays).
     subroutine qstatusbar_showMessage(self, message, timeout)
@@ -5274,7 +5674,7 @@ contains
     subroutine qabstractitemview_attach(self, ptr)
         class(QAbstractItemView), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
-        call self%QFrame%attach(ptr)
+        call self%QAbstractScrollArea%attach(ptr)
         self%clicked = QSignalInt2(ptr, QTF_SIG_QABSTRACTITEMVIEW_CLICKED, self%serial)
         self%doubleClicked = QSignalInt2(ptr, QTF_SIG_QABSTRACTITEMVIEW_DOUBLECLICKED, self%serial)
         self%activated = QSignalInt2(ptr, QTF_SIG_QABSTRACTITEMVIEW_ACTIVATED, self%serial)
@@ -5373,13 +5773,6 @@ contains
         call qtf_qabstractitemview_scrollToBottom(qtf_live(self, 'QAbstractItemView%scrollToBottom'))
     end subroutine qabstractitemview_scrollToBottom
 
-    !> The widget the items are drawn on: mouse and drop positions are relative to it (e.g. for a QtfEventFilter).
-    function qabstractitemview_viewport(self) result(res)
-        class(QAbstractItemView), intent(in) :: self
-        type(QWidget) :: res
-        call res%attach(qtf_qabstractitemview_viewport(qtf_live(self, 'QAbstractItemView%viewport')))
-    end function qabstractitemview_viewport
-
     !> Let the user drag the selected items (the model must allow it: e.g. QtfTableModel%setDragEnabled).
     subroutine qabstractitemview_setDragEnabled(self, enable)
         class(QAbstractItemView), intent(in) :: self
@@ -5456,12 +5849,324 @@ contains
                 'QAbstractItemView%dragDropOverwriteMode')))
     end function qabstractitemview_dragDropOverwriteMode
 
+    !> Bind to a C++ QHeaderView and its signals.
+    subroutine qheaderview_attach(self, ptr)
+        class(QHeaderView), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QAbstractItemView%attach(ptr)
+        self%sectionClicked = QSignalInt(ptr, QTF_SIG_QHEADERVIEW_SECTIONCLICKED, self%serial)
+        self%sectionDoubleClicked = QSignalInt(ptr, QTF_SIG_QHEADERVIEW_SECTIONDOUBLECLICKED, self%serial)
+        self%sectionResized = QSignalInt3(ptr, QTF_SIG_QHEADERVIEW_SECTIONRESIZED, self%serial)
+        self%sectionMoved = QSignalInt3(ptr, QTF_SIG_QHEADERVIEW_SECTIONMOVED, self%serial)
+        self%sortIndicatorChanged = QSignalInt2(ptr, QTF_SIG_QHEADERVIEW_SORTINDICATORCHANGED, self%serial)
+    end subroutine qheaderview_attach
+
+    !> A header (views make their own).
+    function qheaderview_new(orientation, parent) result(res)
+        integer, intent(in) :: orientation
+        class(QWidget), intent(in), optional :: parent
+        type(QHeaderView) :: res
+        call res%attach(qtf_qheaderview_new(int(orientation, c_int), qtf_ptr(parent)))
+    end function qheaderview_new
+
+    !> How all sections are sized: QHeaderView_Interactive (by the user, the default), _Stretch (fill the view), _Fixed or _ResizeToContents.
+    subroutine qheaderview_setSectionResizeModeAll(self, mode)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: mode
+        call qtf_qheaderview_setSectionResizeModeAll(qtf_live(self, 'QHeaderView%setSectionResizeModeAll'), int(mode, &
+                c_int))
+    end subroutine qheaderview_setSectionResizeModeAll
+
+    !> How one section is sized.
+    subroutine qheaderview_setSectionResizeModeOf(self, logicalIndex, mode)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: logicalIndex
+        integer, intent(in) :: mode
+        call qtf_qheaderview_setSectionResizeModeOf(qtf_live(self, 'QHeaderView%setSectionResizeModeOf'), &
+                int(logicalIndex, c_int), int(mode, c_int))
+    end subroutine qheaderview_setSectionResizeModeOf
+
+    !> How a section is sized.
+    function qheaderview_sectionResizeMode(self, logicalIndex) result(res)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: logicalIndex
+        integer :: res
+        res = qtf_qheaderview_sectionResizeMode(qtf_live(self, 'QHeaderView%sectionResizeMode'), int(logicalIndex, &
+                c_int))
+    end function qheaderview_sectionResizeMode
+
+    !> Set a section's width (or height), in pixels.
+    subroutine qheaderview_resizeSection(self, logicalIndex, size)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: logicalIndex
+        integer, intent(in) :: size
+        call qtf_qheaderview_resizeSection(qtf_live(self, 'QHeaderView%resizeSection'), int(logicalIndex, c_int), &
+                int(size, c_int))
+    end subroutine qheaderview_resizeSection
+
+    !> A section's width (or height).
+    function qheaderview_sectionSize(self, logicalIndex) result(res)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: logicalIndex
+        integer :: res
+        res = qtf_qheaderview_sectionSize(qtf_live(self, 'QHeaderView%sectionSize'), int(logicalIndex, c_int))
+    end function qheaderview_sectionSize
+
+    !> Where a section starts (from the header's start, ignoring scrolling).
+    function qheaderview_sectionPosition(self, logicalIndex) result(res)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: logicalIndex
+        integer :: res
+        res = qtf_qheaderview_sectionPosition(qtf_live(self, 'QHeaderView%sectionPosition'), int(logicalIndex, c_int))
+    end function qheaderview_sectionPosition
+
+    !> Resize all sections once by `mode` (e.g. QHeaderView_ResizeToContents).
+    subroutine qheaderview_resizeSections(self, mode)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: mode
+        call qtf_qheaderview_resizeSections(qtf_live(self, 'QHeaderView%resizeSections'), int(mode, c_int))
+    end subroutine qheaderview_resizeSections
+
+    !> The size of new sections.
+    subroutine qheaderview_setDefaultSectionSize(self, size)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: size
+        call qtf_qheaderview_setDefaultSectionSize(qtf_live(self, 'QHeaderView%setDefaultSectionSize'), int(size, &
+                c_int))
+    end subroutine qheaderview_setDefaultSectionSize
+
+    !> The size of new sections.
+    function qheaderview_defaultSectionSize(self) result(res)
+        class(QHeaderView), intent(in) :: self
+        integer :: res
+        res = qtf_qheaderview_defaultSectionSize(qtf_live(self, 'QHeaderView%defaultSectionSize'))
+    end function qheaderview_defaultSectionSize
+
+    !> The smallest size the user can give a section.
+    subroutine qheaderview_setMinimumSectionSize(self, size)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: size
+        call qtf_qheaderview_setMinimumSectionSize(qtf_live(self, 'QHeaderView%setMinimumSectionSize'), int(size, &
+                c_int))
+    end subroutine qheaderview_setMinimumSectionSize
+
+    !> The smallest section size.
+    function qheaderview_minimumSectionSize(self) result(res)
+        class(QHeaderView), intent(in) :: self
+        integer :: res
+        res = qtf_qheaderview_minimumSectionSize(qtf_live(self, 'QHeaderView%minimumSectionSize'))
+    end function qheaderview_minimumSectionSize
+
+    !> The largest section size.
+    subroutine qheaderview_setMaximumSectionSize(self, size)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: size
+        call qtf_qheaderview_setMaximumSectionSize(qtf_live(self, 'QHeaderView%setMaximumSectionSize'), int(size, &
+                c_int))
+    end subroutine qheaderview_setMaximumSectionSize
+
+    !> Let the last section fill the remaining space.
+    subroutine qheaderview_setStretchLastSection(self, stretch)
+        class(QHeaderView), intent(in) :: self
+        logical, intent(in) :: stretch
+        call qtf_qheaderview_setStretchLastSection(qtf_live(self, 'QHeaderView%setStretchLastSection'), &
+                qtf_int(stretch))
+    end subroutine qheaderview_setStretchLastSection
+
+    !> True if the last section fills the remaining space.
+    function qheaderview_stretchLastSection(self) result(res)
+        class(QHeaderView), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qheaderview_stretchLastSection(qtf_live(self, 'QHeaderView%stretchLastSection')))
+    end function qheaderview_stretchLastSection
+
+    !> Let the user reorder sections by dragging them.
+    subroutine qheaderview_setSectionsMovable(self, movable)
+        class(QHeaderView), intent(in) :: self
+        logical, intent(in) :: movable
+        call qtf_qheaderview_setSectionsMovable(qtf_live(self, 'QHeaderView%setSectionsMovable'), qtf_int(movable))
+    end subroutine qheaderview_setSectionsMovable
+
+    !> True if sections can be moved.
+    function qheaderview_sectionsMovable(self) result(res)
+        class(QHeaderView), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qheaderview_sectionsMovable(qtf_live(self, 'QHeaderView%sectionsMovable')))
+    end function qheaderview_sectionsMovable
+
+    !> Make sections clickable (emitting `sectionClicked`; needed for sorting).
+    subroutine qheaderview_setSectionsClickable(self, clickable)
+        class(QHeaderView), intent(in) :: self
+        logical, intent(in) :: clickable
+        call qtf_qheaderview_setSectionsClickable(qtf_live(self, 'QHeaderView%setSectionsClickable'), &
+                qtf_int(clickable))
+    end subroutine qheaderview_setSectionsClickable
+
+    !> True if sections are clickable.
+    function qheaderview_sectionsClickable(self) result(res)
+        class(QHeaderView), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qheaderview_sectionsClickable(qtf_live(self, 'QHeaderView%sectionsClickable')))
+    end function qheaderview_sectionsClickable
+
+    !> Show the sort arrow on a section (with a sorting view, also sorts).
+    subroutine qheaderview_setSortIndicator(self, logicalIndex, order)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: logicalIndex
+        integer, intent(in) :: order
+        call qtf_qheaderview_setSortIndicator(qtf_live(self, 'QHeaderView%setSortIndicator'), int(logicalIndex, &
+                c_int), int(order, c_int))
+    end subroutine qheaderview_setSortIndicator
+
+    !> The section with the sort arrow (-1 if none).
+    function qheaderview_sortIndicatorSection(self) result(res)
+        class(QHeaderView), intent(in) :: self
+        integer :: res
+        res = qtf_qheaderview_sortIndicatorSection(qtf_live(self, 'QHeaderView%sortIndicatorSection'))
+    end function qheaderview_sortIndicatorSection
+
+    !> The sort order shown (Qt_AscendingOrder or Qt_DescendingOrder).
+    function qheaderview_sortIndicatorOrder(self) result(res)
+        class(QHeaderView), intent(in) :: self
+        integer :: res
+        res = qtf_qheaderview_sortIndicatorOrder(qtf_live(self, 'QHeaderView%sortIndicatorOrder'))
+    end function qheaderview_sortIndicatorOrder
+
+    !> Show the sort arrow.
+    subroutine qheaderview_setSortIndicatorShown(self, show)
+        class(QHeaderView), intent(in) :: self
+        logical, intent(in) :: show
+        call qtf_qheaderview_setSortIndicatorShown(qtf_live(self, 'QHeaderView%setSortIndicatorShown'), qtf_int(show))
+    end subroutine qheaderview_setSortIndicatorShown
+
+    !> True if the sort arrow is shown.
+    function qheaderview_isSortIndicatorShown(self) result(res)
+        class(QHeaderView), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qheaderview_isSortIndicatorShown(qtf_live(self, 'QHeaderView%isSortIndicatorShown')))
+    end function qheaderview_isSortIndicatorShown
+
+    !> Hide or show a section.
+    subroutine qheaderview_setSectionHidden(self, logicalIndex, hide)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: logicalIndex
+        logical, intent(in) :: hide
+        call qtf_qheaderview_setSectionHidden(qtf_live(self, 'QHeaderView%setSectionHidden'), int(logicalIndex, &
+                c_int), qtf_int(hide))
+    end subroutine qheaderview_setSectionHidden
+
+    !> True if the section is hidden.
+    function qheaderview_isSectionHidden(self, logicalIndex) result(res)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: logicalIndex
+        logical :: res
+        res = qtf_logical(qtf_qheaderview_isSectionHidden(qtf_live(self, 'QHeaderView%isSectionHidden'), &
+                int(logicalIndex, c_int)))
+    end function qheaderview_isSectionHidden
+
+    !> Hide a section.
+    subroutine qheaderview_hideSection(self, logicalIndex)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: logicalIndex
+        call qtf_qheaderview_hideSection(qtf_live(self, 'QHeaderView%hideSection'), int(logicalIndex, c_int))
+    end subroutine qheaderview_hideSection
+
+    !> Show a hidden section.
+    subroutine qheaderview_showSection(self, logicalIndex)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: logicalIndex
+        call qtf_qheaderview_showSection(qtf_live(self, 'QHeaderView%showSection'), int(logicalIndex, c_int))
+    end subroutine qheaderview_showSection
+
+    !> The number of sections.
+    function qheaderview_count(self) result(res)
+        class(QHeaderView), intent(in) :: self
+        integer :: res
+        res = qtf_qheaderview_count(qtf_live(self, 'QHeaderView%count'))
+    end function qheaderview_count
+
+    !> The total size of the sections.
+    function qheaderview_length(self) result(res)
+        class(QHeaderView), intent(in) :: self
+        integer :: res
+        res = qtf_qheaderview_length(qtf_live(self, 'QHeaderView%length'))
+    end function qheaderview_length
+
+    !> Move the section at visual index `from` to visual index `to`.
+    subroutine qheaderview_moveSection(self, from, to)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: from
+        integer, intent(in) :: to
+        call qtf_qheaderview_moveSection(qtf_live(self, 'QHeaderView%moveSection'), int(from, c_int), int(to, c_int))
+    end subroutine qheaderview_moveSection
+
+    !> Where a section is on screen (its visual index).
+    function qheaderview_visualIndex(self, logicalIndex) result(res)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: logicalIndex
+        integer :: res
+        res = qtf_qheaderview_visualIndex(qtf_live(self, 'QHeaderView%visualIndex'), int(logicalIndex, c_int))
+    end function qheaderview_visualIndex
+
+    !> The section at a visual index.
+    function qheaderview_logicalIndex(self, visualIndex) result(res)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: visualIndex
+        integer :: res
+        res = qtf_qheaderview_logicalIndex(qtf_live(self, 'QHeaderView%logicalIndex'), int(visualIndex, c_int))
+    end function qheaderview_logicalIndex
+
+    !> The section at a position along the header (-1 if none).
+    function qheaderview_logicalIndexAt(self, position) result(res)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: position
+        integer :: res
+        res = qtf_qheaderview_logicalIndexAt(qtf_live(self, 'QHeaderView%logicalIndexAt'), int(position, c_int))
+    end function qheaderview_logicalIndexAt
+
+    !> Highlight the sections of selected items.
+    subroutine qheaderview_setHighlightSections(self, highlight)
+        class(QHeaderView), intent(in) :: self
+        logical, intent(in) :: highlight
+        call qtf_qheaderview_setHighlightSections(qtf_live(self, 'QHeaderView%setHighlightSections'), &
+                qtf_int(highlight))
+    end subroutine qheaderview_setHighlightSections
+
+    !> The alignment of the section titles.
+    subroutine qheaderview_setDefaultAlignment(self, alignment)
+        class(QHeaderView), intent(in) :: self
+        integer, intent(in) :: alignment
+        call qtf_qheaderview_setDefaultAlignment(qtf_live(self, 'QHeaderView%setDefaultAlignment'), int(alignment, &
+                c_int))
+    end subroutine qheaderview_setDefaultAlignment
+
+    !> Qt_Horizontal (column titles) or Qt_Vertical (row titles).
+    function qheaderview_orientation(self) result(res)
+        class(QHeaderView), intent(in) :: self
+        integer :: res
+        res = qtf_qheaderview_orientation(qtf_live(self, 'QHeaderView%orientation'))
+    end function qheaderview_orientation
+
     !> Create a table view.
     function qtableview_new(parent) result(res)
         class(QWidget), intent(in), optional :: parent
         type(QTableView) :: res
         call res%attach(qtf_qtableview_new(qtf_ptr(parent)))
     end function qtableview_new
+
+    !> The column titles.
+    function qtableview_horizontalHeader(self) result(res)
+        class(QTableView), intent(in) :: self
+        type(QHeaderView) :: res
+        call res%attach(qtf_qtableview_horizontalHeader(qtf_live(self, 'QTableView%horizontalHeader')))
+    end function qtableview_horizontalHeader
+
+    !> The row titles.
+    function qtableview_verticalHeader(self) result(res)
+        class(QTableView), intent(in) :: self
+        type(QHeaderView) :: res
+        call res%attach(qtf_qtableview_verticalHeader(qtf_live(self, 'QTableView%verticalHeader')))
+    end function qtableview_verticalHeader
 
     !> Fit the column widths to their contents.
     subroutine qtableview_resizeColumnsToContents(self)
@@ -5779,6 +6484,13 @@ contains
         character(len=*), intent(in) :: path
         call qtf_qtreeview_setRootPath(qtf_live(self, 'QTreeView%setRootPath'), path, len(path, c_int))
     end subroutine qtreeview_setRootPath
+
+    !> The column titles.
+    function qtreeview_header(self) result(res)
+        class(QTreeView), intent(in) :: self
+        type(QHeaderView) :: res
+        call res%attach(qtf_qtreeview_header(qtf_live(self, 'QTreeView%header')))
+    end function qtreeview_header
 
     !> Expand every node.
     subroutine qtreeview_expandAll(self)
@@ -6906,6 +7618,13 @@ contains
         call res%attach(qtf_qtreewidget_new(qtf_ptr(parent)))
     end function qtreewidget_new
 
+    !> The column titles.
+    function qtreewidget_header(self) result(res)
+        class(QTreeWidget), intent(in) :: self
+        type(QHeaderView) :: res
+        call res%attach(qtf_qtreewidget_header(qtf_live(self, 'QTreeWidget%header')))
+    end function qtreewidget_header
+
     !> Set the number of columns.
     subroutine qtreewidget_setColumnCount(self, columns)
         class(QTreeWidget), intent(in) :: self
@@ -7019,7 +7738,7 @@ contains
     subroutine qtextedit_attach(self, ptr)
         class(QTextEdit), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
-        call self%QFrame%attach(ptr)
+        call self%QAbstractScrollArea%attach(ptr)
         self%textChanged = QSignal(ptr, QTF_SIG_QTEXTEDIT_TEXTCHANGED, self%serial)
     end subroutine qtextedit_attach
 
@@ -7155,7 +7874,7 @@ contains
     subroutine qplaintextedit_attach(self, ptr)
         class(QPlainTextEdit), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
-        call self%QFrame%attach(ptr)
+        call self%QAbstractScrollArea%attach(ptr)
         self%textChanged = QSignal(ptr, QTF_SIG_QPLAINTEXTEDIT_TEXTCHANGED, self%serial)
         self%cursorPositionChanged = QSignal(ptr, QTF_SIG_QPLAINTEXTEDIT_CURSORPOSITIONCHANGED, self%serial)
         self%selectionChanged = QSignal(ptr, QTF_SIG_QPLAINTEXTEDIT_SELECTIONCHANGED, self%serial)
@@ -7476,28 +8195,6 @@ contains
         logical, intent(in) :: enable
         call qtf_qplaintextedit_setUndoRedoEnabled(qtf_live(self, 'QPlainTextEdit%setUndoRedoEnabled'), qtf_int(enable))
     end subroutine qplaintextedit_setUndoRedoEnabled
-
-    !> The widget the text is drawn on, which gets the mouse events (e.g. for a QtfEventFilter).
-    function qplaintextedit_viewport(self) result(res)
-        class(QPlainTextEdit), intent(in) :: self
-        type(QWidget) :: res
-        call res%attach(qtf_qplaintextedit_viewport(qtf_live(self, 'QPlainTextEdit%viewport')))
-    end function qplaintextedit_viewport
-
-    !> The vertical scroll position (the first visible line, for plain text).
-    function qplaintextedit_verticalScrollValue(self) result(res)
-        class(QPlainTextEdit), intent(in) :: self
-        integer :: res
-        res = qtf_qplaintextedit_verticalScrollValue(qtf_live(self, 'QPlainTextEdit%verticalScrollValue'))
-    end function qplaintextedit_verticalScrollValue
-
-    !> Scroll vertically (to make line `value` the first visible one).
-    subroutine qplaintextedit_setVerticalScrollValue(self, value)
-        class(QPlainTextEdit), intent(in) :: self
-        integer, intent(in) :: value
-        call qtf_qplaintextedit_setVerticalScrollValue(qtf_live(self, 'QPlainTextEdit%setVerticalScrollValue'), &
-                int(value, c_int))
-    end subroutine qplaintextedit_setVerticalScrollValue
 
     !> Show text from position `start` to `end` with `format` (e.g. a background color), without changing the text. `fullWidth`: color the whole line (with start = end, e.g. the current line).
     subroutine qplaintextedit_addExtraSelection(self, start, end, format, fullWidth)
@@ -7844,6 +8541,301 @@ contains
         call qtf_qtabwidget_setDocumentMode(qtf_live(self, 'QTabWidget%setDocumentMode'), qtf_int(set))
     end subroutine qtabwidget_setDocumentMode
 
+    !> Bind to a C++ QTabBar and its signals.
+    subroutine qtabbar_attach(self, ptr)
+        class(QTabBar), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QWidget%attach(ptr)
+        self%currentChanged = QSignalInt(ptr, QTF_SIG_QTABBAR_CURRENTCHANGED, self%serial)
+        self%tabCloseRequested = QSignalInt(ptr, QTF_SIG_QTABBAR_TABCLOSEREQUESTED, self%serial)
+        self%tabMoved = QSignalInt2(ptr, QTF_SIG_QTABBAR_TABMOVED, self%serial)
+        self%tabBarClicked = QSignalInt(ptr, QTF_SIG_QTABBAR_TABBARCLICKED, self%serial)
+        self%tabBarDoubleClicked = QSignalInt(ptr, QTF_SIG_QTABBAR_TABBARDOUBLECLICKED, self%serial)
+    end subroutine qtabbar_attach
+
+    !> An empty tab bar.
+    function qtabbar_new(parent) result(res)
+        class(QWidget), intent(in), optional :: parent
+        type(QTabBar) :: res
+        call res%attach(qtf_qtabbar_new(qtf_ptr(parent)))
+    end function qtabbar_new
+
+    !> Append a tab.
+    subroutine qtabbar_addTab(self, text)
+        class(QTabBar), intent(in) :: self
+        character(len=*), intent(in) :: text
+        call qtf_qtabbar_addTab(qtf_live(self, 'QTabBar%addTab'), text, len(text, c_int))
+    end subroutine qtabbar_addTab
+
+    !> Append a tab with an icon.
+    subroutine qtabbar_addTabIcon(self, icon, text)
+        class(QTabBar), intent(in) :: self
+        class(QIcon), intent(in) :: icon
+        character(len=*), intent(in) :: text
+        call qtf_qtabbar_addTabIcon(qtf_live(self, 'QTabBar%addTabIcon'), icon%ptr, text, len(text, c_int))
+    end subroutine qtabbar_addTabIcon
+
+    !> Insert a tab before `index`.
+    subroutine qtabbar_insertTab(self, index, text)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        character(len=*), intent(in) :: text
+        call qtf_qtabbar_insertTab(qtf_live(self, 'QTabBar%insertTab'), int(index, c_int), text, len(text, c_int))
+    end subroutine qtabbar_insertTab
+
+    !> Remove a tab.
+    subroutine qtabbar_removeTab(self, index)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        call qtf_qtabbar_removeTab(qtf_live(self, 'QTabBar%removeTab'), int(index, c_int))
+    end subroutine qtabbar_removeTab
+
+    !> Move a tab.
+    subroutine qtabbar_moveTab(self, from, to)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: from
+        integer, intent(in) :: to
+        call qtf_qtabbar_moveTab(qtf_live(self, 'QTabBar%moveTab'), int(from, c_int), int(to, c_int))
+    end subroutine qtabbar_moveTab
+
+    !> The number of tabs.
+    function qtabbar_count(self) result(res)
+        class(QTabBar), intent(in) :: self
+        integer :: res
+        res = qtf_qtabbar_count(qtf_live(self, 'QTabBar%count'))
+    end function qtabbar_count
+
+    !> The current tab (-1 if none).
+    function qtabbar_currentIndex(self) result(res)
+        class(QTabBar), intent(in) :: self
+        integer :: res
+        res = qtf_qtabbar_currentIndex(qtf_live(self, 'QTabBar%currentIndex'))
+    end function qtabbar_currentIndex
+
+    !> Make a tab current.
+    subroutine qtabbar_setCurrentIndex(self, index)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        call qtf_qtabbar_setCurrentIndex(qtf_live(self, 'QTabBar%setCurrentIndex'), int(index, c_int))
+    end subroutine qtabbar_setCurrentIndex
+
+    !> Change a tab's text.
+    subroutine qtabbar_setTabText(self, index, text)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        character(len=*), intent(in) :: text
+        call qtf_qtabbar_setTabText(qtf_live(self, 'QTabBar%setTabText'), int(index, c_int), text, len(text, c_int))
+    end subroutine qtabbar_setTabText
+
+    !> A tab's text.
+    function qtabbar_tabText(self, index) result(res)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qtabbar_tabText(qtf_live(self, 'QTabBar%tabText'), int(index, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function qtabbar_tabText
+
+    !> A tab's tool tip.
+    subroutine qtabbar_setTabToolTip(self, index, tip)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        character(len=*), intent(in) :: tip
+        call qtf_qtabbar_setTabToolTip(qtf_live(self, 'QTabBar%setTabToolTip'), int(index, c_int), tip, len(tip, c_int))
+    end subroutine qtabbar_setTabToolTip
+
+    !> A tab's tool tip.
+    function qtabbar_tabToolTip(self, index) result(res)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qtabbar_tabToolTip(qtf_live(self, 'QTabBar%tabToolTip'), int(index, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function qtabbar_tabToolTip
+
+    !> Show an icon on a tab (copied).
+    subroutine qtabbar_setTabIcon(self, index, icon)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        class(QIcon), intent(in) :: icon
+        call qtf_qtabbar_setTabIcon(qtf_live(self, 'QTabBar%setTabIcon'), int(index, c_int), icon%ptr)
+    end subroutine qtabbar_setTabIcon
+
+    !> A tab's text color.
+    subroutine qtabbar_setTabTextColor(self, index, color)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        type(QColor), intent(in) :: color
+        call qtf_qtabbar_setTabTextColor(qtf_live(self, 'QTabBar%setTabTextColor'), int(index, c_int), int(color%r, &
+                c_int), int(color%g, c_int), int(color%b, c_int), int(color%a, c_int), qtf_int(color%valid))
+    end subroutine qtabbar_setTabTextColor
+
+    !> A tab's text color.
+    function qtabbar_tabTextColor(self, index) result(res)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        type(QColor) :: res
+        integer(c_int) :: r_r
+        integer(c_int) :: r_g
+        integer(c_int) :: r_b
+        integer(c_int) :: r_a
+        integer(c_int) :: r_valid
+        call qtf_qtabbar_tabTextColor(qtf_live(self, 'QTabBar%tabTextColor'), int(index, c_int), r_r, r_g, r_b, r_a, &
+                r_valid)
+        res%r = int(r_r)
+        res%g = int(r_g)
+        res%b = int(r_b)
+        res%a = int(r_a)
+        res%valid = qtf_logical(r_valid)
+    end function qtabbar_tabTextColor
+
+    !> Enable or disable a tab.
+    subroutine qtabbar_setTabEnabled(self, index, enabled)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        logical, intent(in) :: enabled
+        call qtf_qtabbar_setTabEnabled(qtf_live(self, 'QTabBar%setTabEnabled'), int(index, c_int), qtf_int(enabled))
+    end subroutine qtabbar_setTabEnabled
+
+    !> True if the tab is enabled.
+    function qtabbar_isTabEnabled(self, index) result(res)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        logical :: res
+        res = qtf_logical(qtf_qtabbar_isTabEnabled(qtf_live(self, 'QTabBar%isTabEnabled'), int(index, c_int)))
+    end function qtabbar_isTabEnabled
+
+    !> Show or hide a tab.
+    subroutine qtabbar_setTabVisible(self, index, visible)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        logical, intent(in) :: visible
+        call qtf_qtabbar_setTabVisible(qtf_live(self, 'QTabBar%setTabVisible'), int(index, c_int), qtf_int(visible))
+    end subroutine qtabbar_setTabVisible
+
+    !> True if the tab is shown.
+    function qtabbar_isTabVisible(self, index) result(res)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        logical :: res
+        res = qtf_logical(qtf_qtabbar_isTabVisible(qtf_live(self, 'QTabBar%isTabVisible'), int(index, c_int)))
+    end function qtabbar_isTabVisible
+
+    !> Attach an integer to a tab (e.g. an index into your arrays); it moves with the tab.
+    subroutine qtabbar_setTabData(self, index, value)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        integer, intent(in) :: value
+        call qtf_qtabbar_setTabData(qtf_live(self, 'QTabBar%setTabData'), int(index, c_int), int(value, c_int))
+    end subroutine qtabbar_setTabData
+
+    !> The integer attached to a tab (0 if none).
+    function qtabbar_tabData(self, index) result(res)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        integer :: res
+        res = qtf_qtabbar_tabData(qtf_live(self, 'QTabBar%tabData'), int(index, c_int))
+    end function qtabbar_tabData
+
+    !> The tab at point (x, y) of the bar (-1 if none).
+    function qtabbar_tabAt(self, x, y) result(res)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        integer :: res
+        res = qtf_qtabbar_tabAt(qtf_live(self, 'QTabBar%tabAt'), int(x, c_int), int(y, c_int))
+    end function qtabbar_tabAt
+
+    !> A tab's rectangle in the bar.
+    function qtabbar_tabRect(self, index) result(res)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: index
+        type(QRect) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qtabbar_tabRect(qtf_live(self, 'QTabBar%tabRect'), int(index, c_int), r_x, r_y, r_width, r_height)
+        res%x = int(r_x)
+        res%y = int(r_y)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qtabbar_tabRect
+
+    !> Show close buttons on the tabs (they emit tabCloseRequested).
+    subroutine qtabbar_setTabsClosable(self, closable)
+        class(QTabBar), intent(in) :: self
+        logical, intent(in) :: closable
+        call qtf_qtabbar_setTabsClosable(qtf_live(self, 'QTabBar%setTabsClosable'), qtf_int(closable))
+    end subroutine qtabbar_setTabsClosable
+
+    !> True if tabs have close buttons.
+    function qtabbar_tabsClosable(self) result(res)
+        class(QTabBar), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtabbar_tabsClosable(qtf_live(self, 'QTabBar%tabsClosable')))
+    end function qtabbar_tabsClosable
+
+    !> Let the user reorder the tabs (emitting tabMoved).
+    subroutine qtabbar_setMovable(self, movable)
+        class(QTabBar), intent(in) :: self
+        logical, intent(in) :: movable
+        call qtf_qtabbar_setMovable(qtf_live(self, 'QTabBar%setMovable'), qtf_int(movable))
+    end subroutine qtabbar_setMovable
+
+    !> True if tabs can be reordered.
+    function qtabbar_isMovable(self) result(res)
+        class(QTabBar), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtabbar_isMovable(qtf_live(self, 'QTabBar%isMovable')))
+    end function qtabbar_isMovable
+
+    !> Stretch the tabs to fill the bar.
+    subroutine qtabbar_setExpanding(self, enabled)
+        class(QTabBar), intent(in) :: self
+        logical, intent(in) :: enabled
+        call qtf_qtabbar_setExpanding(qtf_live(self, 'QTabBar%setExpanding'), qtf_int(enabled))
+    end subroutine qtabbar_setExpanding
+
+    !> A flatter, document-style look.
+    subroutine qtabbar_setDocumentMode(self, set)
+        class(QTabBar), intent(in) :: self
+        logical, intent(in) :: set
+        call qtf_qtabbar_setDocumentMode(qtf_live(self, 'QTabBar%setDocumentMode'), qtf_int(set))
+    end subroutine qtabbar_setDocumentMode
+
+    !> Draw the base line under the tabs.
+    subroutine qtabbar_setDrawBase(self, drawBase)
+        class(QTabBar), intent(in) :: self
+        logical, intent(in) :: drawBase
+        call qtf_qtabbar_setDrawBase(qtf_live(self, 'QTabBar%setDrawBase'), qtf_int(drawBase))
+    end subroutine qtabbar_setDrawBase
+
+    !> Scroll buttons when the tabs do not fit (or elide/shrink them).
+    subroutine qtabbar_setUsesScrollButtons(self, useButtons)
+        class(QTabBar), intent(in) :: self
+        logical, intent(in) :: useButtons
+        call qtf_qtabbar_setUsesScrollButtons(qtf_live(self, 'QTabBar%setUsesScrollButtons'), qtf_int(useButtons))
+    end subroutine qtabbar_setUsesScrollButtons
+
+    !> Shorten long tab texts (Qt_ElideRight, ...; Qt_ElideNone).
+    subroutine qtabbar_setElideMode(self, mode)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: mode
+        call qtf_qtabbar_setElideMode(qtf_live(self, 'QTabBar%setElideMode'), int(mode, c_int))
+    end subroutine qtabbar_setElideMode
+
+    !> The tab shape and side: QTabBar_RoundedNorth (default), _RoundedSouth, _RoundedWest, _RoundedEast, or Triangular*.
+    subroutine qtabbar_setShape(self, shape)
+        class(QTabBar), intent(in) :: self
+        integer, intent(in) :: shape
+        call qtf_qtabbar_setShape(qtf_live(self, 'QTabBar%setShape'), int(shape, c_int))
+    end subroutine qtabbar_setShape
+
     !> Bind to a C++ QStackedWidget and its signals.
     subroutine qstackedwidget_attach(self, ptr)
         class(QStackedWidget), intent(inout) :: self
@@ -8061,22 +9053,6 @@ contains
         logical :: res
         res = qtf_logical(qtf_qscrollarea_widgetResizable(qtf_live(self, 'QScrollArea%widgetResizable')))
     end function qscrollarea_widgetResizable
-
-    !> When to show the horizontal scroll bar.
-    subroutine qscrollarea_setHorizontalScrollBarPolicy(self, policy)
-        class(QScrollArea), intent(in) :: self
-        integer, intent(in) :: policy
-        call qtf_qscrollarea_setHorizontalScrollBarPolicy(qtf_live(self, 'QScrollArea%setHorizontalScrollBarPolicy'), &
-                int(policy, c_int))
-    end subroutine qscrollarea_setHorizontalScrollBarPolicy
-
-    !> When to show the vertical scroll bar.
-    subroutine qscrollarea_setVerticalScrollBarPolicy(self, policy)
-        class(QScrollArea), intent(in) :: self
-        integer, intent(in) :: policy
-        call qtf_qscrollarea_setVerticalScrollBarPolicy(qtf_live(self, 'QScrollArea%setVerticalScrollBarPolicy'), &
-                int(policy, c_int))
-    end subroutine qscrollarea_setVerticalScrollBarPolicy
 
     !> Scroll so that point (x, y) of the widget is visible.
     subroutine qscrollarea_ensureVisible(self, x, y)
@@ -9695,7 +10671,7 @@ contains
     subroutine qmdiarea_attach(self, ptr)
         class(QMdiArea), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
-        call self%QFrame%attach(ptr)
+        call self%QAbstractScrollArea%attach(ptr)
         self%subWindowActivated = QSignal(ptr, QTF_SIG_QMDIAREA_SUBWINDOWACTIVATED, self%serial)
     end subroutine qmdiarea_attach
 
@@ -10279,6 +11255,44 @@ contains
         type(QtfEventFilter) :: res
         call res%attach(qtf_qtfeventfilter_new(qtf_live(target, 'QtfEventFilter%new')))
     end function qtfeventfilter_new
+
+    !> Show a tool tip with `text` at screen position (x, y) (e.g. from `w%mapToGlobal`), now; '' hides it. With `widget`, it hides when the mouse leaves that widget.
+    subroutine QToolTip_showText(x, y, text, widget)
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        character(len=*), intent(in) :: text
+        class(QWidget), intent(in), optional :: widget
+        call qtf_QToolTip_showText(int(x, c_int), int(y, c_int), text, len(text, c_int), qtf_ptr(widget))
+    end subroutine QToolTip_showText
+
+    !> Hide the tool tip.
+    subroutine QToolTip_hideText()
+        call qtf_QToolTip_hideText()
+    end subroutine QToolTip_hideText
+
+    !> True if a tool tip is shown.
+    function QToolTip_isVisible() result(res)
+        logical :: res
+        res = qtf_logical(qtf_QToolTip_isVisible())
+    end function QToolTip_isVisible
+
+    !> The text of the tool tip shown ('' if none).
+    function QToolTip_text() result(res)
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_QToolTip_text(n_)
+        res = qtf_take_string(p_, n_)
+    end function QToolTip_text
+
+    !> The names of the available styles (e.g. 'Fusion', 'Windows', 'macOS'), for QApplication_setStyle.
+    function QStyleFactory_keys() result(res)
+        type(qt_string), allocatable :: res(:)
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_QStyleFactory_keys(n_)
+        res = qtf_take_string_list(p_, n_)
+    end function QStyleFactory_keys
 
     !> Create the application object, passing the program's command-line
     !> arguments to Qt (trailing blanks of each argument are dropped), or return

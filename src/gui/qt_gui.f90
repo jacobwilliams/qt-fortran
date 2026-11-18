@@ -16,6 +16,126 @@ module qt_gui
     implicit none
     private
 
+    ! QPalette::ColorRole
+    integer(c_int), parameter, public :: QPalette_WindowText = 0
+    integer(c_int), parameter, public :: QPalette_Button = 1
+    integer(c_int), parameter, public :: QPalette_Light = 2
+    integer(c_int), parameter, public :: QPalette_Midlight = 3
+    integer(c_int), parameter, public :: QPalette_Dark = 4
+    integer(c_int), parameter, public :: QPalette_Mid = 5
+    integer(c_int), parameter, public :: QPalette_Text = 6
+    integer(c_int), parameter, public :: QPalette_BrightText = 7
+    integer(c_int), parameter, public :: QPalette_ButtonText = 8
+    integer(c_int), parameter, public :: QPalette_Base = 9
+    integer(c_int), parameter, public :: QPalette_Window = 10
+    integer(c_int), parameter, public :: QPalette_Shadow = 11
+    integer(c_int), parameter, public :: QPalette_Highlight = 12
+    integer(c_int), parameter, public :: QPalette_HighlightedText = 13
+    integer(c_int), parameter, public :: QPalette_Link = 14
+    integer(c_int), parameter, public :: QPalette_LinkVisited = 15
+    integer(c_int), parameter, public :: QPalette_AlternateBase = 16
+    integer(c_int), parameter, public :: QPalette_NoRole = 17
+    integer(c_int), parameter, public :: QPalette_ToolTipBase = 18
+    integer(c_int), parameter, public :: QPalette_ToolTipText = 19
+    integer(c_int), parameter, public :: QPalette_PlaceholderText = 20
+    integer(c_int), parameter, public :: QPalette_Accent = 21
+
+    ! QPalette::ColorGroup
+    integer(c_int), parameter, public :: QPalette_Active = 0
+    integer(c_int), parameter, public :: QPalette_Disabled = 1
+    integer(c_int), parameter, public :: QPalette_Inactive = 2
+    integer(c_int), parameter, public :: QPalette_All = 5
+    integer(c_int), parameter, public :: QPalette_Normal = 0
+
+    ! Qt::ColorScheme
+    integer(c_int), parameter, public :: Qt_ColorScheme_Unknown = 0
+    integer(c_int), parameter, public :: Qt_ColorScheme_Light = 1
+    integer(c_int), parameter, public :: Qt_ColorScheme_Dark = 2
+
+    ! Qt::ShortcutContext
+    integer(c_int), parameter, public :: Qt_WidgetShortcut = 0
+    integer(c_int), parameter, public :: Qt_WindowShortcut = 1
+    integer(c_int), parameter, public :: Qt_ApplicationShortcut = 2
+    integer(c_int), parameter, public :: Qt_WidgetWithChildrenShortcut = 3
+
+    ! QActionGroup::ExclusionPolicy
+    integer(c_int), parameter, public :: QActionGroup_None = 0
+    integer(c_int), parameter, public :: QActionGroup_Exclusive = 1
+    integer(c_int), parameter, public :: QActionGroup_ExclusiveOptional = 2
+
+    ! QKeySequence::StandardKey (the platform's keys for common actions)
+    integer(c_int), parameter, public :: QKeySequence_UnknownKey = 0
+    integer(c_int), parameter, public :: QKeySequence_HelpContents = 1
+    integer(c_int), parameter, public :: QKeySequence_WhatsThis = 2
+    integer(c_int), parameter, public :: QKeySequence_Open = 3
+    integer(c_int), parameter, public :: QKeySequence_Close = 4
+    integer(c_int), parameter, public :: QKeySequence_Save = 5
+    integer(c_int), parameter, public :: QKeySequence_New = 6
+    integer(c_int), parameter, public :: QKeySequence_Delete = 7
+    integer(c_int), parameter, public :: QKeySequence_Cut = 8
+    integer(c_int), parameter, public :: QKeySequence_Copy = 9
+    integer(c_int), parameter, public :: QKeySequence_Paste = 10
+    integer(c_int), parameter, public :: QKeySequence_Undo = 11
+    integer(c_int), parameter, public :: QKeySequence_Redo = 12
+    integer(c_int), parameter, public :: QKeySequence_Back = 13
+    integer(c_int), parameter, public :: QKeySequence_Forward = 14
+    integer(c_int), parameter, public :: QKeySequence_Refresh = 15
+    integer(c_int), parameter, public :: QKeySequence_ZoomIn = 16
+    integer(c_int), parameter, public :: QKeySequence_ZoomOut = 17
+    integer(c_int), parameter, public :: QKeySequence_Print = 18
+    integer(c_int), parameter, public :: QKeySequence_AddTab = 19
+    integer(c_int), parameter, public :: QKeySequence_NextChild = 20
+    integer(c_int), parameter, public :: QKeySequence_PreviousChild = 21
+    integer(c_int), parameter, public :: QKeySequence_Find = 22
+    integer(c_int), parameter, public :: QKeySequence_FindNext = 23
+    integer(c_int), parameter, public :: QKeySequence_FindPrevious = 24
+    integer(c_int), parameter, public :: QKeySequence_Replace = 25
+    integer(c_int), parameter, public :: QKeySequence_SelectAll = 26
+    integer(c_int), parameter, public :: QKeySequence_Bold = 27
+    integer(c_int), parameter, public :: QKeySequence_Italic = 28
+    integer(c_int), parameter, public :: QKeySequence_Underline = 29
+    integer(c_int), parameter, public :: QKeySequence_MoveToNextChar = 30
+    integer(c_int), parameter, public :: QKeySequence_MoveToPreviousChar = 31
+    integer(c_int), parameter, public :: QKeySequence_MoveToNextWord = 32
+    integer(c_int), parameter, public :: QKeySequence_MoveToPreviousWord = 33
+    integer(c_int), parameter, public :: QKeySequence_MoveToNextLine = 34
+    integer(c_int), parameter, public :: QKeySequence_MoveToPreviousLine = 35
+    integer(c_int), parameter, public :: QKeySequence_MoveToNextPage = 36
+    integer(c_int), parameter, public :: QKeySequence_MoveToPreviousPage = 37
+    integer(c_int), parameter, public :: QKeySequence_MoveToStartOfLine = 38
+    integer(c_int), parameter, public :: QKeySequence_MoveToEndOfLine = 39
+    integer(c_int), parameter, public :: QKeySequence_MoveToStartOfBlock = 40
+    integer(c_int), parameter, public :: QKeySequence_MoveToEndOfBlock = 41
+    integer(c_int), parameter, public :: QKeySequence_MoveToStartOfDocument = 42
+    integer(c_int), parameter, public :: QKeySequence_MoveToEndOfDocument = 43
+    integer(c_int), parameter, public :: QKeySequence_SelectNextChar = 44
+    integer(c_int), parameter, public :: QKeySequence_SelectPreviousChar = 45
+    integer(c_int), parameter, public :: QKeySequence_SelectNextWord = 46
+    integer(c_int), parameter, public :: QKeySequence_SelectPreviousWord = 47
+    integer(c_int), parameter, public :: QKeySequence_SelectNextLine = 48
+    integer(c_int), parameter, public :: QKeySequence_SelectPreviousLine = 49
+    integer(c_int), parameter, public :: QKeySequence_SelectNextPage = 50
+    integer(c_int), parameter, public :: QKeySequence_SelectPreviousPage = 51
+    integer(c_int), parameter, public :: QKeySequence_SelectStartOfLine = 52
+    integer(c_int), parameter, public :: QKeySequence_SelectEndOfLine = 53
+    integer(c_int), parameter, public :: QKeySequence_SelectStartOfBlock = 54
+    integer(c_int), parameter, public :: QKeySequence_SelectEndOfBlock = 55
+    integer(c_int), parameter, public :: QKeySequence_SelectStartOfDocument = 56
+    integer(c_int), parameter, public :: QKeySequence_SelectEndOfDocument = 57
+    integer(c_int), parameter, public :: QKeySequence_DeleteStartOfWord = 58
+    integer(c_int), parameter, public :: QKeySequence_DeleteEndOfWord = 59
+    integer(c_int), parameter, public :: QKeySequence_DeleteEndOfLine = 60
+    integer(c_int), parameter, public :: QKeySequence_InsertParagraphSeparator = 61
+    integer(c_int), parameter, public :: QKeySequence_InsertLineSeparator = 62
+    integer(c_int), parameter, public :: QKeySequence_SaveAs = 63
+    integer(c_int), parameter, public :: QKeySequence_Preferences = 64
+    integer(c_int), parameter, public :: QKeySequence_Quit = 65
+    integer(c_int), parameter, public :: QKeySequence_FullScreen = 66
+    integer(c_int), parameter, public :: QKeySequence_Deselect = 67
+    integer(c_int), parameter, public :: QKeySequence_DeleteCompleteLine = 68
+    integer(c_int), parameter, public :: QKeySequence_Backspace = 69
+    integer(c_int), parameter, public :: QKeySequence_Cancel = 70
+
     ! QTextCursor::MoveOperation
     integer(c_int), parameter, public :: QTextCursor_NoMove = 0
     integer(c_int), parameter, public :: QTextCursor_Start = 1
@@ -786,6 +906,9 @@ module qt_gui
         procedure :: setStatusTip => qaction_setStatusTip
         procedure :: setToolTip => qaction_setToolTip
         procedure :: trigger => qaction_trigger
+        procedure :: setStandardShortcut => qaction_setStandardShortcut
+        procedure :: shortcutNativeText => qaction_shortcutNativeText
+        procedure :: setShortcutContext => qaction_setShortcutContext
         procedure :: setIcon => qaction_setIcon
     end type QAction
     !> Constructor: `QAction(text [, parent])`.
@@ -1024,6 +1147,76 @@ module qt_gui
         procedure :: position => qtfhighlightblock_position
     end type QtfHighlightBlock
 
+    !> The colors widgets are drawn with, by role (QPalette_Window, _WindowText,
+    !> _Base, _Text, _Button, _Highlight, ...) and color group (QPalette_Active,
+    !> _Inactive, _Disabled). Make a theme by changing roles and applying it to the
+    !> whole application with QApplication_setPalette (or to one widget with
+    !> `setPalette`). The Fusion style (QApplication_setStyle('Fusion')) follows
+    !> palettes fully; native styles may ignore some roles. Release it with
+    !> `delete`.
+    type, public :: QPalette
+        type(c_ptr) :: ptr = c_null_ptr
+    contains
+        procedure :: setColor => qpalette_setColor
+        procedure :: color => qpalette_color
+        procedure :: isDark => qpalette_isDark
+        procedure :: isEqual => qpalette_isEqual
+        procedure :: copy => qpalette_copy
+        procedure :: delete => qpalette_delete
+    end type QPalette
+    !> Constructor: `QPalette()` or `QPalette(button)` or `QPalette(button, window)`.
+    interface QPalette
+        module procedure :: qpalette_new, qpalette_fromButton, qpalette_fromButtonWindow
+    end interface QPalette
+
+    !> Groups checkable actions so that one at a time is checked (like radio
+    !> buttons), e.g. a View > Theme menu: add each action (made with
+    !> `setCheckable(.true.)`) to the group and to a menu. Actions are numbered
+    !> from 0 in the order they were added; `triggered` reports that number.
+    type, extends(QObject), public :: QActionGroup
+        type(QSignalInt) :: triggered   !! An action of the group was triggered: slots get its index (0-based).
+        type(QSignalInt) :: hovered   !! An action of the group was highlighted: its index.
+    contains
+        procedure :: attach => qactiongroup_attach
+        procedure :: addAction => qactiongroup_addAction
+        procedure :: removeAction => qactiongroup_removeAction
+        procedure :: count => qactiongroup_count
+        procedure :: action => qactiongroup_action
+        procedure :: checkedAction => qactiongroup_checkedAction
+        procedure :: checkedIndex => qactiongroup_checkedIndex
+        procedure :: setExclusive => qactiongroup_setExclusive
+        procedure :: isExclusive => qactiongroup_isExclusive
+        procedure :: setExclusionPolicy => qactiongroup_setExclusionPolicy
+        procedure :: setEnabled => qactiongroup_setEnabled
+        procedure :: setVisible => qactiongroup_setVisible
+    end type QActionGroup
+    !> Constructor: `QActionGroup([parent])`.
+    interface QActionGroup
+        module procedure :: qactiongroup_new
+    end interface QActionGroup
+
+    !> A keyboard shortcut without a menu action: `activated` is emitted when its
+    !> keys are pressed in its parent's window (see `setContext`). Keys are in
+    !> portable text ('Ctrl+K', 'F5', 'Ctrl+K, Ctrl+C' for a sequence), with Ctrl
+    !> meaning Cmd on macOS, or a standard key (QKeySequence_Find, ...).
+    type, extends(QObject), public :: QShortcut
+        type(QSignal) :: activated   !! The keys were pressed.
+        type(QSignal) :: activatedAmbiguously   !! The keys were pressed, but another shortcut uses them too.
+    contains
+        procedure :: attach => qshortcut_attach
+        procedure :: setKey => qshortcut_setKey
+        procedure :: key => qshortcut_key
+        procedure :: nativeText => qshortcut_nativeText
+        procedure :: setEnabled => qshortcut_setEnabled
+        procedure :: isEnabled => qshortcut_isEnabled
+        procedure :: setContext => qshortcut_setContext
+        procedure :: setAutoRepeat => qshortcut_setAutoRepeat
+    end type QShortcut
+    !> Constructor: `QShortcut(key, parent)` or `QShortcut(key, parent)`.
+    interface QShortcut
+        module procedure :: qshortcut_new, qshortcut_fromStandardKey
+    end interface QShortcut
+
     abstract interface
         !> Slot for paint requests: draw with `painter` (do not end it).
         subroutine qt_slot_painter(painter, data)
@@ -1253,6 +1446,13 @@ module qt_gui
     public :: QCursor_y
     public :: QCursor_setPos
     public :: QCursor_pos
+    public :: QGuiApplication_colorScheme
+    public :: QGuiApplication_setColorScheme
+    public :: QDesktopServices_openUrl
+    public :: QKeySequence_standardKey
+    public :: QKeySequence_standardKeyBindings
+    public :: QKeySequence_nativeText
+    public :: QKeySequence_portableText
     public :: QFontDatabase_fixedFamily
 
 contains
@@ -4289,6 +4489,30 @@ contains
         call qtf_qaction_trigger(qtf_live(self, 'QAction%trigger'))
     end subroutine qaction_trigger
 
+    !> Use the platform's key sequences for a standard action (QKeySequence_Open, _Save, _Undo, ...).
+    subroutine qaction_setStandardShortcut(self, key)
+        class(QAction), intent(in) :: self
+        integer, intent(in) :: key
+        call qtf_qaction_setStandardShortcut(qtf_live(self, 'QAction%setStandardShortcut'), int(key, c_int))
+    end subroutine qaction_setStandardShortcut
+
+    !> The shortcut as the platform shows it in menus (e.g. '⌘O' on macOS).
+    function qaction_shortcutNativeText(self) result(res)
+        class(QAction), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qaction_shortcutNativeText(qtf_live(self, 'QAction%shortcutNativeText'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qaction_shortcutNativeText
+
+    !> Where the shortcut works: Qt_WindowShortcut (default: in the action's window), Qt_ApplicationShortcut, Qt_WidgetShortcut, ...
+    subroutine qaction_setShortcutContext(self, context)
+        class(QAction), intent(in) :: self
+        integer, intent(in) :: context
+        call qtf_qaction_setShortcutContext(qtf_live(self, 'QAction%setShortcutContext'), int(context, c_int))
+    end subroutine qaction_setShortcutContext
+
     !> Set the icon shown in menus and tool bars (the icon is copied).
     subroutine qaction_setIcon(self, icon)
         class(QAction), intent(in) :: self
@@ -5251,6 +5475,268 @@ contains
         res = qtf_qtfhighlightblock_position(self%ptr)
     end function qtfhighlightblock_position
 
+    !> A copy of the application's current palette.
+    function qpalette_new() result(res)
+        type(QPalette) :: res
+        res%ptr = qtf_qpalette_new()
+    end function qpalette_new
+
+    !> A palette derived from a button color (Qt computes the other roles).
+    function qpalette_fromButton(button) result(res)
+        type(QColor), intent(in) :: button
+        type(QPalette) :: res
+        res%ptr = qtf_qpalette_fromButton(int(button%r, c_int), int(button%g, c_int), int(button%b, c_int), &
+                int(button%a, c_int))
+    end function qpalette_fromButton
+
+    !> A palette derived from a button and a window color.
+    function qpalette_fromButtonWindow(button, window) result(res)
+        type(QColor), intent(in) :: button
+        type(QColor), intent(in) :: window
+        type(QPalette) :: res
+        res%ptr = qtf_qpalette_fromButtonWindow(int(button%r, c_int), int(button%g, c_int), int(button%b, c_int), &
+                int(button%a, c_int), int(window%r, c_int), int(window%g, c_int), int(window%b, c_int), int(window%a, &
+                        c_int))
+    end function qpalette_fromButtonWindow
+
+    !> Set the color of `role` (in all groups, or in one: QPalette_Active, _Inactive, _Disabled).
+    subroutine qpalette_setColor(self, role, color, group)
+        class(QPalette), intent(in) :: self
+        integer, intent(in) :: role
+        type(QColor), intent(in) :: color
+        integer, intent(in), optional :: group
+        integer(c_int) :: group_
+        group_ = QPalette_All
+        if (present(group)) group_ = int(group, c_int)
+        call qtf_qpalette_setColor(self%ptr, int(role, c_int), int(color%r, c_int), int(color%g, c_int), int(color%b, &
+                c_int), int(color%a, c_int), group_)
+    end subroutine qpalette_setColor
+
+    !> The color of `role` in `group`.
+    function qpalette_color(self, role, group) result(res)
+        class(QPalette), intent(in) :: self
+        integer, intent(in) :: role
+        integer, intent(in), optional :: group
+        type(QColor) :: res
+        integer(c_int) :: group_
+        integer(c_int) :: r_r
+        integer(c_int) :: r_g
+        integer(c_int) :: r_b
+        integer(c_int) :: r_a
+        group_ = QPalette_Active
+        if (present(group)) group_ = int(group, c_int)
+        call qtf_qpalette_color(self%ptr, int(role, c_int), group_, r_r, r_g, r_b, r_a)
+        res%r = int(r_r)
+        res%g = int(r_g)
+        res%b = int(r_b)
+        res%a = int(r_a)
+    end function qpalette_color
+
+    !> True if the window color is darker than the text color (a dark theme).
+    function qpalette_isDark(self) result(res)
+        class(QPalette), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qpalette_isDark(self%ptr))
+    end function qpalette_isDark
+
+    !> True if both palettes have the same colors.
+    function qpalette_isEqual(self, other) result(res)
+        class(QPalette), intent(in) :: self
+        class(QPalette), intent(in) :: other
+        logical :: res
+        res = qtf_logical(qtf_qpalette_isEqual(self%ptr, other%ptr))
+    end function qpalette_isEqual
+
+    !> A copy (delete it when done).
+    function qpalette_copy(self) result(res)
+        class(QPalette), intent(in) :: self
+        type(QPalette) :: res
+        res%ptr = qtf_qpalette_copy(self%ptr)
+    end function qpalette_copy
+
+    !> Release the palette.
+    subroutine qpalette_delete(self)
+        class(QPalette), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qpalette_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qpalette_delete
+
+    !> Bind to a C++ QActionGroup and its signals.
+    subroutine qactiongroup_attach(self, ptr)
+        class(QActionGroup), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QObject%attach(ptr)
+        self%triggered = QSignalInt(ptr, QTF_SIG_QACTIONGROUP_TRIGGERED, self%serial)
+        self%hovered = QSignalInt(ptr, QTF_SIG_QACTIONGROUP_HOVERED, self%serial)
+    end subroutine qactiongroup_attach
+
+    !> An empty, exclusive group.
+    function qactiongroup_new(parent) result(res)
+        class(QObject), intent(in), optional :: parent
+        type(QActionGroup) :: res
+        call res%attach(qtf_qactiongroup_new(qtf_ptr(parent)))
+    end function qactiongroup_new
+
+    !> Add an action (also add it to a menu or toolbar to show it).
+    subroutine qactiongroup_addAction(self, action)
+        class(QActionGroup), intent(in) :: self
+        class(QAction), intent(in) :: action
+        call qtf_qactiongroup_addAction(qtf_live(self, 'QActionGroup%addAction'), qtf_live(action, &
+                'QActionGroup%addAction'))
+    end subroutine qactiongroup_addAction
+
+    !> Remove an action from the group.
+    subroutine qactiongroup_removeAction(self, action)
+        class(QActionGroup), intent(in) :: self
+        class(QAction), intent(in) :: action
+        call qtf_qactiongroup_removeAction(qtf_live(self, 'QActionGroup%removeAction'), qtf_live(action, &
+                'QActionGroup%removeAction'))
+    end subroutine qactiongroup_removeAction
+
+    !> The number of actions.
+    function qactiongroup_count(self) result(res)
+        class(QActionGroup), intent(in) :: self
+        integer :: res
+        res = qtf_qactiongroup_count(qtf_live(self, 'QActionGroup%count'))
+    end function qactiongroup_count
+
+    !> The action at `index` (0-based; null if none).
+    function qactiongroup_action(self, index) result(res)
+        class(QActionGroup), intent(in) :: self
+        integer, intent(in) :: index
+        type(QAction) :: res
+        call res%attach(qtf_qactiongroup_action(qtf_live(self, 'QActionGroup%action'), int(index, c_int)))
+    end function qactiongroup_action
+
+    !> The checked action (null if none).
+    function qactiongroup_checkedAction(self) result(res)
+        class(QActionGroup), intent(in) :: self
+        type(QAction) :: res
+        call res%attach(qtf_qactiongroup_checkedAction(qtf_live(self, 'QActionGroup%checkedAction')))
+    end function qactiongroup_checkedAction
+
+    !> The index of the checked action (-1 if none).
+    function qactiongroup_checkedIndex(self) result(res)
+        class(QActionGroup), intent(in) :: self
+        integer :: res
+        res = qtf_qactiongroup_checkedIndex(qtf_live(self, 'QActionGroup%checkedIndex'))
+    end function qactiongroup_checkedIndex
+
+    !> One checked action at a time (the default), or any number.
+    subroutine qactiongroup_setExclusive(self, exclusive)
+        class(QActionGroup), intent(in) :: self
+        logical, intent(in) :: exclusive
+        call qtf_qactiongroup_setExclusive(qtf_live(self, 'QActionGroup%setExclusive'), qtf_int(exclusive))
+    end subroutine qactiongroup_setExclusive
+
+    !> True if at most one action is checked.
+    function qactiongroup_isExclusive(self) result(res)
+        class(QActionGroup), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qactiongroup_isExclusive(qtf_live(self, 'QActionGroup%isExclusive')))
+    end function qactiongroup_isExclusive
+
+    !> QActionGroup_Exclusive (one is always checked), QActionGroup_ExclusiveOptional (at most one; clicking the checked one unchecks it) or QActionGroup_None.
+    subroutine qactiongroup_setExclusionPolicy(self, policy)
+        class(QActionGroup), intent(in) :: self
+        integer, intent(in) :: policy
+        call qtf_qactiongroup_setExclusionPolicy(qtf_live(self, 'QActionGroup%setExclusionPolicy'), int(policy, c_int))
+    end subroutine qactiongroup_setExclusionPolicy
+
+    !> Enable or disable all the actions.
+    subroutine qactiongroup_setEnabled(self, enabled)
+        class(QActionGroup), intent(in) :: self
+        logical, intent(in) :: enabled
+        call qtf_qactiongroup_setEnabled(qtf_live(self, 'QActionGroup%setEnabled'), qtf_int(enabled))
+    end subroutine qactiongroup_setEnabled
+
+    !> Show or hide all the actions.
+    subroutine qactiongroup_setVisible(self, visible)
+        class(QActionGroup), intent(in) :: self
+        logical, intent(in) :: visible
+        call qtf_qactiongroup_setVisible(qtf_live(self, 'QActionGroup%setVisible'), qtf_int(visible))
+    end subroutine qactiongroup_setVisible
+
+    !> Bind to a C++ QShortcut and its signals.
+    subroutine qshortcut_attach(self, ptr)
+        class(QShortcut), intent(inout) :: self
+        type(c_ptr), intent(in) :: ptr
+        call self%QObject%attach(ptr)
+        self%activated = QSignal(ptr, QTF_SIG_QSHORTCUT_ACTIVATED, self%serial)
+        self%activatedAmbiguously = QSignal(ptr, QTF_SIG_QSHORTCUT_ACTIVATEDAMBIGUOUSLY, self%serial)
+    end subroutine qshortcut_attach
+
+    !> A shortcut for `key` in the window of `parent` (a widget), which owns it.
+    function qshortcut_new(key, parent) result(res)
+        character(len=*), intent(in) :: key
+        class(QObject), intent(in) :: parent
+        type(QShortcut) :: res
+        call res%attach(qtf_qshortcut_new(key, len(key, c_int), qtf_live(parent, 'QShortcut%new')))
+    end function qshortcut_new
+
+    !> A shortcut for the platform's keys for a standard action.
+    function qshortcut_fromStandardKey(key, parent) result(res)
+        integer, intent(in) :: key
+        class(QObject), intent(in) :: parent
+        type(QShortcut) :: res
+        call res%attach(qtf_qshortcut_fromStandardKey(int(key, c_int), qtf_live(parent, 'QShortcut%fromStandardKey')))
+    end function qshortcut_fromStandardKey
+
+    !> Change the keys (portable text).
+    subroutine qshortcut_setKey(self, key)
+        class(QShortcut), intent(in) :: self
+        character(len=*), intent(in) :: key
+        call qtf_qshortcut_setKey(qtf_live(self, 'QShortcut%setKey'), key, len(key, c_int))
+    end subroutine qshortcut_setKey
+
+    !> The keys, in portable text.
+    function qshortcut_key(self) result(res)
+        class(QShortcut), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qshortcut_key(qtf_live(self, 'QShortcut%key'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qshortcut_key
+
+    !> The keys as the platform shows them.
+    function qshortcut_nativeText(self) result(res)
+        class(QShortcut), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qshortcut_nativeText(qtf_live(self, 'QShortcut%nativeText'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qshortcut_nativeText
+
+    !> Enable or disable the shortcut.
+    subroutine qshortcut_setEnabled(self, enabled)
+        class(QShortcut), intent(in) :: self
+        logical, intent(in) :: enabled
+        call qtf_qshortcut_setEnabled(qtf_live(self, 'QShortcut%setEnabled'), qtf_int(enabled))
+    end subroutine qshortcut_setEnabled
+
+    !> True if the shortcut is enabled.
+    function qshortcut_isEnabled(self) result(res)
+        class(QShortcut), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qshortcut_isEnabled(qtf_live(self, 'QShortcut%isEnabled')))
+    end function qshortcut_isEnabled
+
+    !> Where it works: Qt_WindowShortcut (default), Qt_WidgetShortcut (only when the parent has focus), Qt_WidgetWithChildrenShortcut, Qt_ApplicationShortcut.
+    subroutine qshortcut_setContext(self, context)
+        class(QShortcut), intent(in) :: self
+        integer, intent(in) :: context
+        call qtf_qshortcut_setContext(qtf_live(self, 'QShortcut%setContext'), int(context, c_int))
+    end subroutine qshortcut_setContext
+
+    !> Emit `activated` repeatedly while the keys are held (default: on).
+    subroutine qshortcut_setAutoRepeat(self, on)
+        class(QShortcut), intent(in) :: self
+        logical, intent(in) :: on
+        call qtf_qshortcut_setAutoRepeat(qtf_live(self, 'QShortcut%setAutoRepeat'), qtf_int(on))
+    end subroutine qshortcut_setAutoRepeat
+
     !> The system clipboard (needs the application object).
     function QGuiApplication_clipboard() result(res)
         type(QClipboard) :: res
@@ -5335,6 +5821,65 @@ contains
         res%x = int(r_x)
         res%y = int(r_y)
     end function QCursor_pos
+
+    !> Whether the system (or the application, after QGuiApplication_setColorScheme) uses a light or dark appearance: Qt_ColorScheme_Light, Qt_ColorScheme_Dark or Qt_ColorScheme_Unknown.
+    function QGuiApplication_colorScheme() result(res)
+        integer :: res
+        res = qtf_QGuiApplication_colorScheme()
+    end function QGuiApplication_colorScheme
+
+    !> Ask for a light or dark appearance (Qt_ColorScheme_Light, _Dark), or follow the system again (Qt_ColorScheme_Unknown). The platform may not support it; check QGuiApplication_colorScheme.
+    subroutine QGuiApplication_setColorScheme(scheme)
+        integer, intent(in) :: scheme
+        call qtf_QGuiApplication_setColorScheme(int(scheme, c_int))
+    end subroutine QGuiApplication_setColorScheme
+
+    !> Open a URL in the user's default application: a web page ('https://...') in the browser, 'mailto:...' in the mail program, or a local file or directory (a path) as if double-clicked. False if it could not be opened.
+    function QDesktopServices_openUrl(url) result(res)
+        character(len=*), intent(in) :: url
+        logical :: res
+        res = qtf_logical(qtf_QDesktopServices_openUrl(url, len(url, c_int)))
+    end function QDesktopServices_openUrl
+
+    !> The platform's main key sequence for a standard action (QKeySequence_Open, _Undo, ...), in portable text, e.g. 'Ctrl+O' (Ctrl is Cmd on macOS); '' if the platform has none.
+    function QKeySequence_standardKey(key) result(res)
+        integer, intent(in) :: key
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_QKeySequence_standardKey(int(key, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function QKeySequence_standardKey
+
+    !> All of the platform's key sequences for a standard action (e.g. Redo is both 'Ctrl+Shift+Z' and 'Ctrl+Y' on some platforms), in portable text.
+    function QKeySequence_standardKeyBindings(key) result(res)
+        integer, intent(in) :: key
+        type(qt_string), allocatable :: res(:)
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_QKeySequence_standardKeyBindings(int(key, c_int), n_)
+        res = qtf_take_string_list(p_, n_)
+    end function QKeySequence_standardKeyBindings
+
+    !> A key sequence in portable text ('Ctrl+Shift+S') as the platform shows it in menus (e.g. '⇧⌘S' on macOS).
+    function QKeySequence_nativeText(sequence) result(res)
+        character(len=*), intent(in) :: sequence
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_QKeySequence_nativeText(sequence, len(sequence, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function QKeySequence_nativeText
+
+    !> A key sequence in the platform's native text as portable text.
+    function QKeySequence_portableText(sequence) result(res)
+        character(len=*), intent(in) :: sequence
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_QKeySequence_portableText(sequence, len(sequence, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function QKeySequence_portableText
 
     !> The system's fixed-pitch (monospace) font family, e.g. for a code editor: `call editor%setFont(QFont(QFontDatabase_fixedFamily(), 12d0))`.
     function QFontDatabase_fixedFamily() result(res)

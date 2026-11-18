@@ -24,6 +24,10 @@ module qt_c_gui
     integer(c_int), parameter, public :: QTF_SIG_QTEXTDOCUMENT_UNDOAVAILABLE = 2013
     integer(c_int), parameter, public :: QTF_SIG_QTEXTDOCUMENT_REDOAVAILABLE = 2014
     integer(c_int), parameter, public :: QTF_SIG_QTFSYNTAXHIGHLIGHTER_HIGHLIGHTBLOCK = 2015
+    integer(c_int), parameter, public :: QTF_SIG_QACTIONGROUP_TRIGGERED = 2016
+    integer(c_int), parameter, public :: QTF_SIG_QACTIONGROUP_HOVERED = 2017
+    integer(c_int), parameter, public :: QTF_SIG_QSHORTCUT_ACTIVATED = 2018
+    integer(c_int), parameter, public :: QTF_SIG_QSHORTCUT_ACTIVATEDAMBIGUOUSLY = 2019
 
     interface
 
@@ -3565,6 +3569,37 @@ module qt_c_gui
             type(c_ptr), value :: self
         end subroutine qtf_qaction_trigger
 
+        !> Use the platform's key sequences for a standard action (QKeySequence_Open, _Save, _Undo, ...).
+        !>
+        !> C: `void qtf_qaction_setStandardShortcut(void *self, int key)`
+        subroutine qtf_qaction_setStandardShortcut(self, key) bind(C, name='qtf_qaction_setStandardShortcut')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: key
+        end subroutine qtf_qaction_setStandardShortcut
+
+        !> The shortcut as the platform shows it in menus (e.g. '⌘O' on macOS).
+        !>
+        !> C: `char *qtf_qaction_shortcutNativeText(void *self, int *len)`
+        function qtf_qaction_shortcutNativeText(self, len) result(res) bind(C, name='qtf_qaction_shortcutNativeText')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qaction_shortcutNativeText
+
+        !> Where the shortcut works: Qt_WindowShortcut (default: in the action's window), Qt_ApplicationShortcut, Qt_WidgetShortcut, ...
+        !>
+        !> C: `void qtf_qaction_setShortcutContext(void *self, int context)`
+        subroutine qtf_qaction_setShortcutContext(self, context) bind(C, name='qtf_qaction_setShortcutContext')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: context
+        end subroutine qtf_qaction_setShortcutContext
+
         !> Set the icon shown in menus and tool bars (the icon is copied).
         !>
         !> C: `void qtf_qaction_setIcon(void *self, void *icon)`
@@ -4741,6 +4776,335 @@ module qt_c_gui
             integer(c_int) :: res
         end function qtf_qtfhighlightblock_position
 
+        !> Release a palette.
+        !>
+        !> C: `void qtf_qpalette_delete(void *self)`
+        subroutine qtf_qpalette_delete(self) bind(C, name='qtf_qpalette_delete')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qpalette_delete
+
+        !> A copy of the application's current palette.
+        !>
+        !> C: `void *qtf_qpalette_new(void)`
+        function qtf_qpalette_new() result(res) bind(C, name='qtf_qpalette_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr) :: res
+        end function qtf_qpalette_new
+
+        !> A palette derived from a button color (Qt computes the other roles).
+        !>
+        !> C: `void *qtf_qpalette_fromButton(int button_r, int button_g, int button_b, int button_a)`
+        function qtf_qpalette_fromButton(button_r, button_g, button_b, button_a) &
+                result(res) bind(C, name='qtf_qpalette_fromButton')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), value :: button_r
+            integer(c_int), value :: button_g
+            integer(c_int), value :: button_b
+            integer(c_int), value :: button_a
+            type(c_ptr) :: res
+        end function qtf_qpalette_fromButton
+
+        !> A palette derived from a button and a window color.
+        !>
+        !> C: `void *qtf_qpalette_fromButtonWindow(int button_r, int button_g, int button_b, int button_a, int window_r, int window_g, int window_b, int window_a)`
+        function qtf_qpalette_fromButtonWindow(button_r, button_g, button_b, button_a, window_r, window_g, window_b, window_a) &
+                result(res) bind(C, name='qtf_qpalette_fromButtonWindow')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), value :: button_r
+            integer(c_int), value :: button_g
+            integer(c_int), value :: button_b
+            integer(c_int), value :: button_a
+            integer(c_int), value :: window_r
+            integer(c_int), value :: window_g
+            integer(c_int), value :: window_b
+            integer(c_int), value :: window_a
+            type(c_ptr) :: res
+        end function qtf_qpalette_fromButtonWindow
+
+        !> Set the color of `role` (in all groups, or in one: QPalette_Active, _Inactive, _Disabled).
+        !>
+        !> C: `void qtf_qpalette_setColor(void *self, int role, int color_r, int color_g, int color_b, int color_a, int group)`
+        subroutine qtf_qpalette_setColor(self, role, color_r, color_g, color_b, color_a, group) &
+                bind(C, name='qtf_qpalette_setColor')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: role
+            integer(c_int), value :: color_r
+            integer(c_int), value :: color_g
+            integer(c_int), value :: color_b
+            integer(c_int), value :: color_a
+            integer(c_int), value :: group
+        end subroutine qtf_qpalette_setColor
+
+        !> The color of `role` in `group`.
+        !>
+        !> C: `void qtf_qpalette_color(void *self, int role, int group, int *res_r, int *res_g, int *res_b, int *res_a)`
+        subroutine qtf_qpalette_color(self, role, group, res_r, res_g, res_b, res_a) bind(C, name='qtf_qpalette_color')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: role
+            integer(c_int), value :: group
+            integer(c_int), intent(out) :: res_r
+            integer(c_int), intent(out) :: res_g
+            integer(c_int), intent(out) :: res_b
+            integer(c_int), intent(out) :: res_a
+        end subroutine qtf_qpalette_color
+
+        !> True if the window color is darker than the text color (a dark theme).
+        !>
+        !> C: `int qtf_qpalette_isDark(void *self)`
+        function qtf_qpalette_isDark(self) result(res) bind(C, name='qtf_qpalette_isDark')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qpalette_isDark
+
+        !> True if both palettes have the same colors.
+        !>
+        !> C: `int qtf_qpalette_isEqual(void *self, void *other)`
+        function qtf_qpalette_isEqual(self, other) result(res) bind(C, name='qtf_qpalette_isEqual')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: other
+            integer(c_int) :: res
+        end function qtf_qpalette_isEqual
+
+        !> A copy (delete it when done).
+        !>
+        !> C: `void *qtf_qpalette_copy(void *self)`
+        function qtf_qpalette_copy(self) result(res) bind(C, name='qtf_qpalette_copy')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qpalette_copy
+
+        !> An empty, exclusive group.
+        !>
+        !> C: `void *qtf_qactiongroup_new(void *parent)`
+        function qtf_qactiongroup_new(parent) result(res) bind(C, name='qtf_qactiongroup_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qactiongroup_new
+
+        !> Add an action (also add it to a menu or toolbar to show it).
+        !>
+        !> C: `void qtf_qactiongroup_addAction(void *self, void *action)`
+        subroutine qtf_qactiongroup_addAction(self, action) bind(C, name='qtf_qactiongroup_addAction')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: action
+        end subroutine qtf_qactiongroup_addAction
+
+        !> Remove an action from the group.
+        !>
+        !> C: `void qtf_qactiongroup_removeAction(void *self, void *action)`
+        subroutine qtf_qactiongroup_removeAction(self, action) bind(C, name='qtf_qactiongroup_removeAction')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: action
+        end subroutine qtf_qactiongroup_removeAction
+
+        !> The number of actions.
+        !>
+        !> C: `int qtf_qactiongroup_count(void *self)`
+        function qtf_qactiongroup_count(self) result(res) bind(C, name='qtf_qactiongroup_count')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qactiongroup_count
+
+        !> The action at `index` (0-based; null if none).
+        !>
+        !> C: `void *qtf_qactiongroup_action(void *self, int index)`
+        function qtf_qactiongroup_action(self, index) result(res) bind(C, name='qtf_qactiongroup_action')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            type(c_ptr) :: res
+        end function qtf_qactiongroup_action
+
+        !> The checked action (null if none).
+        !>
+        !> C: `void *qtf_qactiongroup_checkedAction(void *self)`
+        function qtf_qactiongroup_checkedAction(self) result(res) bind(C, name='qtf_qactiongroup_checkedAction')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qactiongroup_checkedAction
+
+        !> The index of the checked action (-1 if none).
+        !>
+        !> C: `int qtf_qactiongroup_checkedIndex(void *self)`
+        function qtf_qactiongroup_checkedIndex(self) result(res) bind(C, name='qtf_qactiongroup_checkedIndex')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qactiongroup_checkedIndex
+
+        !> One checked action at a time (the default), or any number.
+        !>
+        !> C: `void qtf_qactiongroup_setExclusive(void *self, int exclusive)`
+        subroutine qtf_qactiongroup_setExclusive(self, exclusive) bind(C, name='qtf_qactiongroup_setExclusive')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: exclusive
+        end subroutine qtf_qactiongroup_setExclusive
+
+        !> True if at most one action is checked.
+        !>
+        !> C: `int qtf_qactiongroup_isExclusive(void *self)`
+        function qtf_qactiongroup_isExclusive(self) result(res) bind(C, name='qtf_qactiongroup_isExclusive')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qactiongroup_isExclusive
+
+        !> QActionGroup_Exclusive (one is always checked), QActionGroup_ExclusiveOptional (at most one; clicking the checked one unchecks it) or QActionGroup_None.
+        !>
+        !> C: `void qtf_qactiongroup_setExclusionPolicy(void *self, int policy)`
+        subroutine qtf_qactiongroup_setExclusionPolicy(self, policy) bind(C, name='qtf_qactiongroup_setExclusionPolicy')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: policy
+        end subroutine qtf_qactiongroup_setExclusionPolicy
+
+        !> Enable or disable all the actions.
+        !>
+        !> C: `void qtf_qactiongroup_setEnabled(void *self, int enabled)`
+        subroutine qtf_qactiongroup_setEnabled(self, enabled) bind(C, name='qtf_qactiongroup_setEnabled')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enabled
+        end subroutine qtf_qactiongroup_setEnabled
+
+        !> Show or hide all the actions.
+        !>
+        !> C: `void qtf_qactiongroup_setVisible(void *self, int visible)`
+        subroutine qtf_qactiongroup_setVisible(self, visible) bind(C, name='qtf_qactiongroup_setVisible')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: visible
+        end subroutine qtf_qactiongroup_setVisible
+
+        !> A shortcut for `key` in the window of `parent` (a widget), which owns it.
+        !>
+        !> C: `void *qtf_qshortcut_new(const char *key, int key_len, void *parent)`
+        function qtf_qshortcut_new(key, key_len, parent) result(res) bind(C, name='qtf_qshortcut_new')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qshortcut_new
+
+        !> A shortcut for the platform's keys for a standard action.
+        !>
+        !> C: `void *qtf_qshortcut_fromStandardKey(int key, void *parent)`
+        function qtf_qshortcut_fromStandardKey(key, parent) result(res) bind(C, name='qtf_qshortcut_fromStandardKey')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), value :: key
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qshortcut_fromStandardKey
+
+        !> Change the keys (portable text).
+        !>
+        !> C: `void qtf_qshortcut_setKey(void *self, const char *key, int key_len)`
+        subroutine qtf_qshortcut_setKey(self, key, key_len) bind(C, name='qtf_qshortcut_setKey')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+        end subroutine qtf_qshortcut_setKey
+
+        !> The keys, in portable text.
+        !>
+        !> C: `char *qtf_qshortcut_key(void *self, int *len)`
+        function qtf_qshortcut_key(self, len) result(res) bind(C, name='qtf_qshortcut_key')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qshortcut_key
+
+        !> The keys as the platform shows them.
+        !>
+        !> C: `char *qtf_qshortcut_nativeText(void *self, int *len)`
+        function qtf_qshortcut_nativeText(self, len) result(res) bind(C, name='qtf_qshortcut_nativeText')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qshortcut_nativeText
+
+        !> Enable or disable the shortcut.
+        !>
+        !> C: `void qtf_qshortcut_setEnabled(void *self, int enabled)`
+        subroutine qtf_qshortcut_setEnabled(self, enabled) bind(C, name='qtf_qshortcut_setEnabled')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enabled
+        end subroutine qtf_qshortcut_setEnabled
+
+        !> True if the shortcut is enabled.
+        !>
+        !> C: `int qtf_qshortcut_isEnabled(void *self)`
+        function qtf_qshortcut_isEnabled(self) result(res) bind(C, name='qtf_qshortcut_isEnabled')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qshortcut_isEnabled
+
+        !> Where it works: Qt_WindowShortcut (default), Qt_WidgetShortcut (only when the parent has focus), Qt_WidgetWithChildrenShortcut, Qt_ApplicationShortcut.
+        !>
+        !> C: `void qtf_qshortcut_setContext(void *self, int context)`
+        subroutine qtf_qshortcut_setContext(self, context) bind(C, name='qtf_qshortcut_setContext')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: context
+        end subroutine qtf_qshortcut_setContext
+
+        !> Emit `activated` repeatedly while the keys are held (default: on).
+        !>
+        !> C: `void qtf_qshortcut_setAutoRepeat(void *self, int on)`
+        subroutine qtf_qshortcut_setAutoRepeat(self, on) bind(C, name='qtf_qshortcut_setAutoRepeat')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: on
+        end subroutine qtf_qshortcut_setAutoRepeat
+
         !> The system clipboard (needs the application object).
         !>
         !> C: `void *qtf_QGuiApplication_clipboard(void)`
@@ -4863,6 +5227,84 @@ module qt_c_gui
             integer(c_int), intent(out) :: res_y
         end subroutine qtf_QCursor_pos
 
+        !> Whether the system (or the application, after QGuiApplication_setColorScheme) uses a light or dark appearance: Qt_ColorScheme_Light, Qt_ColorScheme_Dark or Qt_ColorScheme_Unknown.
+        !>
+        !> C: `int qtf_QGuiApplication_colorScheme(void)`
+        function qtf_QGuiApplication_colorScheme() result(res) bind(C, name='qtf_QGuiApplication_colorScheme')
+            import :: c_int
+            implicit none
+            integer(c_int) :: res
+        end function qtf_QGuiApplication_colorScheme
+
+        !> Ask for a light or dark appearance (Qt_ColorScheme_Light, _Dark), or follow the system again (Qt_ColorScheme_Unknown). The platform may not support it; check QGuiApplication_colorScheme.
+        !>
+        !> C: `void qtf_QGuiApplication_setColorScheme(int scheme)`
+        subroutine qtf_QGuiApplication_setColorScheme(scheme) bind(C, name='qtf_QGuiApplication_setColorScheme')
+            import :: c_int
+            implicit none
+            integer(c_int), value :: scheme
+        end subroutine qtf_QGuiApplication_setColorScheme
+
+        !> Open a URL in the user's default application: a web page ('https://...') in the browser, 'mailto:...' in the mail program, or a local file or directory (a path) as if double-clicked. False if it could not be opened.
+        !>
+        !> C: `int qtf_QDesktopServices_openUrl(const char *url, int url_len)`
+        function qtf_QDesktopServices_openUrl(url, url_len) result(res) bind(C, name='qtf_QDesktopServices_openUrl')
+            import :: c_char, c_int
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: url
+            integer(c_int), value :: url_len
+            integer(c_int) :: res
+        end function qtf_QDesktopServices_openUrl
+
+        !> The platform's main key sequence for a standard action (QKeySequence_Open, _Undo, ...), in portable text, e.g. 'Ctrl+O' (Ctrl is Cmd on macOS); '' if the platform has none.
+        !>
+        !> C: `char *qtf_QKeySequence_standardKey(int key, int *len)`
+        function qtf_QKeySequence_standardKey(key, len) result(res) bind(C, name='qtf_QKeySequence_standardKey')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), value :: key
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_QKeySequence_standardKey
+
+        !> All of the platform's key sequences for a standard action (e.g. Redo is both 'Ctrl+Shift+Z' and 'Ctrl+Y' on some platforms), in portable text.
+        !>
+        !> C: `char *qtf_QKeySequence_standardKeyBindings(int key, int *len)`
+        function qtf_QKeySequence_standardKeyBindings(key, len) &
+                result(res) bind(C, name='qtf_QKeySequence_standardKeyBindings')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), value :: key
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_QKeySequence_standardKeyBindings
+
+        !> A key sequence in portable text ('Ctrl+Shift+S') as the platform shows it in menus (e.g. '⇧⌘S' on macOS).
+        !>
+        !> C: `char *qtf_QKeySequence_nativeText(const char *sequence, int sequence_len, int *len)`
+        function qtf_QKeySequence_nativeText(sequence, sequence_len, len) &
+                result(res) bind(C, name='qtf_QKeySequence_nativeText')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: sequence
+            integer(c_int), value :: sequence_len
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_QKeySequence_nativeText
+
+        !> A key sequence in the platform's native text as portable text.
+        !>
+        !> C: `char *qtf_QKeySequence_portableText(const char *sequence, int sequence_len, int *len)`
+        function qtf_QKeySequence_portableText(sequence, sequence_len, len) &
+                result(res) bind(C, name='qtf_QKeySequence_portableText')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: sequence
+            integer(c_int), value :: sequence_len
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_QKeySequence_portableText
+
         !> The system's fixed-pitch (monospace) font family, e.g. for a code editor: `call editor%setFont(QFont(QFontDatabase_fixedFamily(), 12d0))`.
         !>
         !> C: `char *qtf_QFontDatabase_fixedFamily(int *len)`
@@ -4964,11 +5406,12 @@ module qt_c_gui
     public :: qtf_qaction_new, qtf_qaction_setText, qtf_qaction_text, qtf_qaction_setShortcut
     public :: qtf_qaction_shortcut, qtf_qaction_setCheckable, qtf_qaction_isCheckable, qtf_qaction_setChecked
     public :: qtf_qaction_isChecked, qtf_qaction_setEnabled, qtf_qaction_isEnabled, qtf_qaction_setStatusTip
-    public :: qtf_qaction_setToolTip, qtf_qaction_trigger, qtf_qaction_setIcon, qtf_qvalidator_validate
-    public :: qtf_qintvalidator_new, qtf_qintvalidator_setRange, qtf_qintvalidator_bottom
-    public :: qtf_qintvalidator_top, qtf_qdoublevalidator_new, qtf_qdoublevalidator_setRange
-    public :: qtf_qdoublevalidator_setNotation, qtf_qdoublevalidator_bottom, qtf_qdoublevalidator_top
-    public :: qtf_qdoublevalidator_decimals, qtf_qregularexpressionvalidator_new
+    public :: qtf_qaction_setToolTip, qtf_qaction_trigger, qtf_qaction_setStandardShortcut
+    public :: qtf_qaction_shortcutNativeText, qtf_qaction_setShortcutContext, qtf_qaction_setIcon
+    public :: qtf_qvalidator_validate, qtf_qintvalidator_new, qtf_qintvalidator_setRange
+    public :: qtf_qintvalidator_bottom, qtf_qintvalidator_top, qtf_qdoublevalidator_new
+    public :: qtf_qdoublevalidator_setRange, qtf_qdoublevalidator_setNotation, qtf_qdoublevalidator_bottom
+    public :: qtf_qdoublevalidator_top, qtf_qdoublevalidator_decimals, qtf_qregularexpressionvalidator_new
     public :: qtf_qregularexpressionvalidator_setPattern, qtf_qregularexpressionvalidator_pattern
     public :: qtf_qwindow_new, qtf_qwindow_setSurfaceType, qtf_qwindow_surfaceType, qtf_qwindow_create
     public :: qtf_qwindow_destroy, qtf_qwindow_show, qtf_qwindow_hide, qtf_qwindow_isVisible
@@ -5002,11 +5445,23 @@ module qt_c_gui
     public :: qtf_qtfsyntaxhighlighter_document, qtf_qtfhighlightblock_text, qtf_qtfhighlightblock_setFormat
     public :: qtf_qtfhighlightblock_previousBlockState, qtf_qtfhighlightblock_currentBlockState
     public :: qtf_qtfhighlightblock_setCurrentBlockState, qtf_qtfhighlightblock_blockNumber
-    public :: qtf_qtfhighlightblock_position, qtf_QGuiApplication_clipboard
-    public :: qtf_QGuiApplication_primaryScreen, qtf_QGuiApplication_screenCount, qtf_QGuiApplication_screen
-    public :: qtf_QGuiApplication_screenAt, qtf_QGuiApplication_setOverrideCursor
-    public :: qtf_QGuiApplication_changeOverrideCursor, qtf_QGuiApplication_restoreOverrideCursor
-    public :: qtf_QGuiApplication_overrideCursorShape, qtf_QCursor_x, qtf_QCursor_y, qtf_QCursor_setPos
-    public :: qtf_QCursor_pos, qtf_QFontDatabase_fixedFamily
+    public :: qtf_qtfhighlightblock_position, qtf_qpalette_delete, qtf_qpalette_new, qtf_qpalette_fromButton
+    public :: qtf_qpalette_fromButtonWindow, qtf_qpalette_setColor, qtf_qpalette_color, qtf_qpalette_isDark
+    public :: qtf_qpalette_isEqual, qtf_qpalette_copy, qtf_qactiongroup_new, qtf_qactiongroup_addAction
+    public :: qtf_qactiongroup_removeAction, qtf_qactiongroup_count, qtf_qactiongroup_action
+    public :: qtf_qactiongroup_checkedAction, qtf_qactiongroup_checkedIndex, qtf_qactiongroup_setExclusive
+    public :: qtf_qactiongroup_isExclusive, qtf_qactiongroup_setExclusionPolicy, qtf_qactiongroup_setEnabled
+    public :: qtf_qactiongroup_setVisible, qtf_qshortcut_new, qtf_qshortcut_fromStandardKey
+    public :: qtf_qshortcut_setKey, qtf_qshortcut_key, qtf_qshortcut_nativeText, qtf_qshortcut_setEnabled
+    public :: qtf_qshortcut_isEnabled, qtf_qshortcut_setContext, qtf_qshortcut_setAutoRepeat
+    public :: qtf_QGuiApplication_clipboard, qtf_QGuiApplication_primaryScreen
+    public :: qtf_QGuiApplication_screenCount, qtf_QGuiApplication_screen, qtf_QGuiApplication_screenAt
+    public :: qtf_QGuiApplication_setOverrideCursor, qtf_QGuiApplication_changeOverrideCursor
+    public :: qtf_QGuiApplication_restoreOverrideCursor, qtf_QGuiApplication_overrideCursorShape
+    public :: qtf_QCursor_x, qtf_QCursor_y, qtf_QCursor_setPos, qtf_QCursor_pos
+    public :: qtf_QGuiApplication_colorScheme, qtf_QGuiApplication_setColorScheme
+    public :: qtf_QDesktopServices_openUrl, qtf_QKeySequence_standardKey
+    public :: qtf_QKeySequence_standardKeyBindings, qtf_QKeySequence_nativeText
+    public :: qtf_QKeySequence_portableText, qtf_QFontDatabase_fixedFamily
 
 end module qt_c_gui

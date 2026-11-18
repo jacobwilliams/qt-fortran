@@ -99,17 +99,19 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 | Input helpers | `QDateTimeEdit`, validators (`QIntValidator`, `QDoubleValidator`, `QRegularExpressionValidator`), `QCompleter` |
 | Text | `QTextEdit`, `QPlainTextEdit`, `QTextBrowser` (help pages with links) |
 | Code editors | `QtfPlainTextEdit` (a gutter for line numbers and markers, painting over the text, the visible lines and their geometry), `QTextDocument`, `QTextBlock`, `QTextCursor` (editing, selections, undo steps), `QtfSyntaxHighlighter` (highlighting done by Fortran, with state across lines), `QTextCharFormat`, extra selections |
-| Item views | `QTableWidget`, `QListWidget`, `QTreeWidget`; `QTableView` with `QtfTableModel`, `QListView` with `QtfListModel` and `QTreeView` with `QtfTreeModel` (cells come from Fortran on demand, so large arrays aren't copied; with icons, check boxes, tool tips, colors, alignment and bold/italic); `QSortFilterProxyModel`, `QFileSystemModel`, `QtfItemDelegate` (combo / spin-box cell editors, custom-painted cells) |
-| Containers | `QTabWidget`, `QStackedWidget`, `QSplitter`, `QScrollArea`, `QGroupBox`, `QDockWidget`, `QToolBox`, `QMdiArea` |
+| Item views | `QTableWidget`, `QListWidget`, `QTreeWidget`; `QHeaderView` (resize modes, section sizes, sort indicator, movable sections); `QTableView` with `QtfTableModel`, `QListView` with `QtfListModel` and `QTreeView` with `QtfTreeModel` (cells come from Fortran on demand, so large arrays aren't copied; with icons, check boxes, tool tips, colors, alignment and bold/italic); `QSortFilterProxyModel`, `QFileSystemModel`, `QtfItemDelegate` (combo / spin-box cell editors, custom-painted cells) |
+| Containers | `QTabWidget`, `QTabBar` (standalone, with an integer per tab), `QStackedWidget`, `QStackedLayout`, `QSplitter`, `QScrollArea`, `QGroupBox`, `QDockWidget`, `QToolBox`, `QMdiArea` |
 | Undo | `QUndoStack` (commands are Fortran slots), `QUndoView` |
-| Layouts | `QVBoxLayout`, `QHBoxLayout`, `QGridLayout`, `QFormLayout`, size policies |
-| Main window | `QMainWindow`, `QMenuBar`, `QMenu`, `QToolBar`, `QStatusBar`, `QAction`, docks |
+| Layouts | `QVBoxLayout`, `QHBoxLayout`, `QGridLayout`, `QFormLayout`, `QStackedLayout`, size policies |
+| Theming | `QPalette` (color roles and groups; application and widget palettes), styles (`QApplication_setStyle('Fusion')`, `QStyleFactory_keys`), light/dark color scheme |
+| Scrolling | `QAbstractScrollArea` (the base of views and editors): `verticalScrollBar()`/`horizontalScrollBar()` as `QScrollBar`s, scroll-bar policies, `viewport()` |
+| Main window | `QMainWindow`, `QMenuBar`, `QMenu`, `QToolBar`, `QStatusBar`, `QAction`, `QActionGroup` (one checked at a time), `QShortcut`, standard shortcuts (`QKeySequence_*`, native text), docks |
 | Dialogs | `QDialog`, `QDialogButtonBox`, `QMessageBox`, `QFileDialog`, `QInputDialog`, `QColorDialog`, `QFontDialog`, `QProgressDialog`, `QWizard`, `QSplashScreen` |
 | Painting | `QPainter` (shapes, text, images, arcs and pies, clipping, transforms), `QPainterPath` (curves, boolean operations), `QLinearGradient`, `QRadialGradient`, `QConicalGradient`, `QTransform`, `QFontMetrics`, `QImage`, `QPixmap`, `QColor`, `QPen`, `QBrush`, `QFont` |
 | Arrays as images | `QImage_fromArray` (a 2D Fortran array through a colormap: viridis, magma, inferno, plasma, coolwarm, gray; NaN transparent), `QImage_colorbar` |
 | Icons | `QIcon` (files or generated images), `QStyle_standardIcon`, icons on actions, buttons, tabs, items and windows |
 | Events | `QMouseEvent`, `QKeyEvent`, `QWheelEvent`, `QResizeEvent`; on any widget: `QCloseEvent` (veto closing), `QContextMenuEvent`, enter/leave, focus in/out, show/hide, drag and drop; on any object (e.g. a `QWindow`): `QtfEventFilter` (input and drag-and-drop events can be consumed) |
-| Desktop | `QClipboard` (text, images, any data), drag and drop (`QMimeData`, `QDropEvent`, `QDrag`; files from the desktop arrive as paths; rows and nodes dragged out of, reordered in and dropped on item views with Fortran models), cursors (per widget, override cursor), `QScreen` (size, available area, DPI, pixel ratio) |
+| Desktop | `QClipboard` (text, images, any data), `QToolTip_showText`, `QDesktopServices_openUrl` (web pages, mail, files in their default application), drag and drop (`QMimeData`, `QDropEvent`, `QDrag`; files from the desktop arrive as paths; rows and nodes dragged out of, reordered in and dropped on item views with Fortran models), cursors (per widget, override cursor), `QScreen` (size, available area, DPI, pixel ratio) |
 | Geometry and math | `QPoint`, `QPointF`, `QSize`, `QSizeF`, `QRect`, `QRectF`, `QLineF`, `QMargins`, `QVector2D`, `QVector3D`, `QVector4D`, `QQuaternion` (Euler angles, slerp, look-at rotations): plain Fortran types with Qt's methods and operators, taken and returned by widget geometry (`pos`, `size`, `geometry`, `mapToGlobal`, ...), painting, paths, transforms, events, screens, shader uniforms and `QMatrix4x4` (`rotate(quaternion)`, `matrix * vector`, `QVector3D_project`/`unproject`) |
 | OpenGL | `QtfOpenGLWidget`, `QOpenGLShaderProgram`, `QOpenGLBuffer`, `QOpenGLVertexArrayObject`, `QSurfaceFormat`, `QMatrix4x4`, and `glClear`, `glDrawArrays`, `glDrawElements`, ...; for external engines: `QWindow`, `QOpenGLContext`, `QWidget_createWindowContainer` |
 
@@ -151,7 +153,7 @@ variable. No paths go on the command line, so paths with spaces
 ```sh
 pixi run build                  # build the library and examples
 pixi run test                   # run the test suite (headless)
-pixi run example hello          # run an example: hello, timer, form, plot, explorer, timeseries, fieldviewer, datasets, geometry, editor, surface3d, orbit3d
+pixi run example hello          # run an example: hello, timer, form, plot, explorer, timeseries, fieldviewer, datasets, geometry, editor, themes, surface3d, orbit3d
 ```
 
 Examples:
@@ -167,6 +169,7 @@ Examples:
 | [fieldviewer](example/fieldviewer.f90) | 2D fields computed in Fortran shown with `QImage_fromArray`: interference, masked peaks (NaN), Mandelbrot, and an interactive heat-diffusion solver; colormaps, colorbar, hover readout, standard icons |
 | [geometry](example/geometry.f90) | the geometry and 3D math value types: drag the handles of `QLineF` segments and `QRectF` rectangles to see intersections, angles and unions; a cube painted with `QPainter` that slerps between `QQuaternion` orientations, rotates by dragging, is projected with `QMatrix4x4` and `QVector3D_project`, and picks the vertex under the mouse with `QVector3D_unproject` |
 | [editor](example/editor.f90) | a Fortran code editor: syntax highlighting (strings continued across lines), a gutter with line numbers and clickable bookmarks, the current line and every occurrence of the word under the cursor highlighted, a column-80 ruler with a wavy underline past it, auto-indent, Alt+click for several cursors that type together, a find bar |
+| [themes](example/themes.f90) | an application that restyles itself: light, dark, Solarized and high-contrast palettes plus an accent color, chosen from a menu action group or cycled with a shortcut; every style; pages switched by a tab bar over a stacked layout: controls (enabled and disabled), the palette's color roles, and the platform's standard shortcuts in portable and native text; on-demand tool tips; opening a web page |
 | [surface3d](example/surface3d.f90) | an interactive 3D surface plot with modern OpenGL: GLSL shaders, an indexed mesh with lighting, orbit/zoom with the mouse, auto-rotation, PNG export |
 | [datasets](example/datasets.f90) | a data catalog: datasets in a table with check boxes, color swatches and painted bar cells, a color grid (QListView), a chart of QPainterPath curves with gradient fills; drop files or text to add datasets, drag the chart out as an image, copy and paste through the clipboard |
 | [orbit3d](example/orbit3d.f90) | a spacecraft orbit viewer: Kepler propagation, orbital elements and presets in a side panel, a rotating lit planet, time warp, live readouts, OpenGL 3D view |
@@ -199,6 +202,8 @@ pixi run example surface3d -- --screenshot surface.png
 ![Datasets example](media/datasets.png)
 
 ![Code editor example](media/editor.png)
+
+![Themes example](media/themes.png)
 
 ![3D surface example](media/surface3d.png)
 
@@ -507,6 +512,23 @@ A few conventions to know (the full list is in [plans/plan.md](plans/plan.md)):
   - *Keys and mouse*: a `QtfEventFilter` on the editor (keys) or on
     `editor%viewport()` (mouse) can take over an event with
     `event%accept()`, e.g. for auto-indent or extra cursors.
+- **Themes**: build a `QPalette` (start from `QPalette()`, the current
+  one), set colors by role and apply it to the whole application. The
+  Fusion style follows palettes on every platform:
+
+  ```fortran
+  ok = QApplication_setStyle('Fusion')
+  pal = QPalette()
+  call pal%setColor(QPalette_Window, QColor(45, 45, 48))
+  call pal%setColor(QPalette_WindowText, QColor(230, 230, 230))
+  call pal%setColor(QPalette_Text, QColor(128, 128, 128), QPalette_Disabled)   ! one group only
+  call QApplication_setPalette(pal)
+  call pal%delete()
+  ```
+
+  Menus of exclusive choices use a `QActionGroup`: its `triggered` slot gets
+  the index of the action. Standard shortcuts come from the platform:
+  `act%setStandardShortcut(QKeySequence_Save)`.
 - **External programs**: `QProcess` runs a program (found on the PATH)
   with its arguments, without a shell. In a GUI, connect its signals and
   let it run alongside the event loop:
