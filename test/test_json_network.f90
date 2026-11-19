@@ -56,14 +56,18 @@ program test_json_network
 
     type(QApplication) :: app
     type(reply_log), target :: log
-    character(len=:), allocatable :: dir
+    character(len=:), allocatable :: dir, exe, exe_dir
+    logical :: found
 
     app = QApplication()
 
-    call check(len(QCoreApplication_applicationFilePath()) > 0 .and. &
-               index(QCoreApplication_applicationFilePath(), 'test_json_network') > 0, 'applicationFilePath')
-    call check(index(QCoreApplication_applicationFilePath(), QCoreApplication_applicationDirPath()) == 1, &
-               'applicationDirPath')
+    ! (not checked by name: Windows may report a short 8.3 path)
+    exe = QCoreApplication_applicationFilePath()
+    exe_dir = QCoreApplication_applicationDirPath()
+    inquire(file=exe, exist=found)
+    if (.not. found .or. index(exe, exe_dir) /= 1) print '(4A)', 'applicationFilePath: ', exe, ', dir: ', exe_dir
+    call check(len(exe) > 0 .and. found, 'applicationFilePath: the program file')
+    call check(len(exe_dir) > 0 .and. index(exe, exe_dir) == 1, 'applicationDirPath: its directory')
 
     call test_files()
     call test_json()
