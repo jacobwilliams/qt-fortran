@@ -2051,6 +2051,8 @@ methods = [
     "setEnabled(enabled: bool) -- Enable or disable the action (disabled actions do not trigger).",
     "isEnabled() -> bool -- True if the action is enabled.",
     "setStatusTip(tip: string) -- Text shown in the status bar while the action is hovered.",
+    "setIconText(text: string) -- A short text for tool bar buttons (default: the text without '&' and '...').",
+    "iconText() -> string -- The short text for tool bar buttons.",
     "setToolTip(tip: string) -- Tool tip shown for the action (e.g. on tool bar buttons).",
     "trigger() -- Activate the action (emits triggered, and toggled if checkable).",
     { sig = "setStandardShortcut(key: QKeySequence::StandardKey)", cpp = "{self}->setShortcuts({key})", doc = "Use the platform's key sequences for a standard action (QKeySequence_Open, _Save, _Undo, ...)." },

@@ -3560,6 +3560,28 @@ module qt_c_gui
             integer(c_int), value :: tip_len
         end subroutine qtf_qaction_setStatusTip
 
+        !> A short text for tool bar buttons (default: the text without '&' and '...').
+        !>
+        !> C: `void qtf_qaction_setIconText(void *self, const char *text, int text_len)`
+        subroutine qtf_qaction_setIconText(self, text, text_len) bind(C, name='qtf_qaction_setIconText')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+        end subroutine qtf_qaction_setIconText
+
+        !> The short text for tool bar buttons.
+        !>
+        !> C: `char *qtf_qaction_iconText(void *self, int *len)`
+        function qtf_qaction_iconText(self, len) result(res) bind(C, name='qtf_qaction_iconText')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qaction_iconText
+
         !> Tool tip shown for the action (e.g. on tool bar buttons).
         !>
         !> C: `void qtf_qaction_setToolTip(void *self, const char *tip, int tip_len)`
@@ -5687,9 +5709,9 @@ module qt_c_gui
     public :: qtf_qaction_new, qtf_qaction_setText, qtf_qaction_text, qtf_qaction_setShortcut
     public :: qtf_qaction_shortcut, qtf_qaction_setCheckable, qtf_qaction_isCheckable, qtf_qaction_setChecked
     public :: qtf_qaction_isChecked, qtf_qaction_setEnabled, qtf_qaction_isEnabled, qtf_qaction_setStatusTip
-    public :: qtf_qaction_setToolTip, qtf_qaction_trigger, qtf_qaction_setStandardShortcut
-    public :: qtf_qaction_shortcutNativeText, qtf_qaction_setShortcutContext, qtf_qaction_setIcon
-    public :: qtf_qvalidator_validate, qtf_qintvalidator_new, qtf_qintvalidator_setRange
+    public :: qtf_qaction_setIconText, qtf_qaction_iconText, qtf_qaction_setToolTip, qtf_qaction_trigger
+    public :: qtf_qaction_setStandardShortcut, qtf_qaction_shortcutNativeText, qtf_qaction_setShortcutContext
+    public :: qtf_qaction_setIcon, qtf_qvalidator_validate, qtf_qintvalidator_new, qtf_qintvalidator_setRange
     public :: qtf_qintvalidator_bottom, qtf_qintvalidator_top, qtf_qdoublevalidator_new
     public :: qtf_qdoublevalidator_setRange, qtf_qdoublevalidator_setNotation, qtf_qdoublevalidator_bottom
     public :: qtf_qdoublevalidator_top, qtf_qdoublevalidator_decimals, qtf_qregularexpressionvalidator_new

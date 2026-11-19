@@ -13,7 +13,7 @@ compiler extensions, and you never write C++.
 
 *The [Function Explorer](example/explorer.f90) example, written in about 1350 lines of Fortran.*
 
-> **Status: early development.** The API covers QtCore, QtGui, QtWidgets, QtSvg
+> **Status: early development.** The API covers QtCore, QtGui, QtWidgets, QtSvg, QtNetwork
 > and modern OpenGL essentials and is tested on Linux, macOS and Windows, but it may still change.
 
 ## A taste
@@ -93,7 +93,9 @@ are Qt's, so the [Qt documentation](https://doc.qt.io/qt-6/) applies directly.
 
 | Area | Classes |
 |------|---------|
-| Core | `QObject` (with dynamic properties and `findChild`), `QTimer`, `QEvent`, `QDateTime`, `QSettings` (persistent preferences, window geometry and layout), `QThread` (run Fortran work in a worker thread), `QProcess` and `QProcessEnvironment` (run external programs: arguments, environment, working directory, standard input/output/error, exit codes, signals), `QFileSystemWatcher` (files and folders changed by other programs), `QSocketNotifier` / `QWinEventNotifier` (the event loop calls a slot when a file descriptor or Windows handle is ready, e.g. a pipe or pseudo-terminal), `QDir_mkpath`/`exists`/`removeRecursively`/`entryList`/`isDir` and standard paths (portable directory handling, which standard Fortran lacks) |
+| Core | `QObject` (with dynamic properties and `findChild`), `QTimer`, `QEvent`, `QDateTime`, `QSettings` (persistent preferences, window geometry and layout), `QThread` (run Fortran work in a worker thread), `QProcess` and `QProcessEnvironment` (run external programs: arguments, environment, working directory, standard input/output/error, exit codes, signals), `QFileSystemWatcher` (files and folders changed by other programs), `QSocketNotifier` / `QWinEventNotifier` (the event loop calls a slot when a file descriptor or Windows handle is ready, e.g. a pipe or pseudo-terminal), `QSaveFile` (all-or-nothing file writes, binary safe), `QTemporaryDir`, `QDir_mkpath`/`exists`/`removeRecursively`/`entryList`/`isDir`, `QCoreApplication_applicationFilePath`/`DirPath` and standard paths (portable directory handling, which standard Fortran lacks) |
+| JSON | `QJsonDocument` (parse with error position, write indented or compact), `QJsonObject`, `QJsonArray` (whole Fortran arrays in and out), `QJsonValue`; typed getters with fallbacks |
+| Network | `QNetworkAccessManager` (GET, POST, PUT, DELETE, HEAD, custom verbs; http, https, file and data URLs), `QNetworkRequest` (headers, timeouts, redirects), `QNetworkReply` (body as bytes, status, headers, progress, errors, `waitForFinished` for scripts) |
 | Application | `QApplication` (command-line arguments, organization/application names) |
 | Widgets | `QWidget`, `QFrame`, `QLabel`, `QPushButton`, `QToolButton`, `QCheckBox`, `QRadioButton`, `QButtonGroup`, `QLineEdit`, `QSpinBox`, `QDoubleSpinBox`, `QSlider`, `QDial`, `QComboBox`, `QProgressBar`, `QLCDNumber`, `QDateEdit`, `QTimeEdit`, `QCalendarWidget`, `QtfWidget` (custom painting/events, size hints from Fortran) |
 | Input helpers | `QDateTimeEdit`, validators (`QIntValidator`, `QDoubleValidator`, `QRegularExpressionValidator`), `QCompleter` |
@@ -246,7 +248,7 @@ Instead of exporting the variables, you can let the script run fpm with them
 variables yourself, e.g. on Linux:
 
 ```sh
-QT="Qt6Core Qt6Gui Qt6Widgets Qt6OpenGL Qt6OpenGLWidgets Qt6Svg"
+QT="Qt6Core Qt6Gui Qt6Widgets Qt6OpenGL Qt6OpenGLWidgets Qt6Svg Qt6Network"
 export FPM_CXX=g++
 export FPM_CXXFLAGS="-std=c++17 -fPIC $(pkg-config --cflags $QT)"
 export FPM_LDFLAGS="$(pkg-config --libs-only-L $QT) -Wl,-rpath,$(pkg-config --variable=libdir Qt6Core)"
@@ -260,8 +262,9 @@ minimal project; CI builds and runs it on all three platforms.
 - **pixi/conda-forge (recommended):** add `qt6-main`, `gfortran`, `fpm`,
   `cxx-compiler` and `pkg-config` to your environment (see this repository's
   [pixi.toml](pixi.toml)).
-- **Linux distribution packages** (Qt 6 development files, including Qt SVG,
-  e.g. `qt6-base-dev` and `qt6-svg-dev`, and pkg-config) should also work.
+- **Linux distribution packages** (Qt 6 development files, including Qt SVG
+  and Qt Network, e.g. `qt6-base-dev` and `qt6-svg-dev`, and pkg-config)
+  should also work.
 - **Not yet supported:**
   - Homebrew's Qt on macOS, which ships only as frameworks.
   - MSYS2's MinGW Qt on Windows. It is supported by design but untested.

@@ -1991,6 +1991,26 @@ doc = "QTabWidget::TabShape"
 values = ["QTabWidget_Rounded = 0", "QTabWidget_Triangular = 1"]
 
 [[enum]]
+doc = "Qt::WindowType (flags): window kinds and hints for QWidget%setWindowFlag(s)"
+values = [
+    "Qt_Widget = 0", "Qt_Window = 1", "Qt_Dialog = 3", "Qt_Sheet = 5", "Qt_Drawer = 7", "Qt_Popup = 9",
+    "Qt_Tool = 11", "Qt_ToolTip = 13", "Qt_SplashScreen = 15", "Qt_SubWindow = 18",
+    "Qt_WindowType_Mask = 255",
+    "Qt_MSWindowsFixedSizeDialogHint = 256", "Qt_BypassWindowManagerHint = 1024",
+    "Qt_FramelessWindowHint = 2048", "Qt_WindowTitleHint = 4096", "Qt_WindowSystemMenuHint = 8192",
+    "Qt_WindowMinimizeButtonHint = 16384", "Qt_WindowMaximizeButtonHint = 32768",
+    "Qt_WindowMinMaxButtonsHint = 49152", "Qt_WindowContextHelpButtonHint = 65536",
+    "Qt_WindowShadeButtonHint = 131072", "Qt_WindowStaysOnTopHint = 262144",
+    "Qt_WindowTransparentForInput = 524288", "Qt_WindowDoesNotAcceptFocus = 2097152",
+    "Qt_CustomizeWindowHint = 33554432", "Qt_WindowStaysOnBottomHint = 67108864",
+    "Qt_WindowCloseButtonHint = 134217728",
+]
+
+[[enum]]
+doc = "Qt::TextFormat"
+values = ["Qt_PlainText = 0", "Qt_RichText = 1", "Qt_AutoText = 2", "Qt_MarkdownText = 3"]
+
+[[enum]]
 doc = "Qt::Corner"
 values = ["Qt_TopLeftCorner = 0", "Qt_TopRightCorner = 1", "Qt_BottomLeftCorner = 2", "Qt_BottomRightCorner = 3"]
 
@@ -2166,6 +2186,14 @@ methods = [
     "setWindowTitle(title: string) -- Set the title shown in the window's title bar.",
     "windowTitle() -> string -- The window title.",
     "setToolTip(text: string) -- Set the tool tip shown on hover.",
+    { sig = "setWindowFlag(flag: Qt::WindowType, on: bool = .true.)", cpp = "{self}->setWindowFlag(Qt::WindowType({flag}), {on})", doc = "Turn one window flag on or off, e.g. Qt_FramelessWindowHint (no title bar or border) or Qt_WindowStaysOnTopHint. Changing flags of a visible window hides it: call `show` again." },
+    { sig = "setWindowFlags(flags: Qt::WindowFlags)", cpp = "{self}->setWindowFlags(Qt::WindowFlags({flags}))", doc = "Set all window flags at once: a window kind (Qt_Window, Qt_Dialog, Qt_Tool, ...) combined with hints (`ior`). Hides a visible window, as setWindowFlag." },
+    { sig = "windowFlags() -> Qt::WindowFlags", cpp = "int({self}->windowFlags())", doc = "The window flags (test one with `testWindowFlag`)." },
+    { sig = "testWindowFlag(flag: Qt::WindowType) -> bool", cpp = "{self}->windowFlags().testFlag(Qt::WindowType({flag}))", doc = "True if a window flag is set." },
+    "setAccessibleName(name: string) -- The name screen readers announce for the widget (e.g. for an icon-only button).",
+    "accessibleName() -> string -- The accessible name.",
+    "setAccessibleDescription(description: string) -- A longer description for screen readers.",
+    "accessibleDescription() -> string -- The accessible description.",
     "toolTip() -> string -- The tool tip.",
     "setStyleSheet(styleSheet: string) -- Set a Qt style sheet (CSS-like) for the widget and its children.",
     "setFocus() -- Give the widget keyboard focus.",
@@ -2389,6 +2417,8 @@ methods = [
     "text() -> string -- The label text.",
     "setAlignment(alignment: Qt::Alignment) -- Align the text (a combination of Qt_Align* flags).",
     "setWordWrap(on: bool) -- Wrap long text across lines.",
+    "setTextFormat(format: Qt::TextFormat) -- How the text is interpreted: Qt_PlainText, Qt_RichText (HTML subset), Qt_MarkdownText, or Qt_AutoText (default: rich text if it looks like HTML).",
+    "textFormat() -> Qt::TextFormat -- How the text is interpreted.",
     { sig = "setPixmap(pixmap: QPixmap)", cpp = "{self}->setPixmap(*{pixmap})", doc = "Show an image instead of text (copied; see QPixmap_fromImage)." },
     "setScaledContents(scaled: bool) -- Scale the pixmap to fill the label.",
 ]
@@ -2529,6 +2559,7 @@ methods = [
     "maximum() -> int -- The largest allowed value.",
     "setValue(value: int) -- Set the value (clamped to the range; emits valueChanged if it changes).",
     "value() -> int -- The current value.",
+    "isSliderDown() -> bool -- True while the user is dragging the handle (e.g. to update only when it is released).",
     "setSingleStep(step: int) -- Step used by the arrow keys.",
     "setPageStep(step: int) -- Step used by Page Up/Down and clicks on the groove.",
     "setOrientation(orientation: Qt::Orientation) -- Set the orientation (Qt_Horizontal or Qt_Vertical).",
@@ -2581,6 +2612,8 @@ methods = [
     "itemText(index: int) -> string -- Text of the item at `index` (0-based).",
     "findText(text: string) -> int -- Index of the item with this text (0-based; -1 if not found).",
     "setEditable(editable: bool) -- Allow typing a value that is not in the list.",
+    "setPlaceholderText(text: string) -- Text shown while no item is selected (current index -1).",
+    "placeholderText() -> string -- The placeholder text.",
     "setCompleter(completer: QCompleter?) -- Completions for an editable combo box.",
 ]
 fortran_bindings = "procedure :: addItems => qcombobox_addItems"
@@ -3074,6 +3107,9 @@ methods = [
     { sig = "setCurrentCell(row: int, column: int)", cpp = "if ({self}->model()) {self}->setCurrentIndex({self}->model()->index({row}, {column}))", doc = "Make (row, column) the current cell." },
     "selectRow(row: int) -- Select a whole row.",
     "setWordWrap(on: bool) -- Wrap long cell text.",
+    "setShowGrid(show: bool) -- Draw the grid lines between cells (default: shown).",
+    "showGrid() -> bool -- True if grid lines are drawn.",
+    "setGridStyle(style: Qt::PenStyle) -- The pen style of the grid lines (Qt_SolidLine, Qt_DotLine, ...).",
     "setSortingEnabled(enable: bool) -- Sort when a column title is clicked (a QtfTableModel gets `sortRequested`).",
     "sortByColumn(column: int, order: Qt::SortOrder) -- Sort by a column now.",
     "setColumnHidden(column: int, hide: bool) -- Hide or show a column.",
@@ -3424,8 +3460,10 @@ methods = [
 
 [[class]]
 name = "QListWidget"
-base = "QAbstractItemView"
-doc = "A list of text items. Rows are 0-based."
+base = "QListView"
+doc = """
+A list of text items. Rows are 0-based. It is a QListView, so its layout
+methods apply too (`setSpacing`, `setWordWrap`, `setViewMode`, ...)."""
 ctor = "(parent: QWidget?) -- Create an empty list."
 signals = [
     "currentRowChanged: int -- The current row changed (-1 if none).",
@@ -3528,6 +3566,9 @@ methods = [
     "sortItems(column: int, order: Qt::SortOrder = Qt_AscendingOrder) -- Sort by a column.",
     { sig = "findData(value: int, column: int = 0) -> QTreeWidgetItem", cpp = "qtf_find_tree_data({self}, {value}, {column})", doc = "The first item (in tree order, expanded or not) whose integer data in `column` is `value` (null if none)." },
     "scrollToItem(item: QTreeWidgetItem) -- Scroll so that `item` is visible (expanding its parents).",
+    { sig = "itemAt(x: int, y: int) -> QTreeWidgetItem", fortran_name = "itemAt", doc = "The item at a point of the viewport (`tree%viewport()` coordinates, e.g. a mouse event's position there; null if none)." },
+    { sig = "itemAtPoint(p: QPoint) -> QTreeWidgetItem", cpp = "{self}->itemAt({p})", fortran_name = "itemAt", doc = "The item at a point of the viewport (null if none)." },
+    { sig = "visualItemRect(item: QTreeWidgetItem) -> QRect", cpp = "{self}->visualItemRect({item})", doc = "Where an item is drawn, in viewport coordinates (empty if it is not shown, e.g. under a collapsed parent)." },
     { sig = "takeTopLevelItem(index: int)", cpp = "delete {self}->takeTopLevelItem({index})", doc = "Remove (and delete) a top-level item and its children." },
     "indexOfTopLevelItem(item: QTreeWidgetItem) -> int -- The index of a top-level item (-1 if it is not one).",
 ]

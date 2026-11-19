@@ -10,14 +10,17 @@ QtCore classes: persistent application settings (QSettings), worker
 threads (QThread), external programs (QProcess, QProcessEnvironment),
 watching files for changes (QFileSystemWatcher), event-loop notifications
 for file descriptors and Windows handles (QSocketNotifier, QWinEventNotifier),
-and portable directory functions (QDir_*), which standard Fortran lacks.
+safe file writing (QSaveFile), temporary directories (QTemporaryDir), JSON
+(QJsonDocument, QJsonObject, QJsonArray, QJsonValue), HTTP and other URLs
+(QNetworkAccessManager, QNetworkRequest, QNetworkReply; QtNetwork), and
+portable directory functions (QDir_*), which standard Fortran lacks.
 """
 uses = [
     "use qt_c_util",
     "use qt_c_core_classes",
     "use qt_core",
 ]
-cpp_includes = ["QDir", "QSettings", "QStringList", "QThread", "QVariant", "QProcess", "QProcessEnvironment", "QFileSystemWatcher", "QFileInfo", "QSocketNotifier", "cstdlib", "cstring"]
+cpp_includes = ["QDir", "QSettings", "QStringList", "QThread", "QVariant", "QProcess", "QProcessEnvironment", "QFileSystemWatcher", "QFileInfo", "QSocketNotifier", "QCoreApplication", "QTemporaryDir", "QSaveFile", "QJsonDocument", "QJsonObject", "QJsonArray", "QJsonValue", "QNetworkAccessManager", "QNetworkRequest", "QNetworkReply", "QEventLoop", "QTimer", "QUrl", "algorithm", "cstdlib", "cstring"]
 
 cpp_prelude = """
 // Runs (op 0) or frees (op 1) the Fortran task of a thread.
@@ -100,6 +103,61 @@ static bool connect_win_notifier(void *s, const qtf_slot &ref) {
     return true;
 #endif
 }
+
+// A JSON document with the result of parsing it (QJsonDocument_fromJson).
+// Every QJsonDocument handle is one of these.
+class QtfJsonDocument : public QJsonDocument {
+  public:
+    QtfJsonDocument() = default;
+    explicit QtfJsonDocument(const QJsonDocument &d) : QJsonDocument(d) {}
+    QString error;
+    int offset = -1;
+};
+
+static QtfJsonDocument *qtf_jdoc(QJsonDocument *d) { return static_cast<QtfJsonDocument *>(d); }
+
+static QJsonDocument *qtf_json_parse(const QString &text) {
+    QJsonParseError e;
+    auto *d = new QtfJsonDocument(QJsonDocument::fromJson(text.toUtf8(), &e));
+    if (e.error != QJsonParseError::NoError) {
+        d->error = e.errorString();
+        d->offset = e.offset;
+    }
+    return d;
+}
+
+static QString qtf_json_text(const QJsonDocument &d, bool compact) {
+    return QString::fromUtf8(d.toJson(compact ? QJsonDocument::Compact : QJsonDocument::Indented));
+}
+
+// The integers of a JSON array (non-numbers as 0).
+static QList<int> qtf_json_ints(const QJsonArray *a) {
+    QList<int> v;
+    for (const QJsonValue &x : *a) v << x.toInt(int(x.toDouble()));
+    return v;
+}
+
+// Byte counts for int signal arguments (clamped to the int range).
+static int qtf_clamp_int(qint64 v) { return int(std::clamp<qint64>(v, -2147483647, 2147483647)); }
+
+// Run the event loop until the reply finishes or `msecs` pass (< 0: no limit).
+static bool qtf_wait_reply(QNetworkReply *r, int msecs) {
+    if (r->isFinished()) return true;
+    QEventLoop loop;
+    QTimer timer;
+    timer.setSingleShot(true);
+    QObject::connect(r, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    QObject::connect(&timer, &QTimer::timeout, &loop, &QEventLoop::quit);
+    if (msecs >= 0) timer.start(msecs);
+    loop.exec();
+    return r->isFinished();
+}
+
+static QStringList qtf_header_names(const QNetworkReply *r) {
+    QStringList names;
+    for (const QByteArray &h : r->rawHeaderList()) names << QString::fromUtf8(h);
+    return names;
+}
 """
 
 fortran_decls = '''
@@ -113,6 +171,8 @@ fortran_decls = '''
 '''
 
 functions = [
+    { sig = "QCoreApplication_applicationFilePath() -> string", cpp = "QCoreApplication::applicationFilePath()", doc = "The full path of the running program (needs the application object)." },
+    { sig = "QCoreApplication_applicationDirPath() -> string", cpp = "QCoreApplication::applicationDirPath()", doc = "The directory of the running program (e.g. to find files installed next to it)." },
     { sig = "QWinEventNotifier_isSupported() -> bool", cpp = "qtf_win_supported()", doc = "True on Windows, where QWinEventNotifier works; elsewhere its `activated` never fires." },
     { sig = "QDir_mkpath(path: string) -> bool", cpp = "QDir().mkpath({path})", doc = "Create a directory and any missing parents (like `mkdir -p`); true if it exists afterwards. `/` works as the separator on every platform." },
     { sig = "QDir_exists(path: string) -> bool", cpp = "QDir({path}).exists()", doc = "True if the directory exists." },
@@ -532,4 +592,416 @@ methods = [
     { sig = "handle() -> int64", cpp = "static_cast<long long>(reinterpret_cast<qintptr>({self}->handle()))", doc = "The watched handle." },
     "setEnabled(enable: bool) -- Start or stop watching.",
     "isEnabled() -> bool -- True if watching.",
+]
+
+# ---------------------------------------------------------------------------
+# files
+
+[[enum]]
+doc = "QIODevice::OpenMode (flags)"
+values = [
+    "QIODevice_NotOpen = 0", "QIODevice_ReadOnly = 1", "QIODevice_WriteOnly = 2", "QIODevice_ReadWrite = 3",
+    "QIODevice_Append = 4", "QIODevice_Truncate = 8", "QIODevice_Text = 16", "QIODevice_Unbuffered = 32",
+    "QIODevice_NewOnly = 64", "QIODevice_ExistingOnly = 128",
+]
+
+[[class]]
+name = "QTemporaryDir"
+handle = true
+doc = """
+A new, uniquely named directory for temporary files (e.g. in tests, or for
+intermediate results). It is removed with everything in it when the handle
+is deleted, unless `setAutoRemove(.false.)`."""
+ctor = "(templatePath: string = '') -- Create the directory: in the system's temporary directory, or from a template path whose last 'XXXXXX' is replaced (e.g. '/scratch/run-XXXXXX'). Check `isValid()`."
+cpp_ctor = "{templatePath}.isEmpty() ? new QTemporaryDir() : new QTemporaryDir({templatePath})"
+methods = [
+    "isValid() -> bool -- True if the directory was created.",
+    "path() -> string -- The directory's path ('' if not valid).",
+    "filePath(fileName: string) -> string -- The path of a file in the directory.",
+    "errorString() -> string -- Why it could not be created.",
+    "setAutoRemove(remove: bool) -- Remove the directory on `delete` (default) or keep it.",
+    "autoRemove() -> bool -- True if `delete` removes the directory.",
+    "remove() -> bool -- Remove the directory and its contents now.",
+]
+cpp = """
+// Delete the handle (removing the directory if autoRemove is on).
+QTF_API void qtf_qtemporarydir_delete(void *self) { delete as<QTemporaryDir>(self); }
+"""
+fortran_bindings = "procedure :: delete => qtemporarydir_delete"
+fortran_procedures = """
+    !> Delete the handle; with autoRemove (the default), the directory and its contents are removed.
+    subroutine qtemporarydir_delete(self)
+        class(QTemporaryDir), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qtemporarydir_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qtemporarydir_delete
+"""
+
+[[class]]
+name = "QSaveFile"
+doc = """
+Writes a file safely: everything goes to a temporary file, and `commit`
+replaces the target only if all writes succeeded, so a crash or an error
+never leaves a half-written file. `open`, `write` (any bytes, as they are),
+then `commit` (or `cancelWriting`). Deleting it without committing discards
+the writes."""
+ctor = "(fileName: string, parent: QObject?) -- A save file for `fileName` (not opened yet)."
+methods = [
+    { sig = "open(mode: QIODevice::OpenMode = QIODevice_WriteOnly) -> bool", cpp = "{self}->open(QIODevice::OpenMode({mode}))", doc = "Open for writing (QIODevice_WriteOnly; add QIODevice_Text for platform line endings); false on error (see errorString)." },
+    { sig = "write(data: string, size: int = -1) -> int64", cpp = "static_cast<long long>({self}->write(data, {size} < 0 ? data_len : std::min({size}, data_len)))", doc = "Write the bytes of `data` as they are (binary safe), or only its first `size` bytes; returns the number written, or -1 on error." },
+    { sig = "writeDoubles(values: double[]) -> int64", cpp = "static_cast<long long>({self}->write(reinterpret_cast<const char *>({values}), qint64({n}) * qint64(sizeof(double))))", doc = "Write an array of doubles as raw bytes (native byte order); returns the number of bytes written, or -1." },
+    { sig = "writeInts(values: int[]) -> int64", cpp = "static_cast<long long>({self}->write(reinterpret_cast<const char *>({values}), qint64({n}) * qint64(sizeof(int))))", doc = "Write an array of (32-bit) integers as raw bytes (native byte order); returns the number of bytes written, or -1." },
+    "commit() -> bool -- Close the file and replace the target with it; false if any write failed (the target is unchanged).",
+    "cancelWriting() -- Discard what was written: `commit` will leave the target unchanged.",
+    "fileName() -> string -- The target file.",
+    "setFileName(name: string) -- Change the target (before `open`).",
+    "isOpen() -> bool -- True between `open` and `commit`.",
+    "errorString() -> string -- The last error, as text.",
+    "setDirectWriteFallback(enabled: bool) -- Write in place when a temporary file cannot be created in the directory (not atomic; default off).",
+]
+
+# ---------------------------------------------------------------------------
+# JSON
+
+[[enum]]
+doc = "QJsonValue::Type"
+values = [
+    "QJsonValue_Null = 0", "QJsonValue_Bool = 1", "QJsonValue_Double = 2", "QJsonValue_String = 3",
+    "QJsonValue_Array = 4", "QJsonValue_Object = 5", "QJsonValue_Undefined = 128",
+]
+
+[[class]]
+name = "QJsonValue"
+handle = true
+doc = """
+One JSON value: null, a boolean, a number, a string, an array or an object.
+Values from `object%value(key)` and `array%at(i)` are new handles: delete
+them when done. The typed getters of QJsonObject and QJsonArray
+(`stringValue`, `doubleAt`, ...) avoid handles for scalars."""
+ctors = [
+    { sig = "()", name = "new", doc = "A JSON null." },
+    { sig = "(value: bool)", name = "fromBool", doc = "A boolean." },
+    { sig = "(value: int)", name = "fromInt", doc = "A number (from an integer)." },
+    { sig = "(value: double)", name = "fromDouble", doc = "A number." },
+    { sig = "(value: string)", name = "fromString", doc = "A string." },
+    { sig = "(value: QJsonArray)", name = "fromArray", cpp = "new QJsonValue(*{value})", doc = "An array (copied)." },
+    { sig = "(value: QJsonObject)", name = "fromObject", cpp = "new QJsonValue(*{value})", doc = "An object (copied)." },
+]
+methods = [
+    { sig = "valueType() -> QJsonValue::Type", cpp = "int({self}->type())", doc = "QJsonValue_Null, _Bool, _Double, _String, _Array, _Object, or _Undefined (a missing key)." },
+    "isNull() -> bool -- True for JSON null.",
+    "isBool() -> bool -- True for a boolean.",
+    "isDouble() -> bool -- True for a number.",
+    "isString() -> bool -- True for a string.",
+    "isArray() -> bool -- True for an array.",
+    "isObject() -> bool -- True for an object.",
+    "isUndefined() -> bool -- True for a missing key or index.",
+    { sig = "toBool(fallback: bool = .false.) -> bool", cpp = "{self}->toBool({fallback})", doc = "The boolean (`fallback` if it is not one)." },
+    { sig = "toInt(fallback: int = 0) -> int", cpp = "{self}->toInt({fallback})", doc = "The number as an integer (`fallback` if it is not an integral number)." },
+    { sig = "toDouble(fallback: double = 0.0d0) -> double", cpp = "{self}->toDouble({fallback})", doc = "The number (`fallback` if it is not one)." },
+    { sig = "toString(fallback: string = '') -> string", cpp = "{self}->toString({fallback})", doc = "The string (`fallback` if it is not one)." },
+    { sig = "toArray() -> QJsonArray", cpp = "new QJsonArray({self}->toArray())", doc = "The array (empty if it is not one); delete it when done." },
+    { sig = "toObject() -> QJsonObject", cpp = "new QJsonObject({self}->toObject())", doc = "The object (empty if it is not one); delete it when done." },
+    { sig = "copy() -> QJsonValue", cpp = "new QJsonValue(*{self})", doc = "A copy (delete it when done)." },
+]
+cpp = """
+// Delete a JSON value handle.
+QTF_API void qtf_qjsonvalue_delete(void *self) { delete as<QJsonValue>(self); }
+"""
+fortran_bindings = "procedure :: delete => qjsonvalue_delete"
+fortran_procedures = """
+    !> Delete the handle.
+    subroutine qjsonvalue_delete(self)
+        class(QJsonValue), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qjsonvalue_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qjsonvalue_delete
+"""
+
+[[class]]
+name = "QJsonObject"
+handle = true
+doc = """
+A JSON object: keys (strings) with values. `insert` takes a value of any
+kind (logical, integer, real(c_double), string, QJsonValue, QJsonArray,
+QJsonObject; arrays and objects are copied). Read scalars with the typed
+getters, which return a fallback for missing keys or other types:
+
+    obj = QJsonObject()
+    call obj%insert('name', 'run 1')
+    call obj%insert('steps', 100)
+    n = obj%intValue('steps', fallback=10)
+
+Delete handles when done (a QJsonDocument copies what it is given)."""
+ctor = "() -- An empty object."
+methods = [
+    { sig = "size() -> int", cpp = "int({self}->size())", doc = "The number of keys." },
+    "isEmpty() -> bool -- True if there are no keys.",
+    "keys() -> strings -- The keys, sorted.",
+    "contains(key: string) -> bool -- True if `key` is present.",
+    "remove(key: string) -- Remove a key.",
+    { sig = "value(key: string) -> QJsonValue", cpp = "new QJsonValue({self}->value({key}))", doc = "The value of a key (undefined if missing); delete it when done." },
+    { sig = "valueType(key: string) -> QJsonValue::Type", cpp = "int({self}->value({key}).type())", doc = "The kind of a key's value (QJsonValue_Undefined if missing)." },
+    { sig = "insertValue(key: string, value: QJsonValue)", cpp = "{self}->insert({key}, *{value})", fortran_name = "insert", doc = "Set a key to a value (copied)." },
+    { sig = "insertBool(key: string, value: bool)", cpp = "{self}->insert({key}, {value})", fortran_name = "insert", doc = "Set a key to a boolean." },
+    { sig = "insertInt(key: string, value: int)", cpp = "{self}->insert({key}, {value})", fortran_name = "insert", doc = "Set a key to a number (an integer)." },
+    { sig = "insertDouble(key: string, value: double)", cpp = "{self}->insert({key}, {value})", fortran_name = "insert", doc = "Set a key to a number." },
+    { sig = "insertString(key: string, value: string)", cpp = "{self}->insert({key}, {value})", fortran_name = "insert", doc = "Set a key to a string." },
+    { sig = "insertArray(key: string, value: QJsonArray)", cpp = "{self}->insert({key}, *{value})", fortran_name = "insert", doc = "Set a key to an array (copied)." },
+    { sig = "insertObject(key: string, value: QJsonObject)", cpp = "{self}->insert({key}, *{value})", fortran_name = "insert", doc = "Set a key to an object (copied)." },
+    { sig = "insertNull(key: string)", cpp = "{self}->insert({key}, QJsonValue())", doc = "Set a key to null." },
+    { sig = "boolValue(key: string, fallback: bool = .false.) -> bool", cpp = "{self}->value({key}).toBool({fallback})", doc = "A boolean (`fallback` if missing or not a boolean)." },
+    { sig = "intValue(key: string, fallback: int = 0) -> int", cpp = "{self}->value({key}).toInt({fallback})", doc = "An integral number (`fallback` if missing or not one)." },
+    { sig = "doubleValue(key: string, fallback: double = 0.0d0) -> double", cpp = "{self}->value({key}).toDouble({fallback})", doc = "A number (`fallback` if missing or not a number)." },
+    { sig = "stringValue(key: string, fallback: string = '') -> string", cpp = "{self}->value({key}).toString({fallback})", doc = "A string (`fallback` if missing or not a string)." },
+    { sig = "arrayValue(key: string) -> QJsonArray", cpp = "new QJsonArray({self}->value({key}).toArray())", doc = "An array (empty if missing or not one); delete it when done." },
+    { sig = "objectValue(key: string) -> QJsonObject", cpp = "new QJsonObject({self}->value({key}).toObject())", doc = "An object (empty if missing or not one); delete it when done." },
+    { sig = "toJson(compact: bool = .false.) -> string", cpp = "qtf_json_text(QJsonDocument(*{self}), {compact})", doc = "The object as JSON text: indented, or on one line." },
+    { sig = "copy() -> QJsonObject", cpp = "new QJsonObject(*{self})", doc = "A copy (delete it when done)." },
+]
+cpp = """
+// Delete a JSON object handle.
+QTF_API void qtf_qjsonobject_delete(void *self) { delete as<QJsonObject>(self); }
+"""
+fortran_bindings = "procedure :: delete => qjsonobject_delete"
+fortran_procedures = """
+    !> Delete the handle.
+    subroutine qjsonobject_delete(self)
+        class(QJsonObject), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qjsonobject_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qjsonobject_delete
+"""
+
+[[class]]
+name = "QJsonArray"
+handle = true
+doc = """
+A JSON array (0-based indices). `append` takes a value of any kind, as
+QJsonObject%insert does; `appendDoubles`/`appendInts` add a whole Fortran
+array, and `toDoubles`/`toInts` read one back. Delete handles when done."""
+ctor = "() -- An empty array."
+methods = [
+    { sig = "size() -> int", cpp = "int({self}->size())", doc = "The number of elements." },
+    "isEmpty() -> bool -- True if there are no elements.",
+    { sig = "at(index: int) -> QJsonValue", cpp = "new QJsonValue({self}->at({index}))", doc = "The element at `index` (undefined if out of range); delete it when done." },
+    { sig = "typeAt(index: int) -> QJsonValue::Type", cpp = "int({self}->at({index}).type())", doc = "The kind of an element (QJsonValue_Undefined if out of range)." },
+    { sig = "appendValue(value: QJsonValue)", cpp = "{self}->append(*{value})", fortran_name = "append", doc = "Append a value (copied)." },
+    { sig = "appendBool(value: bool)", cpp = "{self}->append({value})", fortran_name = "append", doc = "Append a boolean." },
+    { sig = "appendInt(value: int)", cpp = "{self}->append({value})", fortran_name = "append", doc = "Append a number (an integer)." },
+    { sig = "appendDouble(value: double)", cpp = "{self}->append({value})", fortran_name = "append", doc = "Append a number." },
+    { sig = "appendString(value: string)", cpp = "{self}->append({value})", fortran_name = "append", doc = "Append a string." },
+    { sig = "appendArray(value: QJsonArray)", cpp = "{self}->append(*{value})", fortran_name = "append", doc = "Append an array (copied, as one element)." },
+    { sig = "appendObject(value: QJsonObject)", cpp = "{self}->append(*{value})", fortran_name = "append", doc = "Append an object (copied)." },
+    { sig = "appendNull()", cpp = "{self}->append(QJsonValue())", doc = "Append null." },
+    { sig = "appendDoubles(values: double[])", cpp = "for (int i = 0; i < {n}; ++i) {self}->append({values}[i])", doc = "Append every element of a real(c_double) array." },
+    { sig = "appendInts(values: int[])", cpp = "for (int i = 0; i < {n}; ++i) {self}->append({values}[i])", doc = "Append every element of an integer array." },
+    { sig = "removeAt(index: int)", cpp = "if ({index} >= 0 && {index} < {self}->size()) {self}->removeAt({index})", doc = "Remove an element." },
+    { sig = "boolAt(index: int, fallback: bool = .false.) -> bool", cpp = "{self}->at({index}).toBool({fallback})", doc = "A boolean element (`fallback` if out of range or not a boolean)." },
+    { sig = "intAt(index: int, fallback: int = 0) -> int", cpp = "{self}->at({index}).toInt({fallback})", doc = "An integral number (`fallback` otherwise)." },
+    { sig = "doubleAt(index: int, fallback: double = 0.0d0) -> double", cpp = "{self}->at({index}).toDouble({fallback})", doc = "A number (`fallback` otherwise)." },
+    { sig = "stringAt(index: int, fallback: string = '') -> string", cpp = "{self}->at({index}).toString({fallback})", doc = "A string (`fallback` otherwise)." },
+    { sig = "arrayAt(index: int) -> QJsonArray", cpp = "new QJsonArray({self}->at({index}).toArray())", doc = "An array element (empty otherwise); delete it when done." },
+    { sig = "objectAt(index: int) -> QJsonObject", cpp = "new QJsonObject({self}->at({index}).toObject())", doc = "An object element (empty otherwise); delete it when done." },
+    { sig = "toInts() -> int[]", cpp = "qtf_json_ints({self})", doc = "The elements as integers (numbers rounded toward zero; other kinds as 0)." },
+    { sig = "toJson(compact: bool = .false.) -> string", cpp = "qtf_json_text(QJsonDocument(*{self}), {compact})", doc = "The array as JSON text: indented, or on one line." },
+    { sig = "copy() -> QJsonArray", cpp = "new QJsonArray(*{self})", doc = "A copy (delete it when done)." },
+]
+cpp = """
+// Delete a JSON array handle.
+QTF_API void qtf_qjsonarray_delete(void *self) { delete as<QJsonArray>(self); }
+"""
+fortran_bindings = """
+procedure :: delete => qjsonarray_delete
+procedure :: toDoubles => qjsonarray_toDoubles
+"""
+fortran_procedures = """
+    !> Delete the handle.
+    subroutine qjsonarray_delete(self)
+        class(QJsonArray), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qjsonarray_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qjsonarray_delete
+
+    !> The elements as real(c_double) numbers (other kinds as `fallback`, default 0).
+    function qjsonarray_toDoubles(self, fallback) result(res)
+        class(QJsonArray), intent(in) :: self
+        real(c_double), intent(in), optional :: fallback
+        real(c_double), allocatable :: res(:)
+        real(c_double) :: f
+        integer :: i
+        f = 0.0_c_double
+        if (present(fallback)) f = fallback
+        allocate(res(self%size()))
+        do i = 1, size(res)
+            res(i) = self%doubleAt(i - 1, f)
+        end do
+    end function qjsonarray_toDoubles
+"""
+
+[[class]]
+name = "QJsonDocument"
+handle = true
+doc = """
+A JSON document: an object or an array, read from and written to JSON text.
+
+    doc = QJsonDocument_fromJson(text)
+    if (doc%isNull()) print *, 'bad JSON: ', doc%errorString(), ' at byte ', doc%errorOffset()
+    obj = doc%object()
+
+Read a file into a string first (e.g. with stream access). `object()` and
+`array()` return new handles; delete everything when done."""
+ctors = [
+    { sig = "()", name = "new", cpp = "static_cast<QJsonDocument *>(new QtfJsonDocument())", doc = "An empty (null) document." },
+    { sig = "(object: QJsonObject)", name = "fromObject", cpp = "static_cast<QJsonDocument *>(new QtfJsonDocument(QJsonDocument(*{object})))", doc = "A document holding an object (copied)." },
+    { sig = "(array: QJsonArray)", name = "fromArray", cpp = "static_cast<QJsonDocument *>(new QtfJsonDocument(QJsonDocument(*{array})))", doc = "A document holding an array (copied)." },
+]
+methods = [
+    { sig = "static fromJson(text: string) -> QJsonDocument", cpp = "qtf_json_parse({text})", doc = "Parse JSON text (UTF-8). On an error the document is null and `errorString`/`errorOffset` say why and where. Delete it when done." },
+    "isNull() -> bool -- True if empty, or if parsing failed.",
+    "isEmpty() -> bool -- True if it holds no object or array.",
+    "isObject() -> bool -- True if it holds an object.",
+    "isArray() -> bool -- True if it holds an array.",
+    { sig = "object() -> QJsonObject", cpp = "new QJsonObject({self}->object())", doc = "The object (empty if it holds an array); delete it when done." },
+    { sig = "array() -> QJsonArray", cpp = "new QJsonArray({self}->array())", doc = "The array (empty if it holds an object); delete it when done." },
+    { sig = "setObject(object: QJsonObject)", cpp = "{self}->setObject(*{object})", doc = "Hold an object (copied)." },
+    { sig = "setArray(array: QJsonArray)", cpp = "{self}->setArray(*{array})", doc = "Hold an array (copied)." },
+    { sig = "toJson(compact: bool = .false.) -> string", cpp = "qtf_json_text(*{self}, {compact})", doc = "The document as JSON text (UTF-8): indented, or on one line." },
+    { sig = "errorString() -> string", cpp = "qtf_jdoc({self})->error", doc = "Why parsing failed ('' if it did not)." },
+    { sig = "errorOffset() -> int", cpp = "qtf_jdoc({self})->offset", doc = "Where parsing failed (a 0-based byte offset; -1 if it did not)." },
+]
+cpp = """
+// Delete a JSON document handle.
+QTF_API void qtf_qjsondocument_delete(void *self) { delete qtf_jdoc(as<QJsonDocument>(self)); }
+"""
+fortran_bindings = "procedure :: delete => qjsondocument_delete"
+fortran_procedures = """
+    !> Delete the handle.
+    subroutine qjsondocument_delete(self)
+        class(QJsonDocument), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qjsondocument_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qjsondocument_delete
+"""
+
+# ---------------------------------------------------------------------------
+# network (QtNetwork)
+
+[[enum]]
+doc = "QNetworkReply::NetworkError"
+values = [
+    "QNetworkReply_NoError = 0", "QNetworkReply_ConnectionRefusedError = 1", "QNetworkReply_RemoteHostClosedError = 2",
+    "QNetworkReply_HostNotFoundError = 3", "QNetworkReply_TimeoutError = 4", "QNetworkReply_OperationCanceledError = 5",
+    "QNetworkReply_SslHandshakeFailedError = 6", "QNetworkReply_TemporaryNetworkFailureError = 7",
+    "QNetworkReply_TooManyRedirectsError = 10", "QNetworkReply_InsecureRedirectError = 11",
+    "QNetworkReply_UnknownNetworkError = 99", "QNetworkReply_ProxyConnectionRefusedError = 101",
+    "QNetworkReply_UnknownProxyError = 199", "QNetworkReply_ContentAccessDenied = 201",
+    "QNetworkReply_ContentOperationNotPermittedError = 202", "QNetworkReply_ContentNotFoundError = 203",
+    "QNetworkReply_AuthenticationRequiredError = 204", "QNetworkReply_ContentConflictError = 206",
+    "QNetworkReply_ContentGoneError = 207", "QNetworkReply_UnknownContentError = 299",
+    "QNetworkReply_ProtocolUnknownError = 301", "QNetworkReply_ProtocolInvalidOperationError = 302",
+    "QNetworkReply_ProtocolFailure = 399", "QNetworkReply_InternalServerError = 401",
+    "QNetworkReply_OperationNotImplementedError = 402", "QNetworkReply_ServiceUnavailableError = 403",
+    "QNetworkReply_UnknownServerError = 499",
+]
+
+[[class]]
+name = "QNetworkRequest"
+handle = true
+doc = """
+What to fetch or send with a QNetworkAccessManager: a URL (http, https,
+file, data, ...), headers and options. Redirects are followed (except from
+https to http). Delete it when done (the manager copies it)."""
+ctor = "(url: string = '') -- A request for `url`."
+cpp_ctor = "new QNetworkRequest(QUrl({url}))"
+methods = [
+    { sig = "setUrl(url: string)", cpp = "{self}->setUrl(QUrl({url}))", doc = "The URL." },
+    { sig = "url() -> string", cpp = "{self}->url().toString()", doc = "The URL." },
+    { sig = "setRawHeader(name: string, value: string)", cpp = "{self}->setRawHeader({name}.toUtf8(), {value}.toUtf8())", doc = "Set a header, e.g. ('Content-Type', 'application/json') or ('Authorization', 'Bearer ...')." },
+    { sig = "rawHeader(name: string) -> string", cpp = "QString::fromUtf8({self}->rawHeader({name}.toUtf8()))", doc = "A header's value ('' if not set)." },
+    { sig = "setTransferTimeout(msecs: int)", cpp = "{self}->setTransferTimeout(std::chrono::milliseconds({msecs}))", doc = "Abort (QNetworkReply_OperationCanceledError) if no data moves for `msecs` (0: no timeout)." },
+    { sig = "setFollowRedirects(follow: bool)", cpp = "{self}->setAttribute(QNetworkRequest::RedirectPolicyAttribute, {follow} ? QNetworkRequest::NoLessSafeRedirectPolicy : QNetworkRequest::ManualRedirectPolicy)", doc = "Follow redirects (default) or return them (status 301/302, `rawHeader('Location')`)." },
+]
+cpp = """
+// Delete a request handle.
+QTF_API void qtf_qnetworkrequest_delete(void *self) { delete as<QNetworkRequest>(self); }
+"""
+fortran_bindings = "procedure :: delete => qnetworkrequest_delete"
+fortran_procedures = """
+    !> Delete the handle.
+    subroutine qnetworkrequest_delete(self)
+        class(QNetworkRequest), intent(inout) :: self
+        if (c_associated(self%ptr)) call qtf_qnetworkrequest_delete(self%ptr)
+        self%ptr = c_null_ptr
+    end subroutine qnetworkrequest_delete
+"""
+
+[[class]]
+name = "QNetworkReply"
+doc = """
+The answer to a request: connect `finished` (and `downloadProgress`, ...)
+and read the body with `readAll` in the slot; or, in scripts and tests,
+`waitForFinished`. The manager owns replies: call `deleteLater` when done
+with one (not `delete` inside its own slot)."""
+signals = [
+    "finished: void -- The reply is complete (successfully or not: check `error`).",
+    "readyRead: void -- More of the body arrived (read it with `readAll` to stream it).",
+    { sig = "errorOccurred: custom", fortran_type = "QSignalInt", lambda = "QNetworkReply::NetworkError e", emit = "qtf_emit_int(ref, int(e))", doc = "An error: a QNetworkReply_* code (`finished` follows)." },
+    { sig = "downloadProgress: custom", fortran_type = "QSignalInt2", lambda = "qint64 received, qint64 total", emit = "qtf_emit_ints(ref, {qtf_clamp_int(received), qtf_clamp_int(total)})", doc = "Bytes received so far, and the total (-1 if unknown)." },
+    { sig = "uploadProgress: custom", fortran_type = "QSignalInt2", lambda = "qint64 sent, qint64 total", emit = "qtf_emit_ints(ref, {qtf_clamp_int(sent), qtf_clamp_int(total)})", doc = "Bytes sent so far, and the total." },
+]
+methods = [
+    { sig = "waitForFinished(msecs: int = 30000) -> bool", cpp = "qtf_wait_reply({self}, {msecs})", doc = "Run the event loop until the reply finishes (slots keep running) or `msecs` pass (< 0: no limit); true if finished." },
+    "isFinished() -> bool -- True when complete.",
+    "isRunning() -> bool -- True while in progress.",
+    { sig = "error() -> int", cpp = "int({self}->error())", doc = "QNetworkReply_NoError, or what went wrong (QNetworkReply_* codes; for HTTP errors also see `statusCode`)." },
+    "errorString() -> string -- The error, as text.",
+    "abort() -- Stop now (error QNetworkReply_OperationCanceledError).",
+    { sig = "url() -> string", cpp = "{self}->url().toString()", doc = "The URL (after redirects)." },
+    { sig = "statusCode() -> int", cpp = "{self}->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()", doc = "The HTTP status code (200, 404, ...). Other schemes may report 200 or 0: check `error` for them." },
+    { sig = "reasonPhrase() -> string", cpp = "{self}->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString()", doc = "The HTTP reason phrase ('OK', 'Not Found', ...)." },
+    { sig = "rawHeader(name: string) -> string", cpp = "QString::fromUtf8({self}->rawHeader({name}.toUtf8()))", doc = "A response header ('' if absent)." },
+    { sig = "hasRawHeader(name: string) -> bool", cpp = "{self}->hasRawHeader({name}.toUtf8())", doc = "True if the response has this header." },
+    { sig = "rawHeaderNames() -> strings", cpp = "qtf_header_names({self})", doc = "The names of the response headers." },
+    { sig = "contentType() -> string", cpp = "{self}->header(QNetworkRequest::ContentTypeHeader).toString()", doc = "The Content-Type ('' if unknown)." },
+    { sig = "bytesAvailable() -> int64", cpp = "static_cast<long long>({self}->bytesAvailable())", doc = "Bytes received and not yet read." },
+]
+cpp = """
+// The body received so far (bytes, as they came).
+QTF_API char *qtf_qnetworkreply_readAll(void *self, int *len) { return qtf_bytes(as<QNetworkReply>(self)->readAll(), len); }
+"""
+fortran_bindings = "procedure :: readAll => qnetworkreply_readAll"
+fortran_procedures = """
+    !> The body received since the last read (bytes, as they came: e.g. UTF-8 text, or binary data).
+    function qnetworkreply_readAll(self) result(res)
+        class(QNetworkReply), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n
+        type(c_ptr) :: p
+        p = qtf_qnetworkreply_readAll(qtf_live(self, 'QNetworkReply%readAll'), n)
+        res = qtf_take_string(p, n)
+    end function qnetworkreply_readAll
+"""
+
+[[class]]
+name = "QNetworkAccessManager"
+doc = """
+Sends requests (QNetworkRequest) and returns their replies (QNetworkReply),
+asynchronously: the program keeps running and the reply's `finished` slot
+gets the result. One manager per application is enough. Bodies (`post`,
+`put`) are bytes, sent as they are: set the Content-Type header.
+
+    req = QNetworkRequest('https://api.example.com/items')
+    reply = manager%get(req)
+    call req%delete()
+    call reply%finished%connect(on_items, state)"""
+ctor = "(parent: QObject?) -- A network access manager."
+methods = [
+    { sig = "get(request: QNetworkRequest) -> QNetworkReply", cpp = "{self}->get(*{request})", doc = "Fetch a URL." },
+    { sig = "head(request: QNetworkRequest) -> QNetworkReply", cpp = "{self}->head(*{request})", doc = "Fetch only the headers." },
+    { sig = "post(request: QNetworkRequest, data: string) -> QNetworkReply", cpp = "{self}->post(*{request}, QByteArray(data, data_len))", doc = "Send `data` (bytes) with POST." },
+    { sig = "put(request: QNetworkRequest, data: string) -> QNetworkReply", cpp = "{self}->put(*{request}, QByteArray(data, data_len))", doc = "Send `data` (bytes) with PUT." },
+    { sig = "deleteResource(request: QNetworkRequest) -> QNetworkReply", cpp = "{self}->deleteResource(*{request})", doc = "Send a DELETE request." },
+    { sig = "sendCustomRequest(request: QNetworkRequest, verb: string, data: string = '') -> QNetworkReply", cpp = "{self}->sendCustomRequest(*{request}, {verb}.toUtf8(), QByteArray(data, data_len))", doc = "Send a request with another HTTP verb (e.g. 'PATCH') and an optional body." },
+    { sig = "setTransferTimeout(msecs: int)", cpp = "{self}->setTransferTimeout(std::chrono::milliseconds({msecs}))", doc = "The default transfer timeout of its requests (0: none)." },
 ]

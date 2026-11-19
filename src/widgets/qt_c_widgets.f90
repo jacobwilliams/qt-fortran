@@ -572,6 +572,94 @@ module qt_c_widgets
             integer(c_int), value :: text_len
         end subroutine qtf_qwidget_setToolTip
 
+        !> Turn one window flag on or off, e.g. Qt_FramelessWindowHint (no title bar or border) or Qt_WindowStaysOnTopHint. Changing flags of a visible window hides it: call `show` again.
+        !>
+        !> C: `void qtf_qwidget_setWindowFlag(void *self, int flag, int on)`
+        subroutine qtf_qwidget_setWindowFlag(self, flag, on) bind(C, name='qtf_qwidget_setWindowFlag')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: flag
+            integer(c_int), value :: on
+        end subroutine qtf_qwidget_setWindowFlag
+
+        !> Set all window flags at once: a window kind (Qt_Window, Qt_Dialog, Qt_Tool, ...) combined with hints (`ior`). Hides a visible window, as setWindowFlag.
+        !>
+        !> C: `void qtf_qwidget_setWindowFlags(void *self, int flags)`
+        subroutine qtf_qwidget_setWindowFlags(self, flags) bind(C, name='qtf_qwidget_setWindowFlags')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: flags
+        end subroutine qtf_qwidget_setWindowFlags
+
+        !> The window flags (test one with `testWindowFlag`).
+        !>
+        !> C: `int qtf_qwidget_windowFlags(void *self)`
+        function qtf_qwidget_windowFlags(self) result(res) bind(C, name='qtf_qwidget_windowFlags')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qwidget_windowFlags
+
+        !> True if a window flag is set.
+        !>
+        !> C: `int qtf_qwidget_testWindowFlag(void *self, int flag)`
+        function qtf_qwidget_testWindowFlag(self, flag) result(res) bind(C, name='qtf_qwidget_testWindowFlag')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: flag
+            integer(c_int) :: res
+        end function qtf_qwidget_testWindowFlag
+
+        !> The name screen readers announce for the widget (e.g. for an icon-only button).
+        !>
+        !> C: `void qtf_qwidget_setAccessibleName(void *self, const char *name, int name_len)`
+        subroutine qtf_qwidget_setAccessibleName(self, name, name_len) bind(C, name='qtf_qwidget_setAccessibleName')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+        end subroutine qtf_qwidget_setAccessibleName
+
+        !> The accessible name.
+        !>
+        !> C: `char *qtf_qwidget_accessibleName(void *self, int *len)`
+        function qtf_qwidget_accessibleName(self, len) result(res) bind(C, name='qtf_qwidget_accessibleName')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qwidget_accessibleName
+
+        !> A longer description for screen readers.
+        !>
+        !> C: `void qtf_qwidget_setAccessibleDescription(void *self, const char *description, int description_len)`
+        subroutine qtf_qwidget_setAccessibleDescription(self, description, description_len) &
+                bind(C, name='qtf_qwidget_setAccessibleDescription')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: description
+            integer(c_int), value :: description_len
+        end subroutine qtf_qwidget_setAccessibleDescription
+
+        !> The accessible description.
+        !>
+        !> C: `char *qtf_qwidget_accessibleDescription(void *self, int *len)`
+        function qtf_qwidget_accessibleDescription(self, len) &
+                result(res) bind(C, name='qtf_qwidget_accessibleDescription')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qwidget_accessibleDescription
+
         !> The tool tip.
         !>
         !> C: `char *qtf_qwidget_toolTip(void *self, int *len)`
@@ -1620,6 +1708,26 @@ module qt_c_widgets
             integer(c_int), value :: on
         end subroutine qtf_qlabel_setWordWrap
 
+        !> How the text is interpreted: Qt_PlainText, Qt_RichText (HTML subset), Qt_MarkdownText, or Qt_AutoText (default: rich text if it looks like HTML).
+        !>
+        !> C: `void qtf_qlabel_setTextFormat(void *self, int format)`
+        subroutine qtf_qlabel_setTextFormat(self, format) bind(C, name='qtf_qlabel_setTextFormat')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: format
+        end subroutine qtf_qlabel_setTextFormat
+
+        !> How the text is interpreted.
+        !>
+        !> C: `int qtf_qlabel_textFormat(void *self)`
+        function qtf_qlabel_textFormat(self) result(res) bind(C, name='qtf_qlabel_textFormat')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qlabel_textFormat
+
         !> Show an image instead of text (copied; see QPixmap_fromImage).
         !>
         !> C: `void qtf_qlabel_setPixmap(void *self, void *pixmap)`
@@ -2231,6 +2339,16 @@ module qt_c_widgets
             integer(c_int) :: res
         end function qtf_qabstractslider_value
 
+        !> True while the user is dragging the handle (e.g. to update only when it is released).
+        !>
+        !> C: `int qtf_qabstractslider_isSliderDown(void *self)`
+        function qtf_qabstractslider_isSliderDown(self) result(res) bind(C, name='qtf_qabstractslider_isSliderDown')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qabstractslider_isSliderDown
+
         !> Step used by the arrow keys.
         !>
         !> C: `void qtf_qabstractslider_setSingleStep(void *self, int step)`
@@ -2451,6 +2569,29 @@ module qt_c_widgets
             type(c_ptr), value :: self
             integer(c_int), value :: editable
         end subroutine qtf_qcombobox_setEditable
+
+        !> Text shown while no item is selected (current index -1).
+        !>
+        !> C: `void qtf_qcombobox_setPlaceholderText(void *self, const char *text, int text_len)`
+        subroutine qtf_qcombobox_setPlaceholderText(self, text, text_len) &
+                bind(C, name='qtf_qcombobox_setPlaceholderText')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+        end subroutine qtf_qcombobox_setPlaceholderText
+
+        !> The placeholder text.
+        !>
+        !> C: `char *qtf_qcombobox_placeholderText(void *self, int *len)`
+        function qtf_qcombobox_placeholderText(self, len) result(res) bind(C, name='qtf_qcombobox_placeholderText')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qcombobox_placeholderText
 
         !> Completions for an editable combo box.
         !>
@@ -5117,6 +5258,36 @@ module qt_c_widgets
             integer(c_int), value :: on
         end subroutine qtf_qtableview_setWordWrap
 
+        !> Draw the grid lines between cells (default: shown).
+        !>
+        !> C: `void qtf_qtableview_setShowGrid(void *self, int show)`
+        subroutine qtf_qtableview_setShowGrid(self, show) bind(C, name='qtf_qtableview_setShowGrid')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: show
+        end subroutine qtf_qtableview_setShowGrid
+
+        !> True if grid lines are drawn.
+        !>
+        !> C: `int qtf_qtableview_showGrid(void *self)`
+        function qtf_qtableview_showGrid(self) result(res) bind(C, name='qtf_qtableview_showGrid')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtableview_showGrid
+
+        !> The pen style of the grid lines (Qt_SolidLine, Qt_DotLine, ...).
+        !>
+        !> C: `void qtf_qtableview_setGridStyle(void *self, int style)`
+        subroutine qtf_qtableview_setGridStyle(self, style) bind(C, name='qtf_qtableview_setGridStyle')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: style
+        end subroutine qtf_qtableview_setGridStyle
+
         !> Sort when a column title is clicked (a QtfTableModel gets `sortRequested`).
         !>
         !> C: `void qtf_qtableview_setSortingEnabled(void *self, int enable)`
@@ -7395,6 +7566,45 @@ module qt_c_widgets
             type(c_ptr), value :: self
             type(c_ptr), value :: item
         end subroutine qtf_qtreewidget_scrollToItem
+
+        !> The item at a point of the viewport (`tree%viewport()` coordinates, e.g. a mouse event's position there; null if none).
+        !>
+        !> C: `void *qtf_qtreewidget_itemAt(void *self, int x, int y)`
+        function qtf_qtreewidget_itemAt(self, x, y) result(res) bind(C, name='qtf_qtreewidget_itemAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: x
+            integer(c_int), value :: y
+            type(c_ptr) :: res
+        end function qtf_qtreewidget_itemAt
+
+        !> The item at a point of the viewport (null if none).
+        !>
+        !> C: `void *qtf_qtreewidget_itemAtPoint(void *self, int p_x, int p_y)`
+        function qtf_qtreewidget_itemAtPoint(self, p_x, p_y) result(res) bind(C, name='qtf_qtreewidget_itemAtPoint')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: p_x
+            integer(c_int), value :: p_y
+            type(c_ptr) :: res
+        end function qtf_qtreewidget_itemAtPoint
+
+        !> Where an item is drawn, in viewport coordinates (empty if it is not shown, e.g. under a collapsed parent).
+        !>
+        !> C: `void qtf_qtreewidget_visualItemRect(void *self, void *item, int *res_x, int *res_y, int *res_width, int *res_height)`
+        subroutine qtf_qtreewidget_visualItemRect(self, item, res_x, res_y, res_width, res_height) &
+                bind(C, name='qtf_qtreewidget_visualItemRect')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: item
+            integer(c_int), intent(out) :: res_x
+            integer(c_int), intent(out) :: res_y
+            integer(c_int), intent(out) :: res_width
+            integer(c_int), intent(out) :: res_height
+        end subroutine qtf_qtreewidget_visualItemRect
 
         !> Remove (and delete) a top-level item and its children.
         !>
@@ -11863,62 +12073,67 @@ module qt_c_widgets
     public :: qtf_qwidget_setVisible, qtf_qwidget_isVisible, qtf_qwidget_setEnabled, qtf_qwidget_isEnabled
     public :: qtf_qwidget_resize, qtf_qwidget_width, qtf_qwidget_height, qtf_qwidget_setMinimumSize
     public :: qtf_qwidget_setFixedSize, qtf_qwidget_setWindowTitle, qtf_qwidget_windowTitle
-    public :: qtf_qwidget_setToolTip, qtf_qwidget_toolTip, qtf_qwidget_setStyleSheet, qtf_qwidget_setFocus
-    public :: qtf_qwidget_setLayout, qtf_qwidget_layout, qtf_qwidget_update, qtf_qwidget_repaint
-    public :: qtf_qwidget_setMouseTracking, qtf_qwidget_hasMouseTracking, qtf_qwidget_setFocusPolicy
-    public :: qtf_qwidget_hasFocus, qtf_qwidget_grab, qtf_qwidget_addAction, qtf_qwidget_insertAction
-    public :: qtf_qwidget_removeAction, qtf_qwidget_setMaximumSize, qtf_qwidget_setMinimumWidth
-    public :: qtf_qwidget_setMinimumHeight, qtf_qwidget_setMaximumWidth, qtf_qwidget_setMaximumHeight
-    public :: qtf_qwidget_setFixedWidth, qtf_qwidget_setFixedHeight, qtf_qwidget_setSizePolicy
-    public :: qtf_qwidget_minimumSizeHint, qtf_qwidget_updateGeometry, qtf_qwidget_adjustSize
-    public :: qtf_qwidget_setContentsMargins, qtf_qwidget_setWindowIcon, qtf_qwidget_saveGeometry
-    public :: qtf_qwidget_restoreGeometry, qtf_qwidget_isWindow, qtf_qwidget_setCursor
-    public :: qtf_qwidget_setCursorPixmap, qtf_qwidget_unsetCursor, qtf_qwidget_cursorShape
-    public :: qtf_qwidget_setAcceptDrops, qtf_qwidget_acceptDrops, qtf_qwidget_screen
-    public :: qtf_qwidget_devicePixelRatio, qtf_qwidget_createWindowContainer, qtf_qwidget_showMaximized
-    public :: qtf_qwidget_showMinimized, qtf_qwidget_showNormal, qtf_qwidget_showFullScreen
-    public :: qtf_qwidget_isMaximized, qtf_qwidget_isMinimized, qtf_qwidget_activateWindow, qtf_qwidget_raise
-    public :: qtf_qwidget_repolish, qtf_qwidget_x, qtf_qwidget_y, qtf_qwidget_move, qtf_qwidget_pos
-    public :: qtf_qwidget_movePoint, qtf_qwidget_size, qtf_qwidget_resizeSize, qtf_qwidget_geometry
-    public :: qtf_qwidget_setGeometry, qtf_qwidget_frameGeometry, qtf_qwidget_rect, qtf_qwidget_contentsRect
-    public :: qtf_qwidget_sizeHint, qtf_qwidget_minimumSize, qtf_qwidget_maximumSize
-    public :: qtf_qwidget_setMinimumSizeSize, qtf_qwidget_setMaximumSizeSize, qtf_qwidget_setFixedSizeSize
-    public :: qtf_qwidget_contentsMargins, qtf_qwidget_setContentsMarginsM, qtf_qwidget_mapToGlobal
-    public :: qtf_qwidget_mapFromGlobal, qtf_qwidget_mapToParent, qtf_qwidget_mapFromParent
-    public :: qtf_qwidget_mapTo, qtf_qwidget_mapFrom, qtf_qwidget_childAt, qtf_qwidget_setPalette
-    public :: qtf_qwidget_palette, qtf_qwidget_setAutoFillBackground, qtf_qtfwidget_new
-    public :: qtf_qtfwidget_setSizeHint, qtf_qtfwidget_setMinimumSizeHint, qtf_qframe_new
-    public :: qtf_qframe_setFrameShape, qtf_qframe_frameShape, qtf_qframe_setFrameShadow
-    public :: qtf_qframe_setLineWidth, qtf_qabstractscrollarea_viewport
-    public :: qtf_qabstractscrollarea_verticalScrollBar, qtf_qabstractscrollarea_horizontalScrollBar
-    public :: qtf_qabstractscrollarea_setVerticalScrollBarPolicy
+    public :: qtf_qwidget_setToolTip, qtf_qwidget_setWindowFlag, qtf_qwidget_setWindowFlags
+    public :: qtf_qwidget_windowFlags, qtf_qwidget_testWindowFlag, qtf_qwidget_setAccessibleName
+    public :: qtf_qwidget_accessibleName, qtf_qwidget_setAccessibleDescription
+    public :: qtf_qwidget_accessibleDescription, qtf_qwidget_toolTip, qtf_qwidget_setStyleSheet
+    public :: qtf_qwidget_setFocus, qtf_qwidget_setLayout, qtf_qwidget_layout, qtf_qwidget_update
+    public :: qtf_qwidget_repaint, qtf_qwidget_setMouseTracking, qtf_qwidget_hasMouseTracking
+    public :: qtf_qwidget_setFocusPolicy, qtf_qwidget_hasFocus, qtf_qwidget_grab, qtf_qwidget_addAction
+    public :: qtf_qwidget_insertAction, qtf_qwidget_removeAction, qtf_qwidget_setMaximumSize
+    public :: qtf_qwidget_setMinimumWidth, qtf_qwidget_setMinimumHeight, qtf_qwidget_setMaximumWidth
+    public :: qtf_qwidget_setMaximumHeight, qtf_qwidget_setFixedWidth, qtf_qwidget_setFixedHeight
+    public :: qtf_qwidget_setSizePolicy, qtf_qwidget_minimumSizeHint, qtf_qwidget_updateGeometry
+    public :: qtf_qwidget_adjustSize, qtf_qwidget_setContentsMargins, qtf_qwidget_setWindowIcon
+    public :: qtf_qwidget_saveGeometry, qtf_qwidget_restoreGeometry, qtf_qwidget_isWindow
+    public :: qtf_qwidget_setCursor, qtf_qwidget_setCursorPixmap, qtf_qwidget_unsetCursor
+    public :: qtf_qwidget_cursorShape, qtf_qwidget_setAcceptDrops, qtf_qwidget_acceptDrops
+    public :: qtf_qwidget_screen, qtf_qwidget_devicePixelRatio, qtf_qwidget_createWindowContainer
+    public :: qtf_qwidget_showMaximized, qtf_qwidget_showMinimized, qtf_qwidget_showNormal
+    public :: qtf_qwidget_showFullScreen, qtf_qwidget_isMaximized, qtf_qwidget_isMinimized
+    public :: qtf_qwidget_activateWindow, qtf_qwidget_raise, qtf_qwidget_repolish, qtf_qwidget_x
+    public :: qtf_qwidget_y, qtf_qwidget_move, qtf_qwidget_pos, qtf_qwidget_movePoint, qtf_qwidget_size
+    public :: qtf_qwidget_resizeSize, qtf_qwidget_geometry, qtf_qwidget_setGeometry
+    public :: qtf_qwidget_frameGeometry, qtf_qwidget_rect, qtf_qwidget_contentsRect, qtf_qwidget_sizeHint
+    public :: qtf_qwidget_minimumSize, qtf_qwidget_maximumSize, qtf_qwidget_setMinimumSizeSize
+    public :: qtf_qwidget_setMaximumSizeSize, qtf_qwidget_setFixedSizeSize, qtf_qwidget_contentsMargins
+    public :: qtf_qwidget_setContentsMarginsM, qtf_qwidget_mapToGlobal, qtf_qwidget_mapFromGlobal
+    public :: qtf_qwidget_mapToParent, qtf_qwidget_mapFromParent, qtf_qwidget_mapTo, qtf_qwidget_mapFrom
+    public :: qtf_qwidget_childAt, qtf_qwidget_setPalette, qtf_qwidget_palette
+    public :: qtf_qwidget_setAutoFillBackground, qtf_qtfwidget_new, qtf_qtfwidget_setSizeHint
+    public :: qtf_qtfwidget_setMinimumSizeHint, qtf_qframe_new, qtf_qframe_setFrameShape
+    public :: qtf_qframe_frameShape, qtf_qframe_setFrameShadow, qtf_qframe_setLineWidth
+    public :: qtf_qabstractscrollarea_viewport, qtf_qabstractscrollarea_verticalScrollBar
+    public :: qtf_qabstractscrollarea_horizontalScrollBar, qtf_qabstractscrollarea_setVerticalScrollBarPolicy
     public :: qtf_qabstractscrollarea_setHorizontalScrollBarPolicy, qtf_qlabel_new, qtf_qlabel_setText
-    public :: qtf_qlabel_text, qtf_qlabel_setAlignment, qtf_qlabel_setWordWrap, qtf_qlabel_setPixmap
-    public :: qtf_qlabel_setScaledContents, qtf_qabstractbutton_setText, qtf_qabstractbutton_text
-    public :: qtf_qabstractbutton_setCheckable, qtf_qabstractbutton_isCheckable
-    public :: qtf_qabstractbutton_setChecked, qtf_qabstractbutton_isChecked, qtf_qabstractbutton_click
-    public :: qtf_qabstractbutton_toggle, qtf_qabstractbutton_setIcon, qtf_qabstractbutton_setIconSize
-    public :: qtf_qpushbutton_new, qtf_qpushbutton_setDefault, qtf_qcheckbox_new, qtf_qradiobutton_new
-    public :: qtf_qlineedit_new, qtf_qlineedit_setText, qtf_qlineedit_text, qtf_qlineedit_setPlaceholderText
-    public :: qtf_qlineedit_placeholderText, qtf_qlineedit_setReadOnly, qtf_qlineedit_isReadOnly
-    public :: qtf_qlineedit_setMaxLength, qtf_qlineedit_maxLength, qtf_qlineedit_clear
-    public :: qtf_qlineedit_setValidator, qtf_qlineedit_hasAcceptableInput, qtf_qlineedit_setCompleter
-    public :: qtf_qlineedit_setInputMask, qtf_qlineedit_setEchoMode, qtf_qlineedit_setClearButtonEnabled
-    public :: qtf_qspinbox_new, qtf_qspinbox_setRange, qtf_qspinbox_minimum, qtf_qspinbox_maximum
-    public :: qtf_qspinbox_setValue, qtf_qspinbox_value, qtf_qspinbox_setSingleStep, qtf_qspinbox_singleStep
-    public :: qtf_qspinbox_setPrefix, qtf_qspinbox_setSuffix, qtf_qdoublespinbox_new
-    public :: qtf_qdoublespinbox_setRange, qtf_qdoublespinbox_minimum, qtf_qdoublespinbox_maximum
-    public :: qtf_qdoublespinbox_setValue, qtf_qdoublespinbox_value, qtf_qdoublespinbox_setSingleStep
-    public :: qtf_qdoublespinbox_singleStep, qtf_qdoublespinbox_setDecimals, qtf_qdoublespinbox_decimals
-    public :: qtf_qdoublespinbox_setPrefix, qtf_qdoublespinbox_setSuffix, qtf_qabstractslider_setRange
-    public :: qtf_qabstractslider_minimum, qtf_qabstractslider_maximum, qtf_qabstractslider_setValue
-    public :: qtf_qabstractslider_value, qtf_qabstractslider_setSingleStep, qtf_qabstractslider_setPageStep
-    public :: qtf_qabstractslider_setOrientation, qtf_qabstractslider_orientation, qtf_qslider_new
-    public :: qtf_qscrollbar_new, qtf_qscrollbar_pageStep, qtf_qscrollbar_singleStep, qtf_qcombobox_new
-    public :: qtf_qcombobox_addItem, qtf_qcombobox_insertItem, qtf_qcombobox_removeItem, qtf_qcombobox_clear
-    public :: qtf_qcombobox_count, qtf_qcombobox_currentIndex, qtf_qcombobox_setCurrentIndex
-    public :: qtf_qcombobox_currentText, qtf_qcombobox_setCurrentText, qtf_qcombobox_itemText
-    public :: qtf_qcombobox_findText, qtf_qcombobox_setEditable, qtf_qcombobox_setCompleter
+    public :: qtf_qlabel_text, qtf_qlabel_setAlignment, qtf_qlabel_setWordWrap, qtf_qlabel_setTextFormat
+    public :: qtf_qlabel_textFormat, qtf_qlabel_setPixmap, qtf_qlabel_setScaledContents
+    public :: qtf_qabstractbutton_setText, qtf_qabstractbutton_text, qtf_qabstractbutton_setCheckable
+    public :: qtf_qabstractbutton_isCheckable, qtf_qabstractbutton_setChecked, qtf_qabstractbutton_isChecked
+    public :: qtf_qabstractbutton_click, qtf_qabstractbutton_toggle, qtf_qabstractbutton_setIcon
+    public :: qtf_qabstractbutton_setIconSize, qtf_qpushbutton_new, qtf_qpushbutton_setDefault
+    public :: qtf_qcheckbox_new, qtf_qradiobutton_new, qtf_qlineedit_new, qtf_qlineedit_setText
+    public :: qtf_qlineedit_text, qtf_qlineedit_setPlaceholderText, qtf_qlineedit_placeholderText
+    public :: qtf_qlineedit_setReadOnly, qtf_qlineedit_isReadOnly, qtf_qlineedit_setMaxLength
+    public :: qtf_qlineedit_maxLength, qtf_qlineedit_clear, qtf_qlineedit_setValidator
+    public :: qtf_qlineedit_hasAcceptableInput, qtf_qlineedit_setCompleter, qtf_qlineedit_setInputMask
+    public :: qtf_qlineedit_setEchoMode, qtf_qlineedit_setClearButtonEnabled, qtf_qspinbox_new
+    public :: qtf_qspinbox_setRange, qtf_qspinbox_minimum, qtf_qspinbox_maximum, qtf_qspinbox_setValue
+    public :: qtf_qspinbox_value, qtf_qspinbox_setSingleStep, qtf_qspinbox_singleStep, qtf_qspinbox_setPrefix
+    public :: qtf_qspinbox_setSuffix, qtf_qdoublespinbox_new, qtf_qdoublespinbox_setRange
+    public :: qtf_qdoublespinbox_minimum, qtf_qdoublespinbox_maximum, qtf_qdoublespinbox_setValue
+    public :: qtf_qdoublespinbox_value, qtf_qdoublespinbox_setSingleStep, qtf_qdoublespinbox_singleStep
+    public :: qtf_qdoublespinbox_setDecimals, qtf_qdoublespinbox_decimals, qtf_qdoublespinbox_setPrefix
+    public :: qtf_qdoublespinbox_setSuffix, qtf_qabstractslider_setRange, qtf_qabstractslider_minimum
+    public :: qtf_qabstractslider_maximum, qtf_qabstractslider_setValue, qtf_qabstractslider_value
+    public :: qtf_qabstractslider_isSliderDown, qtf_qabstractslider_setSingleStep
+    public :: qtf_qabstractslider_setPageStep, qtf_qabstractslider_setOrientation
+    public :: qtf_qabstractslider_orientation, qtf_qslider_new, qtf_qscrollbar_new, qtf_qscrollbar_pageStep
+    public :: qtf_qscrollbar_singleStep, qtf_qcombobox_new, qtf_qcombobox_addItem, qtf_qcombobox_insertItem
+    public :: qtf_qcombobox_removeItem, qtf_qcombobox_clear, qtf_qcombobox_count, qtf_qcombobox_currentIndex
+    public :: qtf_qcombobox_setCurrentIndex, qtf_qcombobox_currentText, qtf_qcombobox_setCurrentText
+    public :: qtf_qcombobox_itemText, qtf_qcombobox_findText, qtf_qcombobox_setEditable
+    public :: qtf_qcombobox_setPlaceholderText, qtf_qcombobox_placeholderText, qtf_qcombobox_setCompleter
     public :: qtf_qlayout_setContentsMargins, qtf_qlayout_setContentsMarginsM, qtf_qlayout_contentsMargins
     public :: qtf_qlayout_setSpacing, qtf_qlayout_spacing, qtf_qlayout_count, qtf_qboxlayout_addWidget
     public :: qtf_qboxlayout_addLayout, qtf_qboxlayout_addStretch, qtf_qboxlayout_addSpacing
@@ -12008,7 +12223,8 @@ module qt_c_widgets
     public :: qtf_qtableview_rowHeight, qtf_qtableview_setStretchLastSection
     public :: qtf_qtableview_setHorizontalHeaderVisible, qtf_qtableview_setVerticalHeaderVisible
     public :: qtf_qtableview_currentRow, qtf_qtableview_currentColumn, qtf_qtableview_setCurrentCell
-    public :: qtf_qtableview_selectRow, qtf_qtableview_setWordWrap, qtf_qtableview_setSortingEnabled
+    public :: qtf_qtableview_selectRow, qtf_qtableview_setWordWrap, qtf_qtableview_setShowGrid
+    public :: qtf_qtableview_showGrid, qtf_qtableview_setGridStyle, qtf_qtableview_setSortingEnabled
     public :: qtf_qtableview_sortByColumn, qtf_qtableview_setColumnHidden, qtf_qlistview_new
     public :: qtf_qlistview_setViewMode, qtf_qlistview_setFlow, qtf_qlistview_setWrapping
     public :: qtf_qlistview_setSpacing, qtf_qlistview_setGridSize, qtf_qlistview_setUniformItemSizes
@@ -12086,7 +12302,8 @@ module qt_c_widgets
     public :: qtf_qtreewidget_setCurrentItem, qtf_qtreewidget_clear, qtf_qtreewidget_expandAll
     public :: qtf_qtreewidget_collapseAll, qtf_qtreewidget_resizeColumnToContents
     public :: qtf_qtreewidget_setSortingEnabled, qtf_qtreewidget_sortItems, qtf_qtreewidget_findData
-    public :: qtf_qtreewidget_scrollToItem, qtf_qtreewidget_takeTopLevelItem
+    public :: qtf_qtreewidget_scrollToItem, qtf_qtreewidget_itemAt, qtf_qtreewidget_itemAtPoint
+    public :: qtf_qtreewidget_visualItemRect, qtf_qtreewidget_takeTopLevelItem
     public :: qtf_qtreewidget_indexOfTopLevelItem, qtf_qtextedit_new, qtf_qtextedit_setPlainText
     public :: qtf_qtextedit_toPlainText, qtf_qtextedit_setHtml, qtf_qtextedit_toHtml
     public :: qtf_qtextedit_setMarkdown, qtf_qtextedit_toMarkdown, qtf_qtextedit_append

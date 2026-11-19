@@ -194,6 +194,41 @@ module qt_widgets
     integer(c_int), parameter, public :: QTabWidget_Rounded = 0
     integer(c_int), parameter, public :: QTabWidget_Triangular = 1
 
+    ! Qt::WindowType (flags): window kinds and hints for QWidget%setWindowFlag(s)
+    integer(c_int), parameter, public :: Qt_Widget = 0
+    integer(c_int), parameter, public :: Qt_Window = 1
+    integer(c_int), parameter, public :: Qt_Dialog = 3
+    integer(c_int), parameter, public :: Qt_Sheet = 5
+    integer(c_int), parameter, public :: Qt_Drawer = 7
+    integer(c_int), parameter, public :: Qt_Popup = 9
+    integer(c_int), parameter, public :: Qt_Tool = 11
+    integer(c_int), parameter, public :: Qt_ToolTip = 13
+    integer(c_int), parameter, public :: Qt_SplashScreen = 15
+    integer(c_int), parameter, public :: Qt_SubWindow = 18
+    integer(c_int), parameter, public :: Qt_WindowType_Mask = 255
+    integer(c_int), parameter, public :: Qt_MSWindowsFixedSizeDialogHint = 256
+    integer(c_int), parameter, public :: Qt_BypassWindowManagerHint = 1024
+    integer(c_int), parameter, public :: Qt_FramelessWindowHint = 2048
+    integer(c_int), parameter, public :: Qt_WindowTitleHint = 4096
+    integer(c_int), parameter, public :: Qt_WindowSystemMenuHint = 8192
+    integer(c_int), parameter, public :: Qt_WindowMinimizeButtonHint = 16384
+    integer(c_int), parameter, public :: Qt_WindowMaximizeButtonHint = 32768
+    integer(c_int), parameter, public :: Qt_WindowMinMaxButtonsHint = 49152
+    integer(c_int), parameter, public :: Qt_WindowContextHelpButtonHint = 65536
+    integer(c_int), parameter, public :: Qt_WindowShadeButtonHint = 131072
+    integer(c_int), parameter, public :: Qt_WindowStaysOnTopHint = 262144
+    integer(c_int), parameter, public :: Qt_WindowTransparentForInput = 524288
+    integer(c_int), parameter, public :: Qt_WindowDoesNotAcceptFocus = 2097152
+    integer(c_int), parameter, public :: Qt_CustomizeWindowHint = 33554432
+    integer(c_int), parameter, public :: Qt_WindowStaysOnBottomHint = 67108864
+    integer(c_int), parameter, public :: Qt_WindowCloseButtonHint = 134217728
+
+    ! Qt::TextFormat
+    integer(c_int), parameter, public :: Qt_PlainText = 0
+    integer(c_int), parameter, public :: Qt_RichText = 1
+    integer(c_int), parameter, public :: Qt_AutoText = 2
+    integer(c_int), parameter, public :: Qt_MarkdownText = 3
+
     ! Qt::Corner
     integer(c_int), parameter, public :: Qt_TopLeftCorner = 0
     integer(c_int), parameter, public :: Qt_TopRightCorner = 1
@@ -433,6 +468,14 @@ module qt_widgets
         procedure :: setWindowTitle => qwidget_setWindowTitle
         procedure :: windowTitle => qwidget_windowTitle
         procedure :: setToolTip => qwidget_setToolTip
+        procedure :: setWindowFlag => qwidget_setWindowFlag
+        procedure :: setWindowFlags => qwidget_setWindowFlags
+        procedure :: windowFlags => qwidget_windowFlags
+        procedure :: testWindowFlag => qwidget_testWindowFlag
+        procedure :: setAccessibleName => qwidget_setAccessibleName
+        procedure :: accessibleName => qwidget_accessibleName
+        procedure :: setAccessibleDescription => qwidget_setAccessibleDescription
+        procedure :: accessibleDescription => qwidget_accessibleDescription
         procedure :: toolTip => qwidget_toolTip
         procedure :: setStyleSheet => qwidget_setStyleSheet
         procedure :: setFocus => qwidget_setFocus
@@ -579,6 +622,8 @@ module qt_widgets
         procedure :: text => qlabel_text
         procedure :: setAlignment => qlabel_setAlignment
         procedure :: setWordWrap => qlabel_setWordWrap
+        procedure :: setTextFormat => qlabel_setTextFormat
+        procedure :: textFormat => qlabel_textFormat
         procedure :: setPixmap => qlabel_setPixmap
         procedure :: setScaledContents => qlabel_setScaledContents
     end type QLabel
@@ -719,6 +764,7 @@ module qt_widgets
         procedure :: maximum => qabstractslider_maximum
         procedure :: setValue => qabstractslider_setValue
         procedure :: value => qabstractslider_value
+        procedure :: isSliderDown => qabstractslider_isSliderDown
         procedure :: setSingleStep => qabstractslider_setSingleStep
         procedure :: setPageStep => qabstractslider_setPageStep
         procedure :: setOrientation => qabstractslider_setOrientation
@@ -767,6 +813,8 @@ module qt_widgets
         procedure :: itemText => qcombobox_itemText
         procedure :: findText => qcombobox_findText
         procedure :: setEditable => qcombobox_setEditable
+        procedure :: setPlaceholderText => qcombobox_setPlaceholderText
+        procedure :: placeholderText => qcombobox_placeholderText
         procedure :: setCompleter => qcombobox_setCompleter
         procedure :: addItems => qcombobox_addItems
     end type QComboBox
@@ -1215,6 +1263,9 @@ module qt_widgets
         procedure :: setCurrentCell => qtableview_setCurrentCell
         procedure :: selectRow => qtableview_selectRow
         procedure :: setWordWrap => qtableview_setWordWrap
+        procedure :: setShowGrid => qtableview_setShowGrid
+        procedure :: showGrid => qtableview_showGrid
+        procedure :: setGridStyle => qtableview_setGridStyle
         procedure :: setSortingEnabled => qtableview_setSortingEnabled
         procedure :: sortByColumn => qtableview_sortByColumn
         procedure :: setColumnHidden => qtableview_setColumnHidden
@@ -1537,8 +1588,9 @@ module qt_widgets
         module procedure :: qtablewidget_new
     end interface QTableWidget
 
-    !> A list of text items. Rows are 0-based.
-    type, extends(QAbstractItemView), public :: QListWidget
+    !> A list of text items. Rows are 0-based. It is a QListView, so its layout
+    !> methods apply too (`setSpacing`, `setWordWrap`, `setViewMode`, ...).
+    type, extends(QListView), public :: QListWidget
         type(QSignalInt) :: currentRowChanged   !! The current row changed (-1 if none).
         type(QSignalString) :: currentTextChanged   !! The current item's text changed.
         type(QSignalInt) :: itemDoubleClicked   !! An item was double-clicked: its row.
@@ -1629,6 +1681,9 @@ module qt_widgets
         procedure :: sortItems => qtreewidget_sortItems
         procedure :: findData => qtreewidget_findData
         procedure :: scrollToItem => qtreewidget_scrollToItem
+        procedure, private :: qtreewidget_itemAt, qtreewidget_itemAtPoint
+        generic :: itemAt => qtreewidget_itemAt, qtreewidget_itemAtPoint
+        procedure :: visualItemRect => qtreewidget_visualItemRect
         procedure :: takeTopLevelItem => qtreewidget_takeTopLevelItem
         procedure :: indexOfTopLevelItem => qtreewidget_indexOfTopLevelItem
     end type QTreeWidget
@@ -2890,6 +2945,74 @@ contains
         call qtf_qwidget_setToolTip(qtf_live(self, 'QWidget%setToolTip'), text, len(text, c_int))
     end subroutine qwidget_setToolTip
 
+    !> Turn one window flag on or off, e.g. Qt_FramelessWindowHint (no title bar or border) or Qt_WindowStaysOnTopHint. Changing flags of a visible window hides it: call `show` again.
+    subroutine qwidget_setWindowFlag(self, flag, on)
+        class(QWidget), intent(in) :: self
+        integer, intent(in) :: flag
+        logical, intent(in), optional :: on
+        logical :: on_
+        on_ = .true.
+        if (present(on)) on_ = on
+        call qtf_qwidget_setWindowFlag(qtf_live(self, 'QWidget%setWindowFlag'), int(flag, c_int), qtf_int(on_))
+    end subroutine qwidget_setWindowFlag
+
+    !> Set all window flags at once: a window kind (Qt_Window, Qt_Dialog, Qt_Tool, ...) combined with hints (`ior`). Hides a visible window, as setWindowFlag.
+    subroutine qwidget_setWindowFlags(self, flags)
+        class(QWidget), intent(in) :: self
+        integer, intent(in) :: flags
+        call qtf_qwidget_setWindowFlags(qtf_live(self, 'QWidget%setWindowFlags'), int(flags, c_int))
+    end subroutine qwidget_setWindowFlags
+
+    !> The window flags (test one with `testWindowFlag`).
+    function qwidget_windowFlags(self) result(res)
+        class(QWidget), intent(in) :: self
+        integer :: res
+        res = qtf_qwidget_windowFlags(qtf_live(self, 'QWidget%windowFlags'))
+    end function qwidget_windowFlags
+
+    !> True if a window flag is set.
+    function qwidget_testWindowFlag(self, flag) result(res)
+        class(QWidget), intent(in) :: self
+        integer, intent(in) :: flag
+        logical :: res
+        res = qtf_logical(qtf_qwidget_testWindowFlag(qtf_live(self, 'QWidget%testWindowFlag'), int(flag, c_int)))
+    end function qwidget_testWindowFlag
+
+    !> The name screen readers announce for the widget (e.g. for an icon-only button).
+    subroutine qwidget_setAccessibleName(self, name)
+        class(QWidget), intent(in) :: self
+        character(len=*), intent(in) :: name
+        call qtf_qwidget_setAccessibleName(qtf_live(self, 'QWidget%setAccessibleName'), name, len(name, c_int))
+    end subroutine qwidget_setAccessibleName
+
+    !> The accessible name.
+    function qwidget_accessibleName(self) result(res)
+        class(QWidget), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qwidget_accessibleName(qtf_live(self, 'QWidget%accessibleName'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qwidget_accessibleName
+
+    !> A longer description for screen readers.
+    subroutine qwidget_setAccessibleDescription(self, description)
+        class(QWidget), intent(in) :: self
+        character(len=*), intent(in) :: description
+        call qtf_qwidget_setAccessibleDescription(qtf_live(self, 'QWidget%setAccessibleDescription'), description, &
+                len(description, c_int))
+    end subroutine qwidget_setAccessibleDescription
+
+    !> The accessible description.
+    function qwidget_accessibleDescription(self) result(res)
+        class(QWidget), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qwidget_accessibleDescription(qtf_live(self, 'QWidget%accessibleDescription'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qwidget_accessibleDescription
+
     !> The tool tip.
     function qwidget_toolTip(self) result(res)
         class(QWidget), intent(in) :: self
@@ -3773,6 +3896,20 @@ contains
         call qtf_qlabel_setWordWrap(qtf_live(self, 'QLabel%setWordWrap'), qtf_int(on))
     end subroutine qlabel_setWordWrap
 
+    !> How the text is interpreted: Qt_PlainText, Qt_RichText (HTML subset), Qt_MarkdownText, or Qt_AutoText (default: rich text if it looks like HTML).
+    subroutine qlabel_setTextFormat(self, format)
+        class(QLabel), intent(in) :: self
+        integer, intent(in) :: format
+        call qtf_qlabel_setTextFormat(qtf_live(self, 'QLabel%setTextFormat'), int(format, c_int))
+    end subroutine qlabel_setTextFormat
+
+    !> How the text is interpreted.
+    function qlabel_textFormat(self) result(res)
+        class(QLabel), intent(in) :: self
+        integer :: res
+        res = qtf_qlabel_textFormat(qtf_live(self, 'QLabel%textFormat'))
+    end function qlabel_textFormat
+
     !> Show an image instead of text (copied; see QPixmap_fromImage).
     subroutine qlabel_setPixmap(self, pixmap)
         class(QLabel), intent(in) :: self
@@ -4264,6 +4401,13 @@ contains
         res = qtf_qabstractslider_value(qtf_live(self, 'QAbstractSlider%value'))
     end function qabstractslider_value
 
+    !> True while the user is dragging the handle (e.g. to update only when it is released).
+    function qabstractslider_isSliderDown(self) result(res)
+        class(QAbstractSlider), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qabstractslider_isSliderDown(qtf_live(self, 'QAbstractSlider%isSliderDown')))
+    end function qabstractslider_isSliderDown
+
     !> Step used by the arrow keys.
     subroutine qabstractslider_setSingleStep(self, step)
         class(QAbstractSlider), intent(in) :: self
@@ -4445,6 +4589,23 @@ contains
         logical, intent(in) :: editable
         call qtf_qcombobox_setEditable(qtf_live(self, 'QComboBox%setEditable'), qtf_int(editable))
     end subroutine qcombobox_setEditable
+
+    !> Text shown while no item is selected (current index -1).
+    subroutine qcombobox_setPlaceholderText(self, text)
+        class(QComboBox), intent(in) :: self
+        character(len=*), intent(in) :: text
+        call qtf_qcombobox_setPlaceholderText(qtf_live(self, 'QComboBox%setPlaceholderText'), text, len(text, c_int))
+    end subroutine qcombobox_setPlaceholderText
+
+    !> The placeholder text.
+    function qcombobox_placeholderText(self) result(res)
+        class(QComboBox), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qcombobox_placeholderText(qtf_live(self, 'QComboBox%placeholderText'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qcombobox_placeholderText
 
     !> Completions for an editable combo box.
     subroutine qcombobox_setCompleter(self, completer)
@@ -6582,6 +6743,27 @@ contains
         call qtf_qtableview_setWordWrap(qtf_live(self, 'QTableView%setWordWrap'), qtf_int(on))
     end subroutine qtableview_setWordWrap
 
+    !> Draw the grid lines between cells (default: shown).
+    subroutine qtableview_setShowGrid(self, show)
+        class(QTableView), intent(in) :: self
+        logical, intent(in) :: show
+        call qtf_qtableview_setShowGrid(qtf_live(self, 'QTableView%setShowGrid'), qtf_int(show))
+    end subroutine qtableview_setShowGrid
+
+    !> True if grid lines are drawn.
+    function qtableview_showGrid(self) result(res)
+        class(QTableView), intent(in) :: self
+        logical :: res
+        res = qtf_logical(qtf_qtableview_showGrid(qtf_live(self, 'QTableView%showGrid')))
+    end function qtableview_showGrid
+
+    !> The pen style of the grid lines (Qt_SolidLine, Qt_DotLine, ...).
+    subroutine qtableview_setGridStyle(self, style)
+        class(QTableView), intent(in) :: self
+        integer, intent(in) :: style
+        call qtf_qtableview_setGridStyle(qtf_live(self, 'QTableView%setGridStyle'), int(style, c_int))
+    end subroutine qtableview_setGridStyle
+
     !> Sort when a column title is clicked (a QtfTableModel gets `sortRequested`).
     subroutine qtableview_setSortingEnabled(self, enable)
         class(QTableView), intent(in) :: self
@@ -7841,7 +8023,7 @@ contains
     subroutine qlistwidget_attach(self, ptr)
         class(QListWidget), intent(inout) :: self
         type(c_ptr), intent(in) :: ptr
-        call self%QAbstractItemView%attach(ptr)
+        call self%QListView%attach(ptr)
         self%currentRowChanged = QSignalInt(ptr, QTF_SIG_QLISTWIDGET_CURRENTROWCHANGED, self%serial)
         self%currentTextChanged = QSignalString(ptr, QTF_SIG_QLISTWIDGET_CURRENTTEXTCHANGED, self%serial)
         self%itemDoubleClicked = QSignalInt(ptr, QTF_SIG_QLISTWIDGET_ITEMDOUBLECLICKED, self%serial)
@@ -8353,6 +8535,41 @@ contains
         class(QTreeWidgetItem), intent(in) :: item
         call qtf_qtreewidget_scrollToItem(qtf_live(self, 'QTreeWidget%scrollToItem'), item%ptr)
     end subroutine qtreewidget_scrollToItem
+
+    !> The item at a point of the viewport (`tree%viewport()` coordinates, e.g. a mouse event's position there; null if none).
+    function qtreewidget_itemAt(self, x, y) result(res)
+        class(QTreeWidget), intent(in) :: self
+        integer, intent(in) :: x
+        integer, intent(in) :: y
+        type(QTreeWidgetItem) :: res
+        res%ptr = qtf_qtreewidget_itemAt(qtf_live(self, 'QTreeWidget%itemAt'), int(x, c_int), int(y, c_int))
+    end function qtreewidget_itemAt
+
+    !> The item at a point of the viewport (null if none).
+    function qtreewidget_itemAtPoint(self, p) result(res)
+        class(QTreeWidget), intent(in) :: self
+        type(QPoint), intent(in) :: p
+        type(QTreeWidgetItem) :: res
+        res%ptr = qtf_qtreewidget_itemAtPoint(qtf_live(self, 'QTreeWidget%itemAtPoint'), int(p%x, c_int), int(p%y, &
+                c_int))
+    end function qtreewidget_itemAtPoint
+
+    !> Where an item is drawn, in viewport coordinates (empty if it is not shown, e.g. under a collapsed parent).
+    function qtreewidget_visualItemRect(self, item) result(res)
+        class(QTreeWidget), intent(in) :: self
+        class(QTreeWidgetItem), intent(in) :: item
+        type(QRect) :: res
+        integer(c_int) :: r_x
+        integer(c_int) :: r_y
+        integer(c_int) :: r_width
+        integer(c_int) :: r_height
+        call qtf_qtreewidget_visualItemRect(qtf_live(self, 'QTreeWidget%visualItemRect'), item%ptr, r_x, r_y, &
+                r_width, r_height)
+        res%x = int(r_x)
+        res%y = int(r_y)
+        res%width = int(r_width)
+        res%height = int(r_height)
+    end function qtreewidget_visualItemRect
 
     !> Remove (and delete) a top-level item and its children.
     subroutine qtreewidget_takeTopLevelItem(self, index)

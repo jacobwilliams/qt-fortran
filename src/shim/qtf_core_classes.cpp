@@ -8,16 +8,30 @@
 
 #include "qtf_common.h"
 
+#include <QCoreApplication>
 #include <QDir>
+#include <QEventLoop>
 #include <QFileInfo>
 #include <QFileSystemWatcher>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 #include <QProcess>
 #include <QProcessEnvironment>
+#include <QSaveFile>
 #include <QSettings>
 #include <QSocketNotifier>
 #include <QStringList>
+#include <QTemporaryDir>
 #include <QThread>
+#include <QTimer>
+#include <QUrl>
 #include <QVariant>
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 
@@ -38,6 +52,11 @@ enum : int {
     QTF_SIG_QFILESYSTEMWATCHER_DIRECTORYCHANGED = 4010,
     QTF_SIG_QSOCKETNOTIFIER_ACTIVATED = 4011,
     QTF_SIG_QWINEVENTNOTIFIER_ACTIVATED = 4012,
+    QTF_SIG_QNETWORKREPLY_FINISHED = 4013,
+    QTF_SIG_QNETWORKREPLY_READYREAD = 4014,
+    QTF_SIG_QNETWORKREPLY_ERROROCCURRED = 4015,
+    QTF_SIG_QNETWORKREPLY_DOWNLOADPROGRESS = 4016,
+    QTF_SIG_QNETWORKREPLY_UPLOADPROGRESS = 4017,
 };
 
 // Runs (op 0) or frees (op 1) the Fortran task of a thread.
@@ -119,6 +138,61 @@ static bool connect_win_notifier(void *s, const qtf_slot &ref) {
     (void)ref;
     return true;
 #endif
+}
+
+// A JSON document with the result of parsing it (QJsonDocument_fromJson).
+// Every QJsonDocument handle is one of these.
+class QtfJsonDocument : public QJsonDocument {
+  public:
+    QtfJsonDocument() = default;
+    explicit QtfJsonDocument(const QJsonDocument &d) : QJsonDocument(d) {}
+    QString error;
+    int offset = -1;
+};
+
+static QtfJsonDocument *qtf_jdoc(QJsonDocument *d) { return static_cast<QtfJsonDocument *>(d); }
+
+static QJsonDocument *qtf_json_parse(const QString &text) {
+    QJsonParseError e;
+    auto *d = new QtfJsonDocument(QJsonDocument::fromJson(text.toUtf8(), &e));
+    if (e.error != QJsonParseError::NoError) {
+        d->error = e.errorString();
+        d->offset = e.offset;
+    }
+    return d;
+}
+
+static QString qtf_json_text(const QJsonDocument &d, bool compact) {
+    return QString::fromUtf8(d.toJson(compact ? QJsonDocument::Compact : QJsonDocument::Indented));
+}
+
+// The integers of a JSON array (non-numbers as 0).
+static QList<int> qtf_json_ints(const QJsonArray *a) {
+    QList<int> v;
+    for (const QJsonValue &x : *a) v << x.toInt(int(x.toDouble()));
+    return v;
+}
+
+// Byte counts for int signal arguments (clamped to the int range).
+static int qtf_clamp_int(qint64 v) { return int(std::clamp<qint64>(v, -2147483647, 2147483647)); }
+
+// Run the event loop until the reply finishes or `msecs` pass (< 0: no limit).
+static bool qtf_wait_reply(QNetworkReply *r, int msecs) {
+    if (r->isFinished()) return true;
+    QEventLoop loop;
+    QTimer timer;
+    timer.setSingleShot(true);
+    QObject::connect(r, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    QObject::connect(&timer, &QTimer::timeout, &loop, &QEventLoop::quit);
+    if (msecs >= 0) timer.start(msecs);
+    loop.exec();
+    return r->isFinished();
+}
+
+static QStringList qtf_header_names(const QNetworkReply *r) {
+    QStringList names;
+    for (const QByteArray &h : r->rawHeaderList()) names << QString::fromUtf8(h);
+    return names;
 }
 
 // ---------------------------------------------------------------------------
@@ -614,7 +688,652 @@ QTF_API int qtf_qwineventnotifier_isEnabled(void *self) {
 }
 
 // ---------------------------------------------------------------------------
+// QTemporaryDir
+
+// Delete the handle (removing the directory if autoRemove is on).
+QTF_API void qtf_qtemporarydir_delete(void *self) { delete as<QTemporaryDir>(self); }
+
+// Create the directory: in the system's temporary directory, or from a template path whose last 'XXXXXX' is replaced (e.g. '/scratch/run-XXXXXX'). Check `isValid()`.
+QTF_API void *qtf_qtemporarydir_new(const char *templatePath, int templatePath_len) {
+    return qtf_qstring(templatePath, templatePath_len).isEmpty() ? new QTemporaryDir() : new QTemporaryDir(qtf_qstring(templatePath, templatePath_len));
+}
+
+// True if the directory was created.
+QTF_API int qtf_qtemporarydir_isValid(void *self) { return qtf_bool(as<QTemporaryDir>(self)->isValid()); }
+
+// The directory's path ('' if not valid).
+QTF_API char *qtf_qtemporarydir_path(void *self, int *len) {
+    return qtf_to_c(as<QTemporaryDir>(self)->path(), len);
+}
+
+// The path of a file in the directory.
+QTF_API char *qtf_qtemporarydir_filePath(void *self, const char *fileName, int fileName_len, int *len) {
+    return qtf_to_c(as<QTemporaryDir>(self)->filePath(qtf_qstring(fileName, fileName_len)), len);
+}
+
+// Why it could not be created.
+QTF_API char *qtf_qtemporarydir_errorString(void *self, int *len) {
+    return qtf_to_c(as<QTemporaryDir>(self)->errorString(), len);
+}
+
+// Remove the directory on `delete` (default) or keep it.
+QTF_API void qtf_qtemporarydir_setAutoRemove(void *self, int remove) {
+    as<QTemporaryDir>(self)->setAutoRemove((remove != 0));
+}
+
+// True if `delete` removes the directory.
+QTF_API int qtf_qtemporarydir_autoRemove(void *self) {
+    return qtf_bool(as<QTemporaryDir>(self)->autoRemove());
+}
+
+// Remove the directory and its contents now.
+QTF_API int qtf_qtemporarydir_remove(void *self) { return qtf_bool(as<QTemporaryDir>(self)->remove()); }
+
+// ---------------------------------------------------------------------------
+// QSaveFile
+
+// A save file for `fileName` (not opened yet).
+QTF_API void *qtf_qsavefile_new(const char *fileName, int fileName_len, void *parent) {
+    return new QSaveFile(qtf_qstring(fileName, fileName_len), as<QObject>(parent));
+}
+
+// Open for writing (QIODevice_WriteOnly; add QIODevice_Text for platform line endings); false on error (see errorString).
+QTF_API int qtf_qsavefile_open(void *self, int mode) {
+    return qtf_bool(as<QSaveFile>(self)->open(QIODevice::OpenMode(QIODevice::OpenMode(mode))));
+}
+
+// Write the bytes of `data` as they are (binary safe), or only its first `size` bytes; returns the number written, or -1 on error.
+QTF_API long long qtf_qsavefile_write(void *self, const char *data, int data_len, int size) {
+    return static_cast<long long>(static_cast<long long>(as<QSaveFile>(self)->write(data, size < 0 ? data_len : std::min(size, data_len))));
+}
+
+// Write an array of doubles as raw bytes (native byte order); returns the number of bytes written, or -1.
+QTF_API long long qtf_qsavefile_writeDoubles(void *self, const double *values, int n) {
+    return static_cast<long long>(static_cast<long long>(as<QSaveFile>(self)->write(reinterpret_cast<const char *>(values), qint64(n) * qint64(sizeof(double)))));
+}
+
+// Write an array of (32-bit) integers as raw bytes (native byte order); returns the number of bytes written, or -1.
+QTF_API long long qtf_qsavefile_writeInts(void *self, const int *values, int n) {
+    return static_cast<long long>(static_cast<long long>(as<QSaveFile>(self)->write(reinterpret_cast<const char *>(values), qint64(n) * qint64(sizeof(int)))));
+}
+
+// Close the file and replace the target with it; false if any write failed (the target is unchanged).
+QTF_API int qtf_qsavefile_commit(void *self) { return qtf_bool(as<QSaveFile>(self)->commit()); }
+
+// Discard what was written: `commit` will leave the target unchanged.
+QTF_API void qtf_qsavefile_cancelWriting(void *self) { as<QSaveFile>(self)->cancelWriting(); }
+
+// The target file.
+QTF_API char *qtf_qsavefile_fileName(void *self, int *len) {
+    return qtf_to_c(as<QSaveFile>(self)->fileName(), len);
+}
+
+// Change the target (before `open`).
+QTF_API void qtf_qsavefile_setFileName(void *self, const char *name, int name_len) {
+    as<QSaveFile>(self)->setFileName(qtf_qstring(name, name_len));
+}
+
+// True between `open` and `commit`.
+QTF_API int qtf_qsavefile_isOpen(void *self) { return qtf_bool(as<QSaveFile>(self)->isOpen()); }
+
+// The last error, as text.
+QTF_API char *qtf_qsavefile_errorString(void *self, int *len) {
+    return qtf_to_c(as<QSaveFile>(self)->errorString(), len);
+}
+
+// Write in place when a temporary file cannot be created in the directory (not atomic; default off).
+QTF_API void qtf_qsavefile_setDirectWriteFallback(void *self, int enabled) {
+    as<QSaveFile>(self)->setDirectWriteFallback((enabled != 0));
+}
+
+// ---------------------------------------------------------------------------
+// QJsonValue
+
+// Delete a JSON value handle.
+QTF_API void qtf_qjsonvalue_delete(void *self) { delete as<QJsonValue>(self); }
+
+// A JSON null.
+QTF_API void *qtf_qjsonvalue_new(void) { return new QJsonValue(); }
+
+// A boolean.
+QTF_API void *qtf_qjsonvalue_fromBool(int value) { return new QJsonValue((value != 0)); }
+
+// A number (from an integer).
+QTF_API void *qtf_qjsonvalue_fromInt(int value) { return new QJsonValue(value); }
+
+// A number.
+QTF_API void *qtf_qjsonvalue_fromDouble(double value) { return new QJsonValue(value); }
+
+// A string.
+QTF_API void *qtf_qjsonvalue_fromString(const char *value, int value_len) {
+    return new QJsonValue(qtf_qstring(value, value_len));
+}
+
+// An array (copied).
+QTF_API void *qtf_qjsonvalue_fromArray(void *value) { return new QJsonValue(*as<QJsonArray>(value)); }
+
+// An object (copied).
+QTF_API void *qtf_qjsonvalue_fromObject(void *value) { return new QJsonValue(*as<QJsonObject>(value)); }
+
+// QJsonValue_Null, _Bool, _Double, _String, _Array, _Object, or _Undefined (a missing key).
+QTF_API int qtf_qjsonvalue_valueType(void *self) { return int(int(as<QJsonValue>(self)->type())); }
+
+// True for JSON null.
+QTF_API int qtf_qjsonvalue_isNull(void *self) { return qtf_bool(as<QJsonValue>(self)->isNull()); }
+
+// True for a boolean.
+QTF_API int qtf_qjsonvalue_isBool(void *self) { return qtf_bool(as<QJsonValue>(self)->isBool()); }
+
+// True for a number.
+QTF_API int qtf_qjsonvalue_isDouble(void *self) { return qtf_bool(as<QJsonValue>(self)->isDouble()); }
+
+// True for a string.
+QTF_API int qtf_qjsonvalue_isString(void *self) { return qtf_bool(as<QJsonValue>(self)->isString()); }
+
+// True for an array.
+QTF_API int qtf_qjsonvalue_isArray(void *self) { return qtf_bool(as<QJsonValue>(self)->isArray()); }
+
+// True for an object.
+QTF_API int qtf_qjsonvalue_isObject(void *self) { return qtf_bool(as<QJsonValue>(self)->isObject()); }
+
+// True for a missing key or index.
+QTF_API int qtf_qjsonvalue_isUndefined(void *self) { return qtf_bool(as<QJsonValue>(self)->isUndefined()); }
+
+// The boolean (`fallback` if it is not one).
+QTF_API int qtf_qjsonvalue_toBool(void *self, int fallback) {
+    return qtf_bool(as<QJsonValue>(self)->toBool((fallback != 0)));
+}
+
+// The number as an integer (`fallback` if it is not an integral number).
+QTF_API int qtf_qjsonvalue_toInt(void *self, int fallback) { return as<QJsonValue>(self)->toInt(fallback); }
+
+// The number (`fallback` if it is not one).
+QTF_API double qtf_qjsonvalue_toDouble(void *self, double fallback) {
+    return as<QJsonValue>(self)->toDouble(fallback);
+}
+
+// The string (`fallback` if it is not one).
+QTF_API char *qtf_qjsonvalue_toString(void *self, const char *fallback, int fallback_len, int *len) {
+    return qtf_to_c(as<QJsonValue>(self)->toString(qtf_qstring(fallback, fallback_len)), len);
+}
+
+// The array (empty if it is not one); delete it when done.
+QTF_API void *qtf_qjsonvalue_toArray(void *self) { return new QJsonArray(as<QJsonValue>(self)->toArray()); }
+
+// The object (empty if it is not one); delete it when done.
+QTF_API void *qtf_qjsonvalue_toObject(void *self) {
+    return new QJsonObject(as<QJsonValue>(self)->toObject());
+}
+
+// A copy (delete it when done).
+QTF_API void *qtf_qjsonvalue_copy(void *self) { return new QJsonValue(*as<QJsonValue>(self)); }
+
+// ---------------------------------------------------------------------------
+// QJsonObject
+
+// Delete a JSON object handle.
+QTF_API void qtf_qjsonobject_delete(void *self) { delete as<QJsonObject>(self); }
+
+// An empty object.
+QTF_API void *qtf_qjsonobject_new(void) { return new QJsonObject(); }
+
+// The number of keys.
+QTF_API int qtf_qjsonobject_size(void *self) { return int(as<QJsonObject>(self)->size()); }
+
+// True if there are no keys.
+QTF_API int qtf_qjsonobject_isEmpty(void *self) { return qtf_bool(as<QJsonObject>(self)->isEmpty()); }
+
+// The keys, sorted.
+QTF_API char *qtf_qjsonobject_keys(void *self, int *len) {
+    return qtf_list_to_c(as<QJsonObject>(self)->keys(), len);
+}
+
+// True if `key` is present.
+QTF_API int qtf_qjsonobject_contains(void *self, const char *key, int key_len) {
+    return qtf_bool(as<QJsonObject>(self)->contains(qtf_qstring(key, key_len)));
+}
+
+// Remove a key.
+QTF_API void qtf_qjsonobject_remove(void *self, const char *key, int key_len) {
+    as<QJsonObject>(self)->remove(qtf_qstring(key, key_len));
+}
+
+// The value of a key (undefined if missing); delete it when done.
+QTF_API void *qtf_qjsonobject_value(void *self, const char *key, int key_len) {
+    return new QJsonValue(as<QJsonObject>(self)->value(qtf_qstring(key, key_len)));
+}
+
+// The kind of a key's value (QJsonValue_Undefined if missing).
+QTF_API int qtf_qjsonobject_valueType(void *self, const char *key, int key_len) {
+    return int(int(as<QJsonObject>(self)->value(qtf_qstring(key, key_len)).type()));
+}
+
+// Set a key to a value (copied).
+QTF_API void qtf_qjsonobject_insertValue(void *self, const char *key, int key_len, void *value) {
+    as<QJsonObject>(self)->insert(qtf_qstring(key, key_len), *as<QJsonValue>(value));
+}
+
+// Set a key to a boolean.
+QTF_API void qtf_qjsonobject_insertBool(void *self, const char *key, int key_len, int value) {
+    as<QJsonObject>(self)->insert(qtf_qstring(key, key_len), (value != 0));
+}
+
+// Set a key to a number (an integer).
+QTF_API void qtf_qjsonobject_insertInt(void *self, const char *key, int key_len, int value) {
+    as<QJsonObject>(self)->insert(qtf_qstring(key, key_len), value);
+}
+
+// Set a key to a number.
+QTF_API void qtf_qjsonobject_insertDouble(void *self, const char *key, int key_len, double value) {
+    as<QJsonObject>(self)->insert(qtf_qstring(key, key_len), value);
+}
+
+// Set a key to a string.
+QTF_API void qtf_qjsonobject_insertString(void *self, const char *key, int key_len, const char *value, int value_len) {
+    as<QJsonObject>(self)->insert(qtf_qstring(key, key_len), qtf_qstring(value, value_len));
+}
+
+// Set a key to an array (copied).
+QTF_API void qtf_qjsonobject_insertArray(void *self, const char *key, int key_len, void *value) {
+    as<QJsonObject>(self)->insert(qtf_qstring(key, key_len), *as<QJsonArray>(value));
+}
+
+// Set a key to an object (copied).
+QTF_API void qtf_qjsonobject_insertObject(void *self, const char *key, int key_len, void *value) {
+    as<QJsonObject>(self)->insert(qtf_qstring(key, key_len), *as<QJsonObject>(value));
+}
+
+// Set a key to null.
+QTF_API void qtf_qjsonobject_insertNull(void *self, const char *key, int key_len) {
+    as<QJsonObject>(self)->insert(qtf_qstring(key, key_len), QJsonValue());
+}
+
+// A boolean (`fallback` if missing or not a boolean).
+QTF_API int qtf_qjsonobject_boolValue(void *self, const char *key, int key_len, int fallback) {
+    return qtf_bool(as<QJsonObject>(self)->value(qtf_qstring(key, key_len)).toBool((fallback != 0)));
+}
+
+// An integral number (`fallback` if missing or not one).
+QTF_API int qtf_qjsonobject_intValue(void *self, const char *key, int key_len, int fallback) {
+    return as<QJsonObject>(self)->value(qtf_qstring(key, key_len)).toInt(fallback);
+}
+
+// A number (`fallback` if missing or not a number).
+QTF_API double qtf_qjsonobject_doubleValue(void *self, const char *key, int key_len, double fallback) {
+    return as<QJsonObject>(self)->value(qtf_qstring(key, key_len)).toDouble(fallback);
+}
+
+// A string (`fallback` if missing or not a string).
+QTF_API char *qtf_qjsonobject_stringValue(void *self, const char *key, int key_len, const char *fallback, int fallback_len, int *len) {
+    return qtf_to_c(as<QJsonObject>(self)->value(qtf_qstring(key, key_len)).toString(qtf_qstring(fallback, fallback_len)), len);
+}
+
+// An array (empty if missing or not one); delete it when done.
+QTF_API void *qtf_qjsonobject_arrayValue(void *self, const char *key, int key_len) {
+    return new QJsonArray(as<QJsonObject>(self)->value(qtf_qstring(key, key_len)).toArray());
+}
+
+// An object (empty if missing or not one); delete it when done.
+QTF_API void *qtf_qjsonobject_objectValue(void *self, const char *key, int key_len) {
+    return new QJsonObject(as<QJsonObject>(self)->value(qtf_qstring(key, key_len)).toObject());
+}
+
+// The object as JSON text: indented, or on one line.
+QTF_API char *qtf_qjsonobject_toJson(void *self, int compact, int *len) {
+    return qtf_to_c(qtf_json_text(QJsonDocument(*as<QJsonObject>(self)), (compact != 0)), len);
+}
+
+// A copy (delete it when done).
+QTF_API void *qtf_qjsonobject_copy(void *self) { return new QJsonObject(*as<QJsonObject>(self)); }
+
+// ---------------------------------------------------------------------------
+// QJsonArray
+
+// Delete a JSON array handle.
+QTF_API void qtf_qjsonarray_delete(void *self) { delete as<QJsonArray>(self); }
+
+// An empty array.
+QTF_API void *qtf_qjsonarray_new(void) { return new QJsonArray(); }
+
+// The number of elements.
+QTF_API int qtf_qjsonarray_size(void *self) { return int(as<QJsonArray>(self)->size()); }
+
+// True if there are no elements.
+QTF_API int qtf_qjsonarray_isEmpty(void *self) { return qtf_bool(as<QJsonArray>(self)->isEmpty()); }
+
+// The element at `index` (undefined if out of range); delete it when done.
+QTF_API void *qtf_qjsonarray_at(void *self, int index) {
+    return new QJsonValue(as<QJsonArray>(self)->at(index));
+}
+
+// The kind of an element (QJsonValue_Undefined if out of range).
+QTF_API int qtf_qjsonarray_typeAt(void *self, int index) {
+    return int(int(as<QJsonArray>(self)->at(index).type()));
+}
+
+// Append a value (copied).
+QTF_API void qtf_qjsonarray_appendValue(void *self, void *value) {
+    as<QJsonArray>(self)->append(*as<QJsonValue>(value));
+}
+
+// Append a boolean.
+QTF_API void qtf_qjsonarray_appendBool(void *self, int value) { as<QJsonArray>(self)->append((value != 0)); }
+
+// Append a number (an integer).
+QTF_API void qtf_qjsonarray_appendInt(void *self, int value) { as<QJsonArray>(self)->append(value); }
+
+// Append a number.
+QTF_API void qtf_qjsonarray_appendDouble(void *self, double value) { as<QJsonArray>(self)->append(value); }
+
+// Append a string.
+QTF_API void qtf_qjsonarray_appendString(void *self, const char *value, int value_len) {
+    as<QJsonArray>(self)->append(qtf_qstring(value, value_len));
+}
+
+// Append an array (copied, as one element).
+QTF_API void qtf_qjsonarray_appendArray(void *self, void *value) {
+    as<QJsonArray>(self)->append(*as<QJsonArray>(value));
+}
+
+// Append an object (copied).
+QTF_API void qtf_qjsonarray_appendObject(void *self, void *value) {
+    as<QJsonArray>(self)->append(*as<QJsonObject>(value));
+}
+
+// Append null.
+QTF_API void qtf_qjsonarray_appendNull(void *self) { as<QJsonArray>(self)->append(QJsonValue()); }
+
+// Append every element of a real(c_double) array.
+QTF_API void qtf_qjsonarray_appendDoubles(void *self, const double *values, int n) {
+    for (int i = 0; i < n; ++i) as<QJsonArray>(self)->append(values[i]);
+}
+
+// Append every element of an integer array.
+QTF_API void qtf_qjsonarray_appendInts(void *self, const int *values, int n) {
+    for (int i = 0; i < n; ++i) as<QJsonArray>(self)->append(values[i]);
+}
+
+// Remove an element.
+QTF_API void qtf_qjsonarray_removeAt(void *self, int index) {
+    if (index >= 0 && index < as<QJsonArray>(self)->size()) as<QJsonArray>(self)->removeAt(index);
+}
+
+// A boolean element (`fallback` if out of range or not a boolean).
+QTF_API int qtf_qjsonarray_boolAt(void *self, int index, int fallback) {
+    return qtf_bool(as<QJsonArray>(self)->at(index).toBool((fallback != 0)));
+}
+
+// An integral number (`fallback` otherwise).
+QTF_API int qtf_qjsonarray_intAt(void *self, int index, int fallback) {
+    return as<QJsonArray>(self)->at(index).toInt(fallback);
+}
+
+// A number (`fallback` otherwise).
+QTF_API double qtf_qjsonarray_doubleAt(void *self, int index, double fallback) {
+    return as<QJsonArray>(self)->at(index).toDouble(fallback);
+}
+
+// A string (`fallback` otherwise).
+QTF_API char *qtf_qjsonarray_stringAt(void *self, int index, const char *fallback, int fallback_len, int *len) {
+    return qtf_to_c(as<QJsonArray>(self)->at(index).toString(qtf_qstring(fallback, fallback_len)), len);
+}
+
+// An array element (empty otherwise); delete it when done.
+QTF_API void *qtf_qjsonarray_arrayAt(void *self, int index) {
+    return new QJsonArray(as<QJsonArray>(self)->at(index).toArray());
+}
+
+// An object element (empty otherwise); delete it when done.
+QTF_API void *qtf_qjsonarray_objectAt(void *self, int index) {
+    return new QJsonObject(as<QJsonArray>(self)->at(index).toObject());
+}
+
+// The elements as integers (numbers rounded toward zero; other kinds as 0).
+QTF_API int *qtf_qjsonarray_toInts(void *self, int *len) {
+    return qtf_ints_to_c(qtf_json_ints(as<QJsonArray>(self)), len);
+}
+
+// The array as JSON text: indented, or on one line.
+QTF_API char *qtf_qjsonarray_toJson(void *self, int compact, int *len) {
+    return qtf_to_c(qtf_json_text(QJsonDocument(*as<QJsonArray>(self)), (compact != 0)), len);
+}
+
+// A copy (delete it when done).
+QTF_API void *qtf_qjsonarray_copy(void *self) { return new QJsonArray(*as<QJsonArray>(self)); }
+
+// ---------------------------------------------------------------------------
+// QJsonDocument
+
+// Delete a JSON document handle.
+QTF_API void qtf_qjsondocument_delete(void *self) { delete qtf_jdoc(as<QJsonDocument>(self)); }
+
+// An empty (null) document.
+QTF_API void *qtf_qjsondocument_new(void) { return static_cast<QJsonDocument *>(new QtfJsonDocument()); }
+
+// A document holding an object (copied).
+QTF_API void *qtf_qjsondocument_fromObject(void *object) {
+    return static_cast<QJsonDocument *>(new QtfJsonDocument(QJsonDocument(*as<QJsonObject>(object))));
+}
+
+// A document holding an array (copied).
+QTF_API void *qtf_qjsondocument_fromArray(void *array) {
+    return static_cast<QJsonDocument *>(new QtfJsonDocument(QJsonDocument(*as<QJsonArray>(array))));
+}
+
+// Parse JSON text (UTF-8). On an error the document is null and `errorString`/`errorOffset` say why and where. Delete it when done.
+QTF_API void *qtf_qjsondocument_fromJson(const char *text, int text_len) {
+    return qtf_json_parse(qtf_qstring(text, text_len));
+}
+
+// True if empty, or if parsing failed.
+QTF_API int qtf_qjsondocument_isNull(void *self) { return qtf_bool(as<QJsonDocument>(self)->isNull()); }
+
+// True if it holds no object or array.
+QTF_API int qtf_qjsondocument_isEmpty(void *self) { return qtf_bool(as<QJsonDocument>(self)->isEmpty()); }
+
+// True if it holds an object.
+QTF_API int qtf_qjsondocument_isObject(void *self) { return qtf_bool(as<QJsonDocument>(self)->isObject()); }
+
+// True if it holds an array.
+QTF_API int qtf_qjsondocument_isArray(void *self) { return qtf_bool(as<QJsonDocument>(self)->isArray()); }
+
+// The object (empty if it holds an array); delete it when done.
+QTF_API void *qtf_qjsondocument_object(void *self) {
+    return new QJsonObject(as<QJsonDocument>(self)->object());
+}
+
+// The array (empty if it holds an object); delete it when done.
+QTF_API void *qtf_qjsondocument_array(void *self) { return new QJsonArray(as<QJsonDocument>(self)->array()); }
+
+// Hold an object (copied).
+QTF_API void qtf_qjsondocument_setObject(void *self, void *object) {
+    as<QJsonDocument>(self)->setObject(*as<QJsonObject>(object));
+}
+
+// Hold an array (copied).
+QTF_API void qtf_qjsondocument_setArray(void *self, void *array) {
+    as<QJsonDocument>(self)->setArray(*as<QJsonArray>(array));
+}
+
+// The document as JSON text (UTF-8): indented, or on one line.
+QTF_API char *qtf_qjsondocument_toJson(void *self, int compact, int *len) {
+    return qtf_to_c(qtf_json_text(*as<QJsonDocument>(self), (compact != 0)), len);
+}
+
+// Why parsing failed ('' if it did not).
+QTF_API char *qtf_qjsondocument_errorString(void *self, int *len) {
+    return qtf_to_c(qtf_jdoc(as<QJsonDocument>(self))->error, len);
+}
+
+// Where parsing failed (a 0-based byte offset; -1 if it did not).
+QTF_API int qtf_qjsondocument_errorOffset(void *self) { return qtf_jdoc(as<QJsonDocument>(self))->offset; }
+
+// ---------------------------------------------------------------------------
+// QNetworkRequest
+
+// Delete a request handle.
+QTF_API void qtf_qnetworkrequest_delete(void *self) { delete as<QNetworkRequest>(self); }
+
+// A request for `url`.
+QTF_API void *qtf_qnetworkrequest_new(const char *url, int url_len) {
+    return new QNetworkRequest(QUrl(qtf_qstring(url, url_len)));
+}
+
+// The URL.
+QTF_API void qtf_qnetworkrequest_setUrl(void *self, const char *url, int url_len) {
+    as<QNetworkRequest>(self)->setUrl(QUrl(qtf_qstring(url, url_len)));
+}
+
+// The URL.
+QTF_API char *qtf_qnetworkrequest_url(void *self, int *len) {
+    return qtf_to_c(as<QNetworkRequest>(self)->url().toString(), len);
+}
+
+// Set a header, e.g. ('Content-Type', 'application/json') or ('Authorization', 'Bearer ...').
+QTF_API void qtf_qnetworkrequest_setRawHeader(void *self, const char *name, int name_len, const char *value, int value_len) {
+    as<QNetworkRequest>(self)->setRawHeader(qtf_qstring(name, name_len).toUtf8(), qtf_qstring(value, value_len).toUtf8());
+}
+
+// A header's value ('' if not set).
+QTF_API char *qtf_qnetworkrequest_rawHeader(void *self, const char *name, int name_len, int *len) {
+    return qtf_to_c(QString::fromUtf8(as<QNetworkRequest>(self)->rawHeader(qtf_qstring(name, name_len).toUtf8())), len);
+}
+
+// Abort (QNetworkReply_OperationCanceledError) if no data moves for `msecs` (0: no timeout).
+QTF_API void qtf_qnetworkrequest_setTransferTimeout(void *self, int msecs) {
+    as<QNetworkRequest>(self)->setTransferTimeout(std::chrono::milliseconds(msecs));
+}
+
+// Follow redirects (default) or return them (status 301/302, `rawHeader('Location')`).
+QTF_API void qtf_qnetworkrequest_setFollowRedirects(void *self, int follow) {
+    as<QNetworkRequest>(self)->setAttribute(QNetworkRequest::RedirectPolicyAttribute, (follow != 0) ? QNetworkRequest::NoLessSafeRedirectPolicy : QNetworkRequest::ManualRedirectPolicy);
+}
+
+// ---------------------------------------------------------------------------
+// QNetworkReply
+
+// The body received so far (bytes, as they came).
+QTF_API char *qtf_qnetworkreply_readAll(void *self, int *len) { return qtf_bytes(as<QNetworkReply>(self)->readAll(), len); }
+
+// Run the event loop until the reply finishes (slots keep running) or `msecs` pass (< 0: no limit); true if finished.
+QTF_API int qtf_qnetworkreply_waitForFinished(void *self, int msecs) {
+    return qtf_bool(qtf_wait_reply(as<QNetworkReply>(self), msecs));
+}
+
+// True when complete.
+QTF_API int qtf_qnetworkreply_isFinished(void *self) {
+    return qtf_bool(as<QNetworkReply>(self)->isFinished());
+}
+
+// True while in progress.
+QTF_API int qtf_qnetworkreply_isRunning(void *self) { return qtf_bool(as<QNetworkReply>(self)->isRunning()); }
+
+// QNetworkReply_NoError, or what went wrong (QNetworkReply_* codes; for HTTP errors also see `statusCode`).
+QTF_API int qtf_qnetworkreply_error(void *self) { return int(as<QNetworkReply>(self)->error()); }
+
+// The error, as text.
+QTF_API char *qtf_qnetworkreply_errorString(void *self, int *len) {
+    return qtf_to_c(as<QNetworkReply>(self)->errorString(), len);
+}
+
+// Stop now (error QNetworkReply_OperationCanceledError).
+QTF_API void qtf_qnetworkreply_abort(void *self) { as<QNetworkReply>(self)->abort(); }
+
+// The URL (after redirects).
+QTF_API char *qtf_qnetworkreply_url(void *self, int *len) {
+    return qtf_to_c(as<QNetworkReply>(self)->url().toString(), len);
+}
+
+// The HTTP status code (200, 404, ...). Other schemes may report 200 or 0: check `error` for them.
+QTF_API int qtf_qnetworkreply_statusCode(void *self) {
+    return as<QNetworkReply>(self)->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+}
+
+// The HTTP reason phrase ('OK', 'Not Found', ...).
+QTF_API char *qtf_qnetworkreply_reasonPhrase(void *self, int *len) {
+    return qtf_to_c(as<QNetworkReply>(self)->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString(), len);
+}
+
+// A response header ('' if absent).
+QTF_API char *qtf_qnetworkreply_rawHeader(void *self, const char *name, int name_len, int *len) {
+    return qtf_to_c(QString::fromUtf8(as<QNetworkReply>(self)->rawHeader(qtf_qstring(name, name_len).toUtf8())), len);
+}
+
+// True if the response has this header.
+QTF_API int qtf_qnetworkreply_hasRawHeader(void *self, const char *name, int name_len) {
+    return qtf_bool(as<QNetworkReply>(self)->hasRawHeader(qtf_qstring(name, name_len).toUtf8()));
+}
+
+// The names of the response headers.
+QTF_API char *qtf_qnetworkreply_rawHeaderNames(void *self, int *len) {
+    return qtf_list_to_c(qtf_header_names(as<QNetworkReply>(self)), len);
+}
+
+// The Content-Type ('' if unknown).
+QTF_API char *qtf_qnetworkreply_contentType(void *self, int *len) {
+    return qtf_to_c(as<QNetworkReply>(self)->header(QNetworkRequest::ContentTypeHeader).toString(), len);
+}
+
+// Bytes received and not yet read.
+QTF_API long long qtf_qnetworkreply_bytesAvailable(void *self) {
+    return static_cast<long long>(static_cast<long long>(as<QNetworkReply>(self)->bytesAvailable()));
+}
+
+// ---------------------------------------------------------------------------
+// QNetworkAccessManager
+
+// A network access manager.
+QTF_API void *qtf_qnetworkaccessmanager_new(void *parent) {
+    return new QNetworkAccessManager(as<QObject>(parent));
+}
+
+// Fetch a URL.
+QTF_API void *qtf_qnetworkaccessmanager_get(void *self, void *request) {
+    return as<QNetworkAccessManager>(self)->get(*as<QNetworkRequest>(request));
+}
+
+// Fetch only the headers.
+QTF_API void *qtf_qnetworkaccessmanager_head(void *self, void *request) {
+    return as<QNetworkAccessManager>(self)->head(*as<QNetworkRequest>(request));
+}
+
+// Send `data` (bytes) with POST.
+QTF_API void *qtf_qnetworkaccessmanager_post(void *self, void *request, const char *data, int data_len) {
+    return as<QNetworkAccessManager>(self)->post(*as<QNetworkRequest>(request), QByteArray(data, data_len));
+}
+
+// Send `data` (bytes) with PUT.
+QTF_API void *qtf_qnetworkaccessmanager_put(void *self, void *request, const char *data, int data_len) {
+    return as<QNetworkAccessManager>(self)->put(*as<QNetworkRequest>(request), QByteArray(data, data_len));
+}
+
+// Send a DELETE request.
+QTF_API void *qtf_qnetworkaccessmanager_deleteResource(void *self, void *request) {
+    return as<QNetworkAccessManager>(self)->deleteResource(*as<QNetworkRequest>(request));
+}
+
+// Send a request with another HTTP verb (e.g. 'PATCH') and an optional body.
+QTF_API void *qtf_qnetworkaccessmanager_sendCustomRequest(void *self, void *request, const char *verb, int verb_len, const char *data, int data_len) {
+    return as<QNetworkAccessManager>(self)->sendCustomRequest(*as<QNetworkRequest>(request), qtf_qstring(verb, verb_len).toUtf8(), QByteArray(data, data_len));
+}
+
+// The default transfer timeout of its requests (0: none).
+QTF_API void qtf_qnetworkaccessmanager_setTransferTimeout(void *self, int msecs) {
+    as<QNetworkAccessManager>(self)->setTransferTimeout(std::chrono::milliseconds(msecs));
+}
+
+// ---------------------------------------------------------------------------
 // functions
+
+// The full path of the running program (needs the application object).
+QTF_API char *qtf_QCoreApplication_applicationFilePath(int *len) {
+    return qtf_to_c(QCoreApplication::applicationFilePath(), len);
+}
+
+// The directory of the running program (e.g. to find files installed next to it).
+QTF_API char *qtf_QCoreApplication_applicationDirPath(int *len) {
+    return qtf_to_c(QCoreApplication::applicationDirPath(), len);
+}
 
 // True on Windows, where QWinEventNotifier works; elsewhere its `activated` never fires.
 QTF_API int qtf_QWinEventNotifier_isSupported(void) { return qtf_bool(qtf_win_supported()); }
@@ -694,6 +1413,21 @@ static const bool qtf_core_classes_registered = [] {
         return qtf_track(ref, QObject::connect(as<QSocketNotifier>(s), &QSocketNotifier::activated, as<QSocketNotifier>(s), [ref, s]() { qtf_emit_int(ref, int(as<QSocketNotifier>(s)->socket())); }));
     });
     qtf_register_connector(QTF_SIG_QWINEVENTNOTIFIER_ACTIVATED, connect_win_notifier);
+    qtf_register_connector(QTF_SIG_QNETWORKREPLY_FINISHED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QNetworkReply>(s), &QNetworkReply::finished, as<QNetworkReply>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QNETWORKREPLY_READYREAD, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QNetworkReply>(s), &QNetworkReply::readyRead, as<QNetworkReply>(s), [ref]() { qtf_emit(ref); }));
+    });
+    qtf_register_connector(QTF_SIG_QNETWORKREPLY_ERROROCCURRED, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QNetworkReply>(s), &QNetworkReply::errorOccurred, as<QNetworkReply>(s), [ref](QNetworkReply::NetworkError e) { qtf_emit_int(ref, int(e)); }));
+    });
+    qtf_register_connector(QTF_SIG_QNETWORKREPLY_DOWNLOADPROGRESS, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QNetworkReply>(s), &QNetworkReply::downloadProgress, as<QNetworkReply>(s), [ref](qint64 received, qint64 total) { qtf_emit_ints(ref, {qtf_clamp_int(received), qtf_clamp_int(total)}); }));
+    });
+    qtf_register_connector(QTF_SIG_QNETWORKREPLY_UPLOADPROGRESS, [](void *s, const qtf_slot &ref) {
+        return qtf_track(ref, QObject::connect(as<QNetworkReply>(s), &QNetworkReply::uploadProgress, as<QNetworkReply>(s), [ref](qint64 sent, qint64 total) { qtf_emit_ints(ref, {qtf_clamp_int(sent), qtf_clamp_int(total)}); }));
+    });
     return true;
 }();
 

@@ -1758,6 +1758,44 @@ QTF_API void qtf_qwidget_setToolTip(void *self, const char *text, int text_len) 
     as<QWidget>(self)->setToolTip(qtf_qstring(text, text_len));
 }
 
+// Turn one window flag on or off, e.g. Qt_FramelessWindowHint (no title bar or border) or Qt_WindowStaysOnTopHint. Changing flags of a visible window hides it: call `show` again.
+QTF_API void qtf_qwidget_setWindowFlag(void *self, int flag, int on) {
+    as<QWidget>(self)->setWindowFlag(Qt::WindowType(Qt::WindowType(flag)), (on != 0));
+}
+
+// Set all window flags at once: a window kind (Qt_Window, Qt_Dialog, Qt_Tool, ...) combined with hints (`ior`). Hides a visible window, as setWindowFlag.
+QTF_API void qtf_qwidget_setWindowFlags(void *self, int flags) {
+    as<QWidget>(self)->setWindowFlags(Qt::WindowFlags(Qt::WindowFlags(flags)));
+}
+
+// The window flags (test one with `testWindowFlag`).
+QTF_API int qtf_qwidget_windowFlags(void *self) { return int(int(as<QWidget>(self)->windowFlags())); }
+
+// True if a window flag is set.
+QTF_API int qtf_qwidget_testWindowFlag(void *self, int flag) {
+    return qtf_bool(as<QWidget>(self)->windowFlags().testFlag(Qt::WindowType(Qt::WindowType(flag))));
+}
+
+// The name screen readers announce for the widget (e.g. for an icon-only button).
+QTF_API void qtf_qwidget_setAccessibleName(void *self, const char *name, int name_len) {
+    as<QWidget>(self)->setAccessibleName(qtf_qstring(name, name_len));
+}
+
+// The accessible name.
+QTF_API char *qtf_qwidget_accessibleName(void *self, int *len) {
+    return qtf_to_c(as<QWidget>(self)->accessibleName(), len);
+}
+
+// A longer description for screen readers.
+QTF_API void qtf_qwidget_setAccessibleDescription(void *self, const char *description, int description_len) {
+    as<QWidget>(self)->setAccessibleDescription(qtf_qstring(description, description_len));
+}
+
+// The accessible description.
+QTF_API char *qtf_qwidget_accessibleDescription(void *self, int *len) {
+    return qtf_to_c(as<QWidget>(self)->accessibleDescription(), len);
+}
+
 // The tool tip.
 QTF_API char *qtf_qwidget_toolTip(void *self, int *len) {
     return qtf_to_c(as<QWidget>(self)->toolTip(), len);
@@ -2223,6 +2261,14 @@ QTF_API void qtf_qlabel_setAlignment(void *self, int alignment) {
 // Wrap long text across lines.
 QTF_API void qtf_qlabel_setWordWrap(void *self, int on) { as<QLabel>(self)->setWordWrap((on != 0)); }
 
+// How the text is interpreted: Qt_PlainText, Qt_RichText (HTML subset), Qt_MarkdownText, or Qt_AutoText (default: rich text if it looks like HTML).
+QTF_API void qtf_qlabel_setTextFormat(void *self, int format) {
+    as<QLabel>(self)->setTextFormat(Qt::TextFormat(format));
+}
+
+// How the text is interpreted.
+QTF_API int qtf_qlabel_textFormat(void *self) { return int(as<QLabel>(self)->textFormat()); }
+
 // Show an image instead of text (copied; see QPixmap_fromImage).
 QTF_API void qtf_qlabel_setPixmap(void *self, void *pixmap) {
     as<QLabel>(self)->setPixmap(*as<QPixmap>(pixmap));
@@ -2496,6 +2542,11 @@ QTF_API void qtf_qabstractslider_setValue(void *self, int value) {
 // The current value.
 QTF_API int qtf_qabstractslider_value(void *self) { return as<QAbstractSlider>(self)->value(); }
 
+// True while the user is dragging the handle (e.g. to update only when it is released).
+QTF_API int qtf_qabstractslider_isSliderDown(void *self) {
+    return qtf_bool(as<QAbstractSlider>(self)->isSliderDown());
+}
+
 // Step used by the arrow keys.
 QTF_API void qtf_qabstractslider_setSingleStep(void *self, int step) {
     as<QAbstractSlider>(self)->setSingleStep(step);
@@ -2594,6 +2645,16 @@ QTF_API int qtf_qcombobox_findText(void *self, const char *text, int text_len) {
 // Allow typing a value that is not in the list.
 QTF_API void qtf_qcombobox_setEditable(void *self, int editable) {
     as<QComboBox>(self)->setEditable((editable != 0));
+}
+
+// Text shown while no item is selected (current index -1).
+QTF_API void qtf_qcombobox_setPlaceholderText(void *self, const char *text, int text_len) {
+    as<QComboBox>(self)->setPlaceholderText(qtf_qstring(text, text_len));
+}
+
+// The placeholder text.
+QTF_API char *qtf_qcombobox_placeholderText(void *self, int *len) {
+    return qtf_to_c(as<QComboBox>(self)->placeholderText(), len);
 }
 
 // Completions for an editable combo box.
@@ -3745,6 +3806,19 @@ QTF_API void qtf_qtableview_selectRow(void *self, int row) { as<QTableView>(self
 // Wrap long cell text.
 QTF_API void qtf_qtableview_setWordWrap(void *self, int on) { as<QTableView>(self)->setWordWrap((on != 0)); }
 
+// Draw the grid lines between cells (default: shown).
+QTF_API void qtf_qtableview_setShowGrid(void *self, int show) {
+    as<QTableView>(self)->setShowGrid((show != 0));
+}
+
+// True if grid lines are drawn.
+QTF_API int qtf_qtableview_showGrid(void *self) { return qtf_bool(as<QTableView>(self)->showGrid()); }
+
+// The pen style of the grid lines (Qt_SolidLine, Qt_DotLine, ...).
+QTF_API void qtf_qtableview_setGridStyle(void *self, int style) {
+    as<QTableView>(self)->setGridStyle(Qt::PenStyle(style));
+}
+
 // Sort when a column title is clicked (a QtfTableModel gets `sortRequested`).
 QTF_API void qtf_qtableview_setSortingEnabled(void *self, int enable) {
     as<QTableView>(self)->setSortingEnabled((enable != 0));
@@ -4741,6 +4815,23 @@ QTF_API void *qtf_qtreewidget_findData(void *self, int value, int column) {
 // Scroll so that `item` is visible (expanding its parents).
 QTF_API void qtf_qtreewidget_scrollToItem(void *self, void *item) {
     as<QTreeWidget>(self)->scrollToItem(as<QTreeWidgetItem>(item));
+}
+
+// The item at a point of the viewport (`tree%viewport()` coordinates, e.g. a mouse event's position there; null if none).
+QTF_API void *qtf_qtreewidget_itemAt(void *self, int x, int y) { return as<QTreeWidget>(self)->itemAt(x, y); }
+
+// The item at a point of the viewport (null if none).
+QTF_API void *qtf_qtreewidget_itemAtPoint(void *self, int p_x, int p_y) {
+    return as<QTreeWidget>(self)->itemAt(QPoint(p_x, p_y));
+}
+
+// Where an item is drawn, in viewport coordinates (empty if it is not shown, e.g. under a collapsed parent).
+QTF_API void qtf_qtreewidget_visualItemRect(void *self, void *item, int *res_x, int *res_y, int *res_width, int *res_height) {
+    const auto v_ = as<QTreeWidget>(self)->visualItemRect(as<QTreeWidgetItem>(item));
+    *res_x = v_.x();
+    *res_y = v_.y();
+    *res_width = v_.width();
+    *res_height = v_.height();
 }
 
 // Remove (and delete) a top-level item and its children.

@@ -904,6 +904,8 @@ module qt_gui
         procedure :: setEnabled => qaction_setEnabled
         procedure :: isEnabled => qaction_isEnabled
         procedure :: setStatusTip => qaction_setStatusTip
+        procedure :: setIconText => qaction_setIconText
+        procedure :: iconText => qaction_iconText
         procedure :: setToolTip => qaction_setToolTip
         procedure :: trigger => qaction_trigger
         procedure :: setStandardShortcut => qaction_setStandardShortcut
@@ -4530,6 +4532,23 @@ contains
         character(len=*), intent(in) :: tip
         call qtf_qaction_setStatusTip(qtf_live(self, 'QAction%setStatusTip'), tip, len(tip, c_int))
     end subroutine qaction_setStatusTip
+
+    !> A short text for tool bar buttons (default: the text without '&' and '...').
+    subroutine qaction_setIconText(self, text)
+        class(QAction), intent(in) :: self
+        character(len=*), intent(in) :: text
+        call qtf_qaction_setIconText(qtf_live(self, 'QAction%setIconText'), text, len(text, c_int))
+    end subroutine qaction_setIconText
+
+    !> The short text for tool bar buttons.
+    function qaction_iconText(self) result(res)
+        class(QAction), intent(in) :: self
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_qaction_iconText(qtf_live(self, 'QAction%iconText'), n_)
+        res = qtf_take_string(p_, n_)
+    end function qaction_iconText
 
     !> Tool tip shown for the action (e.g. on tool bar buttons).
     subroutine qaction_setToolTip(self, tip)

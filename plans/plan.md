@@ -537,6 +537,25 @@ spec-only work now; items marked *(design)* need new machinery.
     `verticalScrollValue`/`setVerticalScrollValue` were dropped for
     `verticalScrollBar()`. The gui QColor value type gained `out`, so gui
     methods can return colors. Example: themes; test: test_theming.
+  - **Done (issue #3, APIs requested for ForCAD Studio):**
+    `QTreeWidget%itemAt` (x, y or a QPoint) and `visualItemRect`;
+    `QWidget%setWindowFlag`/`setWindowFlags`/`windowFlags`/`testWindowFlag`
+    (Qt::WindowType constants) and accessible name/description;
+    `QLabel%setTextFormat` (Qt::TextFormat); `QComboBox%setPlaceholderText`;
+    `QAbstractSlider%isSliderDown`; `QTableView%setShowGrid`/`setGridStyle`;
+    `QListWidget` now extends `QListView` (as in Qt), so `setSpacing`,
+    `setWordWrap`, `setViewMode`, ... apply; `QAction%setIconText`.
+    Core: `QCoreApplication_applicationFilePath`/`DirPath`, `QTemporaryDir`,
+    `QSaveFile` (raw-byte `write` with an optional count, `writeDoubles`/
+    `writeInts`, `commit`, `cancelWriting`; QIODevice::OpenMode constants),
+    JSON handles (`QJsonDocument` is a `QtfJsonDocument` that keeps the parse
+    error; `insert`/`append` are generics over logical, integer, double,
+    string and JSON handles; typed getters with fallbacks; `toDoubles`,
+    `toInts`, `appendDoubles`, `appendInts`), and QtNetwork (now linked:
+    `QNetworkAccessManager`, `QNetworkRequest`, `QNetworkReply` with raw-byte
+    `readAll`, progress as int2 clamped to the int range, and
+    `waitForFinished`, a local event loop). Tests: test_widget_options,
+    test_json_network (file: and data: URLs, so no network is needed).
   - **Done:** `QSocketNotifier` (a descriptor as `int`; `activated` gives
     it; `notifierType`, since `type` is awkward as a Fortran binding name)
     and `QWinEventNotifier` (handles as int64). QWinEventNotifier exists only

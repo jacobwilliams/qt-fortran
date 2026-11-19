@@ -21,6 +21,11 @@ module qt_c_core_classes
     integer(c_int), parameter, public :: QTF_SIG_QFILESYSTEMWATCHER_DIRECTORYCHANGED = 4010
     integer(c_int), parameter, public :: QTF_SIG_QSOCKETNOTIFIER_ACTIVATED = 4011
     integer(c_int), parameter, public :: QTF_SIG_QWINEVENTNOTIFIER_ACTIVATED = 4012
+    integer(c_int), parameter, public :: QTF_SIG_QNETWORKREPLY_FINISHED = 4013
+    integer(c_int), parameter, public :: QTF_SIG_QNETWORKREPLY_READYREAD = 4014
+    integer(c_int), parameter, public :: QTF_SIG_QNETWORKREPLY_ERROROCCURRED = 4015
+    integer(c_int), parameter, public :: QTF_SIG_QNETWORKREPLY_DOWNLOADPROGRESS = 4016
+    integer(c_int), parameter, public :: QTF_SIG_QNETWORKREPLY_UPLOADPROGRESS = 4017
 
     interface
 
@@ -1234,6 +1239,1587 @@ module qt_c_core_classes
             integer(c_int) :: res
         end function qtf_qwineventnotifier_isEnabled
 
+        !> Delete the handle (removing the directory if autoRemove is on).
+        !>
+        !> C: `void qtf_qtemporarydir_delete(void *self)`
+        subroutine qtf_qtemporarydir_delete(self) bind(C, name='qtf_qtemporarydir_delete')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qtemporarydir_delete
+
+        !> Create the directory: in the system's temporary directory, or from a template path whose last 'XXXXXX' is replaced (e.g. '/scratch/run-XXXXXX'). Check `isValid()`.
+        !>
+        !> C: `void *qtf_qtemporarydir_new(const char *templatePath, int templatePath_len)`
+        function qtf_qtemporarydir_new(templatePath, templatePath_len) result(res) bind(C, name='qtf_qtemporarydir_new')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: templatePath
+            integer(c_int), value :: templatePath_len
+            type(c_ptr) :: res
+        end function qtf_qtemporarydir_new
+
+        !> True if the directory was created.
+        !>
+        !> C: `int qtf_qtemporarydir_isValid(void *self)`
+        function qtf_qtemporarydir_isValid(self) result(res) bind(C, name='qtf_qtemporarydir_isValid')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtemporarydir_isValid
+
+        !> The directory's path ('' if not valid).
+        !>
+        !> C: `char *qtf_qtemporarydir_path(void *self, int *len)`
+        function qtf_qtemporarydir_path(self, len) result(res) bind(C, name='qtf_qtemporarydir_path')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qtemporarydir_path
+
+        !> The path of a file in the directory.
+        !>
+        !> C: `char *qtf_qtemporarydir_filePath(void *self, const char *fileName, int fileName_len, int *len)`
+        function qtf_qtemporarydir_filePath(self, fileName, fileName_len, len) &
+                result(res) bind(C, name='qtf_qtemporarydir_filePath')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: fileName
+            integer(c_int), value :: fileName_len
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qtemporarydir_filePath
+
+        !> Why it could not be created.
+        !>
+        !> C: `char *qtf_qtemporarydir_errorString(void *self, int *len)`
+        function qtf_qtemporarydir_errorString(self, len) result(res) bind(C, name='qtf_qtemporarydir_errorString')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qtemporarydir_errorString
+
+        !> Remove the directory on `delete` (default) or keep it.
+        !>
+        !> C: `void qtf_qtemporarydir_setAutoRemove(void *self, int remove)`
+        subroutine qtf_qtemporarydir_setAutoRemove(self, remove) bind(C, name='qtf_qtemporarydir_setAutoRemove')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: remove
+        end subroutine qtf_qtemporarydir_setAutoRemove
+
+        !> True if `delete` removes the directory.
+        !>
+        !> C: `int qtf_qtemporarydir_autoRemove(void *self)`
+        function qtf_qtemporarydir_autoRemove(self) result(res) bind(C, name='qtf_qtemporarydir_autoRemove')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtemporarydir_autoRemove
+
+        !> Remove the directory and its contents now.
+        !>
+        !> C: `int qtf_qtemporarydir_remove(void *self)`
+        function qtf_qtemporarydir_remove(self) result(res) bind(C, name='qtf_qtemporarydir_remove')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qtemporarydir_remove
+
+        !> A save file for `fileName` (not opened yet).
+        !>
+        !> C: `void *qtf_qsavefile_new(const char *fileName, int fileName_len, void *parent)`
+        function qtf_qsavefile_new(fileName, fileName_len, parent) result(res) bind(C, name='qtf_qsavefile_new')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: fileName
+            integer(c_int), value :: fileName_len
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qsavefile_new
+
+        !> Open for writing (QIODevice_WriteOnly; add QIODevice_Text for platform line endings); false on error (see errorString).
+        !>
+        !> C: `int qtf_qsavefile_open(void *self, int mode)`
+        function qtf_qsavefile_open(self, mode) result(res) bind(C, name='qtf_qsavefile_open')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: mode
+            integer(c_int) :: res
+        end function qtf_qsavefile_open
+
+        !> Write the bytes of `data` as they are (binary safe), or only its first `size` bytes; returns the number written, or -1 on error.
+        !>
+        !> C: `long long qtf_qsavefile_write(void *self, const char *data, int data_len, int size)`
+        function qtf_qsavefile_write(self, data, data_len, size) result(res) bind(C, name='qtf_qsavefile_write')
+            import :: c_char, c_int, c_long_long, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: data
+            integer(c_int), value :: data_len
+            integer(c_int), value :: size
+            integer(c_long_long) :: res
+        end function qtf_qsavefile_write
+
+        !> Write an array of doubles as raw bytes (native byte order); returns the number of bytes written, or -1.
+        !>
+        !> C: `long long qtf_qsavefile_writeDoubles(void *self, const double *values, int n)`
+        function qtf_qsavefile_writeDoubles(self, values, n) result(res) bind(C, name='qtf_qsavefile_writeDoubles')
+            import :: c_double, c_int, c_long_long, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), dimension(*), intent(in) :: values
+            integer(c_int), value :: n
+            integer(c_long_long) :: res
+        end function qtf_qsavefile_writeDoubles
+
+        !> Write an array of (32-bit) integers as raw bytes (native byte order); returns the number of bytes written, or -1.
+        !>
+        !> C: `long long qtf_qsavefile_writeInts(void *self, const int *values, int n)`
+        function qtf_qsavefile_writeInts(self, values, n) result(res) bind(C, name='qtf_qsavefile_writeInts')
+            import :: c_int, c_long_long, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), dimension(*), intent(in) :: values
+            integer(c_int), value :: n
+            integer(c_long_long) :: res
+        end function qtf_qsavefile_writeInts
+
+        !> Close the file and replace the target with it; false if any write failed (the target is unchanged).
+        !>
+        !> C: `int qtf_qsavefile_commit(void *self)`
+        function qtf_qsavefile_commit(self) result(res) bind(C, name='qtf_qsavefile_commit')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qsavefile_commit
+
+        !> Discard what was written: `commit` will leave the target unchanged.
+        !>
+        !> C: `void qtf_qsavefile_cancelWriting(void *self)`
+        subroutine qtf_qsavefile_cancelWriting(self) bind(C, name='qtf_qsavefile_cancelWriting')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qsavefile_cancelWriting
+
+        !> The target file.
+        !>
+        !> C: `char *qtf_qsavefile_fileName(void *self, int *len)`
+        function qtf_qsavefile_fileName(self, len) result(res) bind(C, name='qtf_qsavefile_fileName')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qsavefile_fileName
+
+        !> Change the target (before `open`).
+        !>
+        !> C: `void qtf_qsavefile_setFileName(void *self, const char *name, int name_len)`
+        subroutine qtf_qsavefile_setFileName(self, name, name_len) bind(C, name='qtf_qsavefile_setFileName')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+        end subroutine qtf_qsavefile_setFileName
+
+        !> True between `open` and `commit`.
+        !>
+        !> C: `int qtf_qsavefile_isOpen(void *self)`
+        function qtf_qsavefile_isOpen(self) result(res) bind(C, name='qtf_qsavefile_isOpen')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qsavefile_isOpen
+
+        !> The last error, as text.
+        !>
+        !> C: `char *qtf_qsavefile_errorString(void *self, int *len)`
+        function qtf_qsavefile_errorString(self, len) result(res) bind(C, name='qtf_qsavefile_errorString')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qsavefile_errorString
+
+        !> Write in place when a temporary file cannot be created in the directory (not atomic; default off).
+        !>
+        !> C: `void qtf_qsavefile_setDirectWriteFallback(void *self, int enabled)`
+        subroutine qtf_qsavefile_setDirectWriteFallback(self, enabled) &
+                bind(C, name='qtf_qsavefile_setDirectWriteFallback')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: enabled
+        end subroutine qtf_qsavefile_setDirectWriteFallback
+
+        !> Delete a JSON value handle.
+        !>
+        !> C: `void qtf_qjsonvalue_delete(void *self)`
+        subroutine qtf_qjsonvalue_delete(self) bind(C, name='qtf_qjsonvalue_delete')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qjsonvalue_delete
+
+        !> A JSON null.
+        !>
+        !> C: `void *qtf_qjsonvalue_new(void)`
+        function qtf_qjsonvalue_new() result(res) bind(C, name='qtf_qjsonvalue_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr) :: res
+        end function qtf_qjsonvalue_new
+
+        !> A boolean.
+        !>
+        !> C: `void *qtf_qjsonvalue_fromBool(int value)`
+        function qtf_qjsonvalue_fromBool(value) result(res) bind(C, name='qtf_qjsonvalue_fromBool')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), value :: value
+            type(c_ptr) :: res
+        end function qtf_qjsonvalue_fromBool
+
+        !> A number (from an integer).
+        !>
+        !> C: `void *qtf_qjsonvalue_fromInt(int value)`
+        function qtf_qjsonvalue_fromInt(value) result(res) bind(C, name='qtf_qjsonvalue_fromInt')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), value :: value
+            type(c_ptr) :: res
+        end function qtf_qjsonvalue_fromInt
+
+        !> A number.
+        !>
+        !> C: `void *qtf_qjsonvalue_fromDouble(double value)`
+        function qtf_qjsonvalue_fromDouble(value) result(res) bind(C, name='qtf_qjsonvalue_fromDouble')
+            import :: c_double, c_ptr
+            implicit none
+            real(c_double), value :: value
+            type(c_ptr) :: res
+        end function qtf_qjsonvalue_fromDouble
+
+        !> A string.
+        !>
+        !> C: `void *qtf_qjsonvalue_fromString(const char *value, int value_len)`
+        function qtf_qjsonvalue_fromString(value, value_len) result(res) bind(C, name='qtf_qjsonvalue_fromString')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: value
+            integer(c_int), value :: value_len
+            type(c_ptr) :: res
+        end function qtf_qjsonvalue_fromString
+
+        !> An array (copied).
+        !>
+        !> C: `void *qtf_qjsonvalue_fromArray(void *value)`
+        function qtf_qjsonvalue_fromArray(value) result(res) bind(C, name='qtf_qjsonvalue_fromArray')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: value
+            type(c_ptr) :: res
+        end function qtf_qjsonvalue_fromArray
+
+        !> An object (copied).
+        !>
+        !> C: `void *qtf_qjsonvalue_fromObject(void *value)`
+        function qtf_qjsonvalue_fromObject(value) result(res) bind(C, name='qtf_qjsonvalue_fromObject')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: value
+            type(c_ptr) :: res
+        end function qtf_qjsonvalue_fromObject
+
+        !> QJsonValue_Null, _Bool, _Double, _String, _Array, _Object, or _Undefined (a missing key).
+        !>
+        !> C: `int qtf_qjsonvalue_valueType(void *self)`
+        function qtf_qjsonvalue_valueType(self) result(res) bind(C, name='qtf_qjsonvalue_valueType')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsonvalue_valueType
+
+        !> True for JSON null.
+        !>
+        !> C: `int qtf_qjsonvalue_isNull(void *self)`
+        function qtf_qjsonvalue_isNull(self) result(res) bind(C, name='qtf_qjsonvalue_isNull')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsonvalue_isNull
+
+        !> True for a boolean.
+        !>
+        !> C: `int qtf_qjsonvalue_isBool(void *self)`
+        function qtf_qjsonvalue_isBool(self) result(res) bind(C, name='qtf_qjsonvalue_isBool')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsonvalue_isBool
+
+        !> True for a number.
+        !>
+        !> C: `int qtf_qjsonvalue_isDouble(void *self)`
+        function qtf_qjsonvalue_isDouble(self) result(res) bind(C, name='qtf_qjsonvalue_isDouble')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsonvalue_isDouble
+
+        !> True for a string.
+        !>
+        !> C: `int qtf_qjsonvalue_isString(void *self)`
+        function qtf_qjsonvalue_isString(self) result(res) bind(C, name='qtf_qjsonvalue_isString')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsonvalue_isString
+
+        !> True for an array.
+        !>
+        !> C: `int qtf_qjsonvalue_isArray(void *self)`
+        function qtf_qjsonvalue_isArray(self) result(res) bind(C, name='qtf_qjsonvalue_isArray')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsonvalue_isArray
+
+        !> True for an object.
+        !>
+        !> C: `int qtf_qjsonvalue_isObject(void *self)`
+        function qtf_qjsonvalue_isObject(self) result(res) bind(C, name='qtf_qjsonvalue_isObject')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsonvalue_isObject
+
+        !> True for a missing key or index.
+        !>
+        !> C: `int qtf_qjsonvalue_isUndefined(void *self)`
+        function qtf_qjsonvalue_isUndefined(self) result(res) bind(C, name='qtf_qjsonvalue_isUndefined')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsonvalue_isUndefined
+
+        !> The boolean (`fallback` if it is not one).
+        !>
+        !> C: `int qtf_qjsonvalue_toBool(void *self, int fallback)`
+        function qtf_qjsonvalue_toBool(self, fallback) result(res) bind(C, name='qtf_qjsonvalue_toBool')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: fallback
+            integer(c_int) :: res
+        end function qtf_qjsonvalue_toBool
+
+        !> The number as an integer (`fallback` if it is not an integral number).
+        !>
+        !> C: `int qtf_qjsonvalue_toInt(void *self, int fallback)`
+        function qtf_qjsonvalue_toInt(self, fallback) result(res) bind(C, name='qtf_qjsonvalue_toInt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: fallback
+            integer(c_int) :: res
+        end function qtf_qjsonvalue_toInt
+
+        !> The number (`fallback` if it is not one).
+        !>
+        !> C: `double qtf_qjsonvalue_toDouble(void *self, double fallback)`
+        function qtf_qjsonvalue_toDouble(self, fallback) result(res) bind(C, name='qtf_qjsonvalue_toDouble')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: fallback
+            real(c_double) :: res
+        end function qtf_qjsonvalue_toDouble
+
+        !> The string (`fallback` if it is not one).
+        !>
+        !> C: `char *qtf_qjsonvalue_toString(void *self, const char *fallback, int fallback_len, int *len)`
+        function qtf_qjsonvalue_toString(self, fallback, fallback_len, len) &
+                result(res) bind(C, name='qtf_qjsonvalue_toString')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: fallback
+            integer(c_int), value :: fallback_len
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qjsonvalue_toString
+
+        !> The array (empty if it is not one); delete it when done.
+        !>
+        !> C: `void *qtf_qjsonvalue_toArray(void *self)`
+        function qtf_qjsonvalue_toArray(self) result(res) bind(C, name='qtf_qjsonvalue_toArray')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qjsonvalue_toArray
+
+        !> The object (empty if it is not one); delete it when done.
+        !>
+        !> C: `void *qtf_qjsonvalue_toObject(void *self)`
+        function qtf_qjsonvalue_toObject(self) result(res) bind(C, name='qtf_qjsonvalue_toObject')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qjsonvalue_toObject
+
+        !> A copy (delete it when done).
+        !>
+        !> C: `void *qtf_qjsonvalue_copy(void *self)`
+        function qtf_qjsonvalue_copy(self) result(res) bind(C, name='qtf_qjsonvalue_copy')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qjsonvalue_copy
+
+        !> Delete a JSON object handle.
+        !>
+        !> C: `void qtf_qjsonobject_delete(void *self)`
+        subroutine qtf_qjsonobject_delete(self) bind(C, name='qtf_qjsonobject_delete')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qjsonobject_delete
+
+        !> An empty object.
+        !>
+        !> C: `void *qtf_qjsonobject_new(void)`
+        function qtf_qjsonobject_new() result(res) bind(C, name='qtf_qjsonobject_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr) :: res
+        end function qtf_qjsonobject_new
+
+        !> The number of keys.
+        !>
+        !> C: `int qtf_qjsonobject_size(void *self)`
+        function qtf_qjsonobject_size(self) result(res) bind(C, name='qtf_qjsonobject_size')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsonobject_size
+
+        !> True if there are no keys.
+        !>
+        !> C: `int qtf_qjsonobject_isEmpty(void *self)`
+        function qtf_qjsonobject_isEmpty(self) result(res) bind(C, name='qtf_qjsonobject_isEmpty')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsonobject_isEmpty
+
+        !> The keys, sorted.
+        !>
+        !> C: `char *qtf_qjsonobject_keys(void *self, int *len)`
+        function qtf_qjsonobject_keys(self, len) result(res) bind(C, name='qtf_qjsonobject_keys')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qjsonobject_keys
+
+        !> True if `key` is present.
+        !>
+        !> C: `int qtf_qjsonobject_contains(void *self, const char *key, int key_len)`
+        function qtf_qjsonobject_contains(self, key, key_len) result(res) bind(C, name='qtf_qjsonobject_contains')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            integer(c_int) :: res
+        end function qtf_qjsonobject_contains
+
+        !> Remove a key.
+        !>
+        !> C: `void qtf_qjsonobject_remove(void *self, const char *key, int key_len)`
+        subroutine qtf_qjsonobject_remove(self, key, key_len) bind(C, name='qtf_qjsonobject_remove')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+        end subroutine qtf_qjsonobject_remove
+
+        !> The value of a key (undefined if missing); delete it when done.
+        !>
+        !> C: `void *qtf_qjsonobject_value(void *self, const char *key, int key_len)`
+        function qtf_qjsonobject_value(self, key, key_len) result(res) bind(C, name='qtf_qjsonobject_value')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            type(c_ptr) :: res
+        end function qtf_qjsonobject_value
+
+        !> The kind of a key's value (QJsonValue_Undefined if missing).
+        !>
+        !> C: `int qtf_qjsonobject_valueType(void *self, const char *key, int key_len)`
+        function qtf_qjsonobject_valueType(self, key, key_len) result(res) bind(C, name='qtf_qjsonobject_valueType')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            integer(c_int) :: res
+        end function qtf_qjsonobject_valueType
+
+        !> Set a key to a value (copied).
+        !>
+        !> C: `void qtf_qjsonobject_insertValue(void *self, const char *key, int key_len, void *value)`
+        subroutine qtf_qjsonobject_insertValue(self, key, key_len, value) bind(C, name='qtf_qjsonobject_insertValue')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            type(c_ptr), value :: value
+        end subroutine qtf_qjsonobject_insertValue
+
+        !> Set a key to a boolean.
+        !>
+        !> C: `void qtf_qjsonobject_insertBool(void *self, const char *key, int key_len, int value)`
+        subroutine qtf_qjsonobject_insertBool(self, key, key_len, value) bind(C, name='qtf_qjsonobject_insertBool')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            integer(c_int), value :: value
+        end subroutine qtf_qjsonobject_insertBool
+
+        !> Set a key to a number (an integer).
+        !>
+        !> C: `void qtf_qjsonobject_insertInt(void *self, const char *key, int key_len, int value)`
+        subroutine qtf_qjsonobject_insertInt(self, key, key_len, value) bind(C, name='qtf_qjsonobject_insertInt')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            integer(c_int), value :: value
+        end subroutine qtf_qjsonobject_insertInt
+
+        !> Set a key to a number.
+        !>
+        !> C: `void qtf_qjsonobject_insertDouble(void *self, const char *key, int key_len, double value)`
+        subroutine qtf_qjsonobject_insertDouble(self, key, key_len, value) bind(C, name='qtf_qjsonobject_insertDouble')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            real(c_double), value :: value
+        end subroutine qtf_qjsonobject_insertDouble
+
+        !> Set a key to a string.
+        !>
+        !> C: `void qtf_qjsonobject_insertString(void *self, const char *key, int key_len, const char *value, int value_len)`
+        subroutine qtf_qjsonobject_insertString(self, key, key_len, value, value_len) &
+                bind(C, name='qtf_qjsonobject_insertString')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            character(kind=c_char), dimension(*), intent(in) :: value
+            integer(c_int), value :: value_len
+        end subroutine qtf_qjsonobject_insertString
+
+        !> Set a key to an array (copied).
+        !>
+        !> C: `void qtf_qjsonobject_insertArray(void *self, const char *key, int key_len, void *value)`
+        subroutine qtf_qjsonobject_insertArray(self, key, key_len, value) bind(C, name='qtf_qjsonobject_insertArray')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            type(c_ptr), value :: value
+        end subroutine qtf_qjsonobject_insertArray
+
+        !> Set a key to an object (copied).
+        !>
+        !> C: `void qtf_qjsonobject_insertObject(void *self, const char *key, int key_len, void *value)`
+        subroutine qtf_qjsonobject_insertObject(self, key, key_len, value) bind(C, name='qtf_qjsonobject_insertObject')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            type(c_ptr), value :: value
+        end subroutine qtf_qjsonobject_insertObject
+
+        !> Set a key to null.
+        !>
+        !> C: `void qtf_qjsonobject_insertNull(void *self, const char *key, int key_len)`
+        subroutine qtf_qjsonobject_insertNull(self, key, key_len) bind(C, name='qtf_qjsonobject_insertNull')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+        end subroutine qtf_qjsonobject_insertNull
+
+        !> A boolean (`fallback` if missing or not a boolean).
+        !>
+        !> C: `int qtf_qjsonobject_boolValue(void *self, const char *key, int key_len, int fallback)`
+        function qtf_qjsonobject_boolValue(self, key, key_len, fallback) &
+                result(res) bind(C, name='qtf_qjsonobject_boolValue')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            integer(c_int), value :: fallback
+            integer(c_int) :: res
+        end function qtf_qjsonobject_boolValue
+
+        !> An integral number (`fallback` if missing or not one).
+        !>
+        !> C: `int qtf_qjsonobject_intValue(void *self, const char *key, int key_len, int fallback)`
+        function qtf_qjsonobject_intValue(self, key, key_len, fallback) &
+                result(res) bind(C, name='qtf_qjsonobject_intValue')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            integer(c_int), value :: fallback
+            integer(c_int) :: res
+        end function qtf_qjsonobject_intValue
+
+        !> A number (`fallback` if missing or not a number).
+        !>
+        !> C: `double qtf_qjsonobject_doubleValue(void *self, const char *key, int key_len, double fallback)`
+        function qtf_qjsonobject_doubleValue(self, key, key_len, fallback) &
+                result(res) bind(C, name='qtf_qjsonobject_doubleValue')
+            import :: c_char, c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            real(c_double), value :: fallback
+            real(c_double) :: res
+        end function qtf_qjsonobject_doubleValue
+
+        !> A string (`fallback` if missing or not a string).
+        !>
+        !> C: `char *qtf_qjsonobject_stringValue(void *self, const char *key, int key_len, const char *fallback, int fallback_len, int *len)`
+        function qtf_qjsonobject_stringValue(self, key, key_len, fallback, fallback_len, len) &
+                result(res) bind(C, name='qtf_qjsonobject_stringValue')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            character(kind=c_char), dimension(*), intent(in) :: fallback
+            integer(c_int), value :: fallback_len
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qjsonobject_stringValue
+
+        !> An array (empty if missing or not one); delete it when done.
+        !>
+        !> C: `void *qtf_qjsonobject_arrayValue(void *self, const char *key, int key_len)`
+        function qtf_qjsonobject_arrayValue(self, key, key_len) result(res) bind(C, name='qtf_qjsonobject_arrayValue')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            type(c_ptr) :: res
+        end function qtf_qjsonobject_arrayValue
+
+        !> An object (empty if missing or not one); delete it when done.
+        !>
+        !> C: `void *qtf_qjsonobject_objectValue(void *self, const char *key, int key_len)`
+        function qtf_qjsonobject_objectValue(self, key, key_len) result(res) bind(C, name='qtf_qjsonobject_objectValue')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: key
+            integer(c_int), value :: key_len
+            type(c_ptr) :: res
+        end function qtf_qjsonobject_objectValue
+
+        !> The object as JSON text: indented, or on one line.
+        !>
+        !> C: `char *qtf_qjsonobject_toJson(void *self, int compact, int *len)`
+        function qtf_qjsonobject_toJson(self, compact, len) result(res) bind(C, name='qtf_qjsonobject_toJson')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: compact
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qjsonobject_toJson
+
+        !> A copy (delete it when done).
+        !>
+        !> C: `void *qtf_qjsonobject_copy(void *self)`
+        function qtf_qjsonobject_copy(self) result(res) bind(C, name='qtf_qjsonobject_copy')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qjsonobject_copy
+
+        !> Delete a JSON array handle.
+        !>
+        !> C: `void qtf_qjsonarray_delete(void *self)`
+        subroutine qtf_qjsonarray_delete(self) bind(C, name='qtf_qjsonarray_delete')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qjsonarray_delete
+
+        !> An empty array.
+        !>
+        !> C: `void *qtf_qjsonarray_new(void)`
+        function qtf_qjsonarray_new() result(res) bind(C, name='qtf_qjsonarray_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr) :: res
+        end function qtf_qjsonarray_new
+
+        !> The number of elements.
+        !>
+        !> C: `int qtf_qjsonarray_size(void *self)`
+        function qtf_qjsonarray_size(self) result(res) bind(C, name='qtf_qjsonarray_size')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsonarray_size
+
+        !> True if there are no elements.
+        !>
+        !> C: `int qtf_qjsonarray_isEmpty(void *self)`
+        function qtf_qjsonarray_isEmpty(self) result(res) bind(C, name='qtf_qjsonarray_isEmpty')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsonarray_isEmpty
+
+        !> The element at `index` (undefined if out of range); delete it when done.
+        !>
+        !> C: `void *qtf_qjsonarray_at(void *self, int index)`
+        function qtf_qjsonarray_at(self, index) result(res) bind(C, name='qtf_qjsonarray_at')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            type(c_ptr) :: res
+        end function qtf_qjsonarray_at
+
+        !> The kind of an element (QJsonValue_Undefined if out of range).
+        !>
+        !> C: `int qtf_qjsonarray_typeAt(void *self, int index)`
+        function qtf_qjsonarray_typeAt(self, index) result(res) bind(C, name='qtf_qjsonarray_typeAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            integer(c_int) :: res
+        end function qtf_qjsonarray_typeAt
+
+        !> Append a value (copied).
+        !>
+        !> C: `void qtf_qjsonarray_appendValue(void *self, void *value)`
+        subroutine qtf_qjsonarray_appendValue(self, value) bind(C, name='qtf_qjsonarray_appendValue')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: value
+        end subroutine qtf_qjsonarray_appendValue
+
+        !> Append a boolean.
+        !>
+        !> C: `void qtf_qjsonarray_appendBool(void *self, int value)`
+        subroutine qtf_qjsonarray_appendBool(self, value) bind(C, name='qtf_qjsonarray_appendBool')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: value
+        end subroutine qtf_qjsonarray_appendBool
+
+        !> Append a number (an integer).
+        !>
+        !> C: `void qtf_qjsonarray_appendInt(void *self, int value)`
+        subroutine qtf_qjsonarray_appendInt(self, value) bind(C, name='qtf_qjsonarray_appendInt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: value
+        end subroutine qtf_qjsonarray_appendInt
+
+        !> Append a number.
+        !>
+        !> C: `void qtf_qjsonarray_appendDouble(void *self, double value)`
+        subroutine qtf_qjsonarray_appendDouble(self, value) bind(C, name='qtf_qjsonarray_appendDouble')
+            import :: c_double, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), value :: value
+        end subroutine qtf_qjsonarray_appendDouble
+
+        !> Append a string.
+        !>
+        !> C: `void qtf_qjsonarray_appendString(void *self, const char *value, int value_len)`
+        subroutine qtf_qjsonarray_appendString(self, value, value_len) bind(C, name='qtf_qjsonarray_appendString')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: value
+            integer(c_int), value :: value_len
+        end subroutine qtf_qjsonarray_appendString
+
+        !> Append an array (copied, as one element).
+        !>
+        !> C: `void qtf_qjsonarray_appendArray(void *self, void *value)`
+        subroutine qtf_qjsonarray_appendArray(self, value) bind(C, name='qtf_qjsonarray_appendArray')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: value
+        end subroutine qtf_qjsonarray_appendArray
+
+        !> Append an object (copied).
+        !>
+        !> C: `void qtf_qjsonarray_appendObject(void *self, void *value)`
+        subroutine qtf_qjsonarray_appendObject(self, value) bind(C, name='qtf_qjsonarray_appendObject')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: value
+        end subroutine qtf_qjsonarray_appendObject
+
+        !> Append null.
+        !>
+        !> C: `void qtf_qjsonarray_appendNull(void *self)`
+        subroutine qtf_qjsonarray_appendNull(self) bind(C, name='qtf_qjsonarray_appendNull')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qjsonarray_appendNull
+
+        !> Append every element of a real(c_double) array.
+        !>
+        !> C: `void qtf_qjsonarray_appendDoubles(void *self, const double *values, int n)`
+        subroutine qtf_qjsonarray_appendDoubles(self, values, n) bind(C, name='qtf_qjsonarray_appendDoubles')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            real(c_double), dimension(*), intent(in) :: values
+            integer(c_int), value :: n
+        end subroutine qtf_qjsonarray_appendDoubles
+
+        !> Append every element of an integer array.
+        !>
+        !> C: `void qtf_qjsonarray_appendInts(void *self, const int *values, int n)`
+        subroutine qtf_qjsonarray_appendInts(self, values, n) bind(C, name='qtf_qjsonarray_appendInts')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), dimension(*), intent(in) :: values
+            integer(c_int), value :: n
+        end subroutine qtf_qjsonarray_appendInts
+
+        !> Remove an element.
+        !>
+        !> C: `void qtf_qjsonarray_removeAt(void *self, int index)`
+        subroutine qtf_qjsonarray_removeAt(self, index) bind(C, name='qtf_qjsonarray_removeAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+        end subroutine qtf_qjsonarray_removeAt
+
+        !> A boolean element (`fallback` if out of range or not a boolean).
+        !>
+        !> C: `int qtf_qjsonarray_boolAt(void *self, int index, int fallback)`
+        function qtf_qjsonarray_boolAt(self, index, fallback) result(res) bind(C, name='qtf_qjsonarray_boolAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            integer(c_int), value :: fallback
+            integer(c_int) :: res
+        end function qtf_qjsonarray_boolAt
+
+        !> An integral number (`fallback` otherwise).
+        !>
+        !> C: `int qtf_qjsonarray_intAt(void *self, int index, int fallback)`
+        function qtf_qjsonarray_intAt(self, index, fallback) result(res) bind(C, name='qtf_qjsonarray_intAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            integer(c_int), value :: fallback
+            integer(c_int) :: res
+        end function qtf_qjsonarray_intAt
+
+        !> A number (`fallback` otherwise).
+        !>
+        !> C: `double qtf_qjsonarray_doubleAt(void *self, int index, double fallback)`
+        function qtf_qjsonarray_doubleAt(self, index, fallback) result(res) bind(C, name='qtf_qjsonarray_doubleAt')
+            import :: c_double, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            real(c_double), value :: fallback
+            real(c_double) :: res
+        end function qtf_qjsonarray_doubleAt
+
+        !> A string (`fallback` otherwise).
+        !>
+        !> C: `char *qtf_qjsonarray_stringAt(void *self, int index, const char *fallback, int fallback_len, int *len)`
+        function qtf_qjsonarray_stringAt(self, index, fallback, fallback_len, len) &
+                result(res) bind(C, name='qtf_qjsonarray_stringAt')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            character(kind=c_char), dimension(*), intent(in) :: fallback
+            integer(c_int), value :: fallback_len
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qjsonarray_stringAt
+
+        !> An array element (empty otherwise); delete it when done.
+        !>
+        !> C: `void *qtf_qjsonarray_arrayAt(void *self, int index)`
+        function qtf_qjsonarray_arrayAt(self, index) result(res) bind(C, name='qtf_qjsonarray_arrayAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            type(c_ptr) :: res
+        end function qtf_qjsonarray_arrayAt
+
+        !> An object element (empty otherwise); delete it when done.
+        !>
+        !> C: `void *qtf_qjsonarray_objectAt(void *self, int index)`
+        function qtf_qjsonarray_objectAt(self, index) result(res) bind(C, name='qtf_qjsonarray_objectAt')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: index
+            type(c_ptr) :: res
+        end function qtf_qjsonarray_objectAt
+
+        !> The elements as integers (numbers rounded toward zero; other kinds as 0).
+        !>
+        !> C: `int *qtf_qjsonarray_toInts(void *self, int *len)`
+        function qtf_qjsonarray_toInts(self, len) result(res) bind(C, name='qtf_qjsonarray_toInts')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qjsonarray_toInts
+
+        !> The array as JSON text: indented, or on one line.
+        !>
+        !> C: `char *qtf_qjsonarray_toJson(void *self, int compact, int *len)`
+        function qtf_qjsonarray_toJson(self, compact, len) result(res) bind(C, name='qtf_qjsonarray_toJson')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: compact
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qjsonarray_toJson
+
+        !> A copy (delete it when done).
+        !>
+        !> C: `void *qtf_qjsonarray_copy(void *self)`
+        function qtf_qjsonarray_copy(self) result(res) bind(C, name='qtf_qjsonarray_copy')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qjsonarray_copy
+
+        !> Delete a JSON document handle.
+        !>
+        !> C: `void qtf_qjsondocument_delete(void *self)`
+        subroutine qtf_qjsondocument_delete(self) bind(C, name='qtf_qjsondocument_delete')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qjsondocument_delete
+
+        !> An empty (null) document.
+        !>
+        !> C: `void *qtf_qjsondocument_new(void)`
+        function qtf_qjsondocument_new() result(res) bind(C, name='qtf_qjsondocument_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr) :: res
+        end function qtf_qjsondocument_new
+
+        !> A document holding an object (copied).
+        !>
+        !> C: `void *qtf_qjsondocument_fromObject(void *object)`
+        function qtf_qjsondocument_fromObject(object) result(res) bind(C, name='qtf_qjsondocument_fromObject')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: object
+            type(c_ptr) :: res
+        end function qtf_qjsondocument_fromObject
+
+        !> A document holding an array (copied).
+        !>
+        !> C: `void *qtf_qjsondocument_fromArray(void *array)`
+        function qtf_qjsondocument_fromArray(array) result(res) bind(C, name='qtf_qjsondocument_fromArray')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: array
+            type(c_ptr) :: res
+        end function qtf_qjsondocument_fromArray
+
+        !> Parse JSON text (UTF-8). On an error the document is null and `errorString`/`errorOffset` say why and where. Delete it when done.
+        !>
+        !> C: `void *qtf_qjsondocument_fromJson(const char *text, int text_len)`
+        function qtf_qjsondocument_fromJson(text, text_len) result(res) bind(C, name='qtf_qjsondocument_fromJson')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: text
+            integer(c_int), value :: text_len
+            type(c_ptr) :: res
+        end function qtf_qjsondocument_fromJson
+
+        !> True if empty, or if parsing failed.
+        !>
+        !> C: `int qtf_qjsondocument_isNull(void *self)`
+        function qtf_qjsondocument_isNull(self) result(res) bind(C, name='qtf_qjsondocument_isNull')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsondocument_isNull
+
+        !> True if it holds no object or array.
+        !>
+        !> C: `int qtf_qjsondocument_isEmpty(void *self)`
+        function qtf_qjsondocument_isEmpty(self) result(res) bind(C, name='qtf_qjsondocument_isEmpty')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsondocument_isEmpty
+
+        !> True if it holds an object.
+        !>
+        !> C: `int qtf_qjsondocument_isObject(void *self)`
+        function qtf_qjsondocument_isObject(self) result(res) bind(C, name='qtf_qjsondocument_isObject')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsondocument_isObject
+
+        !> True if it holds an array.
+        !>
+        !> C: `int qtf_qjsondocument_isArray(void *self)`
+        function qtf_qjsondocument_isArray(self) result(res) bind(C, name='qtf_qjsondocument_isArray')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsondocument_isArray
+
+        !> The object (empty if it holds an array); delete it when done.
+        !>
+        !> C: `void *qtf_qjsondocument_object(void *self)`
+        function qtf_qjsondocument_object(self) result(res) bind(C, name='qtf_qjsondocument_object')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qjsondocument_object
+
+        !> The array (empty if it holds an object); delete it when done.
+        !>
+        !> C: `void *qtf_qjsondocument_array(void *self)`
+        function qtf_qjsondocument_array(self) result(res) bind(C, name='qtf_qjsondocument_array')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr) :: res
+        end function qtf_qjsondocument_array
+
+        !> Hold an object (copied).
+        !>
+        !> C: `void qtf_qjsondocument_setObject(void *self, void *object)`
+        subroutine qtf_qjsondocument_setObject(self, object) bind(C, name='qtf_qjsondocument_setObject')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: object
+        end subroutine qtf_qjsondocument_setObject
+
+        !> Hold an array (copied).
+        !>
+        !> C: `void qtf_qjsondocument_setArray(void *self, void *array)`
+        subroutine qtf_qjsondocument_setArray(self, array) bind(C, name='qtf_qjsondocument_setArray')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: array
+        end subroutine qtf_qjsondocument_setArray
+
+        !> The document as JSON text (UTF-8): indented, or on one line.
+        !>
+        !> C: `char *qtf_qjsondocument_toJson(void *self, int compact, int *len)`
+        function qtf_qjsondocument_toJson(self, compact, len) result(res) bind(C, name='qtf_qjsondocument_toJson')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: compact
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qjsondocument_toJson
+
+        !> Why parsing failed ('' if it did not).
+        !>
+        !> C: `char *qtf_qjsondocument_errorString(void *self, int *len)`
+        function qtf_qjsondocument_errorString(self, len) result(res) bind(C, name='qtf_qjsondocument_errorString')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qjsondocument_errorString
+
+        !> Where parsing failed (a 0-based byte offset; -1 if it did not).
+        !>
+        !> C: `int qtf_qjsondocument_errorOffset(void *self)`
+        function qtf_qjsondocument_errorOffset(self) result(res) bind(C, name='qtf_qjsondocument_errorOffset')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qjsondocument_errorOffset
+
+        !> Delete a request handle.
+        !>
+        !> C: `void qtf_qnetworkrequest_delete(void *self)`
+        subroutine qtf_qnetworkrequest_delete(self) bind(C, name='qtf_qnetworkrequest_delete')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qnetworkrequest_delete
+
+        !> A request for `url`.
+        !>
+        !> C: `void *qtf_qnetworkrequest_new(const char *url, int url_len)`
+        function qtf_qnetworkrequest_new(url, url_len) result(res) bind(C, name='qtf_qnetworkrequest_new')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: url
+            integer(c_int), value :: url_len
+            type(c_ptr) :: res
+        end function qtf_qnetworkrequest_new
+
+        !> The URL.
+        !>
+        !> C: `void qtf_qnetworkrequest_setUrl(void *self, const char *url, int url_len)`
+        subroutine qtf_qnetworkrequest_setUrl(self, url, url_len) bind(C, name='qtf_qnetworkrequest_setUrl')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: url
+            integer(c_int), value :: url_len
+        end subroutine qtf_qnetworkrequest_setUrl
+
+        !> The URL.
+        !>
+        !> C: `char *qtf_qnetworkrequest_url(void *self, int *len)`
+        function qtf_qnetworkrequest_url(self, len) result(res) bind(C, name='qtf_qnetworkrequest_url')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qnetworkrequest_url
+
+        !> Set a header, e.g. ('Content-Type', 'application/json') or ('Authorization', 'Bearer ...').
+        !>
+        !> C: `void qtf_qnetworkrequest_setRawHeader(void *self, const char *name, int name_len, const char *value, int value_len)`
+        subroutine qtf_qnetworkrequest_setRawHeader(self, name, name_len, value, value_len) &
+                bind(C, name='qtf_qnetworkrequest_setRawHeader')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+            character(kind=c_char), dimension(*), intent(in) :: value
+            integer(c_int), value :: value_len
+        end subroutine qtf_qnetworkrequest_setRawHeader
+
+        !> A header's value ('' if not set).
+        !>
+        !> C: `char *qtf_qnetworkrequest_rawHeader(void *self, const char *name, int name_len, int *len)`
+        function qtf_qnetworkrequest_rawHeader(self, name, name_len, len) &
+                result(res) bind(C, name='qtf_qnetworkrequest_rawHeader')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qnetworkrequest_rawHeader
+
+        !> Abort (QNetworkReply_OperationCanceledError) if no data moves for `msecs` (0: no timeout).
+        !>
+        !> C: `void qtf_qnetworkrequest_setTransferTimeout(void *self, int msecs)`
+        subroutine qtf_qnetworkrequest_setTransferTimeout(self, msecs) &
+                bind(C, name='qtf_qnetworkrequest_setTransferTimeout')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: msecs
+        end subroutine qtf_qnetworkrequest_setTransferTimeout
+
+        !> Follow redirects (default) or return them (status 301/302, `rawHeader('Location')`).
+        !>
+        !> C: `void qtf_qnetworkrequest_setFollowRedirects(void *self, int follow)`
+        subroutine qtf_qnetworkrequest_setFollowRedirects(self, follow) &
+                bind(C, name='qtf_qnetworkrequest_setFollowRedirects')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: follow
+        end subroutine qtf_qnetworkrequest_setFollowRedirects
+
+        !> The body received so far (bytes, as they came).
+        !>
+        !> C: `char *qtf_qnetworkreply_readAll(void *self, int *len)`
+        function qtf_qnetworkreply_readAll(self, len) result(res) bind(C, name='qtf_qnetworkreply_readAll')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qnetworkreply_readAll
+
+        !> Run the event loop until the reply finishes (slots keep running) or `msecs` pass (< 0: no limit); true if finished.
+        !>
+        !> C: `int qtf_qnetworkreply_waitForFinished(void *self, int msecs)`
+        function qtf_qnetworkreply_waitForFinished(self, msecs) &
+                result(res) bind(C, name='qtf_qnetworkreply_waitForFinished')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: msecs
+            integer(c_int) :: res
+        end function qtf_qnetworkreply_waitForFinished
+
+        !> True when complete.
+        !>
+        !> C: `int qtf_qnetworkreply_isFinished(void *self)`
+        function qtf_qnetworkreply_isFinished(self) result(res) bind(C, name='qtf_qnetworkreply_isFinished')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qnetworkreply_isFinished
+
+        !> True while in progress.
+        !>
+        !> C: `int qtf_qnetworkreply_isRunning(void *self)`
+        function qtf_qnetworkreply_isRunning(self) result(res) bind(C, name='qtf_qnetworkreply_isRunning')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qnetworkreply_isRunning
+
+        !> QNetworkReply_NoError, or what went wrong (QNetworkReply_* codes; for HTTP errors also see `statusCode`).
+        !>
+        !> C: `int qtf_qnetworkreply_error(void *self)`
+        function qtf_qnetworkreply_error(self) result(res) bind(C, name='qtf_qnetworkreply_error')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qnetworkreply_error
+
+        !> The error, as text.
+        !>
+        !> C: `char *qtf_qnetworkreply_errorString(void *self, int *len)`
+        function qtf_qnetworkreply_errorString(self, len) result(res) bind(C, name='qtf_qnetworkreply_errorString')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qnetworkreply_errorString
+
+        !> Stop now (error QNetworkReply_OperationCanceledError).
+        !>
+        !> C: `void qtf_qnetworkreply_abort(void *self)`
+        subroutine qtf_qnetworkreply_abort(self) bind(C, name='qtf_qnetworkreply_abort')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+        end subroutine qtf_qnetworkreply_abort
+
+        !> The URL (after redirects).
+        !>
+        !> C: `char *qtf_qnetworkreply_url(void *self, int *len)`
+        function qtf_qnetworkreply_url(self, len) result(res) bind(C, name='qtf_qnetworkreply_url')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qnetworkreply_url
+
+        !> The HTTP status code (200, 404, ...). Other schemes may report 200 or 0: check `error` for them.
+        !>
+        !> C: `int qtf_qnetworkreply_statusCode(void *self)`
+        function qtf_qnetworkreply_statusCode(self) result(res) bind(C, name='qtf_qnetworkreply_statusCode')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int) :: res
+        end function qtf_qnetworkreply_statusCode
+
+        !> The HTTP reason phrase ('OK', 'Not Found', ...).
+        !>
+        !> C: `char *qtf_qnetworkreply_reasonPhrase(void *self, int *len)`
+        function qtf_qnetworkreply_reasonPhrase(self, len) result(res) bind(C, name='qtf_qnetworkreply_reasonPhrase')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qnetworkreply_reasonPhrase
+
+        !> A response header ('' if absent).
+        !>
+        !> C: `char *qtf_qnetworkreply_rawHeader(void *self, const char *name, int name_len, int *len)`
+        function qtf_qnetworkreply_rawHeader(self, name, name_len, len) &
+                result(res) bind(C, name='qtf_qnetworkreply_rawHeader')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qnetworkreply_rawHeader
+
+        !> True if the response has this header.
+        !>
+        !> C: `int qtf_qnetworkreply_hasRawHeader(void *self, const char *name, int name_len)`
+        function qtf_qnetworkreply_hasRawHeader(self, name, name_len) &
+                result(res) bind(C, name='qtf_qnetworkreply_hasRawHeader')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            character(kind=c_char), dimension(*), intent(in) :: name
+            integer(c_int), value :: name_len
+            integer(c_int) :: res
+        end function qtf_qnetworkreply_hasRawHeader
+
+        !> The names of the response headers.
+        !>
+        !> C: `char *qtf_qnetworkreply_rawHeaderNames(void *self, int *len)`
+        function qtf_qnetworkreply_rawHeaderNames(self, len) &
+                result(res) bind(C, name='qtf_qnetworkreply_rawHeaderNames')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qnetworkreply_rawHeaderNames
+
+        !> The Content-Type ('' if unknown).
+        !>
+        !> C: `char *qtf_qnetworkreply_contentType(void *self, int *len)`
+        function qtf_qnetworkreply_contentType(self, len) result(res) bind(C, name='qtf_qnetworkreply_contentType')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_qnetworkreply_contentType
+
+        !> Bytes received and not yet read.
+        !>
+        !> C: `long long qtf_qnetworkreply_bytesAvailable(void *self)`
+        function qtf_qnetworkreply_bytesAvailable(self) result(res) bind(C, name='qtf_qnetworkreply_bytesAvailable')
+            import :: c_long_long, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_long_long) :: res
+        end function qtf_qnetworkreply_bytesAvailable
+
+        !> A network access manager.
+        !>
+        !> C: `void *qtf_qnetworkaccessmanager_new(void *parent)`
+        function qtf_qnetworkaccessmanager_new(parent) result(res) bind(C, name='qtf_qnetworkaccessmanager_new')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: parent
+            type(c_ptr) :: res
+        end function qtf_qnetworkaccessmanager_new
+
+        !> Fetch a URL.
+        !>
+        !> C: `void *qtf_qnetworkaccessmanager_get(void *self, void *request)`
+        function qtf_qnetworkaccessmanager_get(self, request) result(res) bind(C, name='qtf_qnetworkaccessmanager_get')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: request
+            type(c_ptr) :: res
+        end function qtf_qnetworkaccessmanager_get
+
+        !> Fetch only the headers.
+        !>
+        !> C: `void *qtf_qnetworkaccessmanager_head(void *self, void *request)`
+        function qtf_qnetworkaccessmanager_head(self, request) &
+                result(res) bind(C, name='qtf_qnetworkaccessmanager_head')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: request
+            type(c_ptr) :: res
+        end function qtf_qnetworkaccessmanager_head
+
+        !> Send `data` (bytes) with POST.
+        !>
+        !> C: `void *qtf_qnetworkaccessmanager_post(void *self, void *request, const char *data, int data_len)`
+        function qtf_qnetworkaccessmanager_post(self, request, data, data_len) &
+                result(res) bind(C, name='qtf_qnetworkaccessmanager_post')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: request
+            character(kind=c_char), dimension(*), intent(in) :: data
+            integer(c_int), value :: data_len
+            type(c_ptr) :: res
+        end function qtf_qnetworkaccessmanager_post
+
+        !> Send `data` (bytes) with PUT.
+        !>
+        !> C: `void *qtf_qnetworkaccessmanager_put(void *self, void *request, const char *data, int data_len)`
+        function qtf_qnetworkaccessmanager_put(self, request, data, data_len) &
+                result(res) bind(C, name='qtf_qnetworkaccessmanager_put')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: request
+            character(kind=c_char), dimension(*), intent(in) :: data
+            integer(c_int), value :: data_len
+            type(c_ptr) :: res
+        end function qtf_qnetworkaccessmanager_put
+
+        !> Send a DELETE request.
+        !>
+        !> C: `void *qtf_qnetworkaccessmanager_deleteResource(void *self, void *request)`
+        function qtf_qnetworkaccessmanager_deleteResource(self, request) &
+                result(res) bind(C, name='qtf_qnetworkaccessmanager_deleteResource')
+            import :: c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: request
+            type(c_ptr) :: res
+        end function qtf_qnetworkaccessmanager_deleteResource
+
+        !> Send a request with another HTTP verb (e.g. 'PATCH') and an optional body.
+        !>
+        !> C: `void *qtf_qnetworkaccessmanager_sendCustomRequest(void *self, void *request, const char *verb, int verb_len, const char *data, int data_len)`
+        function qtf_qnetworkaccessmanager_sendCustomRequest(self, request, verb, verb_len, data, data_len) &
+                result(res) bind(C, name='qtf_qnetworkaccessmanager_sendCustomRequest')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            type(c_ptr), value :: request
+            character(kind=c_char), dimension(*), intent(in) :: verb
+            integer(c_int), value :: verb_len
+            character(kind=c_char), dimension(*), intent(in) :: data
+            integer(c_int), value :: data_len
+            type(c_ptr) :: res
+        end function qtf_qnetworkaccessmanager_sendCustomRequest
+
+        !> The default transfer timeout of its requests (0: none).
+        !>
+        !> C: `void qtf_qnetworkaccessmanager_setTransferTimeout(void *self, int msecs)`
+        subroutine qtf_qnetworkaccessmanager_setTransferTimeout(self, msecs) &
+                bind(C, name='qtf_qnetworkaccessmanager_setTransferTimeout')
+            import :: c_int, c_ptr
+            implicit none
+            type(c_ptr), value :: self
+            integer(c_int), value :: msecs
+        end subroutine qtf_qnetworkaccessmanager_setTransferTimeout
+
+        !> The full path of the running program (needs the application object).
+        !>
+        !> C: `char *qtf_QCoreApplication_applicationFilePath(int *len)`
+        function qtf_QCoreApplication_applicationFilePath(len) &
+                result(res) bind(C, name='qtf_QCoreApplication_applicationFilePath')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_QCoreApplication_applicationFilePath
+
+        !> The directory of the running program (e.g. to find files installed next to it).
+        !>
+        !> C: `char *qtf_QCoreApplication_applicationDirPath(int *len)`
+        function qtf_QCoreApplication_applicationDirPath(len) &
+                result(res) bind(C, name='qtf_QCoreApplication_applicationDirPath')
+            import :: c_int, c_ptr
+            implicit none
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_QCoreApplication_applicationDirPath
+
         !> True on Windows, where QWinEventNotifier works; elsewhere its `activated` never fires.
         !>
         !> C: `int qtf_QWinEventNotifier_isSupported(void)`
@@ -1368,8 +2954,54 @@ module qt_c_core_classes
     public :: qtf_qsocketnotifier_socket, qtf_qsocketnotifier_setSocket, qtf_qsocketnotifier_notifierType
     public :: qtf_qsocketnotifier_setEnabled, qtf_qsocketnotifier_isEnabled, qtf_qsocketnotifier_isValid
     public :: qtf_qwineventnotifier_new, qtf_qwineventnotifier_setHandle, qtf_qwineventnotifier_handle
-    public :: qtf_qwineventnotifier_setEnabled, qtf_qwineventnotifier_isEnabled
-    public :: qtf_QWinEventNotifier_isSupported, qtf_QDir_mkpath, qtf_QDir_exists, qtf_QDir_removeRecursively
-    public :: qtf_QDir_currentPath, qtf_QDir_homePath, qtf_QDir_tempPath, qtf_QDir_entryList, qtf_QDir_isDir
+    public :: qtf_qwineventnotifier_setEnabled, qtf_qwineventnotifier_isEnabled, qtf_qtemporarydir_delete
+    public :: qtf_qtemporarydir_new, qtf_qtemporarydir_isValid, qtf_qtemporarydir_path
+    public :: qtf_qtemporarydir_filePath, qtf_qtemporarydir_errorString, qtf_qtemporarydir_setAutoRemove
+    public :: qtf_qtemporarydir_autoRemove, qtf_qtemporarydir_remove, qtf_qsavefile_new, qtf_qsavefile_open
+    public :: qtf_qsavefile_write, qtf_qsavefile_writeDoubles, qtf_qsavefile_writeInts, qtf_qsavefile_commit
+    public :: qtf_qsavefile_cancelWriting, qtf_qsavefile_fileName, qtf_qsavefile_setFileName
+    public :: qtf_qsavefile_isOpen, qtf_qsavefile_errorString, qtf_qsavefile_setDirectWriteFallback
+    public :: qtf_qjsonvalue_delete, qtf_qjsonvalue_new, qtf_qjsonvalue_fromBool, qtf_qjsonvalue_fromInt
+    public :: qtf_qjsonvalue_fromDouble, qtf_qjsonvalue_fromString, qtf_qjsonvalue_fromArray
+    public :: qtf_qjsonvalue_fromObject, qtf_qjsonvalue_valueType, qtf_qjsonvalue_isNull
+    public :: qtf_qjsonvalue_isBool, qtf_qjsonvalue_isDouble, qtf_qjsonvalue_isString, qtf_qjsonvalue_isArray
+    public :: qtf_qjsonvalue_isObject, qtf_qjsonvalue_isUndefined, qtf_qjsonvalue_toBool
+    public :: qtf_qjsonvalue_toInt, qtf_qjsonvalue_toDouble, qtf_qjsonvalue_toString, qtf_qjsonvalue_toArray
+    public :: qtf_qjsonvalue_toObject, qtf_qjsonvalue_copy, qtf_qjsonobject_delete, qtf_qjsonobject_new
+    public :: qtf_qjsonobject_size, qtf_qjsonobject_isEmpty, qtf_qjsonobject_keys, qtf_qjsonobject_contains
+    public :: qtf_qjsonobject_remove, qtf_qjsonobject_value, qtf_qjsonobject_valueType
+    public :: qtf_qjsonobject_insertValue, qtf_qjsonobject_insertBool, qtf_qjsonobject_insertInt
+    public :: qtf_qjsonobject_insertDouble, qtf_qjsonobject_insertString, qtf_qjsonobject_insertArray
+    public :: qtf_qjsonobject_insertObject, qtf_qjsonobject_insertNull, qtf_qjsonobject_boolValue
+    public :: qtf_qjsonobject_intValue, qtf_qjsonobject_doubleValue, qtf_qjsonobject_stringValue
+    public :: qtf_qjsonobject_arrayValue, qtf_qjsonobject_objectValue, qtf_qjsonobject_toJson
+    public :: qtf_qjsonobject_copy, qtf_qjsonarray_delete, qtf_qjsonarray_new, qtf_qjsonarray_size
+    public :: qtf_qjsonarray_isEmpty, qtf_qjsonarray_at, qtf_qjsonarray_typeAt, qtf_qjsonarray_appendValue
+    public :: qtf_qjsonarray_appendBool, qtf_qjsonarray_appendInt, qtf_qjsonarray_appendDouble
+    public :: qtf_qjsonarray_appendString, qtf_qjsonarray_appendArray, qtf_qjsonarray_appendObject
+    public :: qtf_qjsonarray_appendNull, qtf_qjsonarray_appendDoubles, qtf_qjsonarray_appendInts
+    public :: qtf_qjsonarray_removeAt, qtf_qjsonarray_boolAt, qtf_qjsonarray_intAt, qtf_qjsonarray_doubleAt
+    public :: qtf_qjsonarray_stringAt, qtf_qjsonarray_arrayAt, qtf_qjsonarray_objectAt, qtf_qjsonarray_toInts
+    public :: qtf_qjsonarray_toJson, qtf_qjsonarray_copy, qtf_qjsondocument_delete, qtf_qjsondocument_new
+    public :: qtf_qjsondocument_fromObject, qtf_qjsondocument_fromArray, qtf_qjsondocument_fromJson
+    public :: qtf_qjsondocument_isNull, qtf_qjsondocument_isEmpty, qtf_qjsondocument_isObject
+    public :: qtf_qjsondocument_isArray, qtf_qjsondocument_object, qtf_qjsondocument_array
+    public :: qtf_qjsondocument_setObject, qtf_qjsondocument_setArray, qtf_qjsondocument_toJson
+    public :: qtf_qjsondocument_errorString, qtf_qjsondocument_errorOffset, qtf_qnetworkrequest_delete
+    public :: qtf_qnetworkrequest_new, qtf_qnetworkrequest_setUrl, qtf_qnetworkrequest_url
+    public :: qtf_qnetworkrequest_setRawHeader, qtf_qnetworkrequest_rawHeader
+    public :: qtf_qnetworkrequest_setTransferTimeout, qtf_qnetworkrequest_setFollowRedirects
+    public :: qtf_qnetworkreply_readAll, qtf_qnetworkreply_waitForFinished, qtf_qnetworkreply_isFinished
+    public :: qtf_qnetworkreply_isRunning, qtf_qnetworkreply_error, qtf_qnetworkreply_errorString
+    public :: qtf_qnetworkreply_abort, qtf_qnetworkreply_url, qtf_qnetworkreply_statusCode
+    public :: qtf_qnetworkreply_reasonPhrase, qtf_qnetworkreply_rawHeader, qtf_qnetworkreply_hasRawHeader
+    public :: qtf_qnetworkreply_rawHeaderNames, qtf_qnetworkreply_contentType
+    public :: qtf_qnetworkreply_bytesAvailable, qtf_qnetworkaccessmanager_new, qtf_qnetworkaccessmanager_get
+    public :: qtf_qnetworkaccessmanager_head, qtf_qnetworkaccessmanager_post, qtf_qnetworkaccessmanager_put
+    public :: qtf_qnetworkaccessmanager_deleteResource, qtf_qnetworkaccessmanager_sendCustomRequest
+    public :: qtf_qnetworkaccessmanager_setTransferTimeout, qtf_QCoreApplication_applicationFilePath
+    public :: qtf_QCoreApplication_applicationDirPath, qtf_QWinEventNotifier_isSupported, qtf_QDir_mkpath
+    public :: qtf_QDir_exists, qtf_QDir_removeRecursively, qtf_QDir_currentPath, qtf_QDir_homePath
+    public :: qtf_QDir_tempPath, qtf_QDir_entryList, qtf_QDir_isDir
 
 end module qt_c_core_classes

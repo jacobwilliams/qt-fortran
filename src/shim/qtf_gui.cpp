@@ -1837,6 +1837,16 @@ QTF_API void qtf_qaction_setStatusTip(void *self, const char *tip, int tip_len) 
     as<QAction>(self)->setStatusTip(qtf_qstring(tip, tip_len));
 }
 
+// A short text for tool bar buttons (default: the text without '&' and '...').
+QTF_API void qtf_qaction_setIconText(void *self, const char *text, int text_len) {
+    as<QAction>(self)->setIconText(qtf_qstring(text, text_len));
+}
+
+// The short text for tool bar buttons.
+QTF_API char *qtf_qaction_iconText(void *self, int *len) {
+    return qtf_to_c(as<QAction>(self)->iconText(), len);
+}
+
 // Tool tip shown for the action (e.g. on tool bar buttons).
 QTF_API void qtf_qaction_setToolTip(void *self, const char *tip, int tip_len) {
     as<QAction>(self)->setToolTip(qtf_qstring(tip, tip_len));
