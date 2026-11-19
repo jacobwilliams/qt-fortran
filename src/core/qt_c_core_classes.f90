@@ -2905,6 +2905,30 @@ module qt_c_core_classes
             type(c_ptr) :: res
         end function qtf_QDir_entryList
 
+        !> The file: URL of a local path, correct on every platform (e.g. 'file:///C:/data/x.json' on Windows), e.g. for a QNetworkRequest.
+        !>
+        !> C: `char *qtf_QUrl_fromLocalFile(const char *path, int path_len, int *len)`
+        function qtf_QUrl_fromLocalFile(path, path_len, len) result(res) bind(C, name='qtf_QUrl_fromLocalFile')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: path
+            integer(c_int), value :: path_len
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_QUrl_fromLocalFile
+
+        !> The local path of a file: URL ('' for other URLs).
+        !>
+        !> C: `char *qtf_QUrl_toLocalFile(const char *url, int url_len, int *len)`
+        function qtf_QUrl_toLocalFile(url, url_len, len) result(res) bind(C, name='qtf_QUrl_toLocalFile')
+            import :: c_char, c_int, c_ptr
+            implicit none
+            character(kind=c_char), dimension(*), intent(in) :: url
+            integer(c_int), value :: url_len
+            integer(c_int), intent(out) :: len
+            type(c_ptr) :: res
+        end function qtf_QUrl_toLocalFile
+
         !> True if `path` is a directory.
         !>
         !> C: `int qtf_QDir_isDir(const char *path, int path_len)`
@@ -3002,6 +3026,7 @@ module qt_c_core_classes
     public :: qtf_qnetworkaccessmanager_setTransferTimeout, qtf_QCoreApplication_applicationFilePath
     public :: qtf_QCoreApplication_applicationDirPath, qtf_QWinEventNotifier_isSupported, qtf_QDir_mkpath
     public :: qtf_QDir_exists, qtf_QDir_removeRecursively, qtf_QDir_currentPath, qtf_QDir_homePath
-    public :: qtf_QDir_tempPath, qtf_QDir_entryList, qtf_QDir_isDir
+    public :: qtf_QDir_tempPath, qtf_QDir_entryList, qtf_QUrl_fromLocalFile, qtf_QUrl_toLocalFile
+    public :: qtf_QDir_isDir
 
 end module qt_c_core_classes

@@ -251,9 +251,10 @@ contains
         net = QNetworkAccessManager()
 
         ! a file: URL, waiting
-        req = QNetworkRequest('file://'//path)
+        req = QNetworkRequest(QUrl_fromLocalFile(path))
         call req%setRawHeader('X-Test', 'yes')
         call check(req%rawHeader('X-Test') == 'yes' .and. index(req%url(), 'data.json') > 0, 'QNetworkRequest')
+        call check(QUrl_toLocalFile(req%url()) == path, 'QUrl_fromLocalFile / toLocalFile')
         call req%setTransferTimeout(5000)
         reply = net%get(req)
         call check(reply%waitForFinished(10000), 'waitForFinished')
@@ -278,7 +279,7 @@ contains
         call log%reply%deleteLater()
 
         ! a missing file
-        call req%setUrl('file://'//tmp%filePath('missing.json'))
+        call req%setUrl(QUrl_fromLocalFile(tmp%filePath('missing.json')))
         reply = net%get(req)
         call check(reply%waitForFinished(10000), 'missing file: finished')
         call check(reply%error() /= QNetworkReply_NoError .and. len(reply%errorString()) > 0, 'missing file: error')

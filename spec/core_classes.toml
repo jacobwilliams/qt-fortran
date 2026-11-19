@@ -210,6 +210,8 @@ functions = [
     { sig = "QDir_homePath() -> string", cpp = "QDir::homePath()", doc = "The user's home directory." },
     { sig = "QDir_tempPath() -> string", cpp = "QDir::tempPath()", doc = "The system's directory for temporary files." },
     { sig = "QDir_entryList(path: string, filters: QDir::Filters = ior(QDir_AllEntries, QDir_NoDotAndDotDot)) -> strings", cpp = "QDir({path}).entryList(QDir::Filters({filters}), QDir::Name | QDir::DirsFirst | QDir::IgnoreCase)", doc = "The names in a directory, directories first, then by name (ignoring case); none if it does not exist. `filters`: QDir_Dirs, QDir_Files, QDir_Hidden, QDir_NoDotAndDotDot (default: all entries but . and .., not hidden ones)." },
+    { sig = "QUrl_fromLocalFile(path: string) -> string", cpp = "QUrl::fromLocalFile({path}).toString()", doc = "The file: URL of a local path, correct on every platform (e.g. 'file:///C:/data/x.json' on Windows), e.g. for a QNetworkRequest." },
+    { sig = "QUrl_toLocalFile(url: string) -> string", cpp = "QUrl({url}).toLocalFile()", doc = "The local path of a file: URL ('' for other URLs)." },
     { sig = "QDir_isDir(path: string) -> bool", cpp = "QFileInfo({path}).isDir()", doc = "True if `path` is a directory." },
 ]
 

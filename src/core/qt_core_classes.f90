@@ -627,6 +627,8 @@ module qt_core_classes
     public :: QDir_homePath
     public :: QDir_tempPath
     public :: QDir_entryList
+    public :: QUrl_fromLocalFile
+    public :: QUrl_toLocalFile
     public :: QDir_isDir
 
 contains
@@ -2902,6 +2904,26 @@ contains
         p_ = qtf_QDir_entryList(path, len(path, c_int), filters_, n_)
         res = qtf_take_string_list(p_, n_)
     end function QDir_entryList
+
+    !> The file: URL of a local path, correct on every platform (e.g. 'file:///C:/data/x.json' on Windows), e.g. for a QNetworkRequest.
+    function QUrl_fromLocalFile(path) result(res)
+        character(len=*), intent(in) :: path
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_QUrl_fromLocalFile(path, len(path, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function QUrl_fromLocalFile
+
+    !> The local path of a file: URL ('' for other URLs).
+    function QUrl_toLocalFile(url) result(res)
+        character(len=*), intent(in) :: url
+        character(len=:), allocatable :: res
+        integer(c_int) :: n_
+        type(c_ptr) :: p_
+        p_ = qtf_QUrl_toLocalFile(url, len(url, c_int), n_)
+        res = qtf_take_string(p_, n_)
+    end function QUrl_toLocalFile
 
     !> True if `path` is a directory.
     function QDir_isDir(path) result(res)

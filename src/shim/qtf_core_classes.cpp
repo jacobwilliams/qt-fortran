@@ -1395,6 +1395,16 @@ QTF_API char *qtf_QDir_entryList(const char *path, int path_len, int filters, in
     return qtf_list_to_c(QDir(qtf_qstring(path, path_len)).entryList(QDir::Filters(QDir::Filters(filters)), QDir::Name | QDir::DirsFirst | QDir::IgnoreCase), len);
 }
 
+// The file: URL of a local path, correct on every platform (e.g. 'file:///C:/data/x.json' on Windows), e.g. for a QNetworkRequest.
+QTF_API char *qtf_QUrl_fromLocalFile(const char *path, int path_len, int *len) {
+    return qtf_to_c(QUrl::fromLocalFile(qtf_qstring(path, path_len)).toString(), len);
+}
+
+// The local path of a file: URL ('' for other URLs).
+QTF_API char *qtf_QUrl_toLocalFile(const char *url, int url_len, int *len) {
+    return qtf_to_c(QUrl(qtf_qstring(url, url_len)).toLocalFile(), len);
+}
+
 // True if `path` is a directory.
 QTF_API int qtf_QDir_isDir(const char *path, int path_len) {
     return qtf_bool(QFileInfo(qtf_qstring(path, path_len)).isDir());
