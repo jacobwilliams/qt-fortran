@@ -34,6 +34,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
 
 template <typename T> static T *as(void *p) { return static_cast<T *>(p); }
 
@@ -138,6 +139,35 @@ static bool connect_win_notifier(void *s, const qtf_slot &ref) {
     (void)ref;
     return true;
 #endif
+}
+
+// The running program's path and directory. Qt's answer, or on Windows the
+// system's if Qt has none (Qt returns '' without a visible application object,
+// seen with ifx on Windows CI). Declared here: the shim doesn't include <windows.h>.
+#ifdef Q_OS_WIN
+extern "C" __declspec(dllimport) unsigned long __stdcall GetModuleFileNameW(void *module, wchar_t *name,
+                                                                          unsigned long size);
+#endif
+
+static QString qtf_app_file_path() {
+    QString p = QCoreApplication::instance() ? QCoreApplication::applicationFilePath() : QString();
+#ifdef Q_OS_WIN
+    if (p.isEmpty()) {
+        std::vector<wchar_t> buf(32768);
+        const unsigned long n = GetModuleFileNameW(nullptr, buf.data(), static_cast<unsigned long>(buf.size()));
+        if (n > 0 && n < buf.size()) p = QDir::fromNativeSeparators(QString::fromWCharArray(buf.data(), int(n)));
+    }
+#endif
+    return p;
+}
+
+static QString qtf_app_dir_path() {
+    QString d = QCoreApplication::instance() ? QCoreApplication::applicationDirPath() : QString();
+    if (d.isEmpty()) {
+        const QString p = qtf_app_file_path();
+        if (!p.isEmpty()) d = QFileInfo(p).absolutePath();
+    }
+    return d;
 }
 
 // A JSON document with the result of parsing it (QJsonDocument_fromJson).
@@ -1327,13 +1357,11 @@ QTF_API void qtf_qnetworkaccessmanager_setTransferTimeout(void *self, int msecs)
 
 // The full path of the running program (needs the application object).
 QTF_API char *qtf_QCoreApplication_applicationFilePath(int *len) {
-    return qtf_to_c(QCoreApplication::applicationFilePath(), len);
+    return qtf_to_c(qtf_app_file_path(), len);
 }
 
 // The directory of the running program (e.g. to find files installed next to it).
-QTF_API char *qtf_QCoreApplication_applicationDirPath(int *len) {
-    return qtf_to_c(QCoreApplication::applicationDirPath(), len);
-}
+QTF_API char *qtf_QCoreApplication_applicationDirPath(int *len) { return qtf_to_c(qtf_app_dir_path(), len); }
 
 // True on Windows, where QWinEventNotifier works; elsewhere its `activated` never fires.
 QTF_API int qtf_QWinEventNotifier_isSupported(void) { return qtf_bool(qtf_win_supported()); }
