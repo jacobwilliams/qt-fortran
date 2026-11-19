@@ -132,7 +132,7 @@ static bool qtf_win_supported() { return false; }
 static bool connect_win_notifier(void *s, const qtf_slot &ref) {
 #ifdef Q_OS_WIN
     auto *n = static_cast<QWinEventNotifier *>(s);
-    return qtf_track(ref, QObject::connect(n, &QWinEventNotifier::activated, n, [ref](HANDLE) { qtf_emit(ref); }));
+    return qtf_track(ref, QObject::connect(n, &QWinEventNotifier::activated, n, [ref]() { qtf_emit(ref); }));
 #else
     (void)s;
     (void)ref;
