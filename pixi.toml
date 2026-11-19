@@ -3,7 +3,7 @@ authors = ["Jacob Williams <jacobwilliams@users.noreply.github.com>"]
 channels = ["conda-forge"]
 name = "qt-fortran"
 platforms = ["osx-arm64", "linux-64", "linux-aarch64", "osx-64", "win-64"]
-version = "0.0.1"
+version = "0.1.0"
 
 [dependencies]
 gfortran = "15.*"
